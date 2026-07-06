@@ -1231,7 +1231,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.55 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.55.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -4391,19 +4391,48 @@ function parseTendencia(text) {
 
   // Capturar totais globais da linha 1 (subheader)
   // [12] = EVOL. TEÓRICA global (%) · [13] = EVOL. FINANCEIRA global (%)
+  // ⚠️ Excel/SheetJS pode entregar como "31,00%" (BR), "31.00%" (EN),
+  //    "31" (número), ou "0.31" (fração 0-1 quando rawNumbers=true).
+  //    Precisamos ser robustos com todos.
   EVOL_GLOBAL = { teorica: null, financeira: null };
   try {
     const sub = rows[1] || [];
-    // Valores vêm como "31,00%" — parseNum já lida com vírgula e ignora %
-    const parsePct = (s) => {
+    const parsePct = (raw) => {
+      if (raw == null) return null;
+      let s = String(raw).trim();
+      if (!s || s === '-') return null;
+      const hadPercent = s.includes('%');
+      // Limpa tudo: R$, espaço, %, pontos/vírgulas
+      s = s.replace(/[R\$\s%]/g, '');
       if (!s) return null;
-      const clean = String(s).replace('%', '').trim();
-      if (!clean || clean === '-') return null;
-      const n = parseNum(clean);
-      return (n == null || isNaN(n)) ? null : n;
+      // Detectar formato: se tem vírgula E ponto, o último decide
+      const lastComma = s.lastIndexOf(',');
+      const lastDot   = s.lastIndexOf('.');
+      let normalized;
+      if (lastComma > lastDot) {
+        // Vírgula é decimal (BR): '1.234,56' → '1234.56'
+        normalized = s.replace(/\./g, '').replace(',', '.');
+      } else if (lastDot > lastComma) {
+        // Ponto é decimal (EN): '1,234.56' → '1234.56'
+        normalized = s.replace(/,/g, '');
+      } else {
+        // Só um separador ou nenhum
+        normalized = s.replace(',', '.');
+      }
+      const n = parseFloat(normalized);
+      if (isNaN(n)) return null;
+      // Se veio como fração 0-1 (ex: 0.31) e o texto original NÃO tinha %,
+      // provavelmente é fração — multiplica por 100.
+      // Se veio como 0.31 COM % explícito, mantém (raro mas possível: 0,31%).
+      // Regra prática: se número < 1.5 e sem % explícito, assume fração.
+      // Se número < 1.5 e COM %, mantém (é um % genuíno pequeno).
+      if (!hadPercent && n > 0 && n <= 1.5) return n * 100;
+      return n;
     };
     EVOL_GLOBAL.teorica    = parsePct(sub[12]);
     EVOL_GLOBAL.financeira = parsePct(sub[13]);
+    console.log('[TEND] EVOL_GLOBAL parsed:', EVOL_GLOBAL,
+                '(bruto: [12]="' + sub[12] + '", [13]="' + sub[13] + '")');
   } catch(e) { console.warn('[TEND] EVOL_GLOBAL parse err:', e); }
 
   const out = [];
@@ -6689,6 +6718,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1716701c8e4c7a4',t:'MTc4MzM3MDE5NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17176c98d95c7a4',t:'MTc4MzM3MDg0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

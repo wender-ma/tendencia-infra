@@ -383,9 +383,9 @@
 /* Badge 2 linhas: email em cima + role chip embaixo */
 .auth-badge.two-line {
   flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  padding: 4px 10px 5px;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 12px 5px;
   line-height: 1.15;
 }
 .auth-badge .auth-email {
@@ -1029,7 +1029,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.50 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.51 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1328,8 +1328,8 @@ async function handleAuthClick() {
     if (error) authToast('Erro ao sair: ' + error.message, 'err');
     // onAuthStateChange cuida do resto
   } else {
-    // Login com Google (redirect) — marca flag pra saber que é login FRESCO ao voltar
-    try { sessionStorage.setItem('jz_fresh_login', '1'); } catch(e){}
+    // Login com Google (redirect) — marca flag COM timestamp pra saber que é login FRESCO ao voltar
+    try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e){}
     const { error } = await SUPA.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -1389,22 +1389,30 @@ async function initAuth() {
   // 2) Ouve mudanças (login, logout, refresh de token)
   SUPA.auth.onAuthStateChange(async (event, session) => {
     console.log('[AUTH] evento:', event);
-    // Só mostra toast quando for login FRESCO (não em refresh de token nem no getSession inicial)
-    // Flag setada em handleAuthClick antes do redirect — consumida aqui.
+    // Detecta login FRESCO: consome flag setada em handleAuthClick antes do redirect.
+    // Aceita SIGNED_IN OU INITIAL_SESSION (SDK v2 pode disparar qualquer um após OAuth).
+    // Só válido se flag tem <60s (evita toast fantasma em sessão restaurada dias depois).
     let isFreshLogin = false;
-    if (event === 'SIGNED_IN') {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
       try {
-        if (sessionStorage.getItem('jz_fresh_login') === '1') {
-          isFreshLogin = true;
+        const raw = sessionStorage.getItem('jz_fresh_login');
+        if (raw) {
+          const ts = parseInt(raw, 10);
+          if (!isNaN(ts) && (Date.now() - ts) < 60_000) {
+            isFreshLogin = true;
+          }
+          // Consome sempre (mesmo se expirada) pra não vazar pra próxima
           sessionStorage.removeItem('jz_fresh_login');
         }
       } catch(e){}
     }
     await applySession(session, isFreshLogin);
     // Limpar params residuais (?code=... ou #access_token=...) após login bem-sucedido
-    if (event === 'SIGNED_IN' && window.history.replaceState) {
-      const clean = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, clean);
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && window.history.replaceState) {
+      if (window.location.search.includes('code=') || window.location.hash.includes('access_token=')) {
+        const clean = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, clean);
+      }
     }
   });
 }
@@ -5652,6 +5660,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f56761aad77f4',t:'MTc4MzM0ODU0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f77a0cb5e0d0b',t:'MTc4MzM0OTkwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -1231,7 +1231,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.55.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.55.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1897,7 +1897,16 @@ const LIC_LABEL = 'Orç. Licitação';
 // Label da última gestão (extraído do header da coluna I do CSV de Tendência)
 let GESTAO_LABEL = 'Gestão Atual';
 // v0.55: percentuais globais de aderência físico-financeira (obra civil, sem indiretos)
-let EVOL_GLOBAL = { teorica: null, financeira: null };
+let EVOL_GLOBAL = (function() {
+  try {
+    const raw = localStorage.getItem('jzurique_evol_global');
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (p && (p.teorica != null || p.financeira != null)) return p;
+    }
+  } catch(e) {}
+  return { teorica: null, financeira: null };
+})();
 
 // ============ MODO DO CARD 3 (Bruto vs Líquido - descontando reserva) ============
 let CARD3_MODO = (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_card3_modo')) || 'bruto';
@@ -1937,8 +1946,18 @@ function renderCardAderencia() {
   const teor = evol.teorica;
   const fin  = evol.financeira;
   if (teor == null && fin == null) {
-    // Sem dados de evolução (CSV antigo ou coluna vazia) — não renderiza
-    return '';
+    // v0.55.2: placeholder amigável em vez de esconder o card
+    return `
+    <div class="kpi kpi-wide" style="opacity:0.85;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div class="label" style="margin:0;">🏗️ Aderência Físico-Financeira</div>
+        <span style="font-size:10px; color:#6b7280; background:#f3f4f6; padding:2px 8px; border-radius:8px; font-weight:600;">Prevision</span>
+      </div>
+      <div style="padding:22px 8px; text-align:center; color:#9ca3af; font-size:13px;">
+        📭 <strong>Aguardando dados</strong><br>
+        <span style="font-size:11.5px;">Envie a aba TENDÊNCIA no formato v0.55 (com colunas EVOLUÇÃO TEÓRICA e EVOLUÇÃO FINANCEIRA)</span>
+      </div>
+    </div>`;
   }
   const delta = (teor != null && fin != null) ? (fin - teor) : null;
   const absD  = delta != null ? Math.abs(delta) : null;
@@ -4433,6 +4452,15 @@ function parseTendencia(text) {
     EVOL_GLOBAL.financeira = parsePct(sub[13]);
     console.log('[TEND] EVOL_GLOBAL parsed:', EVOL_GLOBAL,
                 '(bruto: [12]="' + sub[12] + '", [13]="' + sub[13] + '")');
+    // v0.55.2: persistir no Supabase pra sobreviver a refresh/outras máquinas
+    try {
+      if (typeof AUTH !== 'undefined' && AUTH && AUTH.isEditor) {
+        localStorage.setItem('jzurique_evol_global', JSON.stringify(EVOL_GLOBAL));
+        if (typeof supaSaveDashboardKey === 'function') {
+          supaSaveDashboardKey('evol_global', JSON.stringify(EVOL_GLOBAL));
+        }
+      }
+    } catch(e) { console.warn('[TEND] persist EVOL err:', e); }
   } catch(e) { console.warn('[TEND] EVOL_GLOBAL parse err:', e); }
 
   const out = [];
@@ -6693,6 +6721,17 @@ updateSupaBadge();
         CARD3_MODO = dCfg.card3_modo;
         localStorage.setItem('jzurique_card3_modo', dCfg.card3_modo);
       }
+      // v0.55.2: restaurar EVOL_GLOBAL (aderência físico-financeira)
+      if (dCfg.evol_global) {
+        try {
+          const parsed = JSON.parse(dCfg.evol_global);
+          if (parsed && (parsed.teorica != null || parsed.financeira != null)) {
+            EVOL_GLOBAL = parsed;
+            localStorage.setItem('jzurique_evol_global', dCfg.evol_global);
+            console.log('[SUPA] EVOL_GLOBAL restaurado:', EVOL_GLOBAL);
+          }
+        } catch(e) { console.warn('[SUPA] parse EVOL_GLOBAL err:', e); }
+      }
       // 5) Histórico de uploads (últimos por tipo)
       try {
         const ups = await supaLoadUploadsLatest();
@@ -6718,6 +6757,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17176c98d95c7a4',t:'MTc4MzM3MDg0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17183ee3a42b54f',t:'MTc4MzM3MTM3OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

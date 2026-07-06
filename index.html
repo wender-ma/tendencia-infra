@@ -522,10 +522,67 @@ body:not(.is-editor) [data-editor-only] {
 .sources-header .src-empty { color: #b45309; font-style: italic; }
 .sources-header .src-sep { color: #cbd5e1; }
 
+
+/* ==== v0.54: Excel upload + accordeon avançado ==== */
+.upload-excel-card {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  transition: box-shadow .2s, border-color .2s, transform .1s;
+}
+.upload-excel-card.dragover { border-color: #059669; box-shadow: 0 0 0 4px rgba(16,185,129,.15); transform: scale(1.005); }
+.upload-excel-card h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #065f46;
+}
+.upload-excel-card .subtitle {
+  font-size: 12px;
+  color: #047857;
+  margin: 0 0 12px;
+}
+.uploads-advanced-toggle {
+  display: block;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  user-select: none;
+  transition: background .15s, color .15s;
+}
+.uploads-advanced-toggle:hover { background: #f1f5f9; color: #334155; }
+.uploads-advanced-body { display: none; margin-top: 4px; }
+.uploads-advanced-body.open { display: block; }
+
+/* Modal de mapeamento manual de abas */
+.sheet-mapping-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+.sheet-mapping-row label { font-size: 12px; font-weight: 600; color: #1e293b; }
+.sheet-mapping-row select { padding: 6px 10px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; }
+
+/* Progresso de processamento */
+.upload-progress {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #065f46;
+}
+.upload-progress .prog-step { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+
 </style>
 
 <!-- Supabase JS SDK (v2) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- v0.54: SheetJS pra ler arquivos Excel (.xlsx/.xlsm) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -973,8 +1030,9 @@ body:not(.is-editor) [data-editor-only] {
   <div class="card">
     <h2>📤 Central de Uploads</h2>
     <p style="font-size:13px; color:#4b5563; margin: 8px 0 14px;">
-      Todas as atualizações de dados do dashboard em um lugar só. Cada bloco mostra o último arquivo enviado, quando e por quem.
-      Para atualizar, clique em <strong>📤 Substituir arquivo</strong> ou arraste um <code>.csv</code> para cima do bloco.
+      Todas as atualizações de dados do dashboard em um lugar só. A partir da <strong>v0.54</strong> a forma recomendada é enviar
+      <strong>uma planilha Excel completa</strong> (<code>.xlsx</code>/<code>.xlsm</code>) contendo as 3 abas — o dashboard extrai tudo automaticamente.
+      Se preferir, uploads individuais por CSV continuam disponíveis em <em>Modo avançado</em>.
     </p>
     <div id="uploadsCentral" class="uploads-central"></div>
     <div style="margin-top:16px; padding:10px 14px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:4px; font-size:12px; color:#0c4a6e;">
@@ -1017,16 +1075,23 @@ body:not(.is-editor) [data-editor-only] {
 
     <h3 style="font-size:14px; margin:18px 0 8px; color:#7c3aed;">📤 Como atualizar os dados</h3>
     <div style="font-size:12.5px; color:#374151; padding-left:12px; border-left:3px solid #a78bfa;">
-      <p>Todas as atualizações agora ficam na aba <strong>📤 Uploads</strong> (só editores). Cada bloco mostra:</p>
+      <p>Todas as atualizações ficam na aba <strong>📤 Uploads</strong> (só editores). Dois modos disponíveis:</p>
+      <p style="margin-top:8px;"><strong>📊 Upload Completo (Excel) — recomendado:</strong></p>
       <ul style="margin:6px 0 8px 24px;">
-        <li>📁 Nome do último arquivo enviado</li>
-        <li>📅 Quando foi enviado + por quem</li>
-        <li>📤 Botão para substituir (arraste um CSV ou clique)</li>
-        <li>📜 Botão <strong>Histórico</strong> — abre modal com os últimos 12 arquivos enviados, com opção de <strong>baixar novamente</strong> (só logado, link válido 60s)</li>
+        <li>Envie <strong>1 arquivo</strong> <code>.xlsx</code> ou <code>.xlsm</code> contendo as 3 abas (Tendência, FlowsValor, Gestões)</li>
+        <li>O dashboard identifica as abas automaticamente pelos nomes</li>
+        <li>Se algum nome for diferente, aparece um modal pra você mapear manualmente</li>
+        <li>As 3 fontes de dados são atualizadas de uma vez só</li>
       </ul>
+      <p style="margin-top:8px;"><strong>⚙️ Modo avançado (CSV individual — uso legado):</strong></p>
+      <ul style="margin:6px 0 8px 24px;">
+        <li>Clique no toggle <em>"Modo avançado"</em> pra expandir os 3 cards separados</li>
+        <li>Envie cada CSV independentemente (útil se atualizou só uma parte dos dados)</li>
+      </ul>
+      <p style="margin-top:8px;">Em ambos os modos, cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
       <p style="margin-top:8px;">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
       <p style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border-radius:4px; color:#065f46;">
-        📦 <strong>Backup automático:</strong> a partir da v0.53, cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém automaticamente os <strong>últimos 12 arquivos por tipo</strong> (rolling backup mensal cobre ~1 ano). Arquivos mais antigos são descartados automaticamente.
+        📦 <strong>Backup automático:</strong> desde a v0.53, cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém automaticamente os <strong>últimos 12 arquivos por tipo</strong> (~1 ano de histórico mensal). Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code> (identificados no histórico com badge <em>via Excel</em>).
       </p>
     </div>
 
@@ -1152,7 +1217,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.53 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.54 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1337,7 +1402,7 @@ async function supaSaveDashboardKey(chave, valor) {
 const UPLOADS_BUCKET = 'uploads-history';
 const UPLOADS_MAX_PER_TYPE = 12; // rolling backup: mantém os N mais recentes por tipo
 
-async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath) {
+async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
   if (!SUPA) return null;
   const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
   const { data, error } = await SUPA.from('upload_history').insert({
@@ -1346,6 +1411,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
     linhas: linhas || null,
     enviado_por: enviadoPor,
     storage_path: storagePath || null,
+    upload_group_id: uploadGroupId || null,
   }).select().maybeSingle();
   if (error) { console.warn('[SUPA] logUpload err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
@@ -3620,6 +3686,286 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
 // ============================================================
 // v0.52 — Central de Uploads: renderização + drag-and-drop
 // ============================================================
+// ============================================================
+// v0.54 — EXCEL UPLOAD MODULE
+// Aceita 1 arquivo .xlsx/.xlsm com 3 abas (Tendência, Flows, Gestões)
+// e processa cada aba usando os parsers CSV existentes.
+// ============================================================
+
+// Padrões de nome de aba (case-insensitive, sem acentos)
+const EXCEL_SHEET_PATTERNS = {
+  tendencia: [/^tend[eê]ncia$/i, /^tendencia$/i, /tend/i],
+  flows:     [/^flows?\s*valor$/i, /^flows_valor$/i, /flows.*valor/i, /flowsvalor/i],
+  gestoes:   [/^gest[oõ]es$/i, /^gestoes$/i, /^gest[aã]o$/i, /gest/i],
+};
+
+function _normalizeSheetName(name) {
+  return String(name || '').trim();
+}
+
+// Tenta identificar automaticamente cada tipo pelo nome da aba.
+// Retorna { tendencia: 'nomeAba' | null, flows: ..., gestoes: ... }
+function _autoDetectSheets(sheetNames) {
+  const result = { tendencia: null, flows: null, gestoes: null };
+  for (const kind of Object.keys(EXCEL_SHEET_PATTERNS)) {
+    for (const pattern of EXCEL_SHEET_PATTERNS[kind]) {
+      const match = sheetNames.find(n => pattern.test(_normalizeSheetName(n)));
+      if (match) { result[kind] = match; break; }
+    }
+  }
+  return result;
+}
+
+// Converte uma aba do workbook pra string CSV (que os parsers existentes já entendem)
+function _sheetToCSV(workbook, sheetName) {
+  const ws = workbook.Sheets[sheetName];
+  if (!ws) return '';
+  // Usa ';' como separador (padrão BR, que os parsers atuais esperam)
+  return XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\n', blankrows: false, strip: false });
+}
+
+// ============================================================
+// Handler principal do upload Excel
+// ============================================================
+async function handleExcelUpload(ev) {
+  if (!requireEditor('enviar planilha Excel')) { ev.target.value = ''; return; }
+  const file = ev.target.files[0];
+  if (!file) return;
+  ev.target.value = '';
+
+  if (typeof XLSX === 'undefined') {
+    authToast('❌ Biblioteca XLSX não carregou. Recarregue a página e tente de novo.', 'err', 5000);
+    return;
+  }
+
+  _renderExcelProgress('⏳ Lendo arquivo...');
+  let workbook;
+  try {
+    const buf = await file.arrayBuffer();
+    workbook = XLSX.read(buf, { type: 'array', cellDates: true });
+  } catch (e) {
+    authToast('❌ Erro ao ler o arquivo: ' + e.message, 'err', 5000);
+    _renderExcelProgress(null);
+    return;
+  }
+
+  const sheetNames = workbook.SheetNames || [];
+  _renderExcelProgress(`📋 ${sheetNames.length} aba(s) encontrada(s): ${sheetNames.join(', ')}`);
+
+  // Tentar auto-detectar
+  let mapping = _autoDetectSheets(sheetNames);
+  const missing = Object.entries(mapping).filter(([k, v]) => !v).map(([k]) => k);
+
+  if (missing.length > 0) {
+    // Abrir modal pro usuário mapear manualmente
+    _renderExcelProgress(null);
+    const userMapping = await _promptSheetMapping(sheetNames, mapping);
+    if (!userMapping) {
+      authToast('❌ Upload cancelado', 'warn', 2500);
+      return;
+    }
+    mapping = userMapping;
+  } else {
+    _renderExcelProgress(`✅ Auto-detectadas: 📈 ${mapping.tendencia} · 🔗 ${mapping.flows} · 📅 ${mapping.gestoes}`);
+  }
+
+  // Processar as 3 abas
+  await _processExcelSheets(workbook, mapping, file);
+}
+
+// ============================================================
+// Modal pra usuário mapear abas manualmente
+// ============================================================
+function _promptSheetMapping(sheetNames, autoDetected) {
+  return new Promise((resolve) => {
+    const modalContent = document.getElementById('modalContent');
+    const modalBg = document.getElementById('modalBg');
+    if (!modalContent || !modalBg) { resolve(null); return; }
+
+    const opt = (name, selected) =>
+      `<option value="${escAttr(name)}" ${name === selected ? 'selected' : ''}>${escHtml(name)}</option>`;
+    const options = ['<option value="">— nenhuma —</option>', ...sheetNames.map(n => opt(n, null))].join('');
+
+    modalContent.innerHTML = `
+      <h2>🗂️ Mapeamento de abas</h2>
+      <div class="meta">Não consegui identificar automaticamente todas as abas. Selecione manualmente qual é cada uma:</div>
+      <div style="margin: 18px 0;">
+        <div class="sheet-mapping-row">
+          <label>📈 Tendência:</label>
+          <select id="mapSheet_tendencia">${['<option value="">— nenhuma —</option>', ...sheetNames.map(n => opt(n, autoDetected.tendencia))].join('')}</select>
+        </div>
+        <div class="sheet-mapping-row">
+          <label>🔗 Flows:</label>
+          <select id="mapSheet_flows">${['<option value="">— nenhuma —</option>', ...sheetNames.map(n => opt(n, autoDetected.flows))].join('')}</select>
+        </div>
+        <div class="sheet-mapping-row">
+          <label>📅 Gestões:</label>
+          <select id="mapSheet_gestoes">${['<option value="">— nenhuma —</option>', ...sheetNames.map(n => opt(n, autoDetected.gestoes))].join('')}</select>
+        </div>
+        <p style="font-size:11.5px; color:#64748b; margin-top:10px;">
+          💡 Se uma aba não existir na planilha, deixe em "— nenhuma —" e ela não será processada.
+        </p>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+        <button class="btn-sm" id="mapSheetsCancel">Cancelar</button>
+        <button class="btn-sm primary" id="mapSheetsOk">✅ Processar</button>
+      </div>
+    `;
+    modalBg.classList.add('show');
+
+    const finish = (result) => {
+      modalBg.classList.remove('show');
+      resolve(result);
+    };
+    document.getElementById('mapSheetsCancel').onclick = () => finish(null);
+    document.getElementById('mapSheetsOk').onclick = () => {
+      const r = {
+        tendencia: document.getElementById('mapSheet_tendencia').value || null,
+        flows:     document.getElementById('mapSheet_flows').value || null,
+        gestoes:   document.getElementById('mapSheet_gestoes').value || null,
+      };
+      if (!r.tendencia && !r.flows && !r.gestoes) {
+        authToast('⚠️ Selecione ao menos uma aba pra processar', 'warn', 3000);
+        return;
+      }
+      finish(r);
+    };
+  });
+}
+
+// ============================================================
+// Processar as abas selecionadas do Excel
+// ============================================================
+async function _processExcelSheets(workbook, mapping, file) {
+  // upload_group_id = todos os 3 registros do mesmo Excel compartilham este UUID
+  const groupId = _uuid4();
+  const results = {};
+
+  // 1) Storage: sobe o Excel completo UMA vez (todos os 3 registros apontam pro mesmo)
+  let storagePath = null;
+  try {
+    _renderExcelProgress('📤 Enviando arquivo pro Storage...');
+    storagePath = await supaUploadFile('excel', file);
+    if (storagePath) console.log('[SUPA] Excel armazenado em', storagePath);
+  } catch(e) { console.warn('supaUploadFile excel:', e); }
+
+  // 2) Processar cada aba mapeada
+  const steps = [
+    { kind: 'tendencia', label: 'Tendência', icon: '📈', parser: 'tendencia' },
+    { kind: 'flows',     label: 'Flows',     icon: '🔗', parser: 'flows' },
+    { kind: 'gestoes',   label: 'Gestões',   icon: '📅', parser: 'gestoes' },
+  ];
+
+  for (const step of steps) {
+    const sheetName = mapping[step.kind];
+    if (!sheetName) {
+      results[step.kind] = { skipped: true };
+      continue;
+    }
+
+    _renderExcelProgress(`⚙️ Processando aba "${sheetName}" (${step.icon} ${step.label})...`);
+    let csv;
+    try {
+      csv = _sheetToCSV(workbook, sheetName);
+    } catch(e) {
+      results[step.kind] = { error: 'Falha ao ler aba: ' + e.message };
+      continue;
+    }
+
+    // Reusar exatamente a mesma lógica de validação e parsing do handleUpload CSV
+    const firstLines = csv.split(/\r?\n/).slice(0,3).join(' ');
+    let linhas = 0;
+    try {
+      if (step.parser === 'tendencia') {
+        if (!firstLines.includes('CORRIGIDO') || !firstLines.toUpperCase().includes('INCC')) {
+          throw new Error('Cabeçalho da aba Tendência precisa conter CORRIGIDO + INCC');
+        }
+        DATA_T = parseTendencia(csv);
+        linhas = DATA_T.length;
+      } else if (step.parser === 'flows') {
+        if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
+          throw new Error('Cabeçalho da aba Flows precisa conter INSUMO PLANEJAMENTO ou CONTROLE DE ALTERAÇÕES');
+        }
+        DATA_F = parseFlowsValor(csv);
+        applyManuals();
+        loadClassifications();
+        linhas = DATA_F.length;
+      } else if (step.parser === 'gestoes') {
+        if (!firstLines.includes('Descr_gestao') && !firstLines.includes('Key_planejamento')) {
+          throw new Error('Cabeçalho da aba Gestões precisa conter Descr_gestao ou Key_planejamento');
+        }
+        const parsed = parseGestoes(csv);
+        Object.assign(HISTORICO, parsed);
+        linhas = parsed.items ? parsed.items.length : 0;
+      }
+      results[step.kind] = { ok: true, linhas };
+    } catch (e) {
+      results[step.kind] = { error: e.message };
+      continue;
+    }
+
+    // 3) Logar metadata no upload_history (usando o mesmo file.name e mesmo storagePath)
+    try {
+      const rec = await supaLogUpload(step.kind, file.name, file.size, linhas, storagePath, groupId);
+      if (rec) LAST_UPLOADS[step.kind] = rec;
+    } catch(e) { console.warn('supaLogUpload:', e); }
+
+    // 4) Rolling backup por tipo
+    try { await supaEnforceRollingBackup(step.kind); } catch(e) { console.warn('rolling:', e); }
+  }
+
+  // 5) Re-render tudo
+  renderAll();
+  renderUploadsCentral();
+  renderSourcesHeaders();
+  updateEditCount();
+  _renderExcelProgress(null);
+
+  // 6) Toast de resumo
+  const ok = Object.entries(results).filter(([k, v]) => v.ok);
+  const errs = Object.entries(results).filter(([k, v]) => v.error);
+  const skipped = Object.entries(results).filter(([k, v]) => v.skipped);
+  const parts = [];
+  if (ok.length) parts.push(`✅ ${ok.length} aba(s) processada(s)`);
+  if (skipped.length) parts.push(`⏭️ ${skipped.length} pulada(s)`);
+  if (errs.length) parts.push(`❌ ${errs.length} com erro`);
+  const kind = errs.length ? 'err' : (skipped.length && !ok.length ? 'warn' : 'ok');
+  authToast('📊 ' + parts.join(' · '), kind, 5000);
+  if (errs.length) {
+    console.warn('[Excel] erros por aba:', errs);
+    setTimeout(() => {
+      errs.forEach(([k, v]) => authToast(`❌ ${k}: ${v.error}`, 'err', 6000));
+    }, 500);
+  }
+}
+
+// Renderiza mensagem de progresso dentro do card Excel
+function _renderExcelProgress(msg) {
+  const card = document.querySelector('.upload-excel-card .upload-progress');
+  if (!card) return;
+  if (!msg) { card.innerHTML = ''; card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  card.innerHTML = `<div class="prog-step">${msg}</div>`;
+}
+
+// UUID v4 (não precisa de biblioteca)
+function _uuid4() {
+  if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// Toggle do "modo avançado" (uploads individuais CSV)
+function toggleAdvancedUploads() {
+  const body = document.getElementById('uploadsAdvancedBody');
+  const toggle = document.getElementById('uploadsAdvancedToggle');
+  if (!body || !toggle) return;
+  const open = body.classList.toggle('open');
+  toggle.innerHTML = (open ? '▼' : '▶') + ' <strong>Modo avançado</strong> — enviar cada CSV individualmente (uso legado)';
+}
+
 const UPLOAD_META = {
   tendencia: {
     label: 'TENDÊNCIA',
@@ -3669,7 +4015,52 @@ function renderUploadsCentral() {
   const root = document.getElementById('uploadsCentral');
   if (!root) return;
   const kinds = ['tendencia', 'flows', 'gestoes'];
-  root.innerHTML = kinds.map(k => {
+
+  // ============================================================
+  // v0.54: Bloco Excel destacado no topo
+  // ============================================================
+  // "Última planilha Excel" = pegar o registro mais recente com upload_group_id
+  // que existe em pelo menos um dos LAST_UPLOADS.
+  const groupCandidates = kinds.map(k => LAST_UPLOADS[k]).filter(u => u && u.upload_group_id);
+  let lastExcel = null;
+  if (groupCandidates.length) {
+    // Ordenar por data e pegar o mais recente
+    groupCandidates.sort((a, b) => new Date(b.enviado_em) - new Date(a.enviado_em));
+    const gid = groupCandidates[0].upload_group_id;
+    const relatedKinds = kinds.filter(k => LAST_UPLOADS[k] && LAST_UPLOADS[k].upload_group_id === gid);
+    lastExcel = {
+      ...groupCandidates[0],
+      relatedKinds,
+    };
+  }
+
+  const excelMeta = lastExcel ? `
+    <div class="upload-card-meta filled">
+      📁 <strong>${escHtml(lastExcel.nome_arquivo)}</strong>${lastExcel.tamanho_bytes ? ' <span style="color:#64748b;">('+fmtBytes(lastExcel.tamanho_bytes)+')</span>' : ''}<br>
+      📅 Enviado ${lastExcel.enviado_por ? 'por <code>'+escHtml(lastExcel.enviado_por)+'</code> ' : ''}em ${fmtUploadDate(lastExcel.enviado_em)}<br>
+      📊 Abas processadas: ${lastExcel.relatedKinds.map(k => `${UPLOAD_META[k].icon} ${UPLOAD_META[k].label.split(' ')[0]}`).join(' · ')}
+    </div>` : `
+    <div class="upload-card-meta empty">📭 Nenhuma planilha Excel enviada ainda. Você pode enviar 1 arquivo <code>.xlsx</code>/<code>.xlsm</code> com as 3 abas ou usar o modo avançado abaixo.</div>`;
+
+  const excelCard = `
+    <div class="upload-excel-card" id="excelUploadCard">
+      <h3>📊 Upload Completo (Excel) <span style="font-size:11px; color:#059669; font-weight:600; margin-left:4px;">RECOMENDADO</span></h3>
+      <p class="subtitle">Envie a planilha inteira (<code>.xlsx</code> ou <code>.xlsm</code>) e o dashboard extrai automaticamente as abas <strong>Tendência</strong>, <strong>FlowsValor</strong> e <strong>Gestões</strong>.</p>
+      ${excelMeta}
+      <div class="upload-progress" style="display:none;"></div>
+      <div class="upload-card-actions">
+        <button class="btn-sm primary" data-editor-only onclick="document.getElementById('fileInput_excel').click()">
+          📊 ${lastExcel ? 'Substituir planilha' : 'Escolher planilha Excel'}
+        </button>
+        <button class="btn-sm" onclick="openUploadsHistory('tendencia')" title="Ver todos os uploads">📜 Histórico</button>
+        <input type="file" id="fileInput_excel" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleExcelUpload(event)">
+      </div>
+    </div>`;
+
+  // ============================================================
+  // Accordion "modo avançado" — uploads individuais CSV
+  // ============================================================
+  const csvCardsHtml = kinds.map(k => {
     const meta = UPLOAD_META[k];
     const last = LAST_UPLOADS[k];
     let metaBlock;
@@ -3678,9 +4069,12 @@ function renderUploadsCentral() {
         last.tamanho_bytes ? fmtBytes(last.tamanho_bytes) : null,
         last.linhas ? (last.linhas + ' linhas') : null,
       ].filter(Boolean).join(' · ');
+      const sourceTag = last.upload_group_id
+        ? ' <span style="font-size:10px; color:#059669; background:#d1fae5; padding:1px 6px; border-radius:8px; margin-left:4px;">via Excel</span>'
+        : '';
       metaBlock = `
         <div class="upload-card-meta filled">
-          📁 <strong>${escHtml(last.nome_arquivo)}</strong>${detalhes ? ' <span style="color:#64748b;">('+detalhes+')</span>' : ''}<br>
+          📁 <strong>${escHtml(last.nome_arquivo)}</strong>${sourceTag}${detalhes ? ' <span style="color:#64748b;">('+detalhes+')</span>' : ''}<br>
           📅 Enviado ${last.enviado_por ? 'por <code>'+escHtml(last.enviado_por)+'</code> ' : ''}em ${fmtUploadDate(last.enviado_em)}
         </div>`;
     } else {
@@ -3706,7 +4100,32 @@ function renderUploadsCentral() {
       </div>`;
   }).join('');
 
-  // Drag-and-drop
+  root.innerHTML = `
+    ${excelCard}
+    <div id="uploadsAdvancedToggle" class="uploads-advanced-toggle" onclick="toggleAdvancedUploads()">
+      ▶ <strong>Modo avançado</strong> — enviar cada CSV individualmente (uso legado)
+    </div>
+    <div id="uploadsAdvancedBody" class="uploads-advanced-body">
+      ${csvCardsHtml}
+    </div>
+  `;
+
+  // Drag-and-drop no card Excel
+  const excelCardEl = document.getElementById('excelUploadCard');
+  if (excelCardEl) {
+    excelCardEl.addEventListener('dragover', e => { e.preventDefault(); excelCardEl.classList.add('dragover'); });
+    excelCardEl.addEventListener('dragleave', e => { e.preventDefault(); excelCardEl.classList.remove('dragover'); });
+    excelCardEl.addEventListener('drop', e => {
+      e.preventDefault();
+      excelCardEl.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const fakeEvt = { target: { files: [file], value: '' }};
+      handleExcelUpload(fakeEvt);
+    });
+  }
+
+  // Drag-and-drop nos cards CSV individuais
   root.querySelectorAll('.upload-card').forEach(card => {
     const kind = card.dataset.kind;
     card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); });
@@ -6129,5 +6548,5 @@ updateSupaBadge();
 
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a170aea5b89c1225',t:'MTc4MzM2MjY0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

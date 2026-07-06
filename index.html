@@ -978,7 +978,7 @@ body:not(.is-editor) [data-editor-only] {
     </p>
     <div id="uploadsCentral" class="uploads-central"></div>
     <div style="margin-top:16px; padding:10px 14px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:4px; font-size:12px; color:#0c4a6e;">
-      💡 <strong>Dica:</strong> Envios ficam registrados no histórico. Para ver todos os uploads passados, veja a aba <em>ℹ️ Manual → Histórico de uploads</em> (em breve). Os arquivos em si <strong>não</strong> são armazenados — apenas os metadados (nome, data, autor). Os dados extraídos são gravados no Supabase.
+      💡 <strong>Dica:</strong> Envios ficam registrados no histórico. Clique em <strong>📜 Histórico</strong> em qualquer bloco pra ver os últimos arquivos enviados e <strong>baixá-los novamente</strong>. Mantemos automaticamente os <strong>últimos 12 arquivos por tipo</strong> (rolling backup) — mais antigos são descartados. Download só para usuários logados (link temporário de 60 segundos).
     </div>
   </div>
 </div>
@@ -1021,9 +1021,13 @@ body:not(.is-editor) [data-editor-only] {
       <ul style="margin:6px 0 8px 24px;">
         <li>📁 Nome do último arquivo enviado</li>
         <li>📅 Quando foi enviado + por quem</li>
-        <li>📤 Botão para substituir</li>
+        <li>📤 Botão para substituir (arraste um CSV ou clique)</li>
+        <li>📜 Botão <strong>Histórico</strong> — abre modal com os últimos 12 arquivos enviados, com opção de <strong>baixar novamente</strong> (só logado, link válido 60s)</li>
       </ul>
       <p style="margin-top:8px;">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
+      <p style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border-radius:4px; color:#065f46;">
+        📦 <strong>Backup automático:</strong> a partir da v0.53, cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém automaticamente os <strong>últimos 12 arquivos por tipo</strong> (rolling backup mensal cobre ~1 ano). Arquivos mais antigos são descartados automaticamente.
+      </p>
     </div>
 
     <h3 style="font-size:14px; margin:18px 0 8px; color:#b45309;">🔄 Fluxo mensal recomendado</h3>
@@ -1148,7 +1152,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.52 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.53 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1329,8 +1333,11 @@ async function supaSaveDashboardKey(chave, valor) {
   updateSupaBadge();
 }
 
-// ---------- UPLOAD HISTORY (v0.52) ----------
-async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas) {
+// ---------- UPLOAD HISTORY + STORAGE (v0.52 / v0.53) ----------
+const UPLOADS_BUCKET = 'uploads-history';
+const UPLOADS_MAX_PER_TYPE = 12; // rolling backup: mantém os N mais recentes por tipo
+
+async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath) {
   if (!SUPA) return null;
   const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
   const { data, error } = await SUPA.from('upload_history').insert({
@@ -1338,11 +1345,77 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas) {
     tamanho_bytes: tamanhoBytes || null,
     linhas: linhas || null,
     enviado_por: enviadoPor,
+    storage_path: storagePath || null,
   }).select().maybeSingle();
   if (error) { console.warn('[SUPA] logUpload err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
   return data;
+}
+
+// v0.53: sobe arquivo original pro Storage. Retorna storage_path ou null se falhar.
+async function supaUploadFile(tipo, file) {
+  if (!SUPA || !SUPA.storage) return null;
+  // Nome único: YYYYMMDD_HHMMSS_original.csv (evita colisão + facilita ordenação)
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  // Sanitiza nome (remove caracteres estranhos)
+  const safeName = (file.name || 'arquivo.csv').replace(/[^\w.\-]/g, '_');
+  const path = `${tipo}/${stamp}_${safeName}`;
+  const { error } = await SUPA.storage.from(UPLOADS_BUCKET).upload(path, file, {
+    contentType: file.type || 'text/csv',
+    upsert: false,
+  });
+  if (error) {
+    console.warn('[SUPA] upload storage err:', error);
+    SUPA_STATUS.lastError = 'Storage: ' + error.message;
+    updateSupaBadge();
+    return null;
+  }
+  return path;
+}
+
+// v0.53: lista TODOS os uploads de um tipo (ordenado do mais recente)
+async function supaListUploadsByType(tipo, limit = 50) {
+  if (!SUPA) return [];
+  const { data, error } = await SUPA.from('upload_history')
+    .select('*').eq('tipo', tipo)
+    .order('enviado_em', { ascending: false }).limit(limit);
+  if (error) { console.warn('[SUPA] listUploads err:', error); return []; }
+  return data || [];
+}
+
+// v0.53: gera signed URL de download (válida por 60s)
+async function supaGetDownloadURL(storagePath) {
+  if (!SUPA || !storagePath) return null;
+  const { data, error } = await SUPA.storage.from(UPLOADS_BUCKET)
+    .createSignedUrl(storagePath, 60);
+  if (error) { console.warn('[SUPA] signedUrl err:', error); return null; }
+  return data?.signedUrl || null;
+}
+
+// v0.53: rolling backup — remove uploads mais antigos que passaram do limite
+async function supaEnforceRollingBackup(tipo) {
+  if (!SUPA) return;
+  try {
+    const all = await supaListUploadsByType(tipo, 100);
+    if (all.length <= UPLOADS_MAX_PER_TYPE) return;
+    const toDelete = all.slice(UPLOADS_MAX_PER_TYPE);
+    console.log(`[SUPA] rolling backup ${tipo}: removendo ${toDelete.length} arquivo(s) antigo(s)`);
+    // Apagar arquivos do Storage
+    const paths = toDelete.map(r => r.storage_path).filter(Boolean);
+    if (paths.length) {
+      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
+      if (sErr) console.warn('[SUPA] rolling storage remove err:', sErr);
+    }
+    // Apagar linhas do upload_history
+    const ids = toDelete.map(r => r.id);
+    const { error: dbErr } = await SUPA.from('upload_history').delete().in('id', ids);
+    if (dbErr) console.warn('[SUPA] rolling history remove err:', dbErr);
+  } catch (e) {
+    console.warn('[SUPA] rolling backup err:', e);
+  }
 }
 
 async function supaLoadUploadsLatest() {
@@ -3511,17 +3584,28 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         result = `GESTÕES: ${linhas} itens · ${parsed.gestoes.length} gestões`;
       }
 
+      // v0.53: sobe o arquivo original pro Storage (Supabase bucket privado)
+      let storagePath = null;
+      try {
+        storagePath = await supaUploadFile(kind, file);
+        if (storagePath) console.log('[SUPA] arquivo armazenado em', storagePath);
+      } catch(e) { console.warn('supaUploadFile:', e); }
+
       // Persistir metadata no Supabase (só se editor — RLS bloqueia senão)
       try {
-        const rec = await supaLogUpload(kind, file.name, file.size, linhas);
+        const rec = await supaLogUpload(kind, file.name, file.size, linhas, storagePath);
         if (rec) LAST_UPLOADS[kind] = rec;
       } catch(e) { console.warn('supaLogUpload:', e); }
+
+      // v0.53: rolling backup — mantém só últimos N arquivos por tipo
+      try { await supaEnforceRollingBackup(kind); } catch(e) { console.warn('rolling:', e); }
 
       renderAll();
       renderUploadsCentral();
       renderSourcesHeaders();
       updateEditCount();
-      authToast('✅ ' + result, 'ok', 3500);
+      const storageInfo = storagePath ? ' · 📦 arquivado' : '';
+      authToast('✅ ' + result + storageInfo, 'ok', 3500);
 
     } catch (err) {
       console.error(err);
@@ -3615,6 +3699,7 @@ function renderUploadsCentral() {
           <button class="btn-sm primary" data-editor-only onclick="document.getElementById('fileInput_${k}').click()">
             📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
           </button>
+          <button class="btn-sm" onclick="openUploadsHistory('${k}')" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
           <button class="btn-sm" onclick="alert(MANUAL_TEXT['${meta.manualKey}'])">ℹ️ Como exportar?</button>
           <input type="file" id="fileInput_${k}" accept=".csv" style="display:none" onchange="handleUpload(event, '${k}')">
         </div>
@@ -3635,6 +3720,88 @@ function renderUploadsCentral() {
       handleUpload(fakeEvt, kind);
     });
   });
+}
+
+
+// v0.53: modal com histórico completo de uploads de um tipo
+async function openUploadsHistory(kind) {
+  const meta = UPLOAD_META[kind];
+  if (!meta) return;
+  const modalContent = document.getElementById('modalContent');
+  if (!modalContent) return;
+  modalContent.innerHTML = `
+    <h2>📜 Histórico de uploads — ${meta.icon} ${meta.label}</h2>
+    <div class="meta">Mantemos os últimos <strong>${UPLOADS_MAX_PER_TYPE}</strong> arquivos por tipo (mais antigos são descartados automaticamente).</div>
+    <div id="uploadsHistoryList" style="margin-top:14px;">⏳ Carregando...</div>
+  `;
+  document.getElementById('modalBg').classList.add('show');
+
+  const list = await supaListUploadsByType(kind, UPLOADS_MAX_PER_TYPE + 5);
+  const box = document.getElementById('uploadsHistoryList');
+  if (!box) return;
+  if (!list.length) {
+    box.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:30px;">Nenhum upload registrado ainda.</div>';
+    return;
+  }
+  box.innerHTML = `
+    <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f8fafc; text-align:left;">
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Data / Hora</th>
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Arquivo</th>
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Tamanho</th>
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Linhas</th>
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Enviado por</th>
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb; text-align:right;">Ação</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map((r, idx) => {
+          const isLatest = idx === 0;
+          const canDownload = !!r.storage_path && AUTH && AUTH.user; // qualquer logado baixa
+          const btnDownload = canDownload
+            ? `<button class="btn-sm primary" onclick="downloadUploadFile('${r.storage_path.replace(/'/g, "\\'")}','${escAttr(r.nome_arquivo)}')">📥 Baixar</button>`
+            : (r.storage_path
+                ? `<span style="color:#9ca3af; font-size:11px;" title="Faça login para baixar">🔒 login</span>`
+                : `<span style="color:#9ca3af; font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">— indisponível</span>`);
+          return `
+            <tr style="border-bottom:1px solid #f1f5f9; ${isLatest?'background:#f0fdf4;':''}">
+              <td style="padding:8px;">${fmtUploadDate(r.enviado_em)} ${isLatest?'<span style="color:#059669; font-size:10px; font-weight:700; margin-left:4px;">ATUAL</span>':''}</td>
+              <td style="padding:8px; font-family:monospace; font-size:11.5px;">${escHtml(r.nome_arquivo)}</td>
+              <td style="padding:8px; color:#64748b;">${fmtBytes(r.tamanho_bytes)}</td>
+              <td style="padding:8px; color:#64748b;">${r.linhas != null ? r.linhas.toLocaleString('pt-BR') : '-'}</td>
+              <td style="padding:8px; font-size:11.5px; color:#475569;">${r.enviado_por ? escHtml(r.enviado_por) : '<em>anônimo</em>'}</td>
+              <td style="padding:8px; text-align:right;">${btnDownload}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:12px; padding:8px 12px; background:#f8fafc; border-radius:4px; font-size:11px; color:#64748b;">
+      💡 <strong>Rolling backup:</strong> quando o 13º arquivo é enviado, o mais antigo é apagado automaticamente (arquivo + registro do banco).
+      Para baixar um arquivo você precisa estar <strong>logado</strong> (link temporário válido por 60 segundos).
+    </div>
+  `;
+}
+
+async function downloadUploadFile(storagePath, filename) {
+  if (!AUTH || !AUTH.user) {
+    authToast('🔑 Faça login para baixar arquivos', 'warn', 3500);
+    return;
+  }
+  authToast('⏳ Gerando link de download...', 'info', 2000);
+  const url = await supaGetDownloadURL(storagePath);
+  if (!url) {
+    authToast('❌ Erro ao gerar link de download', 'err', 4000);
+    return;
+  }
+  // Trigger download
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'download.csv';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 function renderSourcesHeaders() {
@@ -5961,6 +6128,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a170689b0c79a538',t:'MTc4MzM1OTc3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

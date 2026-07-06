@@ -444,6 +444,84 @@ body:not(.is-editor) [data-editor-only] {
   display: none !important;
 }
 
+
+/* ==== v0.52: Central de Uploads e cabeçalho de fontes ==== */
+.uploads-central {
+  display: grid;
+  gap: 14px;
+  margin-top: 10px;
+}
+.upload-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #fff;
+  transition: box-shadow .15s, border-color .15s;
+}
+.upload-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); border-color: #cbd5e1; }
+.upload-card.dragover { border-color: #3b82f6; background: #eff6ff; }
+.upload-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.upload-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px;
+}
+.upload-card-sub {
+  font-size: 11.5px;
+  color: #64748b;
+  margin: 0;
+}
+.upload-card-meta {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #334155;
+  border-left: 3px solid #94a3b8;
+}
+.upload-card-meta.filled { border-left-color: #10b981; background: #f0fdf4; }
+.upload-card-meta.empty  { border-left-color: #f59e0b; background: #fffbeb; }
+.upload-card-meta code {
+  background: rgba(0,0,0,.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11.5px;
+}
+.upload-card-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.upload-card-actions .btn-sm { font-size: 12px; }
+
+/* Cabeçalho de fontes no topo de cada aba (compacto) */
+.sources-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #475569;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+}
+.sources-header strong { color: #1e293b; font-weight: 600; }
+.sources-header .src-item { display: inline-flex; align-items: center; gap: 4px; }
+.sources-header .src-empty { color: #b45309; font-style: italic; }
+.sources-header .src-sep { color: #cbd5e1; }
+
 </style>
 
 <!-- Supabase JS SDK (v2) -->
@@ -475,6 +553,7 @@ body:not(.is-editor) [data-editor-only] {
   <div class="tab" data-tab="projecao_ctrl">📦 Controle Projeção</div>
   <div class="tab" data-tab="detalhe">📋 Detalhamento</div>
   <div class="tab" data-tab="historico">📅 Histórico Mensal</div>
+  <div class="tab" data-tab="uploads">📤 Uploads</div>
   <div class="tab" data-tab="manual">ℹ️ Manual</div>
 </div>
 </div><!-- /page-header -->
@@ -483,13 +562,7 @@ body:not(.is-editor) [data-editor-only] {
 
 <!-- VISÃO GERAL -->
 <div class="tab-content active" id="tab-visao">
-  <div class="upload-bar" id="uploadBar_visao">
-    <span>📁 <strong>Atualizar Tendência (alimenta KPIs):</strong> CSV da aba TENDÊNCIA</span>
-    <button class="upload-btn" onclick="document.getElementById('fileInput_visao').click()">📤 Carregar CSV</button>
-    <button class="upload-btn secondary" onclick="alert(MANUAL_TEXT['tendencia'])">ℹ️ Como exportar?</button>
-    <span class="upload-status" id="uploadStatus_visao"></span>
-    <input type="file" id="fileInput_visao" accept=".csv" style="display:none" onchange="handleUpload(event, 'tendencia', 'visao')">
-  </div>
+  <div class="sources-header" id="srcHeader_visao" data-sources="tendencia,flows"></div>
   <div id="alertBanner"></div>
   <div class="kpis" id="kpis"></div>
 
@@ -523,13 +596,7 @@ body:not(.is-editor) [data-editor-only] {
 
 <!-- DETALHAMENTO -->
 <div class="tab-content" id="tab-detalhe">
-  <div class="upload-bar" id="uploadBar_detalhe">
-    <span>📁 <strong>Atualizar Tendência:</strong> CSV da aba TENDÊNCIA</span>
-    <button class="upload-btn" onclick="document.getElementById('fileInput_detalhe').click()">📤 Carregar CSV</button>
-    <button class="upload-btn secondary" onclick="alert(MANUAL_TEXT['tendencia'])">ℹ️ Como exportar?</button>
-    <span class="upload-status" id="uploadStatus_detalhe"></span>
-    <input type="file" id="fileInput_detalhe" accept=".csv" style="display:none" onchange="handleUpload(event, 'tendencia', 'detalhe')">
-  </div>
+  <div class="sources-header" id="srcHeader_detalhe" data-sources="tendencia"></div>
   <div class="card">
     <h2>📋 Detalhamento por Item</h2>
     <div class="toolbar">
@@ -577,13 +644,7 @@ body:not(.is-editor) [data-editor-only] {
 
 <!-- FLOWS -->
 <div class="tab-content" id="tab-flows">
-  <div class="upload-bar" id="uploadBar_flows">
-    <span>📁 <strong>Atualizar Flows / Aditivos:</strong> CSV da aba FlowsValor</span>
-    <button class="upload-btn" onclick="document.getElementById('fileInput_flows').click()">📤 Carregar CSV</button>
-    <button class="upload-btn secondary" onclick="alert(MANUAL_TEXT['flows'])">ℹ️ Como exportar?</button>
-    <span class="upload-status" id="uploadStatus_flows"></span>
-    <input type="file" id="fileInput_flows" accept=".csv" style="display:none" onchange="handleUpload(event, 'flows', 'flows')">
-  </div>
+  <div class="sources-header" id="srcHeader_flows" data-sources="flows"></div>
   <div class="flow-summary" id="flowSummary"></div>
 
   <div class="grid-2">
@@ -669,13 +730,7 @@ body:not(.is-editor) [data-editor-only] {
 
 <!-- HISTÓRICO -->
 <div class="tab-content" id="tab-historico">
-  <div class="upload-bar" id="uploadBar_historico">
-    <span>📁 <strong>Atualizar Histórico Mensal (Gestões):</strong> CSV da aba Gestões</span>
-    <button class="upload-btn" onclick="document.getElementById('fileInput_historico').click()">📤 Carregar CSV</button>
-    <button class="upload-btn secondary" onclick="alert(MANUAL_TEXT['gestoes'])">ℹ️ Como exportar?</button>
-    <span class="upload-status" id="uploadStatus_historico"></span>
-    <input type="file" id="fileInput_historico" accept=".csv" style="display:none" onchange="handleUpload(event, 'gestoes', 'historico')">
-  </div>
+  <div class="sources-header" id="srcHeader_historico" data-sources="gestoes"></div>
   <div class="kpis" id="histKpis"></div>
 
   <div class="card">
@@ -724,13 +779,7 @@ body:not(.is-editor) [data-editor-only] {
 
 <!-- PROJEÇÃO / TENDÊNCIA DE OBRA -->
 <div class="tab-content" id="tab-projecao">
-  <div class="upload-bar" id="uploadBar_projecao">
-    <span>📁 <strong>Atualizar Tendência de Obra:</strong> CSV da aba Gestões (mesmo do Histórico)</span>
-    <button class="upload-btn" onclick="document.getElementById('fileInput_projecao').click()">📤 Carregar CSV</button>
-    <button class="upload-btn secondary" onclick="alert(MANUAL_TEXT['gestoes'])">ℹ️ Como exportar?</button>
-    <span class="upload-status" id="uploadStatus_projecao"></span>
-    <input type="file" id="fileInput_projecao" accept=".csv" style="display:none" onchange="handleUpload(event, 'gestoes', 'projecao')">
-  </div>
+  <div class="sources-header" id="srcHeader_projecao" data-sources="gestoes,tendencia"></div>
 
   <div class="card">
     <h2>⚙️ Parâmetros da Projeção</h2>
@@ -831,6 +880,7 @@ body:not(.is-editor) [data-editor-only] {
 
 <!-- CONTROLE PROJEÇÃO -->
 <div class="tab-content" id="tab-projecao_ctrl">
+  <div class="sources-header" id="srcHeader_projecao_ctrl" data-sources="tendencia,flows"></div>
   <div class="card">
     <h2>📦 Controle da Verba de Projeção de Gastos <span class="hint">insumo I011890</span></h2>
     <p style="font-size:12.5px; color:#4b5563; margin: 8px 0 12px;">
@@ -918,12 +968,81 @@ body:not(.is-editor) [data-editor-only] {
   </div>
 </div>
 
+<!-- UPLOADS (v0.52) -->
+<div class="tab-content" id="tab-uploads">
+  <div class="card">
+    <h2>📤 Central de Uploads</h2>
+    <p style="font-size:13px; color:#4b5563; margin: 8px 0 14px;">
+      Todas as atualizações de dados do dashboard em um lugar só. Cada bloco mostra o último arquivo enviado, quando e por quem.
+      Para atualizar, clique em <strong>📤 Substituir arquivo</strong> ou arraste um <code>.csv</code> para cima do bloco.
+    </p>
+    <div id="uploadsCentral" class="uploads-central"></div>
+    <div style="margin-top:16px; padding:10px 14px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:4px; font-size:12px; color:#0c4a6e;">
+      💡 <strong>Dica:</strong> Envios ficam registrados no histórico. Para ver todos os uploads passados, veja a aba <em>ℹ️ Manual → Histórico de uploads</em> (em breve). Os arquivos em si <strong>não</strong> são armazenados — apenas os metadados (nome, data, autor). Os dados extraídos são gravados no Supabase.
+    </div>
+  </div>
+</div>
+
 <!-- MANUAL -->
 <div class="tab-content" id="tab-manual">
   <div class="card">
-    <h2>ℹ️ Manual de atualização dos dados</h2>
+    <h2>ℹ️ Manual</h2>
+
+    <!-- ==== v0.52: Novas seções ==== -->
+    <h3 style="font-size:14px; margin:8px 0 8px; color:#1e3a8a;">🌐 Sobre a versão online</h3>
+    <div style="font-size:12.5px; color:#374151; padding-left:12px; border-left:3px solid #3b82f6;">
+      <p>Este dashboard vive em <a href="https://tendencia-infra.vercel.app/" target="_blank" style="color:#2563eb;">tendencia-infra.vercel.app</a> e agora é <strong>compartilhado por toda a equipe</strong>. Todas as edições (classificações de aditivos, movimentações, aditivos manuais) são sincronizadas em tempo real com um banco na nuvem (<strong>Supabase</strong>).</p>
+      <p style="margin-top:8px;"><strong>Badges no header:</strong></p>
+      <ul style="margin:6px 0 8px 24px;">
+        <li><code>🔗 Conectando…</code> — SDK inicializando (primeiros 1-2 segundos após abrir)</li>
+        <li><code>☁️ Sincronizado</code> — tudo em dia com a nuvem ✅</li>
+        <li><code>⚠️ Erro ao sincronizar</code> — falha na última operação (passe o mouse pra ver detalhes)</li>
+        <li><code>🔴 Offline (local)</code> — sem conexão; alterações ficam só no navegador até voltar</li>
+      </ul>
+    </div>
+
+    <h3 style="font-size:14px; margin:18px 0 8px; color:#065f46;">🔐 Login e permissões</h3>
+    <div style="font-size:12.5px; color:#374151; padding-left:12px; border-left:3px solid #10b981;">
+      <p>Modelo <strong>ver = livre / editar = restrito</strong>:</p>
+      <ul style="margin:6px 0 8px 24px;">
+        <li><strong>Sem login</strong> — qualquer pessoa com o link consegue <strong>ver</strong> tudo (badge <code>👁️ Visualização</code>). Botões de edição ficam escondidos ou cinzas.</li>
+        <li><strong>Logado + email na whitelist</strong> — badge fica verde com chip <code>EDITOR</code>. Todos os botões de edição liberam.</li>
+        <li><strong>Logado mas fora da whitelist</strong> — badge fica azul com chip <code>SEM PERMISSÃO</code>. Consegue ver, mas não editar. Fale com o admin para ser adicionado.</li>
+      </ul>
+      <p style="margin-top:8px;"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header, escolha sua conta Google, pronto. Não precisa cadastro nem senha.</p>
+      <p style="margin-top:8px; padding:8px 12px; background:#dbeafe; border-radius:4px; color:#1e40af;">
+        📧 <strong>Para pedir permissão de edição:</strong> envie seu email do Google (o mesmo que usou pra logar) para o admin. Ele adiciona você na whitelist em 10 segundos.
+      </p>
+    </div>
+
+    <h3 style="font-size:14px; margin:18px 0 8px; color:#7c3aed;">📤 Como atualizar os dados</h3>
+    <div style="font-size:12.5px; color:#374151; padding-left:12px; border-left:3px solid #a78bfa;">
+      <p>Todas as atualizações agora ficam na aba <strong>📤 Uploads</strong> (só editores). Cada bloco mostra:</p>
+      <ul style="margin:6px 0 8px 24px;">
+        <li>📁 Nome do último arquivo enviado</li>
+        <li>📅 Quando foi enviado + por quem</li>
+        <li>📤 Botão para substituir</li>
+      </ul>
+      <p style="margin-top:8px;">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
+    </div>
+
+    <h3 style="font-size:14px; margin:18px 0 8px; color:#b45309;">🔄 Fluxo mensal recomendado</h3>
+    <div style="font-size:12.5px; color:#374151; padding-left:12px; border-left:3px solid #f59e0b;">
+      <ol style="margin:6px 0 8px 24px;">
+        <li>No começo de cada mês, exporte os 3 CSVs da planilha (TENDÊNCIA, FlowsValor, Gestões)</li>
+        <li>Faça login no dashboard</li>
+        <li>Vá em <strong>📤 Uploads</strong> e substitua os 3 arquivos (não precisa ser tudo de uma vez)</li>
+        <li>Confira nos cabeçalhos das outras abas se todas estão apontando pra data certa</li>
+        <li>Reveja as novas classificações de aditivos que apareceram na aba <strong>🔗 Flows</strong></li>
+      </ol>
+      <p style="margin-top:8px;">Os dados classificados anteriormente (aditivos manuais, movimentações, refletidos) <strong>continuam preservados</strong> mesmo depois de substituir os CSVs.</p>
+    </div>
+
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+    <h2 style="font-size:18px; margin: 0 0 10px;">📊 Formato dos arquivos CSV</h2>
     <p style="font-size:13px; color:#4b5563; margin-bottom:14px;">
-      Este dashboard se atualiza carregando CSVs exportados da planilha de tendência. Cada aba do dashboard tem sua própria fonte de dados. Você pode atualizar cada uma <strong>independentemente</strong> usando o botão "📤 Carregar CSV" no topo de cada aba.
+      Referência técnica de cada CSV que o dashboard consome. Se algum arquivo for rejeitado no upload, confira aqui a estrutura esperada.
     </p>
     <div style="background:#f9fafb; padding:14px; border-radius:8px; margin-bottom:14px;">
       <strong style="font-size:13px;">🗂️ Mapa de fontes</strong>
@@ -1029,7 +1148,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.51 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.52 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1210,6 +1329,54 @@ async function supaSaveDashboardKey(chave, valor) {
   updateSupaBadge();
 }
 
+// ---------- UPLOAD HISTORY (v0.52) ----------
+async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas) {
+  if (!SUPA) return null;
+  const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
+  const { data, error } = await SUPA.from('upload_history').insert({
+    tipo, nome_arquivo: nomeArquivo,
+    tamanho_bytes: tamanhoBytes || null,
+    linhas: linhas || null,
+    enviado_por: enviadoPor,
+  }).select().maybeSingle();
+  if (error) { console.warn('[SUPA] logUpload err:', error); SUPA_STATUS.lastError = error.message; }
+  else SUPA_STATUS.lastSync = new Date();
+  updateSupaBadge();
+  return data;
+}
+
+async function supaLoadUploadsLatest() {
+  // Retorna { tendencia: {...}, flows: {...}, gestoes: {...} } com o último por tipo
+  if (!SUPA) return {};
+  try {
+    const { data, error } = await SUPA.from('upload_history_latest').select('*');
+    if (error) {
+      // View pode não existir se SQL não foi rodado — fallback pra query manual
+      console.warn('[SUPA] view latest indisp, tentando fallback:', error.message);
+      return await _supaLoadUploadsLatestFallback();
+    }
+    const map = {};
+    (data || []).forEach(r => { map[r.tipo] = r; });
+    return map;
+  } catch (e) {
+    console.warn('[SUPA] loadUploadsLatest err:', e);
+    return {};
+  }
+}
+async function _supaLoadUploadsLatestFallback() {
+  const map = {};
+  for (const t of ['tendencia', 'flows', 'gestoes']) {
+    const { data } = await SUPA.from('upload_history')
+      .select('*').eq('tipo', t)
+      .order('enviado_em', { ascending: false }).limit(1);
+    if (data && data[0]) map[t] = data[0];
+  }
+  return map;
+}
+
+// Cache local dos últimos uploads (populado no boot e após cada upload)
+const LAST_UPLOADS = { tendencia: null, flows: null, gestoes: null };
+
 // ---------- Badge visual de sincronização ----------
 function updateSupaBadge() {
   const el = document.getElementById('supaBadge');
@@ -1364,10 +1531,11 @@ async function applySession(session, isFreshLogin = false) {
   }
   AUTH.ready = true;
   updateAuthUI();
-  // Re-renderiza flows/projecao pra atualizar botões que dependem de isEditor
+  // Re-renderiza flows/projecao/central pra atualizar botões que dependem de isEditor
   try {
     if (typeof renderFlows === 'function') renderFlows();
     if (typeof renderProjCtrl === 'function' && document.getElementById('projCtrlMovsList')) renderProjCtrl();
+    if (typeof renderUploadsCentral === 'function') renderUploadsCentral();
   } catch(e){}
 }
 
@@ -3289,78 +3457,202 @@ const MANUAL_TEXT = {
   gestoes: '📅 ABA Gestões\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba Gestões\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nO dashboard agrega valores por Key_planejamento e Gestão, filtrando Jardins Zurique + Obra + chave contendo "-21O-"\nCabeçalho deve conter: "Descr_gestao" ou "Key_planejamento"\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
 };
 
-function handleUpload(ev, kind, tabId) {
+// ============================================================
+// v0.52 — Upload handler (refatorado pra usar Central de Uploads)
+// ============================================================
+function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
+  // Guard editor
+  if (!requireEditor('enviar arquivo')) {
+    ev.target.value = '';
+    return;
+  }
   const file = ev.target.files[0];
   if (!file) return;
-  const status = document.getElementById('uploadStatus_' + tabId);
-  if (status) status.innerHTML = '⏳ Lendo...';
+  const cardMeta = document.querySelector(`.upload-card[data-kind="${kind}"] .upload-card-meta`);
+  if (cardMeta) cardMeta.innerHTML = '⏳ <em>Lendo arquivo...</em>';
+
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
       const txt = e.target.result;
       const firstLines = txt.split(/\r?\n/).slice(0,3).join(' ');
       let result = '';
+      let linhas = 0;
+
       if (kind === 'tendencia') {
         if (!firstLines.includes('CORRIGIDO') || !firstLines.toUpperCase().includes('INCC')) {
-          alert('❌ Esse CSV não está no formato novo da aba TENDÊNCIA.\nEsperado: cabeçalho contendo "CORRIGIDO" e "INCC".\n\n⚠️ Formato antigo (sem essas colunas) não é mais aceito desde a v0.28.\nClique em "ℹ️ Como exportar?" para instruções.');
-          if (status) status.innerHTML = '❌ formato inválido';
+          authToast('❌ CSV inválido para TENDÊNCIA (esperado cabeçalho com CORRIGIDO + INCC)', 'err', 5000);
+          if (cardMeta) renderUploadsCentral();
           ev.target.value = ''; return;
         }
         DATA_T = parseTendencia(txt);
-        result = `✅ TENDÊNCIA atualizada: ${DATA_T.length} linhas`;
+        linhas = DATA_T.length;
+        result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
         if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
-          alert('❌ Esse CSV não parece ser da aba FlowsValor.\nEsperado: cabeçalho contendo "INSUMO PLANEJAMENTO" ou "CONTROLE DE ALTERAÇÕES".\n\nClique em "ℹ️ Como exportar?" para instruções.');
-          if (status) status.innerHTML = '❌ formato inválido';
+          authToast('❌ CSV inválido para FLOWS (esperado cabeçalho INSUMO PLANEJAMENTO)', 'err', 5000);
+          if (cardMeta) renderUploadsCentral();
           ev.target.value = ''; return;
         }
         DATA_F = parseFlowsValor(txt);
-        // Reaplicar manuais e edições salvas
         applyManuals();
         loadClassifications();
-        result = `✅ FLOWS atualizado: ${DATA_F.length} aditivos`;
+        linhas = DATA_F.length;
+        result = `FLOWS: ${linhas} aditivos`;
       } else if (kind === 'gestoes') {
         if (!firstLines.includes('Descr_gestao') && !firstLines.includes('Key_planejamento')) {
-          alert('❌ Esse CSV não parece ser da aba Gestões.\nEsperado: cabeçalho contendo "Descr_gestao" ou "Key_planejamento".\n\nClique em "ℹ️ Como exportar?" para instruções.');
-          if (status) status.innerHTML = '❌ formato inválido';
+          authToast('❌ CSV inválido para GESTÕES (esperado cabeçalho Descr_gestao ou Key_planejamento)', 'err', 5000);
+          if (cardMeta) renderUploadsCentral();
           ev.target.value = ''; return;
         }
         const parsed = parseGestoes(txt);
         Object.assign(HISTORICO, parsed);
-        result = `✅ HISTÓRICO atualizado: ${parsed.items.length} itens · ${parsed.gestoes.length} gestões`;
+        linhas = parsed.items ? parsed.items.length : 0;
+        result = `GESTÕES: ${linhas} itens · ${parsed.gestoes.length} gestões`;
       }
+
+      // Persistir metadata no Supabase (só se editor — RLS bloqueia senão)
+      try {
+        const rec = await supaLogUpload(kind, file.name, file.size, linhas);
+        if (rec) LAST_UPLOADS[kind] = rec;
+      } catch(e) { console.warn('supaLogUpload:', e); }
+
       renderAll();
+      renderUploadsCentral();
+      renderSourcesHeaders();
       updateEditCount();
-      if (status) status.innerHTML = result + ' · ' + new Date().toLocaleTimeString('pt-BR');
+      authToast('✅ ' + result, 'ok', 3500);
+
     } catch (err) {
       console.error(err);
-      alert('❌ Erro ao processar: ' + err.message);
-      if (status) status.innerHTML = '❌ erro';
+      authToast('❌ Erro ao processar: ' + err.message, 'err', 5000);
+      if (cardMeta) renderUploadsCentral();
     }
     ev.target.value = ''; // permite recarregar mesmo arquivo
   };
   reader.readAsText(file, 'UTF-8');
 }
 
-// Drag-and-drop sobre as barras de upload
-document.querySelectorAll('.upload-bar').forEach(bar => {
-  const tabId = bar.id.replace('uploadBar_','');
-  bar.addEventListener('dragover', e => { e.preventDefault(); bar.classList.add('dragover'); });
-  bar.addEventListener('dragleave', e => { e.preventDefault(); bar.classList.remove('dragover'); });
-  bar.addEventListener('drop', e => {
-    e.preventDefault();
-    bar.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const input = document.getElementById('fileInput_' + tabId);
-    // dispara o handler com o tipo correto (encontra "kind" pelo onchange já configurado)
-    const kindMatch = input.getAttribute('onchange').match(/'(tendencia|flows|gestoes)'/);
-    const kind = kindMatch ? kindMatch[1] : 'tendencia';
-    // simula um evento de upload
-    const fakeEvt = { target: { files: [file], value: '' }};
-    handleUpload(fakeEvt, kind, tabId);
+// ============================================================
+// v0.52 — Central de Uploads: renderização + drag-and-drop
+// ============================================================
+const UPLOAD_META = {
+  tendencia: {
+    label: 'TENDÊNCIA',
+    icon: '📈',
+    color: '#3b82f6',
+    desc: 'Alimenta: KPIs da Visão Geral, tabela de Detalhamento, curva S de Tendência de Obra e Controle de Projeção. Fonte: aba TENDÊNCIA da planilha.',
+    manualKey: 'tendencia',
+  },
+  flows: {
+    label: 'FLOWS / ADITIVOS',
+    icon: '🔗',
+    color: '#06b6d4',
+    desc: 'Alimenta: aba Flows/Aditivos, decomposição do desvio na Visão Geral e Controle de Projeção. Fonte: aba FlowsValor da planilha.',
+    manualKey: 'flows',
+  },
+  gestoes: {
+    label: 'GESTÕES',
+    icon: '📅',
+    color: '#0891b2',
+    desc: 'Alimenta: Histórico Mensal e curva S da Tendência de Obra. Fonte: aba Gestões da planilha.',
+    manualKey: 'gestoes',
+  },
+};
+
+function fmtUploadDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' })
+       + ' às ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+function fmtUploadDateShort(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })
+       + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
+function fmtBytes(b) {
+  if (b == null) return '';
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+  return (b/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function renderUploadsCentral() {
+  const root = document.getElementById('uploadsCentral');
+  if (!root) return;
+  const kinds = ['tendencia', 'flows', 'gestoes'];
+  root.innerHTML = kinds.map(k => {
+    const meta = UPLOAD_META[k];
+    const last = LAST_UPLOADS[k];
+    let metaBlock;
+    if (last) {
+      const detalhes = [
+        last.tamanho_bytes ? fmtBytes(last.tamanho_bytes) : null,
+        last.linhas ? (last.linhas + ' linhas') : null,
+      ].filter(Boolean).join(' · ');
+      metaBlock = `
+        <div class="upload-card-meta filled">
+          📁 <strong>${escHtml(last.nome_arquivo)}</strong>${detalhes ? ' <span style="color:#64748b;">('+detalhes+')</span>' : ''}<br>
+          📅 Enviado ${last.enviado_por ? 'por <code>'+escHtml(last.enviado_por)+'</code> ' : ''}em ${fmtUploadDate(last.enviado_em)}
+        </div>`;
+    } else {
+      metaBlock = `<div class="upload-card-meta empty">📭 Nenhum arquivo carregado ainda.</div>`;
+    }
+    return `
+      <div class="upload-card" data-kind="${k}" style="border-top: 3px solid ${meta.color};">
+        <div class="upload-card-header">
+          <div>
+            <h3 class="upload-card-title">${meta.icon} ${meta.label}</h3>
+            <p class="upload-card-sub">${escHtml(meta.desc)}</p>
+          </div>
+        </div>
+        ${metaBlock}
+        <div class="upload-card-actions">
+          <button class="btn-sm primary" data-editor-only onclick="document.getElementById('fileInput_${k}').click()">
+            📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
+          </button>
+          <button class="btn-sm" onclick="alert(MANUAL_TEXT['${meta.manualKey}'])">ℹ️ Como exportar?</button>
+          <input type="file" id="fileInput_${k}" accept=".csv" style="display:none" onchange="handleUpload(event, '${k}')">
+        </div>
+      </div>`;
+  }).join('');
+
+  // Drag-and-drop
+  root.querySelectorAll('.upload-card').forEach(card => {
+    const kind = card.dataset.kind;
+    card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); });
+    card.addEventListener('dragleave', e => { e.preventDefault(); card.classList.remove('dragover'); });
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      card.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const fakeEvt = { target: { files: [file], value: '' }};
+      handleUpload(fakeEvt, kind);
+    });
   });
-});
+}
+
+function renderSourcesHeaders() {
+  document.querySelectorAll('.sources-header').forEach(el => {
+    const kinds = (el.dataset.sources || '').split(',').map(k => k.trim()).filter(Boolean);
+    const parts = kinds.map(k => {
+      const meta = UPLOAD_META[k];
+      const last = LAST_UPLOADS[k];
+      if (!last) {
+        return `<span class="src-item src-empty" title="Nenhum arquivo enviado ainda para ${meta ? meta.label : k}">${meta ? meta.icon : ''} ${meta ? meta.label : k}: (sem dados)</span>`;
+      }
+      const tip = `${last.nome_arquivo} · ${fmtUploadDate(last.enviado_em)}${last.enviado_por ? ' · '+last.enviado_por : ''}`;
+      return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span style="color:#64748b;">(${fmtUploadDateShort(last.enviado_em)})</span></span>`;
+    });
+    el.innerHTML = '📎 ' + parts.join(' <span class="src-sep">·</span> ');
+  });
+}
+
 
 const GRUPOS_MAP = {
   '01.01': 'Custos Indiretos', '01.02': 'Custos Diretos / Infraestrutura',
@@ -5588,6 +5880,9 @@ function renderAll() {
   renderHistorico();
   initProjecao();
   initProjCtrl();
+  // v0.52: cabeçalhos de fontes + central de uploads
+  try { renderSourcesHeaders(); } catch(e) {}
+  try { renderUploadsCentral();  } catch(e) {}
 }
 
 document.getElementById('now').textContent = new Date().toLocaleString('pt-BR');
@@ -5641,6 +5936,12 @@ updateSupaBadge();
         CARD3_MODO = dCfg.card3_modo;
         localStorage.setItem('jzurique_card3_modo', dCfg.card3_modo);
       }
+      // 5) Histórico de uploads (últimos por tipo)
+      try {
+        const ups = await supaLoadUploadsLatest();
+        Object.assign(LAST_UPLOADS, ups);
+        console.log('[SUPA] últimos uploads:', Object.keys(ups).length);
+      } catch(e) { console.warn('[SUPA] loadUploadsLatest err:', e); }
       SUPA_STATUS.lastSync = new Date();
       updateSupaBadge();
     }
@@ -5660,6 +5961,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f77a0cb5e0d0b',t:'MTc4MzM0OTkwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a170689b0c79a538',t:'MTc4MzM1OTc3Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

@@ -687,6 +687,8 @@ body:not(.is-editor) [data-editor-only] {
             <th class="num" data-sort="diferenca">Δ R$</th>
             <th class="num" data-sort="pct">Δ %</th>
             <th class="num" data-sort="aditivo_total">Aditivos R$</th>
+            <th class="num" data-sort="evolucao_teorica" title="Evolução Teórica (Prevision) — cronograma físico esperado">🎯 Teór.</th>
+            <th class="num" data-sort="evolucao_financeira" title="Evolução Financeira — valor efetivamente gasto">💰 Fin.</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -1133,23 +1135,35 @@ body:not(.is-editor) [data-editor-only] {
     <h3 style="font-size:14px; margin:18px 0 8px; color:#1e3a8a;">📈 Aba TENDÊNCIA</h3>
     <div style="font-size:12.5px; color:#374151; padding-left:12px; border-left:3px solid #3b82f6;">
       <p><strong>Como exportar:</strong> Abra a planilha .xlsm, vá na aba <code>TENDÊNCIA</code>, Arquivo → Salvar Como → CSV UTF-8 (.csv).</p>
-      <p style="margin-top:8px;"><strong>Estrutura esperada (formato novo, 17 colunas):</strong></p>
+      <p style="margin-top:8px;"><strong>Estrutura esperada (v0.55+, 22 colunas):</strong></p>
       <ul style="margin:6px 0 8px 24px;">
         <li><code>A</code> — Chave (ex: <code>42-21O-1-31005-S05765-ADM5189-01.01.01.02</code>)</li>
         <li><code>B</code> — Código hierárquico (ex: <code>01.01.01.02</code>)</li>
         <li><code>C</code> — Código de serviço (ex: <code>S05765</code>) · <code>-1</code> quando vazio</li>
         <li><code>D</code> — Código de insumo (ex: <code>ADM5189</code>) ← obrigatório para o item ser "folha". <code>-1</code> ou <code>INSUMOS</code> = grupo</li>
         <li><code>E</code> — Nome do item</li>
-        <li><code>F</code> — Orçamento Licitação (R$)</li>
-        <li><code>G</code> — <strong>Corrigido INCC</strong> (R$) ← novo, alimenta o KPI "Orç. Corrigido" quando INCC selecionado</li>
-        <li><code>H</code> — <strong>Corrigido IPCA</strong> (R$) ← novo, alternativa ao INCC (toggle no topo)</li>
-        <li><code>I</code> — Gestão atual (R$)</li>
-        <li><code>J</code> — Diferença (R$) — calculada na planilha</li>
-        <li><code>K–N</code> — Tendência, Aumento no sistema, Status, Observações — preenchidas manualmente, não usadas no dashboard ainda</li>
+        <li><code>F</code> — <em>(vazia — separador visual)</em></li>
+        <li><code>G</code> — <strong>ORÇ. LICITAÇÃO</strong> (R$)</li>
+        <li><code>H</code> — <strong>Corrigido IPCA</strong> (R$) ← agora vem antes do INCC</li>
+        <li><code>I</code> — <strong>Corrigido INCC</strong> (R$)</li>
+        <li><code>J</code> — Gestão atual (R$) — cabeçalho contém a data da gestão (ex: <code>GESTÃO 05-2026</code>)</li>
+        <li><code>K</code> — Diferença (R$) — calculada na planilha</li>
+        <li><code>L</code> — <em>(vazia — separador visual)</em></li>
+        <li><code>M</code> — 🆕 <strong>EVOLUÇÃO TEÓRICA</strong> (Prevision) — % em cronograma físico</li>
+        <li><code>N</code> — 🆕 <strong>EVOLUÇÃO FINANCEIRA</strong> — % gasto do orçamento</li>
+        <li><code>O</code> — <em>(vazia — separador visual)</em></li>
+        <li><code>P</code> — TENDÊNCIA (manual, ainda não usada no dashboard)</li>
+        <li><code>Q</code> — DIF. TENDÊNCIA (manual, ainda não usada)</li>
+        <li><code>R</code> — <em>(vazia — separador visual)</em></li>
+        <li><code>S</code> — Observações (manuais)</li>
       </ul>
+      <p style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border-radius:4px; color:#065f46;">
+        💡 <strong>Linha 2 é o subheader com totais globais</strong> (área vendável, valores totais e <strong>% globais de evolução</strong>). A linha 1 é o cabeçalho de nomes, dados começam na linha 3.
+      </p>
       <p><strong>Linhas:</strong> linha 1 = cabeçalho. A partir da linha 2 são os dados.</p>
-      <p><strong>Cabeçalho esperado contém:</strong> <code>CORRIGIDO</code> + <code>INCC</code></p>
-      <p style="margin-top:8px; padding:8px 12px; background:#fef3c7; border-radius:4px; color:#92400e;">⚠️ Formato antigo (sem CORRIGIDO INCC/IPCA) <strong>não é mais aceito</strong> a partir da v0.28.</p>
+      <p><strong>Cabeçalho esperado contém (v0.55+):</strong> <code>ORÇ. LICITAÇÃO</code> + <code>IPCA</code> + <code>INCC</code> + <code>EVOLUÇÃO</code></p>
+      <p style="margin-top:8px; padding:8px 12px; background:#dbeafe; border-radius:4px; color:#1e40af;">✨ <strong>Novidade v0.55:</strong> o arquivo agora tem 22 colunas (era 17). Foram adicionadas <code>EVOLUÇÃO TEÓRICA</code> e <code>EVOLUÇÃO FINANCEIRA</code> (integração com o Prevision) para calcular a <strong>Aderência Físico-Financeira</strong> da obra. Custos indiretos não entram nessa conta.</p>
+      <p style="margin-top:8px; padding:8px 12px; background:#fef3c7; border-radius:4px; color:#92400e;">⚠️ Formato anterior (17 colunas, sem EVOLUÇÃO) <strong>não é mais aceito</strong> a partir da v0.55.</p>
     </div>
 
     <h3 style="font-size:14px; margin:18px 0 8px; color:#0891b2;">🔗 Aba FlowsValor</h3>
@@ -1217,7 +1231,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.54 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.55 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1882,6 +1896,8 @@ document.querySelectorAll('.tab').forEach(t => {
 const LIC_LABEL = 'Orç. Licitação';
 // Label da última gestão (extraído do header da coluna I do CSV de Tendência)
 let GESTAO_LABEL = 'Gestão Atual';
+// v0.55: percentuais globais de aderência físico-financeira (obra civil, sem indiretos)
+let EVOL_GLOBAL = { teorica: null, financeira: null };
 
 // ============ MODO DO CARD 3 (Bruto vs Líquido - descontando reserva) ============
 let CARD3_MODO = (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_card3_modo')) || 'bruto';
@@ -1911,6 +1927,72 @@ function setCorrecaoIndice(v) {
     });
   }
   if (typeof renderVisao === 'function') renderVisao();
+}
+
+// v0.55 — Card 4: Aderência Físico-Financeira (Prevision)
+// Compara Evolução Teórica (cronograma) vs Evolução Financeira (gastos).
+// Valores vêm do subheader (linha 1) do CSV Tendência — só obra civil, sem indiretos.
+function renderCardAderencia() {
+  const evol = (typeof EVOL_GLOBAL !== 'undefined') ? EVOL_GLOBAL : { teorica: null, financeira: null };
+  const teor = evol.teorica;
+  const fin  = evol.financeira;
+  if (teor == null && fin == null) {
+    // Sem dados de evolução (CSV antigo ou coluna vazia) — não renderiza
+    return '';
+  }
+  const delta = (teor != null && fin != null) ? (fin - teor) : null;
+  const absD  = delta != null ? Math.abs(delta) : null;
+
+  // Semáforo: verde ≤5pp, amber 5-15pp, red >15pp
+  let sema, semaLabel, semaCls, ico;
+  if (absD == null) { sema = '#6b7280'; semaLabel = 'sem comparativo'; semaCls = ''; ico = '⚪'; }
+  else if (absD <= 5)  { sema = '#047857'; semaLabel = 'Dentro do esperado'; semaCls = 'green'; ico = '🟢'; }
+  else if (absD <= 15) { sema = '#b45309'; semaLabel = 'Descolamento moderado'; semaCls = 'amber'; ico = '🟡'; }
+  else                 { sema = '#b91c1c'; semaLabel = 'Descolamento crítico';  semaCls = 'red';   ico = '🔴'; }
+
+  // Interpretação
+  let interp = '';
+  if (delta != null) {
+    if (delta > 0.5) {
+      interp = `Gastando mais rápido do que executando (financeiro adiantado ${delta.toFixed(2)}pp)`;
+    } else if (delta < -0.5) {
+      interp = `Executando mais rápido do que gastando (físico adiantado ${Math.abs(delta).toFixed(2)}pp)`;
+    } else {
+      interp = 'Físico e financeiro caminhando alinhados';
+    }
+  }
+
+  const fmtPP = v => v == null ? '-' : v.toFixed(2) + 'pp';
+  const fmtPct = v => v == null ? '-' : v.toFixed(2) + '%';
+
+  return `
+    <div class="kpi kpi-wide ${semaCls}">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+        <div class="label" style="margin:0;">🏗️ Aderência Físico-Financeira</div>
+        <span style="font-size:10px; color:#6b7280; background:#f3f4f6; padding:2px 8px; border-radius:8px; font-weight:600;" title="Fonte: Prevision (aba TENDÊNCIA). Indiretos não entram nesta conta.">Prevision</span>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:12px; align-items:baseline; margin:10px 0 6px;">
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:#6b7280; font-weight:600; letter-spacing:0.3px;">🎯 Teórica</div>
+          <div style="font-size:22px; font-weight:700; color:#1e40af;">${fmtPct(teor)}</div>
+          <div style="font-size:10.5px; color:#6b7280;">cronograma físico</div>
+        </div>
+        <div>
+          <div style="font-size:10px; text-transform:uppercase; color:#6b7280; font-weight:600; letter-spacing:0.3px;">💰 Financeira</div>
+          <div style="font-size:22px; font-weight:700; color:#b45309;">${fmtPct(fin)}</div>
+          <div style="font-size:10.5px; color:#6b7280;">% da licitação gasto</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px; text-transform:uppercase; color:#6b7280; font-weight:600; letter-spacing:0.3px;">Δ</div>
+          <div style="font-size:22px; font-weight:700; color:${sema};">${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</div>
+          <div style="font-size:10.5px; color:${sema};">${ico} ${semaLabel}</div>
+        </div>
+      </div>
+      ${interp ? `<div style="padding:8px 10px; background:#f8fafc; border-radius:5px; font-size:11.5px; color:#334155; margin-top:6px;">💡 ${interp}</div>` : ''}
+      <div style="font-size:10.5px; color:#9ca3af; margin-top:6px; font-style:italic;">
+        ℹ️ Custos indiretos <strong>não</strong> entram nesta comparação (base: obra civil)
+      </div>
+    </div>`;
 }
 
 function renderVisao() {
@@ -2093,6 +2175,9 @@ function renderVisao() {
         </div>` : ''}
       </div>
     </div>
+
+    <!-- Card 4 (v0.55) — Aderência Físico-Financeira (Prevision) -->
+    ${renderCardAderencia()}
   `;
 
   // Alerta de pendentes
@@ -2220,6 +2305,17 @@ function populateFilters() {
   sel.value = cur;
 }
 
+// v0.55: cor da célula de Evolução Financeira baseada no descolamento vs Teórica
+function _evolClass(d) {
+  if (d.evolucao_teorica == null || d.evolucao_financeira == null) return '#b45309';
+  if (d.evolucao_teorica === 0) return '#b45309';
+  // Ratio: quanto o financeiro adiantou/atrasou em relação ao teórico
+  const ratio = d.evolucao_financeira / d.evolucao_teorica;
+  if (ratio > 1.15) return '#b91c1c'; // gastando muito acima do executado
+  if (ratio < 0.85) return '#047857'; // executando bem mais do que gastando
+  return '#b45309'; // dentro da faixa
+}
+
 function renderTable() {
   const q = document.getElementById('search').value.toLowerCase();
   const fg = document.getElementById('filterGrupo').value;
@@ -2257,7 +2353,7 @@ function renderTable() {
     const badge = st ? `<span class="badge ${st}">${st==='red'?'🔴 Estouro':st==='amber'?'🟡 Atenção':'🟢 OK'}</span>` : '';
     if (!d.is_folha) {
       const cls = d.nivel <= 2 ? 'row-grupo' : 'row-sub';
-      return `<tr class="${cls}"><td colspan="9">${d.cod} · ${d.item}</td></tr>`;
+      return `<tr class="${cls}"><td colspan="11">${d.cod} · ${d.item}</td></tr>`;
     }
     const hasAdt = (d.flows_destino && d.flows_destino.length > 0) || (d.flows_origem && d.flows_origem.length > 0);
     const adt = d.aditivo_total || 0;
@@ -2271,6 +2367,8 @@ function renderTable() {
       <td class="num ${diff<=0?'pos':'neg'}">${diff!=null?(diff>=0?'+':'')+fmt(diff):'-'}</td>
       <td class="num ${pct<=0?'pos':'neg'}">${pct!=null?fmtPct(pct):'-'}</td>
       <td class="num">${adtTxt}</td>
+      <td class="num" style="color:#1e40af;">${d.evolucao_teorica != null ? fmt(d.evolucao_teorica, 0) : '<span style="color:#d1d5db;">-</span>'}</td>
+      <td class="num" style="color:${_evolClass(d)}">${d.evolucao_financeira != null ? fmt(d.evolucao_financeira, 0) : '<span style="color:#d1d5db;">-</span>'}</td>
       <td>${badge}</td>
     </tr>`;
   }).join('');
@@ -3619,8 +3717,10 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
       let linhas = 0;
 
       if (kind === 'tendencia') {
-        if (!firstLines.includes('CORRIGIDO') || !firstLines.toUpperCase().includes('INCC')) {
-          authToast('❌ CSV inválido para TENDÊNCIA (esperado cabeçalho com CORRIGIDO + INCC)', 'err', 5000);
+        // v0.55: formato novo tem "LICITAÇÃO" + "IPCA" + "INCC" + "EVOLUÇÃO"
+        const fu = firstLines.toUpperCase();
+        if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
+          authToast('❌ CSV inválido para TENDÊNCIA (esperado cabeçalho v0.55 com LICITAÇÃO + IPCA + INCC + EVOLUÇÃO)', 'err', 5000);
           if (cardMeta) renderUploadsCentral();
           ev.target.value = ''; return;
         }
@@ -3877,8 +3977,10 @@ async function _processExcelSheets(workbook, mapping, file) {
     let linhas = 0;
     try {
       if (step.parser === 'tendencia') {
-        if (!firstLines.includes('CORRIGIDO') || !firstLines.toUpperCase().includes('INCC')) {
-          throw new Error('Cabeçalho da aba Tendência precisa conter CORRIGIDO + INCC');
+        // v0.55: formato novo
+        const fu = firstLines.toUpperCase();
+        if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
+          throw new Error('Cabeçalho da aba Tendência precisa conter LICITAÇÃO + IPCA + INCC + EVOLUÇÃO (formato v0.55)');
         }
         DATA_T = parseTendencia(csv);
         linhas = DATA_T.length;
@@ -4256,33 +4358,59 @@ function parseNum(s) {
   return isNaN(n) ? null : n;
 }
 
+// v0.55 — Formato novo da aba TENDÊNCIA (22 colunas)
+// Adiciona colunas EVOLUÇÃO TEÓRICA e EVOLUÇÃO FINANCEIRA (do Prevision)
+// Layout:
+// [0] chave · [1] cod · [2] cod_servico · [3] cod_insumo · [4] item
+// [5] (vazio separador) · [6] ORÇ. LICITAÇÃO · [7] IPCA · [8] INCC · [9] GESTÃO · [10] DIFERENÇA
+// [11] (vazio) · [12] EVOL. TEÓRICA % · [13] EVOL. FINANCEIRA % · [14] (vazio)
+// [15] TENDÊNCIA · [16] DIF. TENDÊNCIA · [17] (vazio) · [18] OBSERVAÇÕES · [19+] vazios
+// Linha 0 = cabeçalho, linha 1 = subheader com totais globais (área vendável + % globais)
 function parseTendencia(text) {
-  // Usa parseCSVRows para lidar com aspas multilinha (header novo tem \n dentro de "")
+  // Usa parseCSVRows para lidar com aspas multilinha (headers têm \n dentro de "")
   const rows = parseCSVRows(text);
-  if (rows.length < 2) return [];
-  // Capturar label da gestão a partir do header (coluna I = índice 8)
-  try {
-    const headerCol8 = (rows[0][8] || '').trim().replace(/\s+/g, ' ');
-    if (headerCol8 && headerCol8.length > 3) {
-      GESTAO_LABEL = headerCol8;
-    }
-  } catch(e) {}
-  // Formato novo (v0.6+): cabeçalho na linha 0 contém "CORRIGIDO" e "INCC"
+  if (rows.length < 3) return [];
+
   const header = rows[0].map(c => (c||'').toUpperCase());
   const headerText = header.join(' | ');
-  const isNovoFormato = headerText.includes('CORRIGIDO') && headerText.includes('INCC');
-  if (!isNovoFormato) {
-    alert('⚠️ CSV em formato antigo detectado.\nO dashboard agora aceita apenas o formato novo (com colunas CORRIGIDO INCC e CORRIGIDO IPCA).\n\nExporte a aba TENDÊNCIA atualizada da planilha.');
+  // Validação formato v0.55: precisa ter ORÇ. LICITAÇÃO + IPCA + INCC + EVOLUÇÃO
+  const isFormatoV055 = headerText.includes('LICITAÇÃO') && headerText.includes('IPCA')
+                     && headerText.includes('INCC') && headerText.includes('EVOLUÇÃO');
+  if (!isFormatoV055) {
+    alert('⚠️ CSV da aba TENDÊNCIA em formato não reconhecido.\n\nA partir da v0.55, o dashboard espera o formato novo com:\n· ORÇ. LICITAÇÃO\n· IPCA + INCC (colunas separadas)\n· EVOLUÇÃO TEÓRICA + FINANCEIRA\n\nExporte a aba TENDÊNCIA atualizada da planilha.');
     return [];
   }
-  // Colunas formato novo:
-  // [0] vazio · [1] cod · [2] cod_servico · [3] cod_insumo · [4] item
-  // [5] LICITAÇÃO · [6] INCC · [7] IPCA · [8] GESTÃO · [9] DIFERENÇA
-  // [10] TENDÊNCIA · [11] AUMENTO SISTEMA · [12] STATUS · [13] OBSERVAÇÕES
+
+  // Capturar label da gestão (agora está no idx 9)
+  try {
+    const headerCol9 = (rows[0][9] || '').trim().replace(/\s+/g, ' ');
+    if (headerCol9 && headerCol9.length > 3) {
+      GESTAO_LABEL = headerCol9;
+    }
+  } catch(e) {}
+
+  // Capturar totais globais da linha 1 (subheader)
+  // [12] = EVOL. TEÓRICA global (%) · [13] = EVOL. FINANCEIRA global (%)
+  EVOL_GLOBAL = { teorica: null, financeira: null };
+  try {
+    const sub = rows[1] || [];
+    // Valores vêm como "31,00%" — parseNum já lida com vírgula e ignora %
+    const parsePct = (s) => {
+      if (!s) return null;
+      const clean = String(s).replace('%', '').trim();
+      if (!clean || clean === '-') return null;
+      const n = parseNum(clean);
+      return (n == null || isNaN(n)) ? null : n;
+    };
+    EVOL_GLOBAL.teorica    = parsePct(sub[12]);
+    EVOL_GLOBAL.financeira = parsePct(sub[13]);
+  } catch(e) { console.warn('[TEND] EVOL_GLOBAL parse err:', e); }
+
   const out = [];
-  for (let i = 1; i < rows.length; i++) {
+  // Dados a partir da linha 2 (linha 1 é subheader com totais)
+  for (let i = 2; i < rows.length; i++) {
     const cols = rows[i];
-    if (!cols || cols.length < 10) continue;
+    if (!cols || cols.length < 11) continue;
     const cod = (cols[1]||'').trim();
     const cod_servico_raw = (cols[2]||'').trim();
     const cod_servico = (cod_servico_raw === '-1') ? '' : cod_servico_raw;
@@ -4295,16 +4423,27 @@ function parseTendencia(text) {
     const grupo_cod = parts.length >= 2 ? parts.slice(0,2).join('.') : cod;
     const grupo = GRUPOS_MAP[grupo_cod] || grupo_cod;
     const is_folha = Boolean(cod_insumo);
-    const incc = parseNum(cols[6]);
+    const licitacao = parseNum(cols[6]);
+    const ipca = parseNum(cols[7]);
+    const incc = parseNum(cols[8]);
+    const gestao = parseNum(cols[9]);
+    const diferenca = parseNum(cols[10]);
+    // Evolução: pode vir como número (%) ou como valor absoluto no total geral.
+    // Nos itens folha vem como valor R$ (não %). Tratamos como número simples.
+    const evol_teor = parseNum(cols[12]);
+    const evol_fin  = parseNum(cols[13]);
     out.push({
       cod, cod_servico, cod_insumo, item, grupo_cod, grupo,
       nivel: parts.length, is_folha,
-      licitacao: parseNum(cols[5]),
+      licitacao,
       corrigido_incc: incc,
-      corrigido_ipca: parseNum(cols[7]),
-      licitacao_corrigido: (CORRECAO_INDICE === 'ipca') ? parseNum(cols[7]) : incc,
-      gestao: parseNum(cols[8]),
-      diferenca: parseNum(cols[9]),
+      corrigido_ipca: ipca,
+      licitacao_corrigido: (CORRECAO_INDICE === 'ipca') ? ipca : incc,
+      gestao,
+      diferenca,
+      // v0.55: colunas novas
+      evolucao_teorica:    evol_teor,
+      evolucao_financeira: evol_fin,
     });
   }
   return out;
@@ -4753,6 +4892,9 @@ function renderProjecao() {
 
   // Gráfico curva S geral
   renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, janelaMeses);
+
+  // v0.55: Aderência Físico × Financeira
+  try { renderAderenciaProj(); } catch(e) { console.warn('aderencia:', e); }
 
   // Tabela hierárquica
   renderProjTable(porGrupo, projServicos, projInsumos, tolerancia);
@@ -6547,6 +6689,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a170aea5b89c1225',t:'MTc4MzM2MjY0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1716701c8e4c7a4',t:'MTc4MzM3MDE5NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

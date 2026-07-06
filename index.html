@@ -377,9 +377,35 @@
   align-items: center;
   gap: 6px;
 }
-.auth-badge.editor { background: #d1fae5; color: #065f46; }
-.auth-badge.viewer { background: #e0e7ff; color: #3730a3; }
+.auth-badge.editor  { background: #d1fae5; color: #065f46; }
+.auth-badge.viewer  { background: #e0e7ff; color: #3730a3; }
 .auth-badge.pending { background: #fef3c7; color: #92400e; }
+/* Badge 2 linhas: email em cima + role chip embaixo */
+.auth-badge.two-line {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 4px 10px 5px;
+  line-height: 1.15;
+}
+.auth-badge .auth-email {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.auth-badge .auth-role {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 8px;
+  opacity: 0.95;
+}
+.auth-badge.editor .auth-role { background: #065f46; color: #ecfdf5; }
+.auth-badge.viewer .auth-role { background: #3730a3; color: #eef2ff; }
 
 /* Toast */
 #authToast {
@@ -1003,7 +1029,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.49 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.50 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1267,17 +1293,17 @@ function updateAuthUI() {
   }
 
   if (AUTH.user) {
-    // Logado
+    // Logado — badge com 2 linhas: email + chip de papel
     const email = AUTH.user.email || 'usuário';
-    const shortEmail = email.length > 24 ? email.slice(0, 22) + '…' : email;
+    const shortEmail = email.length > 26 ? email.slice(0, 24) + '…' : email;
     if (AUTH.isEditor) {
-      badge.className = 'auth-badge editor';
-      badge.innerHTML = `✏️ ${shortEmail}`;
-      badge.title = `Logado como ${email} — modo Editor (você pode alterar dados)`;
+      badge.className = 'auth-badge editor two-line';
+      badge.innerHTML = `<span class="auth-email">✏️ ${shortEmail}</span><span class="auth-role">Editor</span>`;
+      badge.title = `Logado como ${email}\nModo: Editor (pode alterar dados)`;
     } else {
-      badge.className = 'auth-badge viewer';
-      badge.innerHTML = `👁️ ${shortEmail}`;
-      badge.title = `Logado como ${email}, mas sem permissão para editar.\nPeça ao admin para adicionar seu email à whitelist.`;
+      badge.className = 'auth-badge viewer two-line';
+      badge.innerHTML = `<span class="auth-email">👁️ ${shortEmail}</span><span class="auth-role">Sem permissão</span>`;
+      badge.title = `Logado como ${email}\nModo: Somente leitura (fale com o admin para liberar edição)`;
     }
     btn.style.display = '';
     btn.textContent = '🚪 Sair';
@@ -1302,7 +1328,8 @@ async function handleAuthClick() {
     if (error) authToast('Erro ao sair: ' + error.message, 'err');
     // onAuthStateChange cuida do resto
   } else {
-    // Login com Google (redirect)
+    // Login com Google (redirect) — marca flag pra saber que é login FRESCO ao voltar
+    try { sessionStorage.setItem('jz_fresh_login', '1'); } catch(e){}
     const { error } = await SUPA.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -1310,7 +1337,10 @@ async function handleAuthClick() {
         queryParams: { prompt: 'select_account' },
       }
     });
-    if (error) authToast('Erro no login: ' + error.message, 'err');
+    if (error) {
+      try { sessionStorage.removeItem('jz_fresh_login'); } catch(e){}
+      authToast('Erro no login: ' + error.message, 'err');
+    }
     // O navegador redireciona pro Google. Ao voltar, onAuthStateChange dispara.
   }
 }
@@ -1360,12 +1390,18 @@ async function initAuth() {
   SUPA.auth.onAuthStateChange(async (event, session) => {
     console.log('[AUTH] evento:', event);
     // Só mostra toast quando for login FRESCO (não em refresh de token nem no getSession inicial)
-    // Detecta 'login fresco' por marca na URL (?code=... só existe logo após redirect do Google)
-    const isFreshLogin = event === 'SIGNED_IN' &&
-                         (window.location.search.includes('code=') ||
-                          window.location.hash.includes('access_token='));
+    // Flag setada em handleAuthClick antes do redirect — consumida aqui.
+    let isFreshLogin = false;
+    if (event === 'SIGNED_IN') {
+      try {
+        if (sessionStorage.getItem('jz_fresh_login') === '1') {
+          isFreshLogin = true;
+          sessionStorage.removeItem('jz_fresh_login');
+        }
+      } catch(e){}
+    }
     await applySession(session, isFreshLogin);
-    // Limpar params ?code= da URL após login bem-sucedido
+    // Limpar params residuais (?code=... ou #access_token=...) após login bem-sucedido
     if (event === 'SIGNED_IN' && window.history.replaceState) {
       const clean = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, clean);
@@ -5616,6 +5652,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f3990bfe8fbd2',t:'MTc4MzM0NzM2MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f56761aad77f4',t:'MTc4MzM0ODU0NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

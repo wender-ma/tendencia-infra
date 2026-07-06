@@ -1003,7 +1003,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.48 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.49 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1315,16 +1315,19 @@ async function handleAuthClick() {
   }
 }
 
-async function applySession(session) {
+async function applySession(session, isFreshLogin = false) {
   AUTH.session = session || null;
   AUTH.user = session?.user || null;
   if (AUTH.user) {
     AUTH.isEditor = await checkEditorPermission(AUTH.user.email);
     AUTH.whitelistChecked = true;
-    if (!AUTH.isEditor) {
-      authToast(`👁️ Logado como ${AUTH.user.email}, mas sem permissão para editar. Fale com o admin para adicionar seu email.`, 'warn', 6000);
-    } else {
-      authToast(`✏️ Bem-vindo, ${AUTH.user.email}! Você pode editar.`, 'ok', 3000);
+    // Toasts só na 1ª entrada (login novo) — não em cada refresh/boot
+    if (isFreshLogin) {
+      if (!AUTH.isEditor) {
+        authToast(`👁️ Logado como ${AUTH.user.email}, mas sem permissão para editar. Fale com o admin para adicionar seu email.`, 'warn', 6000);
+      } else {
+        authToast(`✏️ Bem-vindo, ${AUTH.user.email}! Você pode editar.`, 'ok', 3000);
+      }
     }
   } else {
     AUTH.isEditor = false;
@@ -1356,10 +1359,15 @@ async function initAuth() {
   // 2) Ouve mudanças (login, logout, refresh de token)
   SUPA.auth.onAuthStateChange(async (event, session) => {
     console.log('[AUTH] evento:', event);
-    await applySession(session);
+    // Só mostra toast quando for login FRESCO (não em refresh de token nem no getSession inicial)
+    // Detecta 'login fresco' por marca na URL (?code=... só existe logo após redirect do Google)
+    const isFreshLogin = event === 'SIGNED_IN' &&
+                         (window.location.search.includes('code=') ||
+                          window.location.hash.includes('access_token='));
+    await applySession(session, isFreshLogin);
     // Limpar params ?code= da URL após login bem-sucedido
     if (event === 'SIGNED_IN' && window.history.replaceState) {
-      const clean = window.location.origin + window.location.pathname + window.location.hash;
+      const clean = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, clean);
     }
   });
@@ -5608,5 +5616,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f1497bb17a184',t:'MTc4MzM0NTg0Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a16f3990bfe8fbd2',t:'MTc4MzM0NzM2MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

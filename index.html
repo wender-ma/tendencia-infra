@@ -1040,6 +1040,18 @@ body:not(.is-editor) [data-editor-only] {
     <div style="margin-top:16px; padding:10px 14px; background:#f0f9ff; border-left:3px solid #0ea5e9; border-radius:4px; font-size:12px; color:#0c4a6e;">
       💡 <strong>Dica:</strong> Envios ficam registrados no histórico. Clique em <strong>📜 Histórico</strong> em qualquer bloco pra ver os últimos arquivos enviados e <strong>baixá-los novamente</strong>. Mantemos automaticamente os <strong>últimos 12 arquivos por tipo</strong> (rolling backup) — mais antigos são descartados. Download só para usuários logados (link temporário de 60 segundos).
     </div>
+
+    <!-- v0.57: Zona de manutenção -->
+    <div style="margin-top:16px; padding:12px 16px; background:#fef2f2; border-left:3px solid #dc2626; border-radius:4px;">
+      <strong style="font-size:13px; color:#991b1b;">🛠️ Manutenção</strong>
+      <p style="font-size:11.5px; color:#7f1d1d; margin:4px 0 10px;">
+        Use se os dados estiverem inconsistentes ou você quiser forçar um reset do que está persistido na nuvem.
+      </p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn-sm" data-editor-only style="background:#fef3c7; border:1px solid #f59e0b; color:#92400e;" onclick="resetCacheDados()" title="Apaga os dados parseados salvos no Supabase. Próximo upload vai reconstruir do zero.">🧹 Resetar cache de dados</button>
+        <button class="btn-sm" data-editor-only style="background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" onclick="apagarHistoricoUploads()" title="Apaga todo o histórico de uploads (metadados + arquivos no Storage). Ação irreversível.">🗑️ Limpar histórico de uploads</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1231,7 +1243,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.56 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.57.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1443,20 +1455,79 @@ async function supaSaveDados(chave, obj) {
 async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' */) {
   if (!SUPA || !AUTH || !AUTH.isEditor) return;
   const jobs = [];
-  if (!kinds || kinds.includes('tendencia')) {
+  // v0.57.1: guard de conteúdo — só persistir se realmente veio dado
+  if ((!kinds || kinds.includes('tendencia')) && Array.isArray(DATA_T) && DATA_T.length > 0) {
     jobs.push(supaSaveDados(DATA_KEYS.DATA_T, DATA_T));
     jobs.push(supaSaveDashboardKey(DATA_KEYS.GESTAO_LABEL, GESTAO_LABEL || ''));
   }
-  if (!kinds || kinds.includes('flows')) {
+  if ((!kinds || kinds.includes('flows')) && Array.isArray(DATA_F) && DATA_F.length > 0) {
     jobs.push(supaSaveDados(DATA_KEYS.DATA_F, DATA_F));
   }
-  if (!kinds || kinds.includes('gestoes')) {
+  if ((!kinds || kinds.includes('gestoes')) && HISTORICO && HISTORICO.items && HISTORICO.items.length > 0) {
     jobs.push(supaSaveDados(DATA_KEYS.HISTORICO, HISTORICO));
-    jobs.push(supaSaveDados(DATA_KEYS.PROJ_RAW, PROJ_RAW));
+    if (Array.isArray(PROJ_RAW) && PROJ_RAW.length > 0) {
+      jobs.push(supaSaveDados(DATA_KEYS.PROJ_RAW, PROJ_RAW));
+    }
+  }
+  if (jobs.length === 0) {
+    console.warn('[SUPA] nada para persistir — todos os datasets estão vazios');
+    return;
   }
   await Promise.all(jobs);
-  console.log('[SUPA] dados parseados persistidos com sucesso');
+  console.log(`[SUPA] ${jobs.length} dataset(s) persistido(s) com sucesso`);
 }
+
+// v0.57: reset seguro dos dados parseados persistidos no Supabase
+async function resetCacheDados() {
+  if (!requireEditor('resetar cache')) return;
+  if (!confirm('⚠️ Isto vai APAGAR do Supabase todos os dados parseados salvos (Tendência, Flows, Histórico, Projeção Curva S).\n\nOs arquivos originais no Storage NÃO serão apagados — você continua podendo re-enviar.\n\nPróximo upload vai reconstruir tudo do zero.\n\nConfirma?')) return;
+  const chaves = ['dados_tendencia', 'dados_flows', 'dados_historico', 'dados_projraw', 'gestao_label', 'evol_global'];
+  authToast('🧹 Limpando cache...', 'info', 2000);
+  try {
+    for (const chave of chaves) {
+      const { error } = await SUPA.from('dashboard_config').delete().eq('chave', chave);
+      if (error) console.warn(`[SUPA] delete ${chave}:`, error);
+    }
+    try { localStorage.removeItem('jzurique_evol_global'); } catch(e) {}
+    authToast('✅ Cache limpo. Recarregando página...', 'ok', 2000);
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    console.error(e);
+    authToast('❌ Erro ao limpar cache: ' + e.message, 'err', 5000);
+  }
+}
+
+// v0.57: apagar todo o histórico de uploads (metadados + arquivos no Storage)
+async function apagarHistoricoUploads() {
+  if (!requireEditor('apagar histórico de uploads')) return;
+  if (!confirm('⚠️ IRREVERSÍVEL!\n\nIsto vai APAGAR:\n- Todo o histórico de uploads (metadados)\n- Todos os arquivos armazenados no Storage\n\nOs dados parseados NÃO serão afetados (dashboard continua funcionando com o que já tem).\n\nConfirma?')) return;
+  authToast('🗑️ Apagando histórico...', 'info', 2000);
+  try {
+    // Buscar todos os registros pra pegar storage_paths
+    const { data: recs, error: readErr } = await SUPA.from('upload_history').select('id, storage_path');
+    if (readErr) throw readErr;
+    // Apagar arquivos do Storage
+    const paths = (recs || []).map(r => r.storage_path).filter(Boolean);
+    if (paths.length) {
+      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
+      if (sErr) console.warn('[SUPA] storage remove err:', sErr);
+    }
+    // Apagar linhas
+    const { error: dErr } = await SUPA.from('upload_history').delete().gte('id', 0);
+    if (dErr) throw dErr;
+    // Reset local
+    LAST_UPLOADS.tendencia = null;
+    LAST_UPLOADS.flows = null;
+    LAST_UPLOADS.gestoes = null;
+    renderUploadsCentral();
+    renderSourcesHeaders();
+    authToast(`✅ ${(recs||[]).length} registro(s) apagado(s)`, 'ok', 3000);
+  } catch(e) {
+    console.error(e);
+    authToast('❌ Erro ao apagar histórico: ' + e.message, 'err', 5000);
+  }
+}
+
 
 
 // ---------- UPLOAD HISTORY + STORAGE (v0.52 / v0.53) ----------
@@ -3811,7 +3882,13 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
           ev.target.value = ''; return;
         }
         const parsed = parseGestoes(txt);
-        Object.assign(HISTORICO, parsed);
+        // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
+        if (parsed && parsed.items && parsed.items.length > 0) {
+          HISTORICO = parsed;
+        } else {
+          console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
+          throw new Error('Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.');
+        }
         linhas = parsed.items ? parsed.items.length : 0;
         result = `GESTÕES: ${linhas} itens · ${parsed.gestoes.length} gestões`;
       }
@@ -4066,7 +4143,13 @@ async function _processExcelSheets(workbook, mapping, file) {
           throw new Error('Cabeçalho da aba Gestões precisa conter Descr_gestao ou Key_planejamento');
         }
         const parsed = parseGestoes(csv);
-        Object.assign(HISTORICO, parsed);
+        // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
+        if (parsed && parsed.items && parsed.items.length > 0) {
+          HISTORICO = parsed;
+        } else {
+          console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
+          throw new Error('Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.');
+        }
         linhas = parsed.items ? parsed.items.length : 0;
       }
       results[step.kind] = { ok: true, linhas };
@@ -6719,7 +6802,13 @@ function renderAll() {
   renderTable();
   renderFlows();
   renderHistorico();
-  initProjecao();
+  // v0.57 FIX: initProjecao só inicializa filtros; se já foi inicializado, chamar renderProjecao direto
+  if (PROJ_RAW && PROJ_RAW.length) {
+    initProjecao();  // popula filtros na 1ª vez
+    try { renderProjecao(); } catch(e) { console.warn('renderProjecao err:', e); }
+  } else {
+    initProjecao(); // mostra estado vazio se sem dados
+  }
   initProjCtrl();
   // v0.52: cabeçalhos de fontes + central de uploads
   try { renderSourcesHeaders(); } catch(e) {}
@@ -6847,6 +6936,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1769cef1ee83f2d',t:'MTc4MzQyNDgzMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a176d652ea05a166',t:'MTc4MzQyNzE4Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

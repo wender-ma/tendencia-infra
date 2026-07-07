@@ -589,11 +589,18 @@ body:not(.is-editor) [data-editor-only] {
 <div class="page-header">
 <div class="header">
   <div style="flex:1; min-width:0;">
-    <div style="display:flex; align-items:center; gap:8px;">
-      <span id="headerTitle" style="font-size:20px; font-weight:600; cursor:default; outline:none;">📊 Tendência Orçamentária - Jardins Zurique</span>
-      <button id="headerLockBtn" type="button" onclick="toggleHeaderEdit()" data-requires-edit title="Editar título" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:3px 8px; border-radius:5px; cursor:pointer; font-size:12px;">🔒 Editar</button>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <span id="headerTitle" style="font-size:13px; font-weight:500; opacity:0.85; cursor:default; outline:none;">Tendência Orçamentária</span>
+      <button id="headerLockBtn" type="button" onclick="toggleHeaderEdit()" data-requires-edit title="Editar título" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">🔒 Editar</button>
     </div>
-    <div class="subtitle">Orçamento × Gestão × Aditivos (Flows) | <span id="dataRef">Gestão 05/2026</span></div>
+    <!-- v0.58a: nome grande da obra + dropdown -->
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:2px;">
+      <span id="obraNomeGrande" style="font-size:22px; font-weight:700; letter-spacing:-0.3px;">📊 —</span>
+      <select id="obraSelector" onchange="trocarObra(this.value)" title="Trocar de obra" style="padding:5px 10px; font-size:12.5px; font-weight:600; border-radius:6px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.15); color:white; cursor:pointer; backdrop-filter:blur(3px);">
+        <option value="">Carregando obras...</option>
+      </select>
+    </div>
+    <div class="subtitle" style="margin-top:4px;">Orçamento × Gestão × Aditivos (Flows) | <span id="dataRef">—</span></div>
   </div>
   <div class="header-actions">
     <span id="supaBadge" style="padding:5px 10px; border-radius:12px; font-size:11px; font-weight:600; align-self:center;">🔗 Conectando...</span>
@@ -602,6 +609,17 @@ body:not(.is-editor) [data-editor-only] {
     <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
   </div>
 </div>
+
+<!-- v0.58a: Estilo do dropdown de obras nas <option> -->
+<style>
+#obraSelector option {
+  background: #1f2937;
+  color: white;
+}
+#obraSelector:focus {
+  outline: 2px solid rgba(255,255,255,0.5);
+}
+</style>
 
 <div class="tabs">
   <div class="tab active" data-tab="visao">📈 Visão Geral</div>
@@ -1243,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.57.5 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.58a · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1267,7 +1285,204 @@ try {
 // Status global de conexão (pra UI mostrar "salvo" / "offline")
 const SUPA_STATUS = { online: !!SUPA, lastSync: null, lastError: null };
 
+
+// ============================================================
+// v0.58a — MULTI-OBRA (multi-tenant)
+// ============================================================
+// OBRAS é o catálogo de obras carregado do Supabase (tabela `obras`).
+// OBRA_ATIVA é o código da obra atualmente exibida no dashboard.
+// Toda leitura/escrita no Supabase filtra por OBRA_ATIVA (exceto configs globais).
+// Fallback padrão: '42-21O' (Jardins Zurique) — a obra original antes da migração.
+// ============================================================
+const OBRA_DEFAULT = '42-21O';
+let OBRAS = [];              // catálogo: [{codigo_obra, nome, key_empobratd, ativa}]
+let OBRA_ATIVA = null;       // preenchido no boot
+
+// Prefixa chave do dashboard_config com codigo_obra (dados por obra).
+// Chaves globais (ex: header_title, indice_correcao) NÃO usam prefixo.
+function keyPorObra(chave, obra) {
+  const o = obra || OBRA_ATIVA;
+  if (!o) return chave;
+  return o + ':' + chave;
+}
+
+// Retorna metadados da obra ativa (ou default)
+function getObraInfo(codigo) {
+  codigo = codigo || OBRA_ATIVA;
+  return OBRAS.find(o => o.codigo_obra === codigo) || null;
+}
+
+// Determina qual obra deve estar ativa no boot:
+// 1) parâmetro ?obra=XXX na URL   (bookmark direto)
+// 2) localStorage (última escolha do usuário)
+// 3) primeira obra ativa do catálogo
+// 4) OBRA_DEFAULT (fallback definitivo)
+function resolverObraInicial() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get('obra');
+    if (fromUrl && OBRAS.find(o => o.codigo_obra === fromUrl)) return fromUrl;
+  } catch(e) {}
+  try {
+    const fromLS = localStorage.getItem('jzurique_obra_ativa');
+    if (fromLS && OBRAS.find(o => o.codigo_obra === fromLS)) return fromLS;
+  } catch(e) {}
+  const primeiraAtiva = OBRAS.find(o => o.ativa);
+  if (primeiraAtiva) return primeiraAtiva.codigo_obra;
+  return OBRA_DEFAULT;
+}
+
+// Carrega catálogo de obras do Supabase (chamado no boot)
+async function carregarObras() {
+  if (!SUPA) return [];
+  try {
+    const { data, error } = await SUPA.from('obras')
+      .select('*').order('nome', { ascending: true });
+    if (error) { console.warn('[OBRAS] erro carregar:', error); return []; }
+    OBRAS = data || [];
+    console.log(`[OBRAS] ${OBRAS.length} obra(s) carregada(s)`);
+    return OBRAS;
+  } catch(e) {
+    console.warn('[OBRAS] excecao:', e);
+    return [];
+  }
+}
+
+// Renderiza o dropdown de obras no header (chamado após carregarObras)
+function renderObrasDropdown() {
+  const el = document.getElementById('obraSelector');
+  if (!el) return;
+  if (!OBRAS.length) {
+    el.innerHTML = '<option value="">Nenhuma obra cadastrada</option>';
+    el.disabled = true;
+    return;
+  }
+  el.innerHTML = OBRAS
+    .filter(o => o.ativa)
+    .map(o => `<option value="${escAttr(o.codigo_obra)}" ${o.codigo_obra === OBRA_ATIVA ? 'selected' : ''}>${escHtml(o.nome)}</option>`)
+    .join('');
+  el.disabled = false;
+  // Atualiza título grande do header
+  const titulo = document.getElementById('obraNomeGrande');
+  if (titulo) {
+    const info = getObraInfo();
+    titulo.textContent = info ? '📊 ' + info.nome : '📊 —';
+  }
+}
+
+// Chamado quando usuário troca de obra no dropdown
+async function trocarObra(novoCodigo) {
+  if (!novoCodigo || novoCodigo === OBRA_ATIVA) return;
+  console.log('[OBRAS] trocando de', OBRA_ATIVA, '→', novoCodigo);
+  OBRA_ATIVA = novoCodigo;
+  try { localStorage.setItem('jzurique_obra_ativa', novoCodigo); } catch(e) {}
+  // Atualiza URL sem recarregar (bookmark limpo)
+  try {
+    const url = new URL(window.location);
+    url.searchParams.set('obra', novoCodigo);
+    window.history.replaceState({}, '', url);
+  } catch(e) {}
+  // Reset em RAM dos dados extraídos (serão recarregados)
+  DATA_T = [];
+  DATA_F = [];
+  HISTORICO = { gestoes: [], items: [], totals: {} };
+  PROJ_RAW = [];
+  EVOL_GLOBAL = { teorica: null, financeira: null };
+  Object.keys(LAST_UPLOADS).forEach(k => LAST_UPLOADS[k] = null);
+  // Atualiza header grande
+  const titulo = document.getElementById('obraNomeGrande');
+  if (titulo) {
+    const info = getObraInfo();
+    titulo.textContent = info ? '📊 ' + info.nome : '📊 —';
+  }
+  // Recarrega dados dessa obra
+  authToast('🔄 Carregando dados de ' + (getObraInfo()?.nome || novoCodigo) + '...', 'info', 2500);
+  try {
+    await recarregarDadosDaObra();
+    renderAll();
+    authToast('✅ Obra ativa: ' + (getObraInfo()?.nome || novoCodigo), 'ok', 2500);
+  } catch(e) {
+    console.error('[OBRAS] erro ao trocar:', e);
+    authToast('❌ Erro ao carregar obra: ' + e.message, 'err', 5000);
+  }
+}
+
+// Recarrega dados da obra ativa (dados extraídos + configs + histórico de uploads)
+// Chamado ao trocar de obra e no boot inicial.
+async function recarregarDadosDaObra() {
+  if (!SUPA || !OBRA_ATIVA) return;
+  // Carrega tudo em paralelo
+  const [cls, manuals, projCfg, movs, cfg, ups] = await Promise.all([
+    supaLoadClassifications(),
+    supaLoadManuals(),
+    supaLoadProjConfig(),
+    supaLoadMovs(),
+    supaLoadDashboardConfig(),
+    supaLoadUploadsLatest(),
+  ]);
+  // Aplicar classifications no localStorage (formato do dashboard)
+  if (cls) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cls)); } catch(e) {}
+  } else {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  }
+  // Aplicar manuais
+  if (manuals) {
+    try { localStorage.setItem(MANUAL_KEY, JSON.stringify(manuals)); } catch(e) {}
+  } else {
+    try { localStorage.removeItem(MANUAL_KEY); } catch(e) {}
+  }
+  // Aplicar projecao_config + movs
+  const projState = {
+    insumo: projCfg?.insumo_controlado || 'I011890',
+    saldo_inicial: projCfg?.saldo_inicial ?? null,
+    data_ref: projCfg?.data_ref || null,
+    movimentacoes: movs || [],
+  };
+  try { localStorage.setItem(PROJ_CTRL_KEY, JSON.stringify(projState)); } catch(e) {}
+  // Aplicar dados persistidos (com prefixo da obra)
+  if (cfg) {
+    // Chaves globais (sem prefixo): header_title, indice_correcao, card3_modo
+    if (cfg.header_title) {
+      try { localStorage.setItem(HEADER_KEY, cfg.header_title); } catch(e) {}
+    }
+    if (cfg.indice_correcao) {
+      CORRECAO_INDICE = cfg.indice_correcao;
+      try { localStorage.setItem('jzurique_indice_correcao', cfg.indice_correcao); } catch(e) {}
+    }
+    if (cfg.card3_modo) {
+      CARD3_MODO = cfg.card3_modo;
+      try { localStorage.setItem('jzurique_card3_modo', cfg.card3_modo); } catch(e) {}
+    }
+    // Chaves por obra (com prefixo): dados_*, evol_global, gestao_label
+    const pref = OBRA_ATIVA + ':';
+    if (cfg[pref + 'evol_global']) {
+      try {
+        const p = JSON.parse(cfg[pref + 'evol_global']);
+        if (p) EVOL_GLOBAL = p;
+      } catch(e) {}
+    }
+    if (cfg[pref + 'gestao_label']) GESTAO_LABEL = cfg[pref + 'gestao_label'];
+    if (cfg[pref + 'dados_tendencia']) {
+      try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {}
+    } else { DATA_T = []; }
+    if (cfg[pref + 'dados_flows']) {
+      try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {}
+    } else { DATA_F = []; }
+    if (cfg[pref + 'dados_historico']) {
+      try { const d = JSON.parse(cfg[pref + 'dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {}
+    } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
+    if (cfg[pref + 'dados_projraw']) {
+      try { const d = JSON.parse(cfg[pref + 'dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {}
+    } else { PROJ_RAW = []; }
+  }
+  // Aplicar uploads latest (agora já filtrado por obra)
+  Object.assign(LAST_UPLOADS, ups);
+  console.log('[OBRAS] dados recarregados para', OBRA_ATIVA);
+}
+
 // Espelha em localStorage também (fallback)
+
 function _lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e){} }
 function _lsGet(k) { try { return localStorage.getItem(k); } catch(e){ return null; } }
 
@@ -1276,7 +1491,9 @@ function _lsGet(k) { try { return localStorage.getItem(k); } catch(e){ return nu
 // no Supabase: 1 linha por n_alteracao com colunas
 async function supaLoadClassifications() {
   if (!SUPA) return null;
-  const { data, error } = await SUPA.from('flow_classifications').select('*');
+  if (!OBRA_ATIVA) return null;
+  const { data, error } = await SUPA.from('flow_classifications')
+    .select('*').eq('codigo_obra', OBRA_ATIVA);
   if (error) { console.warn('[SUPA] loadClass err:', error); SUPA_STATUS.lastError = error.message; return null; }
   const map = {};
   data.forEach(r => {
@@ -1293,9 +1510,12 @@ async function supaLoadClassifications() {
 }
 async function supaUpsertClassification(nAlt, patch) {
   if (!SUPA) return;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] upsertClass: sem OBRA_ATIVA'); return; }
   // Buscar registro atual pra fazer merge (evita sobrescrever campos que não estão no patch)
-  const { data: cur } = await SUPA.from('flow_classifications').select('*').eq('n_alteracao', nAlt).maybeSingle();
+  const { data: cur } = await SUPA.from('flow_classifications')
+    .select('*').eq('codigo_obra', OBRA_ATIVA).eq('n_alteracao', nAlt).maybeSingle();
   const merged = {
+    codigo_obra: OBRA_ATIVA,
     n_alteracao: nAlt,
     insumo_planejamento: cur?.insumo_planejamento || null,
     insumo_remanejamento: cur?.insumo_remanejamento || null,
@@ -1304,7 +1524,7 @@ async function supaUpsertClassification(nAlt, patch) {
     ...patch,
     updated_at: new Date().toISOString(),
   };
-  const { error } = await SUPA.from('flow_classifications').upsert(merged, { onConflict: 'n_alteracao' });
+  const { error } = await SUPA.from('flow_classifications').upsert(merged, { onConflict: 'codigo_obra,n_alteracao' });
   if (error) { console.warn('[SUPA] upsertClass err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
@@ -1313,7 +1533,9 @@ async function supaUpsertClassification(nAlt, patch) {
 // ---------- FLOW MANUALS ----------
 async function supaLoadManuals() {
   if (!SUPA) return null;
-  const { data, error } = await SUPA.from('flow_manuals').select('*');
+  if (!OBRA_ATIVA) return null;
+  const { data, error } = await SUPA.from('flow_manuals')
+    .select('*').eq('codigo_obra', OBRA_ATIVA);
   if (error) { console.warn('[SUPA] loadManuals err:', error); return null; }
   return data.map(r => ({
     n_alteracao: r.n_alteracao,
@@ -1331,7 +1553,9 @@ async function supaLoadManuals() {
 }
 async function supaUpsertManual(m) {
   if (!SUPA) return;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] upsertManual: sem OBRA_ATIVA'); return; }
   const { error } = await SUPA.from('flow_manuals').upsert({
+    codigo_obra: OBRA_ATIVA,
     n_alteracao: m.n_alteracao,
     n_adt: m.n_adt, dep: m.dep, descricao: m.descricao,
     data: m.data, data_br: m.data_br,
@@ -1341,14 +1565,16 @@ async function supaUpsertManual(m) {
     motivo: m.motivo, justificativa: m.justificativa,
     insumo_planejamento: m.insumo_planejamento, insumo_remanejamento: m.insumo_remanejamento,
     obs: m.obs,
-  }, { onConflict: 'n_alteracao' });
+  }, { onConflict: 'codigo_obra,n_alteracao' });
   if (error) { console.warn('[SUPA] upsertManual err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
 async function supaDeleteManual(nAlt) {
   if (!SUPA) return;
-  const { error } = await SUPA.from('flow_manuals').delete().eq('n_alteracao', nAlt);
+  if (!OBRA_ATIVA) return;
+  const { error } = await SUPA.from('flow_manuals').delete()
+    .eq('codigo_obra', OBRA_ATIVA).eq('n_alteracao', nAlt);
   if (error) { console.warn('[SUPA] delManual err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
@@ -1357,19 +1583,22 @@ async function supaDeleteManual(nAlt) {
 // ---------- PROJECAO CONFIG (linha única id=1) ----------
 async function supaLoadProjConfig() {
   if (!SUPA) return null;
-  const { data, error } = await SUPA.from('projecao_config').select('*').eq('id', 1).maybeSingle();
+  if (!OBRA_ATIVA) return null;
+  const { data, error } = await SUPA.from('projecao_config')
+    .select('*').eq('codigo_obra', OBRA_ATIVA).maybeSingle();
   if (error) { console.warn('[SUPA] loadProjConfig err:', error); return null; }
   return data;
 }
 async function supaSaveProjConfig(cfg) {
   if (!SUPA) return;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] saveProjConfig: sem OBRA_ATIVA'); return; }
   const { error } = await SUPA.from('projecao_config').upsert({
-    id: 1,
+    codigo_obra: OBRA_ATIVA,
     insumo_controlado: cfg.insumo || 'I011890',
     saldo_inicial: cfg.saldo_inicial ?? null,
     data_ref: cfg.data_ref || null,
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'id' });
+  }, { onConflict: 'codigo_obra' });
   if (error) { console.warn('[SUPA] saveProjConfig err:', error); }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
@@ -1378,7 +1607,9 @@ async function supaSaveProjConfig(cfg) {
 // ---------- PROJECAO MOVIMENTACOES ----------
 async function supaLoadMovs() {
   if (!SUPA) return null;
-  const { data, error } = await SUPA.from('projecao_movimentacoes').select('*');
+  if (!OBRA_ATIVA) return null;
+  const { data, error } = await SUPA.from('projecao_movimentacoes')
+    .select('*').eq('codigo_obra', OBRA_ATIVA);
   if (error) { console.warn('[SUPA] loadMovs err:', error); return null; }
   return data.map(r => ({
     id: r.id, tipo: r.tipo, data: r.data, data_br: r.data_br,
@@ -1388,7 +1619,9 @@ async function supaLoadMovs() {
 }
 async function supaUpsertMov(m) {
   if (!SUPA) return;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] upsertMov: sem OBRA_ATIVA'); return; }
   const { error } = await SUPA.from('projecao_movimentacoes').upsert({
+    codigo_obra: OBRA_ATIVA,
     id: m.id, tipo: m.tipo, data: m.data, data_br: m.data_br,
     origem: m.origem, destino: m.destino, descricao: m.descricao,
     justificativa: m.justificativa, responsavel: m.responsavel, valor: m.valor,
@@ -1399,7 +1632,9 @@ async function supaUpsertMov(m) {
 }
 async function supaDeleteMov(id) {
   if (!SUPA) return;
-  const { error } = await SUPA.from('projecao_movimentacoes').delete().eq('id', id);
+  if (!OBRA_ATIVA) return;
+  const { error } = await SUPA.from('projecao_movimentacoes').delete()
+    .eq('codigo_obra', OBRA_ATIVA).eq('id', id);
   if (error) { console.warn('[SUPA] delMov err:', error); }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
@@ -1408,6 +1643,8 @@ async function supaDeleteMov(id) {
 // ---------- DASHBOARD CONFIG (chave/valor genérico) ----------
 async function supaLoadDashboardConfig() {
   if (!SUPA) return {};
+  // Carrega todas as chaves de uma vez (globais + prefixadas por obra).
+  // Retorno: { 'header_title': '...', '42-21O:dados_tendencia': '...', ... }
   const { data, error } = await SUPA.from('dashboard_config').select('*');
   if (error) { console.warn('[SUPA] loadCfg err:', error); return {}; }
   const map = {};
@@ -1452,21 +1689,24 @@ async function supaSaveDados(chave, obj) {
 }
 
 // Persistir tudo de uma vez após um upload (chamado em handleUpload/Excel)
+// v0.58a: chaves prefixadas com codigo_obra ("42-21O:dados_tendencia", etc.)
 async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' */) {
   if (!SUPA || !AUTH || !AUTH.isEditor) return;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] supaSaveAllData: sem OBRA_ATIVA'); return; }
   const jobs = [];
+  const K = (chave) => keyPorObra(chave); // prefixa com codigo_obra
   // v0.57.1: guard de conteúdo — só persistir se realmente veio dado
   if ((!kinds || kinds.includes('tendencia')) && Array.isArray(DATA_T) && DATA_T.length > 0) {
-    jobs.push(supaSaveDados(DATA_KEYS.DATA_T, DATA_T));
-    jobs.push(supaSaveDashboardKey(DATA_KEYS.GESTAO_LABEL, GESTAO_LABEL || ''));
+    jobs.push(supaSaveDados(K(DATA_KEYS.DATA_T), DATA_T));
+    jobs.push(supaSaveDashboardKey(K(DATA_KEYS.GESTAO_LABEL), GESTAO_LABEL || ''));
   }
   if ((!kinds || kinds.includes('flows')) && Array.isArray(DATA_F) && DATA_F.length > 0) {
-    jobs.push(supaSaveDados(DATA_KEYS.DATA_F, DATA_F));
+    jobs.push(supaSaveDados(K(DATA_KEYS.DATA_F), DATA_F));
   }
   if ((!kinds || kinds.includes('gestoes')) && HISTORICO && HISTORICO.items && HISTORICO.items.length > 0) {
-    jobs.push(supaSaveDados(DATA_KEYS.HISTORICO, HISTORICO));
+    jobs.push(supaSaveDados(K(DATA_KEYS.HISTORICO), HISTORICO));
     if (Array.isArray(PROJ_RAW) && PROJ_RAW.length > 0) {
-      jobs.push(supaSaveDados(DATA_KEYS.PROJ_RAW, PROJ_RAW));
+      jobs.push(supaSaveDados(K(DATA_KEYS.PROJ_RAW), PROJ_RAW));
     }
   }
   if (jobs.length === 0) {
@@ -1474,15 +1714,20 @@ async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' *
     return;
   }
   await Promise.all(jobs);
-  console.log(`[SUPA] ${jobs.length} dataset(s) persistido(s) com sucesso`);
+  console.log(`[SUPA] ${jobs.length} dataset(s) persistido(s) para obra ${OBRA_ATIVA}`);
 }
 
-// v0.57: reset seguro dos dados parseados persistidos no Supabase
+// v0.58a: reset APENAS dos dados da obra ativa (chaves prefixadas)
 async function resetCacheDados() {
   if (!requireEditor('resetar cache')) return;
-  if (!confirm('⚠️ Isto vai APAGAR do Supabase todos os dados parseados salvos (Tendência, Flows, Histórico, Projeção Curva S).\n\nOs arquivos originais no Storage NÃO serão apagados — você continua podendo re-enviar.\n\nPróximo upload vai reconstruir tudo do zero.\n\nConfirma?')) return;
-  const chaves = ['dados_tendencia', 'dados_flows', 'dados_historico', 'dados_projraw', 'gestao_label', 'evol_global'];
-  authToast('🧹 Limpando cache...', 'info', 2000);
+  if (!OBRA_ATIVA) { authToast('❌ Nenhuma obra selecionada', 'err', 3000); return; }
+  const info = getObraInfo();
+  const nomeObra = info ? info.nome : OBRA_ATIVA;
+  if (!confirm(`⚠️ Isto vai APAGAR do Supabase os dados parseados salvos DESTA obra (${nomeObra}):\n- Tendência\n- Flows\n- Histórico\n- Projeção Curva S\n\nAs outras obras NÃO são afetadas.\nOs arquivos originais no Storage também NÃO são apagados.\n\nPróximo upload vai reconstruir tudo do zero.\n\nConfirma?`)) return;
+  // Chaves prefixadas com codigo_obra + evol_global (que também é por obra na v0.58a)
+  const chavesBase = ['dados_tendencia', 'dados_flows', 'dados_historico', 'dados_projraw', 'gestao_label', 'evol_global'];
+  const chaves = chavesBase.map(c => keyPorObra(c));
+  authToast('🧹 Limpando cache da obra ' + nomeObra + '...', 'info', 2000);
   try {
     for (const chave of chaves) {
       const { error } = await SUPA.from('dashboard_config').delete().eq('chave', chave);
@@ -1503,8 +1748,10 @@ async function apagarHistoricoUploads() {
   if (!confirm('⚠️ IRREVERSÍVEL!\n\nIsto vai APAGAR:\n- Todo o histórico de uploads (metadados)\n- Todos os arquivos armazenados no Storage\n\nOs dados parseados NÃO serão afetados (dashboard continua funcionando com o que já tem).\n\nConfirma?')) return;
   authToast('🗑️ Apagando histórico...', 'info', 2000);
   try {
-    // Buscar todos os registros pra pegar storage_paths
-    const { data: recs, error: readErr } = await SUPA.from('upload_history').select('id, storage_path');
+    if (!OBRA_ATIVA) throw new Error('Nenhuma obra selecionada');
+    // Buscar registros DA OBRA ATIVA pra pegar storage_paths
+    const { data: recs, error: readErr } = await SUPA.from('upload_history')
+      .select('id, storage_path').eq('codigo_obra', OBRA_ATIVA);
     if (readErr) throw readErr;
     // Apagar arquivos do Storage
     const paths = (recs || []).map(r => r.storage_path).filter(Boolean);
@@ -1512,8 +1759,9 @@ async function apagarHistoricoUploads() {
       const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
       if (sErr) console.warn('[SUPA] storage remove err:', sErr);
     }
-    // Apagar linhas
-    const { error: dErr } = await SUPA.from('upload_history').delete().gte('id', 0);
+    // Apagar linhas da obra ativa
+    const { error: dErr } = await SUPA.from('upload_history').delete()
+      .eq('codigo_obra', OBRA_ATIVA);
     if (dErr) throw dErr;
     // Reset local
     LAST_UPLOADS.tendencia = null;
@@ -1536,8 +1784,10 @@ const UPLOADS_MAX_PER_TYPE = 12; // rolling backup: mantém os N mais recentes p
 
 async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
   if (!SUPA) return null;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] logUpload: sem OBRA_ATIVA'); return null; }
   const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
   const { data, error } = await SUPA.from('upload_history').insert({
+    codigo_obra: OBRA_ATIVA,
     tipo, nome_arquivo: nomeArquivo,
     tamanho_bytes: tamanhoBytes || null,
     linhas: linhas || null,
@@ -1554,13 +1804,16 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
 // v0.53: sobe arquivo original pro Storage. Retorna storage_path ou null se falhar.
 async function supaUploadFile(tipo, file) {
   if (!SUPA || !SUPA.storage) return null;
+  if (!OBRA_ATIVA) { console.warn('[SUPA] uploadFile: sem OBRA_ATIVA'); return null; }
   // Nome único: YYYYMMDD_HHMMSS_original.csv (evita colisão + facilita ordenação)
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   // Sanitiza nome (remove caracteres estranhos)
   const safeName = (file.name || 'arquivo.csv').replace(/[^\w.\-]/g, '_');
-  const path = `${tipo}/${stamp}_${safeName}`;
+  // v0.58a: prefixa com codigo_obra pra isolamento no Storage
+  const safeObra = OBRA_ATIVA.replace(/[^\w.\-]/g, '_');
+  const path = `${safeObra}/${tipo}/${stamp}_${safeName}`;
   const { error } = await SUPA.storage.from(UPLOADS_BUCKET).upload(path, file, {
     contentType: file.type || 'text/csv',
     upsert: false,
@@ -1577,8 +1830,9 @@ async function supaUploadFile(tipo, file) {
 // v0.53: lista TODOS os uploads de um tipo (ordenado do mais recente)
 async function supaListUploadsByType(tipo, limit = 50) {
   if (!SUPA) return [];
+  if (!OBRA_ATIVA) return [];
   const { data, error } = await SUPA.from('upload_history')
-    .select('*').eq('tipo', tipo)
+    .select('*').eq('codigo_obra', OBRA_ATIVA).eq('tipo', tipo)
     .order('enviado_em', { ascending: false }).limit(limit);
   if (error) { console.warn('[SUPA] listUploads err:', error); return []; }
   return data || [];
@@ -1609,7 +1863,9 @@ async function supaEnforceRollingBackup(tipo) {
     }
     // Apagar linhas do upload_history
     const ids = toDelete.map(r => r.id);
-    const { error: dbErr } = await SUPA.from('upload_history').delete().in('id', ids);
+    // Filtra por obra também pra segurança extra (ids são unique globalmente, mas garantia dupla)
+    const { error: dbErr } = await SUPA.from('upload_history').delete()
+      .eq('codigo_obra', OBRA_ATIVA).in('id', ids);
     if (dbErr) console.warn('[SUPA] rolling history remove err:', dbErr);
   } catch (e) {
     console.warn('[SUPA] rolling backup err:', e);
@@ -1617,12 +1873,14 @@ async function supaEnforceRollingBackup(tipo) {
 }
 
 async function supaLoadUploadsLatest() {
-  // Retorna { tendencia: {...}, flows: {...}, gestoes: {...} } com o último por tipo
+  // Retorna { tendencia: {...}, flows: {...}, gestoes: {...} } com o último por tipo,
+  // filtrado pela OBRA_ATIVA.
   if (!SUPA) return {};
+  if (!OBRA_ATIVA) return {};
   try {
-    const { data, error } = await SUPA.from('upload_history_latest').select('*');
+    const { data, error } = await SUPA.from('upload_history_latest')
+      .select('*').eq('codigo_obra', OBRA_ATIVA);
     if (error) {
-      // View pode não existir se SQL não foi rodado — fallback pra query manual
       console.warn('[SUPA] view latest indisp, tentando fallback:', error.message);
       return await _supaLoadUploadsLatestFallback();
     }
@@ -1636,9 +1894,10 @@ async function supaLoadUploadsLatest() {
 }
 async function _supaLoadUploadsLatestFallback() {
   const map = {};
+  if (!OBRA_ATIVA) return map;
   for (const t of ['tendencia', 'flows', 'gestoes']) {
     const { data } = await SUPA.from('upload_history')
-      .select('*').eq('tipo', t)
+      .select('*').eq('codigo_obra', OBRA_ATIVA).eq('tipo', t)
       .order('enviado_em', { ascending: false }).limit(1);
     if (data && data[0]) map[t] = data[0];
   }
@@ -3861,6 +4120,12 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
     ev.target.value = '';
     return;
   }
+  // v0.58a: guard obra ativa (upload sem obra selecionada não faz sentido)
+  if (!OBRA_ATIVA) {
+    authToast('❌ Nenhuma obra selecionada. Escolha uma obra no header antes de fazer upload.', 'err', 5000);
+    ev.target.value = '';
+    return;
+  }
   const file = ev.target.files[0];
   if (!file) return;
   const cardMeta = document.querySelector(`.upload-card[data-kind="${kind}"] .upload-card-meta`);
@@ -3996,6 +4261,12 @@ function _sheetToCSV(workbook, sheetName) {
 // ============================================================
 async function handleExcelUpload(ev) {
   if (!requireEditor('enviar planilha Excel')) { ev.target.value = ''; return; }
+  // v0.58a: guard obra ativa
+  if (!OBRA_ATIVA) {
+    authToast('❌ Nenhuma obra selecionada. Escolha uma obra no header antes de fazer upload.', 'err', 5000);
+    ev.target.value = '';
+    return;
+  }
   const file = ev.target.files[0];
   if (!file) return;
   ev.target.value = '';
@@ -4629,12 +4900,12 @@ function parseTendencia(text) {
     EVOL_GLOBAL.financeira = parsePct(sub[13]);
     console.log('[TEND] EVOL_GLOBAL parsed:', EVOL_GLOBAL,
                 '(bruto: [12]="' + sub[12] + '", [13]="' + sub[13] + '")');
-    // v0.55.2: persistir no Supabase pra sobreviver a refresh/outras máquinas
+    // v0.55.2 + v0.58a: persistir no Supabase (chave prefixada com codigo_obra)
     try {
-      if (typeof AUTH !== 'undefined' && AUTH && AUTH.isEditor) {
+      if (typeof AUTH !== 'undefined' && AUTH && AUTH.isEditor && OBRA_ATIVA) {
         localStorage.setItem('jzurique_evol_global', JSON.stringify(EVOL_GLOBAL));
         if (typeof supaSaveDashboardKey === 'function') {
-          supaSaveDashboardKey('evol_global', JSON.stringify(EVOL_GLOBAL));
+          supaSaveDashboardKey(keyPorObra('evol_global'), JSON.stringify(EVOL_GLOBAL));
         }
       }
     } catch(e) { console.warn('[TEND] persist EVOL err:', e); }
@@ -6900,103 +7171,25 @@ INSUMOS_OPTIONS = buildInsumosList();
 buildDatalist();
 updateSupaBadge();
 
-// Boot assíncrono: primeiro tenta puxar do Supabase, depois faz o merge com localStorage
+// Boot assíncrono v0.58a: multi-obra
+// Ordem: carregar catálogo de obras → resolver obra ativa → carregar dados dessa obra
 (async () => {
   try {
     if (SUPA) {
       console.log('[SUPA] carregando dados iniciais...');
-      // 1) Classificações
-      const remoteCls = await supaLoadClassifications();
-      if (remoteCls) {
-        // Mescla com localStorage e sobrescreve o remoto como fonte da verdade
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCls));
-        console.log(`[SUPA] ${Object.keys(remoteCls).length} classificações carregadas`);
-      }
-      // 2) Manuais
-      const remoteManuals = await supaLoadManuals();
-      if (remoteManuals) {
-        localStorage.setItem(MANUAL_KEY, JSON.stringify(remoteManuals));
-        console.log(`[SUPA] ${remoteManuals.length} aditivos manuais carregados`);
-      }
-      // 3) Projecao config + movimentacoes
-      const remoteCfg = await supaLoadProjConfig();
-      const remoteMovs = await supaLoadMovs();
-      if (remoteCfg || remoteMovs) {
-        const projState = {
-          insumo: remoteCfg?.insumo_controlado || 'I011890',
-          saldo_inicial: remoteCfg?.saldo_inicial ?? null,
-          data_ref: remoteCfg?.data_ref || null,
-          movimentacoes: remoteMovs || [],
-        };
-        localStorage.setItem(PROJ_CTRL_KEY, JSON.stringify(projState));
-        console.log(`[SUPA] projecao_config + ${projState.movimentacoes.length} movimentações carregadas`);
-      }
-      // 4) Dashboard configs (title, INCC/IPCA, card3)
-      const dCfg = await supaLoadDashboardConfig();
-      if (dCfg.header_title) {
-        localStorage.setItem(HEADER_KEY, dCfg.header_title);
-        const el = document.getElementById('headerTitle');
-        if (el) el.textContent = dCfg.header_title;
-      }
-      if (dCfg.indice_correcao) {
-        CORRECAO_INDICE = dCfg.indice_correcao;
-        localStorage.setItem('jzurique_indice_correcao', dCfg.indice_correcao);
-      }
-      if (dCfg.card3_modo) {
-        CARD3_MODO = dCfg.card3_modo;
-        localStorage.setItem('jzurique_card3_modo', dCfg.card3_modo);
-      }
-      // v0.55.2: restaurar EVOL_GLOBAL (aderência físico-financeira)
-      if (dCfg.evol_global) {
-        try {
-          const parsed = JSON.parse(dCfg.evol_global);
-          if (parsed && (parsed.teorica != null || parsed.financeira != null)) {
-            EVOL_GLOBAL = parsed;
-            localStorage.setItem('jzurique_evol_global', dCfg.evol_global);
-            console.log('[SUPA] EVOL_GLOBAL restaurado:', EVOL_GLOBAL);
-          }
-        } catch(e) { console.warn('[SUPA] parse EVOL_GLOBAL err:', e); }
-      }
-      // v0.56: restaurar dados parseados (Tendência, Flows, Histórico, PROJ_RAW)
-      try {
-        if (dCfg.dados_tendencia) {
-          const t = JSON.parse(dCfg.dados_tendencia);
-          if (Array.isArray(t) && t.length) {
-            DATA_T = t;
-            console.log(`[SUPA] DATA_T restaurado: ${t.length} itens`);
-          }
-        }
-        if (dCfg.dados_flows) {
-          const f = JSON.parse(dCfg.dados_flows);
-          if (Array.isArray(f) && f.length) {
-            DATA_F = f;
-            console.log(`[SUPA] DATA_F restaurado: ${f.length} aditivos`);
-          }
-        }
-        if (dCfg.dados_historico) {
-          const h = JSON.parse(dCfg.dados_historico);
-          if (h && h.items) {
-            HISTORICO = h;
-            console.log(`[SUPA] HISTORICO restaurado: ${h.items.length} itens · ${(h.gestoes||[]).length} gestões`);
-          }
-        }
-        if (dCfg.dados_projraw) {
-          const pr = JSON.parse(dCfg.dados_projraw);
-          if (Array.isArray(pr) && pr.length) {
-            PROJ_RAW = pr;
-            console.log(`[SUPA] PROJ_RAW restaurado: ${pr.length} entradas`);
-          }
-        }
-        if (dCfg.gestao_label) {
-          GESTAO_LABEL = dCfg.gestao_label;
-        }
-      } catch(e) { console.warn('[SUPA] restore dados err:', e); }
-      // 5) Histórico de uploads (últimos por tipo)
-      try {
-        const ups = await supaLoadUploadsLatest();
-        Object.assign(LAST_UPLOADS, ups);
-        console.log('[SUPA] últimos uploads:', Object.keys(ups).length);
-      } catch(e) { console.warn('[SUPA] loadUploadsLatest err:', e); }
+      // 1) Carrega catálogo de obras primeiro
+      await carregarObras();
+      // 2) Resolve qual obra deve estar ativa (URL > localStorage > primeira ativa > default)
+      OBRA_ATIVA = resolverObraInicial();
+      console.log('[OBRAS] obra ativa selecionada:', OBRA_ATIVA);
+      // 3) Popula o dropdown do header
+      renderObrasDropdown();
+      // 4) Carrega TODOS os dados da obra ativa em paralelo
+      await recarregarDadosDaObra();
+      // 5) Aplica config global de UI que carregou (título/INCC/card3)
+      const el = document.getElementById('headerTitle');
+      const savedTitle = localStorage.getItem(HEADER_KEY);
+      if (el && savedTitle) el.textContent = savedTitle;
       SUPA_STATUS.lastSync = new Date();
       updateSupaBadge();
     }
@@ -7005,7 +7198,7 @@ updateSupaBadge();
     SUPA_STATUS.lastError = e.message;
     updateSupaBadge();
   }
-  // Aplica os dados carregados (local ou remoto) nas estruturas do dashboard
+  // Aplica manuais + classificações carregadas
   applyManuals();
   const _loaded = loadClassifications();
   renderAll();
@@ -7016,6 +7209,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1777797fd78f53b',t:'MTc4MzQzMzc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

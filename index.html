@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.58a · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.58b · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1469,11 +1469,12 @@ async function recarregarDadosDaObra() {
     if (cfg[pref + 'dados_flows']) {
       try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {}
     } else { DATA_F = []; }
-    if (cfg[pref + 'dados_historico']) {
-      try { const d = JSON.parse(cfg[pref + 'dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {}
+    // v0.58b: HISTORICO e PROJ_RAW são globais (sem prefixo), compartilhados entre obras
+    if (cfg['dados_historico']) {
+      try { const d = JSON.parse(cfg['dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {}
     } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
-    if (cfg[pref + 'dados_projraw']) {
-      try { const d = JSON.parse(cfg[pref + 'dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {}
+    if (cfg['dados_projraw']) {
+      try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {}
     } else { PROJ_RAW = []; }
   }
   // Aplicar uploads latest (agora já filtrado por obra)
@@ -1703,10 +1704,11 @@ async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' *
   if ((!kinds || kinds.includes('flows')) && Array.isArray(DATA_F) && DATA_F.length > 0) {
     jobs.push(supaSaveDados(K(DATA_KEYS.DATA_F), DATA_F));
   }
+  // v0.58b: Gestões (HISTORICO + PROJ_RAW) é GLOBAL — 1 arquivo compartilhado entre todas as obras
   if ((!kinds || kinds.includes('gestoes')) && HISTORICO && HISTORICO.items && HISTORICO.items.length > 0) {
-    jobs.push(supaSaveDados(K(DATA_KEYS.HISTORICO), HISTORICO));
+    jobs.push(supaSaveDados(DATA_KEYS.HISTORICO, HISTORICO));  // sem K() = global
     if (Array.isArray(PROJ_RAW) && PROJ_RAW.length > 0) {
-      jobs.push(supaSaveDados(K(DATA_KEYS.PROJ_RAW), PROJ_RAW));
+      jobs.push(supaSaveDados(DATA_KEYS.PROJ_RAW, PROJ_RAW));  // sem K() = global
     }
   }
   if (jobs.length === 0) {
@@ -1717,24 +1719,30 @@ async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' *
   console.log(`[SUPA] ${jobs.length} dataset(s) persistido(s) para obra ${OBRA_ATIVA}`);
 }
 
-// v0.58a: reset APENAS dos dados da obra ativa (chaves prefixadas)
+// v0.58b: reset dos dados da obra ativa
+//   - Chaves POR OBRA: dados_tendencia, dados_flows, gestao_label, evol_global (prefixadas)
+//   - Chaves GLOBAIS (Gestões): dados_historico, dados_projraw — pergunta se quer apagar também
 async function resetCacheDados() {
   if (!requireEditor('resetar cache')) return;
   if (!OBRA_ATIVA) { authToast('❌ Nenhuma obra selecionada', 'err', 3000); return; }
   const info = getObraInfo();
   const nomeObra = info ? info.nome : OBRA_ATIVA;
-  if (!confirm(`⚠️ Isto vai APAGAR do Supabase os dados parseados salvos DESTA obra (${nomeObra}):\n- Tendência\n- Flows\n- Histórico\n- Projeção Curva S\n\nAs outras obras NÃO são afetadas.\nOs arquivos originais no Storage também NÃO são apagados.\n\nPróximo upload vai reconstruir tudo do zero.\n\nConfirma?`)) return;
-  // Chaves prefixadas com codigo_obra + evol_global (que também é por obra na v0.58a)
-  const chavesBase = ['dados_tendencia', 'dados_flows', 'dados_historico', 'dados_projraw', 'gestao_label', 'evol_global'];
-  const chaves = chavesBase.map(c => keyPorObra(c));
-  authToast('🧹 Limpando cache da obra ' + nomeObra + '...', 'info', 2000);
+  const confirmObra = confirm(`⚠️ Isto vai APAGAR do Supabase os dados desta obra (${nomeObra}):\n\n- Tendência (individual)\n- Flows (individual)\n- Aderência Físico-Financeira\n\nAs outras obras NÃO são afetadas.\nOs arquivos originais no Storage também NÃO são apagados.\n\nConfirma?`);
+  if (!confirmObra) return;
+  // Chaves POR OBRA
+  const chavesObra = ['dados_tendencia', 'dados_flows', 'gestao_label', 'evol_global'].map(c => keyPorObra(c));
+  // Perguntar sobre as chaves GLOBAIS (Histórico Mensal + Curva S — compartilhadas entre todas as obras)
+  const apagarGlobal = confirm(`\n\n📋 EXTRA: também apagar dados GLOBAIS (Histórico e Curva S)?\n\nEsses dados são compartilhados entre TODAS as obras — apagar aqui afeta o dashboard de todas.\n\nOK = apaga também os globais\nCancelar = mantém globais (só apaga os individuais desta obra)`);
+  const chavesGlobais = apagarGlobal ? ['dados_historico', 'dados_projraw'] : [];
+  const chaves = [...chavesObra, ...chavesGlobais];
+  authToast('🧹 Limpando cache...', 'info', 2000);
   try {
     for (const chave of chaves) {
       const { error } = await SUPA.from('dashboard_config').delete().eq('chave', chave);
       if (error) console.warn(`[SUPA] delete ${chave}:`, error);
     }
     try { localStorage.removeItem('jzurique_evol_global'); } catch(e) {}
-    authToast('✅ Cache limpo. Recarregando página...', 'ok', 2000);
+    authToast(`✅ Cache limpo (${chaves.length} chaves). Recarregando...`, 'ok', 2000);
     setTimeout(() => location.reload(), 1500);
   } catch(e) {
     console.error(e);
@@ -2444,12 +2452,14 @@ function renderVisao() {
   const flowsPend = (typeof calcularFlowsPendentesPorGrupo === 'function') ? calcularFlowsPendentesPorGrupo() : {'Custos Indiretos':0,'Custos Diretos / Infraestrutura':0,'Obras Civis':0,'Projeção de Gastos':0,'Outros':0};
   // Calcular extrapolação dos Indiretos rodando uma "mini-projeção" rápida
   let totExtrapInd = 0;
-  if (Array.isArray(PROJ_RAW) && PROJ_RAW.length && typeof projetarServico === 'function') {
+  // v0.58b: usa PROJ_RAW filtrado pela obra ativa
+  const _PROJ_VG = (typeof getProjRawObraAtiva === 'function') ? getProjRawObraAtiva() : PROJ_RAW;
+  if (Array.isArray(_PROJ_VG) && _PROJ_VG.length && typeof projetarServico === 'function') {
     const dataCorteVG = (document.getElementById('projDataCorte')?.value) || defaultDataCorte();
     const dataFimVG = (document.getElementById('projDataFim')?.value) || defaultDataFim();
     const janelaVG = parseInt(document.getElementById('projMetodo')?.value) || 6;
     const porServVG = {};
-    PROJ_RAW.forEach(r => {
+    _PROJ_VG.forEach(r => {
       if (!porServVG[r.servico]) porServVG[r.servico] = {};
       porServVG[r.servico][r.mes] = (porServVG[r.servico][r.mes] || 0) + r.valor;
     });
@@ -4534,11 +4544,12 @@ const UPLOAD_META = {
     manualKey: 'flows',
   },
   gestoes: {
-    label: 'GESTÕES',
+    label: 'GESTÕES 🌐',
     icon: '📅',
     color: '#0891b2',
-    desc: 'Alimenta: Histórico Mensal e curva S da Tendência de Obra. Fonte: aba Gestões da planilha.',
+    desc: 'Alimenta: Histórico Mensal e curva S da Tendência de Obra. Fonte: aba Gestões da planilha. ⚠️ ARQUIVO COMPARTILHADO: 1 upload afeta TODAS as obras (v0.58b).',
     manualKey: 'gestoes',
+    global: true,
   },
 };
 
@@ -5026,16 +5037,16 @@ function toIsoDate(s) {
 }
 
 
+// v0.58b: parseGestoes agora processa TODAS as obras (não filtra por empreendimento).
+// Cada item ganha campo `codigo_obra` derivado do prefixo da Key_planejamento.
+// Ex: "42-21O-1-31005-..." → codigo_obra = "42-21O"
+// A filtragem por obra ativa acontece na renderização (renderHistorico / renderProjecao).
 function parseGestoes(text) {
   const rows = parseCSVRows(text);
   if (rows.length < 2) { PROJ_RAW = []; return { gestoes: [], items: [], totals: {} }; }
-  // Encontrar cabeçalho (linha 0 normalmente)
   const header = rows[0].map(c => (c||'').trim());
-  const idx = (name) => {
-    const i = header.findIndex(h => h.toLowerCase() === name.toLowerCase());
-    return i;
-  };
-  // Caso a aba tenha índices variáveis, tentamos por nome:
+  const idx = (name) => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
   const iEmp = idx('Descr_empreendimento');
   const iGest = idx('Descr_gestao');
   const iClasFin = idx('Descr_classificacaofinanceira');
@@ -5044,25 +5055,38 @@ function parseGestoes(text) {
   const iInsumo = idx('Insumo');
   const iItem = idx('Item');
   const iServ = idx('Serviço');
+  const iMesPag = idx('Mes_pagamento');
 
-  const agg = new Map(); // key → { meta, gestoes: {nome:soma} }
+  // Extrai codigo_obra do prefixo da Key_planejamento
+  // "42-21O-1-31005-..." → "42-21O"
+  function extrairObra(keyPlan) {
+    if (!keyPlan) return null;
+    const partes = keyPlan.split('-');
+    if (partes.length < 2) return null;
+    return partes[0] + '-' + partes[1];
+  }
+
+  const agg = new Map(); // (codigo_obra + '|' + key) → { meta, gestoes: {nome:soma} }
   const allGestoesSet = new Set();
 
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || r.length < 5) continue;
-    const emp = (r[iEmp]||'').trim();
     const classFin = (r[iClasFin]||'').trim();
     const key = (r[iKeyPlan]||'').trim();
     const gestao = (r[iGest]||'').trim();
-    if (emp !== 'Jardins Zurique') continue;
+    // Filtros mínimos (não filtra por empreendimento — aceita todas as obras)
     if (classFin !== 'Obra') continue;
-    if (!key.includes('-21O-')) continue;
+    if (!key) continue;
     if (!gestao) continue;
+    const codigoObra = extrairObra(key);
+    if (!codigoObra) continue;
     allGestoesSet.add(gestao);
-    if (!agg.has(key)) {
-      agg.set(key, {
+    const aggKey = codigoObra + '|' + key;
+    if (!agg.has(aggKey)) {
+      agg.set(aggKey, {
         meta: {
+          codigo_obra: codigoObra,
           servico: (r[iServ]||'').trim(),
           insumo: (r[iInsumo]||'').trim(),
           item_cod: (r[iItem]||'').trim(),
@@ -5070,11 +5094,11 @@ function parseGestoes(text) {
         gestoes: {},
       });
     }
-    const entry = agg.get(key);
+    const entry = agg.get(aggKey);
     entry.gestoes[gestao] = (entry.gestoes[gestao]||0) + (parseNum(r[iVal])||0);
   }
 
-  // Ordem cronológica
+  // Ordem cronológica das gestões
   function sortKey(g) {
     if (g === 'Atual') return [9999, 99];
     const m = g.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
@@ -5087,50 +5111,60 @@ function parseGestoes(text) {
   });
 
   const items = [];
-  for (const [key, v] of agg) {
+  for (const [aggKey, v] of agg) {
+    const key = aggKey.substring(aggKey.indexOf('|') + 1);
     const obj = { key, ...v.meta };
     gestoes.forEach(g => { obj[g] = Math.round((v.gestoes[g]||0)*100)/100; });
     items.push(obj);
   }
+  // NOTA: totals agora é POR OBRA (não somamos todas as obras juntas)
+  // { "42-21O": { "GESTÃO 05-2026": xxx, ... }, "18-JROMO": { ... } }
   const totals = {};
-  gestoes.forEach(g => { totals[g] = Math.round(items.reduce((s,it) => s + (it[g]||0), 0) * 100) / 100; });
+  items.forEach(it => {
+    if (!totals[it.codigo_obra]) totals[it.codigo_obra] = {};
+    gestoes.forEach(g => {
+      totals[it.codigo_obra][g] = (totals[it.codigo_obra][g] || 0) + (it[g] || 0);
+    });
+  });
+  // Arredondar totals
+  Object.keys(totals).forEach(obra => {
+    gestoes.forEach(g => {
+      totals[obra][g] = Math.round((totals[obra][g] || 0) * 100) / 100;
+    });
+  });
 
-  // Construir PROJ_RAW (gestão Atual, mês a mês por serviço)
-  const iMesPag = idx('Mes_pagamento');
+  // Construir PROJ_RAW (todas as obras, apenas gestão "Atual", mês a mês)
   PROJ_RAW = [];
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || r.length < 5) continue;
-    if ((r[iEmp]||'').trim() !== 'Jardins Zurique') continue;
     if ((r[iClasFin]||'').trim() !== 'Obra') continue;
     const key = (r[iKeyPlan]||'').trim();
-    if (!key.includes('-21O-')) continue;
-    if ((r[iGest]||'').trim() !== 'Atual') continue; // só gestão atual para projeção
+    if (!key) continue;
+    const codigoObra = extrairObra(key);
+    if (!codigoObra) continue;
+    if ((r[iGest]||'').trim() !== 'Atual') continue;
     const mes = (r[iMesPag]||'').trim();
     const parts = mes.split('/');
     if (parts.length !== 3) continue;
-    // v0.57.4 FIX: aceita formato BR (dd/mm/aaaa do CSV) e US (m/d/aa do SheetJS)
-    // Heurística: 4 dígitos no fim = BR; senão US (o SheetJS sempre normaliza pra ano curto)
     const p0 = parseInt(parts[0], 10);
     const p1 = parseInt(parts[1], 10);
     const p2raw = parts[2];
     let ano, mesNum;
     if (p2raw.length === 4) {
-      // Formato BR: dd/mm/aaaa
       ano = p2raw;
       mesNum = String(p1);
     } else {
-      // Formato US do SheetJS: m/d/aa
       ano = '20' + p2raw.padStart(2, '0');
       mesNum = String(p0);
     }
-    // Sanity check: mês deve estar entre 1-12
     const mn = parseInt(mesNum, 10);
     if (isNaN(mn) || mn < 1 || mn > 12) continue;
     const yyyy_mm = `${ano}-${String(mn).padStart(2, '0')}`;
     const valor = parseNum(r[iVal]) || 0;
     if (valor <= 0) continue;
     PROJ_RAW.push({
+      codigo_obra: codigoObra,
       servico: (r[iServ]||'').trim(),
       insumo: (r[iInsumo]||'').trim(),
       mes: yyyy_mm,
@@ -5194,8 +5228,10 @@ function defaultDataCorte() {
 
 function defaultDataFim() {
   // último mês do CSV
-  if (!PROJ_RAW.length) return defaultDataCorte();
-  return PROJ_RAW.map(r => r.mes).sort().slice(-1)[0];
+  // v0.58b: usa dados da obra ativa
+  const _p = (typeof getProjRawObraAtiva === 'function') ? getProjRawObraAtiva() : PROJ_RAW;
+  if (!_p.length) return defaultDataCorte();
+  return _p.map(r => r.mes).sort().slice(-1)[0];
 }
 
 // Metadados de serviço (descrição + grupo) — pré-carregado da Tendência
@@ -5205,7 +5241,9 @@ const SERVICOS_META = {"S05765": {"descricao": "MÃO DE OBRA - RATEIO DIFERENCIA
 const INSUMOS_META = {"ADM5189": {"descricao": "ASSESSORIA E CONSULTORIA GERENCIAL - OBRA", "servico_pai": "S05765"}, "CONDH271": {"descricao": "MAO DE OBRA - RATEIO DIFERENCIADO - OBRA", "servico_pai": "PLAN2013"}, "I002226": {"descricao": "PLR (PARTICIPACAO DE LUCROS E RESULTADOS)", "servico_pai": "S05765"}, "I013329": {"descricao": "MOBILIZAÇÃO / ALUGUEL DE CONTAINER", "servico_pai": "S05751"}, "I001609": {"descricao": "TAPUME METALICO", "servico_pai": "S02544"}, "I002242": {"descricao": "LIMPEZA E CONSERVACAO", "servico_pai": "S02544"}, "I013233": {"descricao": "CONFECÇÃO DE CANTEIROS", "servico_pai": "S02544"}, "I013234": {"descricao": "CONSTRUÇÃO REFORMA E MANUTENÇÃO DE ESCRITÓRIO - OBRA", "servico_pai": "S02544"}, "I019735": {"descricao": "MENSALIDADE DE ALOJAMENTO MODULAR", "servico_pai": "S02544"}, "I013235": {"descricao": "FOSSA SEPTICA / BANHEIRO QUIMICO", "servico_pai": "S05753"}, "I009447": {"descricao": "MATERIAL POÇO ARTESIANO", "servico_pai": "S04314"}, "I009888": {"descricao": "EMPREITEIRO PERFURAÇÃO POÇO ARTESIANO", "servico_pai": "S04314"}, "I004804": {"descricao": "VIGIA / SEGURANÇA DE OBRA", "servico_pai": "S05766"}, "I001266": {"descricao": "EQUIPAMENTOS DE INFORMATICA", "servico_pai": "S05745"}, "I013236": {"descricao": "TELEFONE / INTERNET / ENERGIA / AGUA - OBRA", "servico_pai": "S05745"}, "I013237": {"descricao": "TECNOLOGIA DA INFORMAÇÃO", "servico_pai": "S05745"}, "I003192": {"descricao": "UNIFORMES", "servico_pai": "S02595"}, "I013238": {"descricao": "FERRAMENTAS E EQUIPAMENTOS", "servico_pai": "S02595"}, "I013239": {"descricao": "MATERIAL DE ESCRITÓRIO", "servico_pai": "S02595"}, "I013240": {"descricao": "EQUIPAMENTO DE PROTECÃO INDIVIDUAL E COLETIVA", "servico_pai": "S02595"}, "I009448": {"descricao": "CAFE DA MANHÃ", "servico_pai": "S01899"}, "I002272": {"descricao": "CONTROLE TECNOLÓGICO DE CONCRETO", "servico_pai": "S00837"}, "I001713": {"descricao": "MAPEAMENTO COM DRONE", "servico_pai": "S05746"}, "I013241": {"descricao": "EQUIPE DE TOPOGRAFIA", "servico_pai": "S05746"}, "I013324": {"descricao": "PORTARIA/VIGILÂNCIA - OBRA", "servico_pai": "S05747"}, "I001275": {"descricao": "COMBUSTIVEL", "servico_pai": "S05748"}, "I004807": {"descricao": "ALUGUEL DE VEICULO DE PASSEIO", "servico_pai": "S05748"}, "I004808": {"descricao": "CAMINHÃO PIPA - LOCAÇÃO", "servico_pai": "S05748"}, "I013424": {"descricao": "DESPESAS COM TRANSPORTE – UBER", "servico_pai": "S05748"}, "I020929": {"descricao": "LOCAÇÃO DE EQUIPAMENTO", "servico_pai": "S01041"}, "I009752": {"descricao": "CAIXA DE OBRAS", "servico_pai": "S04257"}, "I006784": {"descricao": "EXECUÇÃO DE LAUDO DE VIZINHANÇA", "servico_pai": "S05767"}, "I013242": {"descricao": "COMPENSAÇÃO AMBIENTAL DA SUPRESSÃO", "servico_pai": "S05767"}, "I019429": {"descricao": "MANUTENÇÃO DE ÁREAS PRÉ-OBRA", "servico_pai": "S05767"}, "I011126": {"descricao": "MANUTENÇÃO DE PLANTIO", "servico_pai": "S05752"}, "I013243": {"descricao": "REFLORESTAMENTO / FORNECIMENTO DE MUDAS", "servico_pai": "S05752"}, "I013244": {"descricao": "CONSULTORIA AMBIENTAL", "servico_pai": "S05752"}, "I002245": {"descricao": "PLANO DE GERENCIAMENTO DE RESÍDUOS", "servico_pai": "S00893"}, "I012012": {"descricao": "EMPREITEIRO ROÇAGEM DE MANUTENÇÃO", "servico_pai": "S05749"}, "I013246": {"descricao": "RETIRADA DE ENTULHOS / DEMOLIÇÕES", "servico_pai": "S05749"}, "I013247": {"descricao": "ABERTURA DE RUAS", "servico_pai": "S05749"}, "I013248": {"descricao": "SUPRESSAO VEGETAL", "servico_pai": "S05749"}, "I013249": {"descricao": "EMPREITEIRO DE TERRAPLANAGEM INTERNA", "servico_pai": "S03369"}, "I013250": {"descricao": "EMPREITEIRO DE TERRAPLANAGEM PISTA DE ACESSO", "servico_pai": "S03369"}, "I008103": {"descricao": "DRENAGEM - MATERIAL", "servico_pai": "S03368"}, "I008127": {"descricao": "EMPREITEIRO DRENAGEM", "servico_pai": "S03368"}, "I008105": {"descricao": "LANÇAMENTOS DRENAGEM - MATERIAL", "servico_pai": "S03725"}, "I008129": {"descricao": "EMPREITEIRO LANÇAMENTOS DRENAGEM", "servico_pai": "S03725"}, "I008104": {"descricao": "BOCA DE LOBO/CHAMINÉS - MATERIAL", "servico_pai": "S03724"}, "I013328": {"descricao": "EMPREITEIRO BOCA DE LOBO /CHAMINÉS", "servico_pai": "S03724"}, "I024034": {"descricao": "GRELHA DE PAVIMENTO", "servico_pai": "S03724"}, "I013255": {"descricao": "EMPREITEIRO DE REDE DE ESGOTO", "servico_pai": "S05743"}, "I013256": {"descricao": "MATERIAIS DE REDE DE ESGOTO", "servico_pai": "S05743"}, "I013258": {"descricao": "EMPREITEIRO ESTAÇÃO ELEVATÓRIA DE ESGOTO/TRATAMENTO DE ESGOTO", "servico_pai": "S05743"}, "I008131": {"descricao": "EMPREITEIRO REDE DE ÁGUA", "servico_pai": "S03726"}, "I012679": {"descricao": "EMPREITEIRO CENTRO DE RESERVAÇÃO", "servico_pai": "S03726"}, "I013261": {"descricao": "MATERIAIS DE REDE DE ÁGUA", "servico_pai": "S03726"}, "I013264": {"descricao": "EMPREITEIRO ADUTORA / POÇO ARTESIANO", "servico_pai": "S03726"}, "I007387": {"descricao": "EMPREITEIRO PARA INSTALAÇÃO GRADIL", "servico_pai": "S05764"}, "I008461": {"descricao": "EMPREITEIRO CERCAMENTO EM GRADIL", "servico_pai": "S05764"}, "I013266": {"descricao": "EMPREITEIRO DE MURO", "servico_pai": "S05764"}, "I013267": {"descricao": "MATERIAIS DE MURO / GRADIL", "servico_pai": "S05764"}, "I002878": {"descricao": "EMPREITEIRO PISO INTERTRAVADO", "servico_pai": "S03740"}, "I008100": {"descricao": "PAVIMENTAÇÃO - MATERIAL", "servico_pai": "S05744"}, "I008101": {"descricao": "PAVIMENTAÇÃO BLOCO INTERTRAVADO - MATERIAL", "servico_pai": "S05744"}, "I008124": {"descricao": "EMPREITEIRO PAVIMENTAÇÃO", "servico_pai": "S05744"}, "I014713": {"descricao": "EMPREITEIRO DE PAVIMENTAÇÃO DE PISTA DE ACESSO", "servico_pai": "S05744"}, "I013269": {"descricao": "EMPREITEIRO MEIO FIO INTERNO", "servico_pai": "S03723"}, "I013270": {"descricao": "EMPREITEIRO DE PINTURA DE MEIO-FIO INTERNO E GRELHAS", "servico_pai": "S03723"}, "I013271": {"descricao": "MEIO FIO - MATERIAL", "servico_pai": "S03723"}, "I013272": {"descricao": "EMPREITEIRO MEIO-FIO EXTERNO", "servico_pai": "S03723"}, "I001934": {"descricao": "ILUMINACAO PUBLICA EXTERNA", "servico_pai": "S03727"}, "I008108": {"descricao": "INSTALAÇÕES ELÉTRICAS - MATERIAL", "servico_pai": "S03727"}, "I013273": {"descricao": "EMPREITEIRO INFRAESTRUTURA ELÉTRICA SUBTERRÂNEA", "servico_pai": "S03727"}, "I013274": {"descricao": "EMPREITEIRO REDE DISTRIBUIÇÃO AÉREA", "servico_pai": "S03727"}, "I013544": {"descricao": "EMPREITEIRO ELETROMECANICA", "servico_pai": "S03727"}, "I001549": {"descricao": "PAISAGISMO - MATERIAL", "servico_pai": "S01041"}, "I002379": {"descricao": "EMPREITEIRO PAISAGISMO", "servico_pai": "S01041"}, "I011024": {"descricao": "MANUTENÇÃO E LIMPEZA DA MATA", "servico_pai": "S01041"}, "I013276": {"descricao": "EMPREITEIRO PLANTIO DE MIX", "servico_pai": "S01041"}, "I024029": {"descricao": "EMPREITEIRO PLANTIO DE GRAMA", "servico_pai": "S01041"}, "I008113": {"descricao": "INSTALAÇÕES DE CFTV - MATERIAL", "servico_pai": "S03732"}, "I008137": {"descricao": "EMPREITEIRO INSTALAÇÕES DE CFTV", "servico_pai": "S03732"}, "I014940": {"descricao": "EMPREITEIRO CAIXA DE PASSAGEM PARA FIBRA ÓPTICA", "servico_pai": "S03732"}, "I008135": {"descricao": "EMPREITEIRO SINALIZAÇÃO", "servico_pai": "S03730"}, "I013281": {"descricao": "EMPREITEIRO SINALIZAÇÃO INTERNO", "servico_pai": "S03730"}, "I003248": {"descricao": "EMPREITEIRO DE ESTRUTURAS METALICAS", "servico_pai": "S03734"}, "I008115": {"descricao": "PORTARIA - MATERIAL", "servico_pai": "S03734"}, "I008138": {"descricao": "EMPREITEIRO ACADEMIA", "servico_pai": "S03734"}, "I013286": {"descricao": "EMPRETEIRO ESTRUTURA DE CONCRETO", "servico_pai": "S03738"}, "I013288": {"descricao": "EMPRETEIRO OBRA FINA", "servico_pai": "S03734"}, "I001148": {"descricao": "MURO DE ARRIMO - MÃO DE OBRA E MATERIAL", "servico_pai": "S03740"}, "I004837": {"descricao": "PLANTIO DE HORTA", "servico_pai": "S03740"}, "I008121": {"descricao": "PRAÇAS - MATERIAL", "servico_pai": "S03740"}, "I008186": {"descricao": "EMPREITEIRO INSTALAÇÕES", "servico_pai": "S03740"}, "I013292": {"descricao": "EMPREITEIRO ESTAÇÃO DE GINÁSTICA", "servico_pai": "S03740"}, "I013293": {"descricao": "EMPREITEIRO PERGOLADOS/DUCHA", "servico_pai": "S03740"}, "I013298": {"descricao": "EMPREITEIRO PET PLACE", "servico_pai": "S03740"}, "I014233": {"descricao": "EMPREITEIRO DE ASSENTAMENTO DE GUARDA CORPO", "servico_pai": "S03740"}, "I013300": {"descricao": "EMPREITEIRO PLAYGROUND", "servico_pai": "S03739"}, "I013301": {"descricao": "EMPREITEIRO BRINQUEDOS", "servico_pai": "S03739"}, "I013302": {"descricao": "EMPREITEIRO CAMPO SOCIETY SINTÉTICO", "servico_pai": "S05760"}, "I013304": {"descricao": "EMPRETEIRO QUADRA DE AREIA", "servico_pai": "S05760"}, "I013305": {"descricao": "EMPREITEIRO QUADRA DE TENIS", "servico_pai": "S05760"}, "I008119": {"descricao": "QUIOSQUE 2 - MATERIAL", "servico_pai": "S03738"}, "I008143": {"descricao": "EMPREITEIRO QUIOSQUE 2", "servico_pai": "S03738"}, "I008122": {"descricao": "PISTA DE COOPER - MATERIAL", "servico_pai": "S03741"}, "I008146": {"descricao": "EMPREITEIRO PISTA DE COOPER", "servico_pai": "S03741"}, "I013313": {"descricao": "EMPREITEIRO DE CALÇADA EXTERNA", "servico_pai": "S05757"}, "I013314": {"descricao": "MATERIAIS DE CALÇADA EXTERNA", "servico_pai": "S05757"}, "I001169": {"descricao": "EMPREITEIRO LIMPEZA FINAL DE OBRA", "servico_pai": "S00449"}, "I011890": {"descricao": "PROJEÇÃO DE GASTOS", "servico_pai": "S05305"}, "V0000005": {"descricao": "LIMPEZA DO TERRENO", "servico_pai": "RJSMIL0004"}, "V0000017": {"descricao": "ABERTURA DE RUAS", "servico_pai": "RJSMIL0004"}, "SR10007": {"descricao": "IMPLANTACAO TOPOGRAFICA", "servico_pai": "RJSMIL0007"}};
 
 function initProjecao() {
-  if (!PROJ_RAW.length) {
+  // v0.58b: verifica se há dados PARA A OBRA ATIVA
+  const _proj = getProjRawObraAtiva();
+  if (!_proj.length) {
     document.getElementById('projChart').innerHTML = '<div style="text-align:center; color:#9ca3af; padding:80px 20px; font-size:14px;">⚠️ Recarregue o CSV da aba <strong>Gestões</strong> usando a barra acima.<br>Os dados mensais não foram pré-carregados.</div>';
     document.getElementById('projKpis').innerHTML = '';
     document.getElementById('projTbody').innerHTML = '';
@@ -5359,7 +5397,9 @@ function calcStatus(diff, planejado, tolerancia) {
 }
 
 function renderProjecao() {
-  if (!PROJ_RAW.length) { initProjecao(); return; }
+  // v0.58b: filtra PROJ_RAW pela obra ativa
+  const PROJ_OBRA = getProjRawObraAtiva();
+  if (!PROJ_OBRA.length) { initProjecao(); return; }
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
@@ -5368,7 +5408,7 @@ function renderProjecao() {
   // Agregar por serviço e por insumo
   const porServico = {};
   const porInsumo = {}; // chave "servico|insumo"
-  PROJ_RAW.forEach(r => {
+  PROJ_OBRA.forEach(r => {
     if (!porServico[r.servico]) porServico[r.servico] = {};
     porServico[r.servico][r.mes] = (porServico[r.servico][r.mes] || 0) + r.valor;
     const k = r.servico + '|' + r.insumo;
@@ -5577,7 +5617,7 @@ function flowsPorInsumo(insumo) {
 function flowsPorServico(cod_servico) {
   if (!cod_servico) return null;
   // pegar todos os insumos desse serviço a partir do PROJ_RAW
-  const insumosSet = new Set(PROJ_RAW.filter(r => r.servico === cod_servico).map(r => r.insumo));
+  const insumosSet = new Set(getProjRawObraAtiva().filter(r => r.servico === cod_servico).map(r => r.insumo));
   let totalN = 0, totalE = 0, totalS = 0, valE = 0, valS = 0, refl = 0;
   insumosSet.forEach(ins => {
     const info = flowsPorInsumo(ins);
@@ -5969,12 +6009,12 @@ function openProjDrill(servico, insumo) {
   let meses = {};
   let titulo, subtitulo;
   if (insumo) {
-    PROJ_RAW.filter(r => r.servico === servico && r.insumo === insumo)
+    getProjRawObraAtiva().filter(r => r.servico === servico && r.insumo === insumo)
       .forEach(r => { meses[r.mes] = (meses[r.mes]||0) + r.valor; });
     titulo = `${servico} · ${insumo}`;
     subtitulo = descInsumo(insumo);
   } else {
-    PROJ_RAW.filter(r => r.servico === servico)
+    getProjRawObraAtiva().filter(r => r.servico === servico)
       .forEach(r => { meses[r.mes] = (meses[r.mes]||0) + r.valor; });
     titulo = servico;
     subtitulo = descServico(servico);
@@ -6072,7 +6112,7 @@ function renderMovimentacoesProjecaoSection(servico, insumo) {
   if (insumo) {
     alvos = [insumo];
   } else if (servico) {
-    alvos = [...new Set(PROJ_RAW.filter(r => r.servico === servico).map(r => r.insumo))];
+    alvos = [...new Set(getProjRawObraAtiva().filter(r => r.servico === servico).map(r => r.insumo))];
   }
   if (!alvos.length) return '';
   // Excluir o próprio insumo controlado da lista de "outros impactados"
@@ -6160,7 +6200,7 @@ function renderFlowsRefletidosSection(servico, insumo) {
       return DATA_F.filter(f => filtroStatus(f) && f.dep !== 'Cancelado' && (f.insumo_planejamento === insumo || f.insumo_remanejamento === insumo))
                    .map(f => ({ ...f, _direcao: f.insumo_planejamento === insumo ? 'entrada' : 'saida' }));
     } else {
-      const insumosSet = new Set(PROJ_RAW.filter(r => r.servico === servico).map(r => r.insumo));
+      const insumosSet = new Set(getProjRawObraAtiva().filter(r => r.servico === servico).map(r => r.insumo));
       return DATA_F.filter(f => filtroStatus(f) && f.dep !== 'Cancelado' && (insumosSet.has(f.insumo_planejamento) || insumosSet.has(f.insumo_remanejamento)))
                    .map(f => {
                      const ehEntrada = insumosSet.has(f.insumo_planejamento);
@@ -6900,10 +6940,30 @@ const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
 
 let HISTORICO = {"gestoes": ["GESTÃO 11-2025", "GESTÃO 03-2026", "GESTÃO 04-2026", "GESTÃO 05-2026", "Atual"], "items": [{"key": "42-21O-1-31005-S05765-ADM5189-01.01.01.02", "servico": "S05765", "insumo": "ADM5189", "item_cod": "01.01.01.02", "GESTÃO 11-2025": 1614494.42, "GESTÃO 03-2026": 1912699.47, "GESTÃO 04-2026": 1912699.53, "GESTÃO 05-2026": 1923173.5, "Atual": 1923173.5}, {"key": "42-21O-1-31005-S05765-CONDH271-01.01.01.02", "servico": "S05765", "insumo": "CONDH271", "item_cod": "01.01.01.02", "GESTÃO 11-2025": 2345084.73, "GESTÃO 03-2026": 2349747.44, "GESTÃO 04-2026": 2349747.42, "GESTÃO 05-2026": 2370063.71, "Atual": 2370063.71}, {"key": "42-21O-1-31005-S05765-I002226-01.01.01.02", "servico": "S05765", "insumo": "I002226", "item_cod": "01.01.01.02", "GESTÃO 11-2025": 1076231.52, "GESTÃO 03-2026": 1076231.52, "GESTÃO 04-2026": 826927.84, "GESTÃO 05-2026": 826927.84, "Atual": 826927.84}, {"key": "42-21O-1-31005-S05751-I013329-01.01.02", "servico": "S05751", "insumo": "I013329", "item_cod": "01.01.02", "GESTÃO 11-2025": 33675.72, "GESTÃO 03-2026": 33675.72, "GESTÃO 04-2026": 33675.72, "GESTÃO 05-2026": 33675.72, "Atual": 33675.72}, {"key": "42-21O-1-31005-S02544-I002242-01.01.02.02", "servico": "S02544", "insumo": "I002242", "item_cod": "01.01.02.02", "GESTÃO 11-2025": 198000.0, "GESTÃO 03-2026": 218418.67, "GESTÃO 04-2026": 218418.67, "GESTÃO 05-2026": 213305.91, "Atual": 211305.91}, {"key": "42-21O-1-31005-S02544-I013233-01.01.02.02", "servico": "S02544", "insumo": "I013233", "item_cod": "01.01.02.02", "GESTÃO 11-2025": 360205.86, "GESTÃO 03-2026": 360476.3, "GESTÃO 04-2026": 360476.3, "GESTÃO 05-2026": 360476.3, "Atual": 360476.3}, {"key": "42-21O-1-31005-S02544-I013234-01.01.02.02", "servico": "S02544", "insumo": "I013234", "item_cod": "01.01.02.02", "GESTÃO 11-2025": 38487.08, "GESTÃO 03-2026": 37908.09, "GESTÃO 04-2026": 37908.09, "GESTÃO 05-2026": 37266.19, "Atual": 39266.19}, {"key": "42-21O-1-31005-S05753-I013235-01.01.02.03", "servico": "S05753", "insumo": "I013235", "item_cod": "01.01.02.03", "GESTÃO 11-2025": 103654.08, "GESTÃO 03-2026": 103654.08, "GESTÃO 04-2026": 103654.08, "GESTÃO 05-2026": 113494.08, "Atual": 113494.08}, {"key": "42-21O-1-31005-S05766-I004804-01.01.02.05", "servico": "S05766", "insumo": "I004804", "item_cod": "01.01.02.05", "GESTÃO 11-2025": 772215.48, "GESTÃO 03-2026": 758482.11, "GESTÃO 04-2026": 758482.11, "GESTÃO 05-2026": 758482.11, "Atual": 758482.11}, {"key": "42-21O-1-31005-S05745-I013236-01.01.03.01", "servico": "S05745", "insumo": "I013236", "item_cod": "01.01.03.01", "GESTÃO 11-2025": 143488.7, "GESTÃO 03-2026": 143488.7, "GESTÃO 04-2026": 143488.7, "GESTÃO 05-2026": 133325.51, "Atual": 133325.51}, {"key": "42-21O-1-31005-S05745-I013237-01.01.03.01", "servico": "S05745", "insumo": "I013237", "item_cod": "01.01.03.01", "GESTÃO 11-2025": 119514.32, "GESTÃO 03-2026": 118629.08, "GESTÃO 04-2026": 118629.08, "GESTÃO 05-2026": 120063.12, "Atual": 120063.12}, {"key": "42-21O-1-31005-S02595-I003192-01.01.03.02", "servico": "S02595", "insumo": "I003192", "item_cod": "01.01.03.02", "GESTÃO 11-2025": 3950.0, "GESTÃO 03-2026": 3895.0, "GESTÃO 04-2026": 3895.0, "GESTÃO 05-2026": 3895.0, "Atual": 3895.0}, {"key": "42-21O-1-31005-S02595-I013238-01.01.03.02", "servico": "S02595", "insumo": "I013238", "item_cod": "01.01.03.02", "GESTÃO 11-2025": 22289.83, "GESTÃO 03-2026": 22289.83, "GESTÃO 04-2026": 22289.83, "GESTÃO 05-2026": 19589.22, "Atual": 19589.22}, {"key": "42-21O-1-31005-S02595-I013239-01.01.03.02", "servico": "S02595", "insumo": "I013239", "item_cod": "01.01.03.02", "GESTÃO 11-2025": 13000.0, "GESTÃO 03-2026": 18000.0, "GESTÃO 04-2026": 18000.0, "GESTÃO 05-2026": 17116.4, "Atual": 17116.4}, {"key": "42-21O-1-31005-S02595-I013240-01.01.03.02", "servico": "S02595", "insumo": "I013240", "item_cod": "01.01.03.02", "GESTÃO 11-2025": 65300.89, "GESTÃO 03-2026": 65355.87, "GESTÃO 04-2026": 65355.86, "GESTÃO 05-2026": 65781.33, "Atual": 65781.33}, {"key": "42-21O-1-31005-S01899-I009448-01.01.03.03", "servico": "S01899", "insumo": "I009448", "item_cod": "01.01.03.03", "GESTÃO 11-2025": 316465.27, "GESTÃO 03-2026": 316465.2, "GESTÃO 04-2026": 316465.2, "GESTÃO 05-2026": 316181.84, "Atual": 316181.84}, {"key": "42-21O-1-31005-S00837-I002272-01.01.03.04", "servico": "S00837", "insumo": "I002272", "item_cod": "01.01.03.04", "GESTÃO 11-2025": 668042.53, "GESTÃO 03-2026": 565519.66, "GESTÃO 04-2026": 565519.66, "GESTÃO 05-2026": 553508.16, "Atual": 553508.16}, {"key": "42-21O-1-31005-S05746-I001713-01.01.03.05", "servico": "S05746", "insumo": "I001713", "item_cod": "01.01.03.05", "GESTÃO 11-2025": 104000.0, "GESTÃO 03-2026": 104000.0, "GESTÃO 04-2026": 109320.0, "GESTÃO 05-2026": 109320.0, "Atual": 109320.0}, {"key": "42-21O-1-31005-S05746-I013241-01.01.03.05", "servico": "S05746", "insumo": "I013241", "item_cod": "01.01.03.05", "GESTÃO 11-2025": 935389.2, "GESTÃO 03-2026": 935398.2, "GESTÃO 04-2026": 935398.2, "GESTÃO 05-2026": 934743.07, "Atual": 934743.07}, {"key": "42-21O-1-31005-S05748-I001275-01.01.03.07", "servico": "S05748", "insumo": "I001275", "item_cod": "01.01.03.07", "GESTÃO 11-2025": 222436.09, "GESTÃO 03-2026": 222435.97, "GESTÃO 04-2026": 222435.97, "GESTÃO 05-2026": 215995.65, "Atual": 215957.65}, {"key": "42-21O-1-31005-S05748-I004807-01.01.03.07", "servico": "S05748", "insumo": "I004807", "item_cod": "01.01.03.07", "GESTÃO 11-2025": 226124.89, "GESTÃO 03-2026": 226125.0, "GESTÃO 04-2026": 226125.0, "GESTÃO 05-2026": 220776.27, "Atual": 220776.27}, {"key": "42-21O-1-31005-S05748-I004808-01.01.03.07", "servico": "S05748", "insumo": "I004808", "item_cod": "01.01.03.07", "GESTÃO 11-2025": 524107.92, "GESTÃO 03-2026": 572000.0, "GESTÃO 04-2026": 572000.0, "GESTÃO 05-2026": 577400.0, "Atual": 577399.99}, {"key": "42-21O-1-31005-S05748-I013424-01.01.03.07", "servico": "S05748", "insumo": "I013424", "item_cod": "01.01.03.07", "GESTÃO 11-2025": 180.34, "GESTÃO 03-2026": 251.75, "GESTÃO 04-2026": 251.75, "GESTÃO 05-2026": 251.75, "Atual": 289.75}, {"key": "42-21O-1-31005-S05748-I020929-01.01.03.07", "servico": "S05748", "insumo": "I020929", "item_cod": "01.01.03.07", "GESTÃO 11-2025": 224584.2, "GESTÃO 03-2026": 227084.2, "GESTÃO 04-2026": 227084.2, "GESTÃO 05-2026": 227084.2, "Atual": 227084.2}, {"key": "42-21O-1-31005-S04257-I009752-01.01.22", "servico": "S04257", "insumo": "I009752", "item_cod": "01.01.22", "GESTÃO 11-2025": 0, "GESTÃO 03-2026": 2500.01, "GESTÃO 04-2026": 2500.01, "GESTÃO 05-2026": 2500.01, "Atual": 2500.01}, {"key": "42-21O-1-31005-S05767-I006784-01.02.01.01", "servico": "S05767", "insumo": "I006784", "item_cod": "01.02.01.01", "GESTÃO 11-2025": 26845.0, "GESTÃO 03-2026": 26845.0, "GESTÃO 04-2026": 26845.0, "GESTÃO 05-2026": 26845.0, "Atual": 26845.0}, {"key": "42-21O-1-31005-S05767-I019429-01.02.01.01", "servico": "S05767", "insumo": "I019429", "item_cod": "01.02.01.01", "GESTÃO 11-2025": 16119.7, "GESTÃO 03-2026": 16119.7, "GESTÃO 04-2026": 16119.7, "GESTÃO 05-2026": 16119.7, "Atual": 16119.7}, {"key": "42-21O-1-31005-S05752-I013243-01.02.01.02", "servico": "S05752", "insumo": "I013243", "item_cod": "01.02.01.02", "GESTÃO 11-2025": 245239.97, "GESTÃO 03-2026": 204181.35, "GESTÃO 04-2026": 204181.35, "GESTÃO 05-2026": 204181.35, "Atual": 204181.35}, {"key": "42-21O-1-31005-S05752-I013244-01.02.01.02", "servico": "S05752", "insumo": "I013244", "item_cod": "01.02.01.02", "GESTÃO 11-2025": 74952.54, "GESTÃO 03-2026": 74952.54, "GESTÃO 04-2026": 74952.54, "GESTÃO 05-2026": 74952.54, "Atual": 74952.54}, {"key": "42-21O-1-31005-S00893-I002245-01.02.01.03", "servico": "S00893", "insumo": "I002245", "item_cod": "01.02.01.03", "GESTÃO 11-2025": 49886.79, "GESTÃO 03-2026": 49886.79, "GESTÃO 04-2026": 49886.79, "GESTÃO 05-2026": 46236.79, "Atual": 46236.79}, {"key": "42-21O-1-31005-S05749-I012012-01.02.02.01", "servico": "S05749", "insumo": "I012012", "item_cod": "01.02.02.01", "GESTÃO 11-2025": 535753.77, "GESTÃO 03-2026": 517756.73, "GESTÃO 04-2026": 517756.73, "GESTÃO 05-2026": 517756.73, "Atual": 517756.75}, {"key": "42-21O-1-31005-S05749-I013247-01.02.02.01", "servico": "S05749", "insumo": "I013247", "item_cod": "01.02.02.01", "GESTÃO 11-2025": 36357.34, "GESTÃO 03-2026": 36357.34, "GESTÃO 04-2026": 36357.34, "GESTÃO 05-2026": 36357.34, "Atual": 36357.34}, {"key": "42-21O-1-31005-S05749-I013248-01.02.02.01", "servico": "S05749", "insumo": "I013248", "item_cod": "01.02.02.01", "GESTÃO 11-2025": 172419.34, "GESTÃO 03-2026": 179627.34, "GESTÃO 04-2026": 179627.34, "GESTÃO 05-2026": 179627.34, "Atual": 179627.34}, {"key": "42-21O-1-31005-S03369-I013249-01.02.03.01", "servico": "S03369", "insumo": "I013249", "item_cod": "01.02.03.01", "GESTÃO 11-2025": 5631095.1, "GESTÃO 03-2026": 5287061.17, "GESTÃO 04-2026": 5287061.17, "GESTÃO 05-2026": 5287061.17, "Atual": 5287061.17}, {"key": "42-21O-1-31005-S03369-I013250-01.02.03.01", "servico": "S03369", "insumo": "I013250", "item_cod": "01.02.03.01", "GESTÃO 11-2025": 398612.59, "GESTÃO 03-2026": 398612.59, "GESTÃO 04-2026": 398612.59, "GESTÃO 05-2026": 398612.59, "Atual": 398612.59}, {"key": "42-21O-1-31005-S03368-I008103-01.02.04.01", "servico": "S03368", "insumo": "I008103", "item_cod": "01.02.04.01", "GESTÃO 11-2025": 945680.91, "GESTÃO 03-2026": 945680.91, "GESTÃO 04-2026": 945680.91, "GESTÃO 05-2026": 945680.91, "Atual": 945680.91}, {"key": "42-21O-1-31005-S03368-I008127-01.02.04.01", "servico": "S03368", "insumo": "I008127", "item_cod": "01.02.04.01", "GESTÃO 11-2025": 2314914.72, "GESTÃO 03-2026": 2166450.91, "GESTÃO 04-2026": 2166450.91, "GESTÃO 05-2026": 2166450.91, "Atual": 2166450.91}, {"key": "42-21O-1-31005-S03725-I008105-01.02.04.02", "servico": "S03725", "insumo": "I008105", "item_cod": "01.02.04.02", "GESTÃO 11-2025": 130820.21, "GESTÃO 03-2026": 130820.21, "GESTÃO 04-2026": 130820.21, "GESTÃO 05-2026": 130820.21, "Atual": 130820.21}, {"key": "42-21O-1-31005-S03725-I008129-01.02.04.02", "servico": "S03725", "insumo": "I008129", "item_cod": "01.02.04.02", "GESTÃO 11-2025": 897910.3, "GESTÃO 03-2026": 861204.94, "GESTÃO 04-2026": 861204.94, "GESTÃO 05-2026": 861204.95, "Atual": 861204.95}, {"key": "42-21O-1-31005-S03724-I008104-01.02.04.03", "servico": "S03724", "insumo": "I008104", "item_cod": "01.02.04.03", "GESTÃO 11-2025": 183464.28, "GESTÃO 03-2026": 183464.26, "GESTÃO 04-2026": 183464.26, "GESTÃO 05-2026": 183464.26, "Atual": 183464.26}, {"key": "42-21O-1-31005-S03724-I013328-01.02.04.03", "servico": "S03724", "insumo": "I013328", "item_cod": "01.02.04.03", "GESTÃO 11-2025": 511415.97, "GESTÃO 03-2026": 511415.97, "GESTÃO 04-2026": 511415.97, "GESTÃO 05-2026": 511415.97, "Atual": 511415.97}, {"key": "42-21O-1-31005-S03724-I024034-01.02.04.03", "servico": "S03724", "insumo": "I024034", "item_cod": "01.02.04.03", "GESTÃO 11-2025": 120842.4, "GESTÃO 03-2026": 120842.4, "GESTÃO 04-2026": 120842.4, "GESTÃO 05-2026": 120842.4, "Atual": 120842.4}, {"key": "42-21O-1-31005-S03368-I008103-01.02.05.01", "servico": "S03368", "insumo": "I008103", "item_cod": "01.02.05.01", "GESTÃO 11-2025": 133398.69, "GESTÃO 03-2026": 133398.69, "GESTÃO 04-2026": 133398.69, "GESTÃO 05-2026": 133398.69, "Atual": 133398.69}, {"key": "42-21O-1-31005-S03368-I008127-01.02.05.01", "servico": "S03368", "insumo": "I008127", "item_cod": "01.02.05.01", "GESTÃO 11-2025": 240000.05, "GESTÃO 03-2026": 240000.05, "GESTÃO 04-2026": 240000.05, "GESTÃO 05-2026": 240000.05, "Atual": 240000.05}, {"key": "42-21O-1-31005-S03725-I008129-01.02.05.02", "servico": "S03725", "insumo": "I008129", "item_cod": "01.02.05.02", "GESTÃO 11-2025": 130000.0, "GESTÃO 03-2026": 130000.0, "GESTÃO 04-2026": 130000.0, "GESTÃO 05-2026": 130000.0, "Atual": 130000.0}, {"key": "42-21O-1-31005-S03724-I008104-01.02.05.03", "servico": "S03724", "insumo": "I008104", "item_cod": "01.02.05.03", "GESTÃO 11-2025": 5406.48, "GESTÃO 03-2026": 35406.48, "GESTÃO 04-2026": 35406.48, "GESTÃO 05-2026": 35406.48, "Atual": 35406.48}, {"key": "42-21O-1-31005-S03724-I013328-01.02.05.03", "servico": "S03724", "insumo": "I013328", "item_cod": "01.02.05.03", "GESTÃO 11-2025": 82144.53, "GESTÃO 03-2026": 82144.53, "GESTÃO 04-2026": 82144.53, "GESTÃO 05-2026": 82144.53, "Atual": 82144.53}, {"key": "42-21O-1-31005-S05743-I013255-01.02.06.01", "servico": "S05743", "insumo": "I013255", "item_cod": "01.02.06.01", "GESTÃO 11-2025": 444755.76, "GESTÃO 03-2026": 444755.76, "GESTÃO 04-2026": 444755.76, "GESTÃO 05-2026": 444755.76, "Atual": 444755.75}, {"key": "42-21O-1-31005-S05743-I013256-01.02.06.01", "servico": "S05743", "insumo": "I013256", "item_cod": "01.02.06.01", "GESTÃO 11-2025": 295970.89, "GESTÃO 03-2026": 296431.8, "GESTÃO 04-2026": 296431.81, "GESTÃO 05-2026": 296431.81, "Atual": 296431.81}, {"key": "42-21O-1-31005-S03726-I008131-01.02.07.01", "servico": "S03726", "insumo": "I008131", "item_cod": "01.02.07.01", "GESTÃO 11-2025": 452340.03, "GESTÃO 03-2026": 372121.1, "GESTÃO 04-2026": 372121.11, "GESTÃO 05-2026": 372121.11, "Atual": 372121.11}, {"key": "42-21O-1-31005-S03726-I013261-01.02.07.01", "servico": "S03726", "insumo": "I013261", "item_cod": "01.02.07.01", "GESTÃO 11-2025": 267338.93, "GESTÃO 03-2026": 232503.69, "GESTÃO 04-2026": 233721.24, "GESTÃO 05-2026": 233721.24, "Atual": 233721.24}, {"key": "42-21O-1-31005-S03726-I013264-01.02.07.01", "servico": "S03726", "insumo": "I013264", "item_cod": "01.02.07.01", "GESTÃO 11-2025": 2191265.86, "GESTÃO 03-2026": 2190855.86, "GESTÃO 04-2026": 2190855.86, "GESTÃO 05-2026": 2190855.86, "Atual": 2190855.86}, {"key": "42-21O-1-31005-S05764-I007387-01.02.08.01", "servico": "S05764", "insumo": "I007387", "item_cod": "01.02.08.01", "GESTÃO 11-2025": 1096228.8, "GESTÃO 03-2026": 1032049.0, "GESTÃO 04-2026": 1032049.0, "GESTÃO 05-2026": 1032049.0, "Atual": 1032049.0}, {"key": "42-21O-1-31005-S05764-I008461-01.02.08.01", "servico": "S05764", "insumo": "I008461", "item_cod": "01.02.08.01", "GESTÃO 11-2025": 262473.66, "GESTÃO 03-2026": 262473.66, "GESTÃO 04-2026": 262473.66, "GESTÃO 05-2026": 262473.66, "Atual": 262473.66}, {"key": "42-21O-1-31005-S05764-I013266-01.02.08.01", "servico": "S05764", "insumo": "I013266", "item_cod": "01.02.08.01", "GESTÃO 11-2025": 1053352.89, "GESTÃO 03-2026": 990797.51, "GESTÃO 04-2026": 990797.51, "GESTÃO 05-2026": 990797.51, "Atual": 990797.5}, {"key": "42-21O-1-31005-S05764-I013267-01.02.08.01", "servico": "S05764", "insumo": "I013267", "item_cod": "01.02.08.01", "GESTÃO 11-2025": 402309.53, "GESTÃO 03-2026": 298561.92, "GESTÃO 04-2026": 299595.92, "GESTÃO 05-2026": 299595.92, "Atual": 299595.92}, {"key": "42-21O-1-31005-S05744-I002878-01.02.09.01", "servico": "S05744", "insumo": "I002878", "item_cod": "01.02.09.01", "GESTÃO 11-2025": 834104.82, "GESTÃO 03-2026": 834475.71, "GESTÃO 04-2026": 834475.76, "GESTÃO 05-2026": 834475.76, "Atual": 834475.76}, {"key": "42-21O-1-31005-S05744-I008100-01.02.09.01", "servico": "S05744", "insumo": "I008100", "item_cod": "01.02.09.01", "GESTÃO 11-2025": 178613.38, "GESTÃO 03-2026": 178613.38, "GESTÃO 04-2026": 178613.38, "GESTÃO 05-2026": 178613.38, "Atual": 178613.38}, {"key": "42-21O-1-31005-S05744-I008101-01.02.09.01", "servico": "S05744", "insumo": "I008101", "item_cod": "01.02.09.01", "GESTÃO 11-2025": 2594236.47, "GESTÃO 03-2026": 2587887.7, "GESTÃO 04-2026": 2587887.7, "GESTÃO 05-2026": 2587887.7, "Atual": 2587887.7}, {"key": "42-21O-1-31005-S05744-I008124-01.02.09.01", "servico": "S05744", "insumo": "I008124", "item_cod": "01.02.09.01", "GESTÃO 11-2025": 1332330.49, "GESTÃO 03-2026": 1355844.7, "GESTÃO 04-2026": 1355844.7, "GESTÃO 05-2026": 1355844.7, "Atual": 1355844.7}, {"key": "42-21O-1-31005-S05744-I014713-01.02.09.01", "servico": "S05744", "insumo": "I014713", "item_cod": "01.02.09.01", "GESTÃO 11-2025": 1192642.42, "GESTÃO 03-2026": 1189716.09, "GESTÃO 04-2026": 1189715.09, "GESTÃO 05-2026": 1189715.09, "Atual": 1189715.09}, {"key": "42-21O-1-31005-S03723-I013269-01.02.10.01", "servico": "S03723", "insumo": "I013269", "item_cod": "01.02.10.01", "GESTÃO 11-2025": 322619.12, "GESTÃO 03-2026": 339664.08, "GESTÃO 04-2026": 339664.08, "GESTÃO 05-2026": 339664.08, "Atual": 339664.08}, {"key": "42-21O-1-31005-S03723-I013270-01.02.10.01", "servico": "S03723", "insumo": "I013270", "item_cod": "01.02.10.01", "GESTÃO 11-2025": 52364.84, "GESTÃO 03-2026": 54388.55, "GESTÃO 04-2026": 54388.55, "GESTÃO 05-2026": 54388.55, "Atual": 54388.55}, {"key": "42-21O-1-31005-S03723-I013271-01.02.10.01", "servico": "S03723", "insumo": "I013271", "item_cod": "01.02.10.01", "GESTÃO 11-2025": 794617.22, "GESTÃO 03-2026": 794620.22, "GESTÃO 04-2026": 794620.22, "GESTÃO 05-2026": 794620.22, "Atual": 794620.22}, {"key": "42-21O-1-31005-S03723-I013272-01.02.10.01", "servico": "S03723", "insumo": "I013272", "item_cod": "01.02.10.01", "GESTÃO 11-2025": 240185.61, "GESTÃO 03-2026": 240185.61, "GESTÃO 04-2026": 240185.61, "GESTÃO 05-2026": 240185.61, "Atual": 240185.61}, {"key": "42-21O-1-31005-S03727-I001934-01.02.11.01", "servico": "S03727", "insumo": "I001934", "item_cod": "01.02.11.01", "GESTÃO 11-2025": 961734.87, "GESTÃO 03-2026": 786521.37, "GESTÃO 04-2026": 786521.37, "GESTÃO 05-2026": 786521.37, "Atual": 786521.37}, {"key": "42-21O-1-31005-S03727-I008108-01.02.11.01", "servico": "S03727", "insumo": "I008108", "item_cod": "01.02.11.01", "GESTÃO 11-2025": 1989568.06, "GESTÃO 03-2026": 1989568.05, "GESTÃO 04-2026": 1989368.05, "GESTÃO 05-2026": 1989368.06, "Atual": 1989368.06}, {"key": "42-21O-1-31005-S03727-I013273-01.02.11.01", "servico": "S03727", "insumo": "I013273", "item_cod": "01.02.11.01", "GESTÃO 11-2025": 2876305.36, "GESTÃO 03-2026": 2290516.83, "GESTÃO 04-2026": 2290516.79, "GESTÃO 05-2026": 2290516.77, "Atual": 2290516.77}, {"key": "42-21O-1-31005-S03727-I013544-01.02.11.01", "servico": "S03727", "insumo": "I013544", "item_cod": "01.02.11.01", "GESTÃO 11-2025": 4144517.28, "GESTÃO 03-2026": 4144517.3, "GESTÃO 04-2026": 4144517.29, "GESTÃO 05-2026": 4144518.67, "Atual": 4144518.67}, {"key": "42-21O-1-31005-S01041-I001549-01.02.12.01", "servico": "S01041", "insumo": "I001549", "item_cod": "01.02.12.01", "GESTÃO 11-2025": 880032.0, "GESTÃO 03-2026": 880031.96, "GESTÃO 04-2026": 880031.96, "GESTÃO 05-2026": 880031.96, "Atual": 880031.96}, {"key": "42-21O-1-31005-S01041-I002379-01.02.12.01", "servico": "S01041", "insumo": "I002379", "item_cod": "01.02.12.01", "GESTÃO 11-2025": 332475.67, "GESTÃO 03-2026": 230169.75, "GESTÃO 04-2026": 230169.75, "GESTÃO 05-2026": 230169.75, "Atual": 230169.75}, {"key": "42-21O-1-31005-S01041-I011024-01.02.12.01", "servico": "S01041", "insumo": "I011024", "item_cod": "01.02.12.01", "GESTÃO 11-2025": 92563.44, "GESTÃO 03-2026": 92563.44, "GESTÃO 04-2026": 92563.44, "GESTÃO 05-2026": 92563.44, "Atual": 92563.44}, {"key": "42-21O-1-31005-S01041-I013276-01.02.12.01", "servico": "S01041", "insumo": "I013276", "item_cod": "01.02.12.01", "GESTÃO 11-2025": 87543.99, "GESTÃO 03-2026": 87543.99, "GESTÃO 04-2026": 87543.99, "GESTÃO 05-2026": 87543.99, "Atual": 87543.99}, {"key": "42-21O-1-31005-S01041-I020929-01.02.12.01", "servico": "S01041", "insumo": "I020929", "item_cod": "01.02.12.01", "GESTÃO 11-2025": 549308.0, "GESTÃO 03-2026": 569570.0, "GESTÃO 04-2026": 569570.0, "GESTÃO 05-2026": 569570.0, "Atual": 569570.0}, {"key": "42-21O-1-31005-S01041-I024029-01.02.12.01", "servico": "S01041", "insumo": "I024029", "item_cod": "01.02.12.01", "GESTÃO 11-2025": 1044698.5, "GESTÃO 03-2026": 1044698.47, "GESTÃO 04-2026": 1044698.47, "GESTÃO 05-2026": 1044698.47, "Atual": 1044698.47}, {"key": "42-21O-1-31005-S03732-I008113-01.02.13.01", "servico": "S03732", "insumo": "I008113", "item_cod": "01.02.13.01", "GESTÃO 11-2025": 214354.81, "GESTÃO 03-2026": 218173.87, "GESTÃO 04-2026": 218173.87, "GESTÃO 05-2026": 218173.86, "Atual": 218173.86}, {"key": "42-21O-1-31005-S03732-I008137-01.02.13.01", "servico": "S03732", "insumo": "I008137", "item_cod": "01.02.13.01", "GESTÃO 11-2025": 1200000.0, "GESTÃO 03-2026": 1200060.25, "GESTÃO 04-2026": 1200060.25, "GESTÃO 05-2026": 1200060.25, "Atual": 1200060.25}, {"key": "42-21O-1-31005-S03732-I014940-01.02.13.01", "servico": "S03732", "insumo": "I014940", "item_cod": "01.02.13.01", "GESTÃO 11-2025": 477401.36, "GESTÃO 03-2026": 428661.6, "GESTÃO 04-2026": 428661.6, "GESTÃO 05-2026": 428661.6, "Atual": 428661.6}, {"key": "42-21O-1-31005-S03730-I008135-01.02.14.01", "servico": "S03730", "insumo": "I008135", "item_cod": "01.02.14.01", "GESTÃO 11-2025": 108404.27, "GESTÃO 03-2026": 14482.5, "GESTÃO 04-2026": 14482.5, "GESTÃO 05-2026": 14482.5, "Atual": 14482.5}, {"key": "42-21O-1-31005-S03730-I013281-01.02.14.01", "servico": "S03730", "insumo": "I013281", "item_cod": "01.02.14.01", "GESTÃO 11-2025": 0, "GESTÃO 03-2026": 93921.77, "GESTÃO 04-2026": 93921.77, "GESTÃO 05-2026": 93921.77, "Atual": 93921.77}, {"key": "42-21O-1-31005-S03734-I008115-01.03.01.01", "servico": "S03734", "insumo": "I008115", "item_cod": "01.03.01.01", "GESTÃO 11-2025": 3353929.0, "GESTÃO 03-2026": 3353928.96, "GESTÃO 04-2026": 3353928.96, "GESTÃO 05-2026": 3353928.96, "Atual": 3353928.96}, {"key": "42-21O-1-31005-S03734-I008138-01.03.01.01", "servico": "S03734", "insumo": "I008138", "item_cod": "01.03.01.01", "GESTÃO 11-2025": 1720325.45, "GESTÃO 03-2026": 1720325.41, "GESTÃO 04-2026": 1720325.41, "GESTÃO 05-2026": 1720325.41, "Atual": 1720325.41}, {"key": "42-21O-1-31005-S03740-I001148-01.03.02.01", "servico": "S03740", "insumo": "I001148", "item_cod": "01.03.02.01", "GESTÃO 11-2025": 0, "GESTÃO 03-2026": 1636391.22, "GESTÃO 04-2026": 1636391.22, "GESTÃO 05-2026": 1636391.22, "Atual": 1636391.22}, {"key": "42-21O-1-31005-S03740-I002878-01.03.02.01", "servico": "S03740", "insumo": "I002878", "item_cod": "01.03.02.01", "GESTÃO 11-2025": 1636391.22, "GESTÃO 03-2026": 0, "GESTÃO 04-2026": 0, "GESTÃO 05-2026": 0, "Atual": 0}, {"key": "42-21O-1-31005-S03740-I008121-01.03.02.01", "servico": "S03740", "insumo": "I008121", "item_cod": "01.03.02.01", "GESTÃO 11-2025": 3776035.8, "GESTÃO 03-2026": 3776035.8, "GESTÃO 04-2026": 3776035.75, "GESTÃO 05-2026": 3776035.75, "Atual": 3776035.75}, {"key": "42-21O-1-31005-S03740-I013293-01.03.02.01", "servico": "S03740", "insumo": "I013293", "item_cod": "01.03.02.01", "GESTÃO 11-2025": 0, "GESTÃO 03-2026": 13990.0, "GESTÃO 04-2026": 13990.0, "GESTÃO 05-2026": 13990.0, "Atual": 13990.0}, {"key": "42-21O-1-31005-S03740-I013298-01.03.02.01", "servico": "S03740", "insumo": "I013298", "item_cod": "01.03.02.01", "GESTÃO 11-2025": 13990.0, "GESTÃO 03-2026": 0, "GESTÃO 04-2026": 0, "GESTÃO 05-2026": 0, "Atual": 0}, {"key": "42-21O-1-31005-S03739-I013300-01.03.03.01", "servico": "S03739", "insumo": "I013300", "item_cod": "01.03.03.01", "GESTÃO 11-2025": 264843.28, "GESTÃO 03-2026": 264843.28, "GESTÃO 04-2026": 264843.28, "GESTÃO 05-2026": 264843.28, "Atual": 264843.28}, {"key": "42-21O-1-31005-S05760-I013302-01.03.04.01", "servico": "S05760", "insumo": "I013302", "item_cod": "01.03.04.01", "GESTÃO 11-2025": 452521.14, "GESTÃO 03-2026": 452521.14, "GESTÃO 04-2026": 452521.14, "GESTÃO 05-2026": 452521.14, "Atual": 452521.14}, {"key": "42-21O-1-31005-S05760-I013304-01.03.04.01", "servico": "S05760", "insumo": "I013304", "item_cod": "01.03.04.01", "GESTÃO 11-2025": 327571.4, "GESTÃO 03-2026": 327571.38, "GESTÃO 04-2026": 327571.38, "GESTÃO 05-2026": 327571.38, "Atual": 327571.38}, {"key": "42-21O-1-31005-S05760-I013305-01.03.04.01", "servico": "S05760", "insumo": "I013305", "item_cod": "01.03.04.01", "GESTÃO 11-2025": 437662.37, "GESTÃO 03-2026": 437662.36, "GESTÃO 04-2026": 437662.36, "GESTÃO 05-2026": 437662.36, "Atual": 437662.36}, {"key": "42-21O-1-31005-S03738-I008143-01.03.05.01", "servico": "S03738", "insumo": "I008143", "item_cod": "01.03.05.01", "GESTÃO 11-2025": 1220852.6, "GESTÃO 03-2026": 1220852.56, "GESTÃO 04-2026": 1220852.56, "GESTÃO 05-2026": 1220852.56, "Atual": 1220852.56}, {"key": "42-21O-1-31005-S03741-I008122-01.03.06.01", "servico": "S03741", "insumo": "I008122", "item_cod": "01.03.06.01", "GESTÃO 11-2025": 329692.64, "GESTÃO 03-2026": 0, "GESTÃO 04-2026": 0, "GESTÃO 05-2026": 0, "Atual": 0}, {"key": "42-21O-1-31005-S03741-I008146-01.03.06.01", "servico": "S03741", "insumo": "I008146", "item_cod": "01.03.06.01", "GESTÃO 11-2025": 0, "GESTÃO 03-2026": 329692.65, "GESTÃO 04-2026": 329692.65, "GESTÃO 05-2026": 329692.65, "Atual": 329692.65}, {"key": "42-21O-1-31005-S05757-I013313-01.03.07.01", "servico": "S05757", "insumo": "I013313", "item_cod": "01.03.07.01", "GESTÃO 11-2025": 0, "GESTÃO 03-2026": 0, "GESTÃO 04-2026": 0, "GESTÃO 05-2026": 390000.0, "Atual": 390000.0}, {"key": "42-21O-1-31005-S00449-I001169-01.03.08.01", "servico": "S00449", "insumo": "I001169", "item_cod": "01.03.08.01", "GESTÃO 11-2025": 243204.45, "GESTÃO 03-2026": 243204.45, "GESTÃO 04-2026": 243204.45, "GESTÃO 05-2026": 243204.45, "Atual": 243204.45}, {"key": "42-21O-1-31005-S05305-I011890-01.04.01", "servico": "S05305", "insumo": "I011890", "item_cod": "01.04.01", "GESTÃO 11-2025": 3202545.48, "GESTÃO 03-2026": 4689498.46, "GESTÃO 04-2026": 4931431.56, "GESTÃO 05-2026": 4541431.52, "Atual": 4541431.52}, {"key": "42-21O-1-31005-PLAN2013-CONDH271-09.01.01", "servico": "PLAN2013", "insumo": "CONDH271", "item_cod": "09.01.01", "GESTÃO 11-2025": 52417.86, "GESTÃO 03-2026": 52417.86, "GESTÃO 04-2026": 52417.86, "GESTÃO 05-2026": 52417.86, "Atual": 52417.86}, {"key": "42-21O-1-31005-RJSMIL0004-V0000005-09.02.01", "servico": "RJSMIL0004", "insumo": "V0000005", "item_cod": "09.02.01", "GESTÃO 11-2025": 124588.7, "GESTÃO 03-2026": 124588.7, "GESTÃO 04-2026": 124588.7, "GESTÃO 05-2026": 124588.7, "Atual": 124588.7}, {"key": "42-21O-1-31005-RJSMIL0004-V0000017-09.02.01", "servico": "RJSMIL0004", "insumo": "V0000017", "item_cod": "09.02.01", "GESTÃO 11-2025": 20664.3, "GESTÃO 03-2026": 20664.3, "GESTÃO 04-2026": 20664.3, "GESTÃO 05-2026": 20664.3, "Atual": 20664.3}, {"key": "42-21O-1-31005-RJSMIL0007-SR10007-09.02.02", "servico": "RJSMIL0007", "insumo": "SR10007", "item_cod": "09.02.02", "GESTÃO 11-2025": 10688.8, "GESTÃO 03-2026": 10688.8, "GESTÃO 04-2026": 10688.8, "GESTÃO 05-2026": 10688.8, "Atual": 10688.8}], "totals": {"GESTÃO 11-2025": 69168786.57, "GESTÃO 03-2026": 69168786.59, "GESTÃO 04-2026": 69168786.56, "GESTÃO 05-2026": 69168786.56, "Atual": 69168786.55}};
 
+// v0.58b: helpers de filtragem por obra ativa
+// HISTORICO e PROJ_RAW são globais (todas as obras), filtramos em memória ao renderizar.
+// Retorna items filtrados da obra ativa
+function getHistoricoObraAtiva() {
+  if (!HISTORICO || !HISTORICO.items) return { items: [], gestoes: [], totals: {} };
+  if (!OBRA_ATIVA) return HISTORICO; // fallback (sem obra: mostra tudo)
+  const items = HISTORICO.items.filter(it => it.codigo_obra === OBRA_ATIVA);
+  const totals = (HISTORICO.totals && HISTORICO.totals[OBRA_ATIVA]) || {};
+  return { items, gestoes: HISTORICO.gestoes || [], totals };
+}
+
+// Retorna PROJ_RAW filtrado da obra ativa
+function getProjRawObraAtiva() {
+  if (!Array.isArray(PROJ_RAW)) return [];
+  if (!OBRA_ATIVA) return PROJ_RAW;
+  return getProjRawObraAtiva().filter(r => r.codigo_obra === OBRA_ATIVA);
+}
+
 function renderHistorico() {
-  if (!HISTORICO || !HISTORICO.items || !HISTORICO.items.length) return;
+  // v0.58b: filtra pela obra ativa
+  const HIST_OBRA = getHistoricoObraAtiva();
+  if (!HIST_OBRA || !HIST_OBRA.items || !HIST_OBRA.items.length) return;
   // Construir cópias que incluam o Orçamento Licitação como ponto zero
-  const gestoes = [LIC_LABEL, ...HISTORICO.gestoes];
+  const gestoes = [LIC_LABEL, ...HIST_OBRA.gestoes];
   // Mapa insumo → licitação (a partir da Tendência)
   const licMap = {};
   DATA_T.forEach(t => {
@@ -6912,12 +6972,12 @@ function renderHistorico() {
     }
   });
   // Anexar valor de licitação em cada item
-  const items = HISTORICO.items.map(it => ({
+  const items = HIST_OBRA.items.map(it => ({
     ...it,
     [LIC_LABEL]: licMap[it.insumo] || 0,
   }));
   // Totais (inclui licitação)
-  const totals = { [LIC_LABEL]: Object.values(licMap).reduce((s,v) => s+v, 0), ...HISTORICO.totals };
+  const totals = { [LIC_LABEL]: Object.values(licMap).reduce((s,v) => s+v, 0), ...HIST_OBRA.totals };
 
   // KPIs: total atual, variação vs primeira, qtd itens que mudaram
   const primeira = gestoes[0];
@@ -7059,8 +7119,10 @@ function renderHistTopChanges(items, gestoes) {
 }
 
 function renderHistHeatmap() {
-  const items = HISTORICO.items;
-  const gestoes = HISTORICO.gestoes;
+  // v0.58b: filtra pela obra ativa
+  const HIST_OBRA = getHistoricoObraAtiva();
+  const items = HIST_OBRA.items;
+  const gestoes = HIST_OBRA.gestoes;
   const q = document.getElementById('histSearch').value.toLowerCase();
   const compare = document.getElementById('histCompare').value;
   const onlyChanged = document.getElementById('histOnlyChanged').checked;

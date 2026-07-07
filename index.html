@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.59.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.60 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1407,6 +1407,34 @@ async function trocarObra(novoCodigo) {
   }
 }
 
+// v0.59.2: identifica a última gestão cronológica em uma lista de gestões.
+// Ignora 'Atual' (sem data). Retorna string 'GESTÃO MM-AAAA' ou null se não achar.
+function acharUltimaGestaoCronologica(listaGestoes) {
+  if (!Array.isArray(listaGestoes) || !listaGestoes.length) return null;
+  // Extrai [ano, mês] de cada gestão que tem formato GESTÃO MM-AAAA
+  const comData = listaGestoes
+    .map(g => {
+      const m = String(g).match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
+      if (!m) return null;
+      return { label: g, ano: parseInt(m[2], 10), mes: parseInt(m[1], 10) };
+    })
+    .filter(x => x !== null);
+  if (!comData.length) return null;
+  // Ordena desc por ano-mês, retorna a primeira
+  comData.sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
+  return comData[0].label;
+}
+
+// v0.59.2: atualiza GESTAO_LABEL pra última gestão cronológica se HISTORICO tiver dados
+function atualizarGestaoLabelPelaHistoria() {
+  if (!HISTORICO || !Array.isArray(HISTORICO.gestoes)) return;
+  const ultima = acharUltimaGestaoCronologica(HISTORICO.gestoes);
+  if (ultima) {
+    console.log('[GESTAO] label atualizado pela última gestão do histórico:', ultima);
+    GESTAO_LABEL = ultima;
+  }
+}
+
 // Recarrega dados da obra ativa (dados extraídos + configs + histórico de uploads)
 // Chamado ao trocar de obra e no boot inicial.
 async function recarregarDadosDaObra() {
@@ -1479,6 +1507,8 @@ async function recarregarDadosDaObra() {
     if (cfg['dados_historico']) {
       try { const d = JSON.parse(cfg['dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {}
     } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
+    // v0.59.2: sobrescreve GESTAO_LABEL com a última gestão do histórico (se houver)
+    atualizarGestaoLabelPelaHistoria();
     if (cfg['dados_projraw']) {
       try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {}
     } else { PROJ_RAW = []; }
@@ -1802,6 +1832,13 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
   if (!SUPA) return null;
   if (!OBRA_ATIVA) { console.warn('[SUPA] logUpload: sem OBRA_ATIVA'); return null; }
   const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
+  // v0.60: desativa TODOS os anteriores do mesmo (obra, tipo) antes de inserir novo como ativo
+  try {
+    const { error: updErr } = await SUPA.from('upload_history')
+      .update({ is_active: false })
+      .eq('codigo_obra', OBRA_ATIVA).eq('tipo', tipo).eq('is_active', true);
+    if (updErr) console.warn('[SUPA] desativar anteriores err:', updErr);
+  } catch(e) { console.warn('[SUPA] desativar anteriores excecao:', e); }
   const { data, error } = await SUPA.from('upload_history').insert({
     codigo_obra: OBRA_ATIVA,
     tipo, nome_arquivo: nomeArquivo,
@@ -1810,6 +1847,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
     enviado_por: enviadoPor,
     storage_path: storagePath || null,
     upload_group_id: uploadGroupId || null,
+    is_active: true, // v0.60: novo upload sempre vira ativo
   }).select().maybeSingle();
   if (error) { console.warn('[SUPA] logUpload err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
@@ -1869,7 +1907,11 @@ async function supaEnforceRollingBackup(tipo) {
   try {
     const all = await supaListUploadsByType(tipo, 100);
     if (all.length <= UPLOADS_MAX_PER_TYPE) return;
-    const toDelete = all.slice(UPLOADS_MAX_PER_TYPE);
+    // v0.60: NUNCA descarta arquivo ativo, mesmo que seja o mais antigo.
+    // Ordem: pega os que passaram do limite MAS filtra pra não incluir ativos.
+    const excedentes = all.slice(UPLOADS_MAX_PER_TYPE);
+    const toDelete = excedentes.filter(r => !r.is_active);
+    if (!toDelete.length) return;
     console.log(`[SUPA] rolling backup ${tipo}: removendo ${toDelete.length} arquivo(s) antigo(s)`);
     // Apagar arquivos do Storage
     const paths = toDelete.map(r => r.storage_path).filter(Boolean);
@@ -4260,6 +4302,8 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
           HISTORICO = parsed;
+          // v0.59.2: sobrescreve GESTAO_LABEL com última gestão cronológica
+          atualizarGestaoLabelPelaHistoria();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
           throw new Error('Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.');
@@ -4527,6 +4571,8 @@ async function _processExcelSheets(workbook, mapping, file) {
         // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
           HISTORICO = parsed;
+          // v0.59.2: sobrescreve GESTAO_LABEL com última gestão cronológica
+          atualizarGestaoLabelPelaHistoria();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
           throw new Error('Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.');
@@ -4796,7 +4842,12 @@ async function openUploadsHistory(kind) {
     <div id="uploadsHistoryList" style="margin-top:14px;">⏳ Carregando...</div>
   `;
   document.getElementById('modalBg').classList.add('show');
+  await _renderUploadsHistoryList(kind);
+}
 
+// v0.60: extraído em função separada pra poder re-renderizar após ações (ativar/excluir)
+async function _renderUploadsHistoryList(kind) {
+  const meta = UPLOAD_META[kind];
   const list = await supaListUploadsByType(kind, UPLOADS_MAX_PER_TYPE + 5);
   const box = document.getElementById('uploadsHistoryList');
   if (!box) return;
@@ -4804,6 +4855,8 @@ async function openUploadsHistory(kind) {
     box.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:30px;">Nenhum upload registrado ainda.</div>';
     return;
   }
+  const isEditor = AUTH && AUTH.isEditor;
+  const isGlobal = meta.global === true; // Gestões é compartilhado entre obras
   box.innerHTML = `
     <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
       <thead>
@@ -4813,33 +4866,50 @@ async function openUploadsHistory(kind) {
           <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Tamanho</th>
           <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Linhas</th>
           <th style="padding:8px; border-bottom:2px solid #e5e7eb;">Enviado por</th>
-          <th style="padding:8px; border-bottom:2px solid #e5e7eb; text-align:right;">Ação</th>
+          <th style="padding:8px; border-bottom:2px solid #e5e7eb; text-align:right;">Ações</th>
         </tr>
       </thead>
       <tbody>
-        ${list.map((r, idx) => {
-          const isLatest = idx === 0;
-          const canDownload = !!r.storage_path && AUTH && AUTH.user; // qualquer logado baixa
+        ${list.map(r => {
+          const isAtivo = !!r.is_active;
+          const canDownload = !!r.storage_path && AUTH && AUTH.user;
+          const canReativar = isEditor && !isAtivo && !!r.storage_path;
+          const canExcluir = isEditor && !isAtivo; // BLOQUEADO se ativo
           const btnDownload = canDownload
-            ? `<button class="btn-sm primary" onclick="downloadUploadFile('${r.storage_path.replace(/'/g, "\\'")}','${escAttr(r.nome_arquivo)}')">📥 Baixar</button>`
+            ? `<button class="btn-sm" onclick="downloadUploadFile('${r.storage_path.replace(/'/g, "\\'")}','${escAttr(r.nome_arquivo)}')" title="Baixar arquivo">📥</button>`
             : (r.storage_path
-                ? `<span style="color:#9ca3af; font-size:11px;" title="Faça login para baixar">🔒 login</span>`
-                : `<span style="color:#9ca3af; font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">— indisponível</span>`);
+                ? `<span style="color:#9ca3af; font-size:11px;" title="Faça login para baixar">🔒</span>`
+                : `<span style="color:#9ca3af; font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`);
+          const btnAtivar = canReativar
+            ? `<button class="btn-sm primary" onclick="marcarUploadComoAtivo(${r.id}, '${kind}')" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
+            : (isAtivo
+                ? ''
+                : `<span style="color:#9ca3af; font-size:11px;" title="Arquivo sem storage_path — não pode ser reativado">—</span>`);
+          const btnExcluir = canExcluir
+            ? `<button class="btn-sm danger" onclick="excluirUpload(${r.id}, '${kind}')" title="Excluir arquivo" style="background:#fee2e2; border:1px solid #fca5a5; color:#991b1b;">🗑️</button>`
+            : (isAtivo && isEditor
+                ? `<span style="color:#9ca3af; font-size:11px;" title="Ative outro arquivo antes de excluir este">🔒</span>`
+                : '');
           return `
-            <tr style="border-bottom:1px solid #f1f5f9; ${isLatest?'background:#f0fdf4;':''}">
-              <td style="padding:8px;">${fmtUploadDate(r.enviado_em)} ${isLatest?'<span style="color:#059669; font-size:10px; font-weight:700; margin-left:4px;">ATUAL</span>':''}</td>
+            <tr style="border-bottom:1px solid #f1f5f9; ${isAtivo?'background:#f0fdf4;':''}">
+              <td style="padding:8px;">${fmtUploadDate(r.enviado_em)} ${isAtivo?'<span style="display:inline-block; margin-left:4px; padding:2px 8px; background:#059669; color:white; font-size:9px; font-weight:700; border-radius:10px; letter-spacing:0.3px;">📌 ATIVO</span>':''}</td>
               <td style="padding:8px; font-family:monospace; font-size:11.5px;">${escHtml(r.nome_arquivo)}</td>
               <td style="padding:8px; color:#64748b;">${fmtBytes(r.tamanho_bytes)}</td>
               <td style="padding:8px; color:#64748b;">${r.linhas != null ? r.linhas.toLocaleString('pt-BR') : '-'}</td>
               <td style="padding:8px; font-size:11.5px; color:#475569;">${r.enviado_por ? escHtml(r.enviado_por) : '<em>anônimo</em>'}</td>
-              <td style="padding:8px; text-align:right;">${btnDownload}</td>
+              <td style="padding:8px; text-align:right; white-space:nowrap;">
+                <span style="display:inline-flex; gap:4px; align-items:center;">${btnDownload} ${btnAtivar} ${btnExcluir}</span>
+              </td>
             </tr>`;
         }).join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; padding:8px 12px; background:#f8fafc; border-radius:4px; font-size:11px; color:#64748b;">
-      💡 <strong>Rolling backup:</strong> quando o 13º arquivo é enviado, o mais antigo é apagado automaticamente (arquivo + registro do banco).
-      Para baixar um arquivo você precisa estar <strong>logado</strong> (link temporário válido por 60 segundos).
+    <div style="margin-top:12px; padding:10px 14px; background:#f8fafc; border-radius:4px; font-size:11.5px; color:#64748b; line-height:1.5;">
+      💡 <strong>Ativar:</strong> marca esse arquivo como fonte de dados do dashboard (substitui o atual sem apagar).<br>
+      🗑️ <strong>Excluir:</strong> apaga permanentemente do banco e Storage. Só permitido em arquivos não-ativos.<br>
+      📌 <strong>Ativo:</strong> arquivo cujos dados estão sendo usados no dashboard agora.<br>
+      🔄 <strong>Rolling backup:</strong> mantém apenas os últimos ${UPLOADS_MAX_PER_TYPE} arquivos. Ativo nunca é descartado automaticamente.
+      ${isGlobal ? '<br>🌐 <strong>Gestões é compartilhado:</strong> trocar o ativo afeta TODAS as obras.' : ''}
     </div>
   `;
 }
@@ -4863,6 +4933,137 @@ async function downloadUploadFile(storagePath, filename) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+}
+
+// ============================================================
+// v0.60 — Controle manual de arquivo ativo
+// ============================================================
+
+// Marca um upload específico como ativo (desativa os anteriores do mesmo obra+tipo)
+// Depois: baixa o arquivo do Storage, re-parseia e substitui os dados no Supabase.
+async function marcarUploadComoAtivo(uploadId, kind) {
+  if (!requireEditor('trocar arquivo ativo')) return;
+  const meta = UPLOAD_META[kind];
+  const isGlobal = meta && meta.global === true;
+  // Aviso especial pra Gestões (global)
+  if (isGlobal) {
+    if (!confirm(`⚠️ Gestões é COMPARTILHADO entre todas as obras.\n\nTrocar o arquivo ativo vai atualizar o Histórico Mensal e a Curva S de TODAS as obras — não só da atual.\n\nContinuar?`)) return;
+  } else {
+    if (!confirm(`Trocar o arquivo ativo de ${meta ? meta.label : kind} para esta versão?\n\nO dashboard vai substituir os dados atuais pelos deste arquivo.`)) return;
+  }
+  authToast('⏳ Ativando arquivo...', 'info', 2500);
+  try {
+    // 1) Buscar o registro alvo
+    const { data: alvo, error: readErr } = await SUPA.from('upload_history')
+      .select('*').eq('id', uploadId).maybeSingle();
+    if (readErr || !alvo) throw new Error('Arquivo não encontrado no banco');
+    if (!alvo.storage_path) throw new Error('Arquivo não tem cópia no Storage (upload muito antigo). Impossível reativar.');
+    // 2) Baixar o arquivo do Storage
+    const url = await supaGetDownloadURL(alvo.storage_path);
+    if (!url) throw new Error('Falha ao gerar link de download do arquivo');
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Falha ao baixar arquivo: HTTP ' + resp.status);
+    const isExcel = /\.xlsx?$|\.xlsm$/i.test(alvo.nome_arquivo);
+    // 3) Re-parseia
+    if (isExcel) {
+      const buf = await resp.arrayBuffer();
+      if (typeof XLSX === 'undefined') throw new Error('Biblioteca XLSX não carregou');
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+      const sheetNames = wb.SheetNames || [];
+      const mapping = _autoDetectSheets(sheetNames);
+      // Só processa a aba correspondente ao tipo
+      const sheetName = mapping[kind];
+      if (!sheetName) throw new Error(`Aba correspondente a "${kind}" não encontrada no Excel`);
+      const csv = _sheetToCSV(wb, sheetName);
+      _parsearECarregar(kind, csv);
+    } else {
+      // CSV direto
+      const csv = await resp.text();
+      _parsearECarregar(kind, csv);
+    }
+    // 4) Marcar novo ativo no banco (desativa os outros)
+    const { error: updErr } = await SUPA.from('upload_history')
+      .update({ is_active: false })
+      .eq('codigo_obra', alvo.codigo_obra).eq('tipo', kind).eq('is_active', true);
+    if (updErr) console.warn('[v0.60] desativar anteriores:', updErr);
+    const { error: setErr } = await SUPA.from('upload_history')
+      .update({ is_active: true }).eq('id', uploadId);
+    if (setErr) throw setErr;
+    // 5) Persistir dados novos no dashboard_config + re-renderizar
+    await supaSaveAllData([kind]);
+    LAST_UPLOADS[kind] = { ...alvo, is_active: true };
+    renderAll();
+    renderUploadsCentral();
+    renderSourcesHeaders();
+    // 6) Re-renderizar o modal pra refletir o novo ativo
+    await _renderUploadsHistoryList(kind);
+    authToast(`✅ Arquivo ativado: ${alvo.nome_arquivo}`, 'ok', 3500);
+  } catch (e) {
+    console.error('[v0.60] marcarUploadComoAtivo:', e);
+    authToast('❌ Erro ao ativar: ' + e.message, 'err', 5000);
+  }
+}
+
+// Helper interno: parseia CSV do tipo correspondente e atualiza estruturas em memória
+function _parsearECarregar(kind, csv) {
+  const firstLines = csv.split(/\r?\n/).slice(0,3).join(' ');
+  const fu = firstLines.toUpperCase();
+  if (kind === 'tendencia') {
+    if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
+      throw new Error('CSV Tendência em formato inesperado');
+    }
+    DATA_T = parseTendencia(csv);
+  } else if (kind === 'flows') {
+    if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
+      throw new Error('CSV Flows em formato inesperado');
+    }
+    DATA_F = parseFlowsValor(csv);
+    applyManuals();
+    loadClassifications();
+  } else if (kind === 'gestoes') {
+    if (!firstLines.includes('Descr_gestao') && !firstLines.includes('Key_planejamento')) {
+      throw new Error('CSV Gestões em formato inesperado');
+    }
+    const parsed = parseGestoes(csv);
+    if (parsed && parsed.items && parsed.items.length > 0) {
+      HISTORICO = parsed;
+      atualizarGestaoLabelPelaHistoria();
+    } else {
+      throw new Error('CSV Gestões não retornou linhas válidas');
+    }
+  }
+}
+
+// Exclui um upload específico (bloqueado se for o ativo — check no HTML)
+async function excluirUpload(uploadId, kind) {
+  if (!requireEditor('excluir arquivo')) return;
+  try {
+    // Buscar pra confirmar que não é o ativo
+    const { data: rec, error: readErr } = await SUPA.from('upload_history')
+      .select('id, nome_arquivo, storage_path, is_active, codigo_obra')
+      .eq('id', uploadId).maybeSingle();
+    if (readErr || !rec) throw new Error('Arquivo não encontrado');
+    if (rec.is_active) {
+      authToast('🔒 Não é possível excluir o arquivo ativo. Ative outro primeiro.', 'warn', 4500);
+      return;
+    }
+    if (!confirm(`Excluir permanentemente o arquivo "${rec.nome_arquivo}"?\n\n⚠️ Esta ação é irreversível.\n(Os dados do dashboard NÃO são afetados — só este registro do histórico.)`)) return;
+    authToast('🗑️ Excluindo...', 'info', 2000);
+    // 1) Apagar do Storage
+    if (rec.storage_path) {
+      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove([rec.storage_path]);
+      if (sErr) console.warn('[v0.60] storage remove:', sErr);
+    }
+    // 2) Apagar do banco
+    const { error: dbErr } = await SUPA.from('upload_history').delete().eq('id', uploadId);
+    if (dbErr) throw dbErr;
+    // 3) Re-render do modal
+    await _renderUploadsHistoryList(kind);
+    authToast(`✅ Arquivo excluído`, 'ok', 3000);
+  } catch (e) {
+    console.error('[v0.60] excluirUpload:', e);
+    authToast('❌ Erro ao excluir: ' + e.message, 'err', 5000);
+  }
 }
 
 function renderSourcesHeaders() {
@@ -7375,6 +7576,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17984ed0e430136',t:'MTc4MzQ1NTMwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a179c031d884f1ce',t:'MTc4MzQ1NzczMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

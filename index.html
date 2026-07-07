@@ -701,7 +701,7 @@ body:not(.is-editor) [data-editor-only] {
             <th data-sort="item">Item</th>
             <th data-sort="cod_insumo">Insumo</th>
             <th class="num" data-sort="licitacao">Licitação</th>
-            <th class="num" data-sort="gestao">Gestão 05/26</th>
+            <th class="num" data-sort="gestao" id="thGestao">Gestão</th>
             <th class="num" data-sort="diferenca">Δ R$</th>
             <th class="num" data-sort="pct">Δ %</th>
             <th class="num" data-sort="aditivo_total">Aditivos R$</th>
@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.59 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.59.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1485,7 +1485,9 @@ async function recarregarDadosDaObra() {
   }
   // Aplicar uploads latest (agora já filtrado por obra)
   Object.assign(LAST_UPLOADS, ups);
-  console.log('[OBRAS] dados recarregados para', OBRA_ATIVA);
+  // v0.59.1: repopular PROJ_CTRL_STATE a partir do localStorage recém-atualizado
+  if (typeof loadProjCtrl === 'function') loadProjCtrl();
+  console.log('[OBRAS] dados recarregados para', OBRA_ATIVA, '— insumo controlado:', PROJ_CTRL_STATE?.insumo);
 }
 
 // Espelha em localStorage também (fallback)
@@ -2415,6 +2417,12 @@ function renderAderenciaProj() {
 }
 
 
+// v0.59.1: navegar entre abas via JS (usado em botões de CTA)
+function irParaAba(nomeAba) {
+  const tab = document.querySelector(`.tab[data-tab="${nomeAba}"]`);
+  if (tab) tab.click();
+}
+
 // v0.59: helpers de placeholder "sem dados"
 // Retorna HTML de CTA amigável quando obra não tem Tendência carregada
 function renderPlaceholderSemDados(icone, titulo, subtitulo) {
@@ -2425,7 +2433,7 @@ function renderPlaceholderSemDados(icone, titulo, subtitulo) {
       <div style="font-size:48px; margin-bottom:12px;">${icone || '📭'}</div>
       <h3 style="font-size:16px; color:#334155; margin:0 0 6px; font-weight:600;">${titulo || 'Sem dados para exibir'}</h3>
       <p style="font-size:13px; margin:0 0 20px;">${subtitulo || ('Envie o Excel de Tendência de <strong>' + escHtml(nomeObra) + '</strong> na aba <strong>📤 Uploads</strong>.')}</p>
-      <button class="btn-sm primary" onclick="document.querySelector('.tab[data-tab=\"uploads\"]').click()" style="padding:8px 18px; font-size:13px;">
+      <button class="btn-sm primary" onclick="irParaAba('uploads')" style="padding:8px 18px; font-size:13px;">
         📤 Ir para Uploads
       </button>
     </div>
@@ -2779,6 +2787,13 @@ function _evolClass(d) {
 }
 
 function renderTable() {
+  // v0.59.1: atualizar header da coluna Gestão com o GESTAO_LABEL atual
+  const thG = document.getElementById('thGestao');
+  if (thG && GESTAO_LABEL) {
+    // Encurta 'GESTÃO 07-2026' pra 'Gestão 07/26' pra caber
+    const m = GESTAO_LABEL.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
+    thG.textContent = m ? `Gestão ${m[1]}/${m[2].slice(-2)}` : GESTAO_LABEL;
+  }
   // v0.59: guard sem dados
   if (!obraTemTendencia()) {
     const tbody = document.getElementById('tbody');
@@ -6399,12 +6414,28 @@ let PROJ_CTRL_STATE = {
 };
 
 function loadProjCtrl() {
+  // v0.59.1: SUBSTITUI todo o estado (não mescla) — evita resíduo de obra anterior
   try {
     const raw = localStorage.getItem(PROJ_CTRL_KEY);
     if (raw) {
       const obj = JSON.parse(raw);
-      if (obj && typeof obj === 'object') Object.assign(PROJ_CTRL_STATE, obj);
+      if (obj && typeof obj === 'object') {
+        PROJ_CTRL_STATE = {
+          saldo_inicial: obj.saldo_inicial ?? null,
+          data_ref: obj.data_ref || null,
+          insumo: obj.insumo || 'I011890',
+          movimentacoes: Array.isArray(obj.movimentacoes) ? obj.movimentacoes : [],
+        };
+        return;
+      }
     }
+    // Nenhum dado no localStorage — reset pro default
+    PROJ_CTRL_STATE = {
+      saldo_inicial: null,
+      data_ref: null,
+      insumo: 'I011890',
+      movimentacoes: [],
+    };
   } catch (e) { console.warn('Erro ao ler controle projeção:', e); }
 }
 
@@ -7344,6 +7375,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1797542ffaf0136',t:'MTc4MzQ1NDY2NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17984ed0e430136',t:'MTc4MzQ1NTMwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

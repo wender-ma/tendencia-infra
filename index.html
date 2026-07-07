@@ -1243,7 +1243,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.57.4 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.57.5 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -3361,16 +3361,27 @@ function massAplicarRefletido() {
 
 // ============ EDIÇÃO DE VALOR (Fluxo Planejamento) ============
 function parseNumBR(s) {
+  // v0.57.5: robusto pra formato BR e US (mesma lógica do parseNum principal).
+  // Nome mantido por compatibilidade — historicamente era só BR, hoje aceita ambos.
   if (s == null) return null;
   s = String(s).trim();
   if (!s || s === '-') return null;
-  // remove R$, espaços; troca . por nada se for separador de milhar; troca , por .
-  s = s.replace(/R\$/g,'').replace(/\s/g,'');
-  // se tem vírgula, é decimal; pontos são milhar
-  if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.');
-  // sinal de + no início
-  s = s.replace(/^\+/, '');
-  const n = parseFloat(s);
+  s = s.replace(/R\$/g, '').replace(/\s/g, '').replace(/^\+/, '');
+  if (!s) return null;
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  let normalized;
+  if (lastComma > lastDot) {
+    // BR: vírgula decimal
+    normalized = s.replace(/\./g, '').replace(',', '.');
+  } else if (lastDot > lastComma) {
+    // US: ponto decimal
+    normalized = s.replace(/,/g, '');
+  } else {
+    // só um separador ou nenhum: vírgula → ponto (padrão BR)
+    normalized = s.replace(',', '.');
+  }
+  const n = parseFloat(normalized);
   return isNaN(n) ? null : n;
 }
 
@@ -4713,10 +4724,34 @@ function classifyFlow(ip, ir) {
 }
 
 function toIsoDate(s) {
+  // v0.57.5 FIX: aceita BR (dd/mm/aaaa) e US (m/d/aa do SheetJS).
+  // Bug anterior: Excel via SheetJS entregava datas em formato US e o parser assumia BR,
+  // gerando anos truncados como '25-06-02'. Mesma família do fix do Mes_pagamento (v0.57.4).
   if (!s) return null;
   s = String(s).trim().split(' ')[0];
-  if (s.includes('/')) { const p = s.split('/'); if (p.length===3) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`; }
-  return s;
+  if (!s.includes('/')) return s;
+  const p = s.split('/');
+  if (p.length !== 3) return s;
+  const p0 = parseInt(p[0], 10);
+  const p1 = parseInt(p[1], 10);
+  const p2raw = p[2];
+  let ano, mes, dia;
+  if (p2raw.length === 4) {
+    // BR: dd/mm/aaaa
+    ano = p2raw;
+    mes = String(p1);
+    dia = String(p0);
+  } else {
+    // US do SheetJS: m/d/aa
+    ano = '20' + p2raw.padStart(2, '0');
+    mes = String(p0);
+    dia = String(p1);
+  }
+  const mn = parseInt(mes, 10);
+  const dn = parseInt(dia, 10);
+  if (isNaN(mn) || mn < 1 || mn > 12) return s;
+  if (isNaN(dn) || dn < 1 || dn > 31) return s;
+  return `${ano}-${String(mn).padStart(2, '0')}-${String(dn).padStart(2, '0')}`;
 }
 
 
@@ -6981,6 +7016,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17767c9ece7f53b',t:'MTc4MzQzMzE0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1777797fd78f53b',t:'MTc4MzQzMzc4OA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

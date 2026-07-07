@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.58b · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.58b.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -6955,7 +6955,7 @@ function getHistoricoObraAtiva() {
 function getProjRawObraAtiva() {
   if (!Array.isArray(PROJ_RAW)) return [];
   if (!OBRA_ATIVA) return PROJ_RAW;
-  return getProjRawObraAtiva().filter(r => r.codigo_obra === OBRA_ATIVA);
+  return PROJ_RAW.filter(r => r.codigo_obra === OBRA_ATIVA);
 }
 
 function renderHistorico() {

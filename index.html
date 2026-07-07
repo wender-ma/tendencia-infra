@@ -1243,7 +1243,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.57.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.57.4 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -4803,7 +4803,25 @@ function parseGestoes(text) {
     const mes = (r[iMesPag]||'').trim();
     const parts = mes.split('/');
     if (parts.length !== 3) continue;
-    const yyyy_mm = `${parts[2]}-${parts[1].padStart(2,'0')}`;
+    // v0.57.4 FIX: aceita formato BR (dd/mm/aaaa do CSV) e US (m/d/aa do SheetJS)
+    // Heurística: 4 dígitos no fim = BR; senão US (o SheetJS sempre normaliza pra ano curto)
+    const p0 = parseInt(parts[0], 10);
+    const p1 = parseInt(parts[1], 10);
+    const p2raw = parts[2];
+    let ano, mesNum;
+    if (p2raw.length === 4) {
+      // Formato BR: dd/mm/aaaa
+      ano = p2raw;
+      mesNum = String(p1);
+    } else {
+      // Formato US do SheetJS: m/d/aa
+      ano = '20' + p2raw.padStart(2, '0');
+      mesNum = String(p0);
+    }
+    // Sanity check: mês deve estar entre 1-12
+    const mn = parseInt(mesNum, 10);
+    if (isNaN(mn) || mn < 1 || mn > 12) continue;
+    const yyyy_mm = `${ano}-${String(mn).padStart(2, '0')}`;
     const valor = parseNum(r[iVal]) || 0;
     if (valor <= 0) continue;
     PROJ_RAW.push({
@@ -6964,5 +6982,5 @@ updateSupaBadge();
 
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17743a7ad95b559',t:'MTc4MzQzMTY2MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17767c9ece7f53b',t:'MTc4MzQzMzE0MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

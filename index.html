@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.60.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.60.4 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2241,13 +2241,23 @@ let sortDir = -1;
 let sortKeyF = 'data';
 let sortDirF = -1;
 
-const fmt = (v, dec=2) => v == null ? '-' : v.toLocaleString('pt-BR', {minimumFractionDigits: dec, maximumFractionDigits: dec});
-const fmtR$ = (v) => v == null ? '-' : 'R$ ' + fmt(v);
+// v0.60.4: formato Excel #.##0,00;-#.##0,00;"-" — zero e null viram "-"; sem prefixo R$
+const fmt = (v, dec=2) => {
+  if (v == null) return '-';
+  const abs = Math.abs(v);
+  // Considera zero se abaixo da precisão exibida (evita "0,00" virar "-" indevidamente com valores pequenos legítimos)
+  const eps = dec > 0 ? Math.pow(10, -dec) / 2 : 0.5;
+  if (abs < eps) return '-';
+  return v.toLocaleString('pt-BR', {minimumFractionDigits: dec, maximumFractionDigits: dec});
+};
+// Aliases mantidos por retrocompat (chamados em ~97 lugares). Agora SEM R$ e com zero=hífen.
+const fmtR$ = (v) => fmt(v);
 const fmtR$k = (v) => {
   if (v == null) return '-';
-  if (Math.abs(v) >= 1e6) return 'R$ ' + (v/1e6).toFixed(2) + 'M';
-  if (Math.abs(v) >= 1e3) return 'R$ ' + (v/1e3).toFixed(0) + 'k';
-  return 'R$ ' + fmt(v, 0);
+  if (Math.abs(v) < 0.5) return '-';
+  if (Math.abs(v) >= 1e6) return (v/1e6).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + 'M';
+  if (Math.abs(v) >= 1e3) return (v/1e3).toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0}) + 'k';
+  return fmt(v, 0);
 };
 const fmtPct = (v) => v == null ? '-' : (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
 
@@ -2983,10 +2993,10 @@ function openItem(idx) {
       <div class="kpi purple"><div class="label">Coberto por aditivo</div><div class="value">${fmtR$(totDest - totOrig)}</div><div class="sub">${dest.length} entrada / ${orig.length} saída</div></div>
     </div>
 
-    ${dest.length > 0 ? `<h3 style="font-size:13px; margin-bottom:8px; color:#7c3aed;">➡️ Aditivos que ENTRARAM neste item (R$ ${fmt(totDest)})</h3>` : ''}
+    ${dest.length > 0 ? `<h3 style="font-size:13px; margin-bottom:8px; color:#7c3aed;">➡️ Aditivos que ENTRARAM neste item (${fmt(totDest)})</h3>` : ''}
     ${dest.map(f => renderFlowMini(f)).join('')}
 
-    ${orig.length > 0 ? `<h3 style="font-size:13px; margin: 14px 0 8px; color:#0891b2;">⬅️ Aditivos que SAÍRAM deste item para outros (R$ ${fmt(totOrig)})</h3>` : ''}
+    ${orig.length > 0 ? `<h3 style="font-size:13px; margin: 14px 0 8px; color:#0891b2;">⬅️ Aditivos que SAÍRAM deste item para outros (${fmt(totOrig)})</h3>` : ''}
     ${orig.map(f => renderFlowMini(f, true)).join('')}
 
     ${dest.length === 0 && orig.length === 0 ? '<div style="text-align:center; color:#9ca3af; padding:20px;">Nenhum aditivo vinculado a este item.</div>' : ''}
@@ -6617,6 +6627,21 @@ function exportarProjecaoDetalhada() {
       {wch:6},{wch:10},{wch:14},{wch:12},{wch:12},{wch:28},{wch:60},
       {wch:16},{wch:16},{wch:18},{wch:18},{wch:16},{wch:18},{wch:16},{wch:18},{wch:20},{wch:18},{wch:10},{wch:16},
     ];
+    // v0.60.4: aplicar format code Excel nas colunas numéricas monetárias
+    // Colunas H..P (índices 7..15) = Valor Gestão, Realizado, Planejado Total, Planejado Futuro,
+    //   Extrapolação, Flows Pendentes, Tendência, Δ vs Planejado, Ritmo Histórico
+    const FMT_NUM = '#,##0.00;-#,##0.00;"-"';  // SheetJS interpreta e converte pro locale do Excel do usuário
+    const range1 = XLSX.utils.decode_range(ws1['!ref']);
+    for (let R = range1.s.r + 1; R <= range1.e.r; R++) { // pula header
+      for (let C = 7; C <= 15; C++) {
+        const cellRef = XLSX.utils.encode_cell({r: R, c: C});
+        const cell = ws1[cellRef];
+        if (cell && typeof cell.v === 'number') {
+          cell.t = 'n';
+          cell.z = FMT_NUM;
+        }
+      }
+    }
     XLSX.utils.book_append_sheet(wb, ws1, 'Projeção Detalhada');
     const ws2 = XLSX.utils.json_to_sheet(meta);
     ws2['!cols'] = [{wch:32},{wch:40}];
@@ -7927,6 +7952,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f4566ac8a016e',t:'MTc4MzUxNTYxOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f57db7aac016e',t:'MTc4MzUxNjM3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

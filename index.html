@@ -1176,7 +1176,7 @@ body:not(.is-editor) [data-editor-only] {
         <li><code>G</code> — <strong>ORÇ. LICITAÇÃO</strong> (R$)</li>
         <li><code>H</code> — <strong>Corrigido IPCA</strong> (R$) ← agora vem antes do INCC</li>
         <li><code>I</code> — <strong>Corrigido INCC</strong> (R$)</li>
-        <li><code>J</code> — Gestão atual (R$) — cabeçalho contém a data da gestão (ex: <code>GESTÃO 05-2026</code>)</li>
+        <li><code>J</code> — Gestão atual (R$) — cabeçalho contém a data da gestão (ex: <code>GESTÃO MM-AAAA</code>)</li>
         <li><code>K</code> — Diferença (R$) — calculada na planilha</li>
         <li><code>L</code> — <em>(vazia — separador visual)</em></li>
         <li><code>M</code> — 🆕 <strong>EVOLUÇÃO TEÓRICA</strong> (Prevision) — % em cronograma físico</li>
@@ -1227,7 +1227,7 @@ body:not(.is-editor) [data-editor-only] {
       <p style="margin-top:8px;"><strong>Estrutura esperada (27 colunas):</strong></p>
       <ul style="margin:6px 0 8px 24px;">
         <li><code>B</code> — Empreendimento (filtro: <code>Jardins Zurique</code>)</li>
-        <li><code>D</code> — Nome da gestão (ex: <code>GESTÃO 05-2026</code>, <code>Atual</code>)</li>
+        <li><code>D</code> — Nome da gestão (ex: <code>GESTÃO MM-AAAA</code>, <code>Atual</code>)</li>
         <li><code>H</code> — Classificação financeira (filtro: <code>Obra</code>)</li>
         <li><code>K</code> — Key_planejamento (chave igual à coluna A da Tendência)</li>
         <li><code>L</code> — Val_totalliquido (R$ por mês de pagamento)</li>
@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.60.1-spy · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.60.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1430,11 +1430,55 @@ function atualizarGestaoLabelPelaHistoria() {
   if (!HISTORICO || !Array.isArray(HISTORICO.gestoes)) return;
   const ultima = acharUltimaGestaoCronologica(HISTORICO.gestoes);
   if (ultima) {
-    console.warn('[SPY-1 atualizarGestaoLabelPelaHistoria] mudando GESTAO_LABEL:', GESTAO_LABEL, '→', ultima);
-    console.trace();
+    console.log('[GESTAO] label atualizado pela última gestão do histórico:', ultima);
     GESTAO_LABEL = ultima;
   }
 }
+
+// v0.60.2: fallback inteligente pra coluna Gestão vazia na Tendência.
+// Cenário: na virada de mês, o Excel Tendência é reexportado com cabeçalho 07-2026
+// mas os valores ainda não foram preenchidos (todas as folhas com d.gestao == null).
+// Nesse caso, puxamos os valores da última gestão preenchida no HISTORICO por insumo.
+function aplicarFallbackGestaoDoHistorico() {
+  if (!Array.isArray(DATA_T) || !DATA_T.length) return;
+  if (!HISTORICO || !HISTORICO.items || !HISTORICO.items.length) return;
+  // Detecta se a coluna gestão da Tendência está toda vazia (nenhuma folha com valor)
+  const folhas = DATA_T.filter(d => d.is_folha);
+  const folhasComGestao = folhas.filter(d => d.gestao != null && d.gestao !== 0).length;
+  if (folhasComGestao > 0) {
+    // Coluna Gestão tem valores — não aplica fallback
+    return;
+  }
+  // Coluna Gestão vazia — determina qual gestão do HISTORICO usar (última cronológica)
+  const ultima = acharUltimaGestaoCronologica(HISTORICO.gestoes);
+  if (!ultima) return;
+  // v0.60.2 FIX: mapear por servico+insumo+item_cod (chave composta) evita duplicação
+  // Ex: insumo CONDH271 aparece em S05765-CONDH271-01.01.01.02 E S05305-CONDH271-01.04.01
+  //     — são linhas distintas na Tendência, precisam bater cada uma com sua contraparte no HISTORICO
+  const mapa = {};
+  HISTORICO.items
+    .filter(it => it.codigo_obra === OBRA_ATIVA)
+    .forEach(it => {
+      if (!it.insumo) return;
+      const chaveComp = (it.servico||'') + '|' + (it.insumo||'') + '|' + (it.item_cod||'');
+      mapa[chaveComp] = (mapa[chaveComp] || 0) + (it[ultima] || 0);
+    });
+  // Aplica o valor em cada folha do DATA_T (bate por servico+insumo+cod)
+  let aplicados = 0;
+  DATA_T.forEach(d => {
+    if (!d.is_folha || !d.cod_insumo) return;
+    const chaveComp = (d.cod_servico||'') + '|' + (d.cod_insumo||'') + '|' + (d.cod||'');
+    if (mapa[chaveComp] != null && mapa[chaveComp] !== 0) {
+      d.gestao = mapa[chaveComp];
+      d.diferenca = (d.licitacao != null && d.gestao != null) ? (d.licitacao - d.gestao) : null;
+      aplicados++;
+    }
+  });
+  if (aplicados > 0) {
+    console.log(`[TEND] coluna Gestão vazia — usando HISTORICO (${ultima}). ${aplicados} folha(s) preenchida(s).`);
+  }
+}
+
 
 // Recarrega dados da obra ativa (dados extraídos + configs + histórico de uploads)
 // Chamado ao trocar de obra e no boot inicial.
@@ -1445,8 +1489,6 @@ async function recarregarDadosDaObra() {
   DATA_T = [];
   DATA_F = [];
   EVOL_GLOBAL = { teorica: null, financeira: null };
-  console.warn('[SPY-2 recarregarDadosDaObra] zerando GESTAO_LABEL. era:', GESTAO_LABEL);
-  console.trace();
   GESTAO_LABEL = 'Gestão Atual';
   // Carrega tudo em paralelo
   const [cls, manuals, projCfg, movs, cfg, ups] = await Promise.all([
@@ -1499,11 +1541,7 @@ async function recarregarDadosDaObra() {
         if (p) EVOL_GLOBAL = p;
       } catch(e) {}
     }
-    if (cfg[pref + 'gestao_label']) {
-      console.warn('[SPY-3 restore Supabase] mudando GESTAO_LABEL:', GESTAO_LABEL, '→', cfg[pref + 'gestao_label']);
-      console.trace();
-      GESTAO_LABEL = cfg[pref + 'gestao_label'];
-    }
+    if (cfg[pref + 'gestao_label']) GESTAO_LABEL = cfg[pref + 'gestao_label'];
     if (cfg[pref + 'dados_tendencia']) {
       try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {}
     } else { DATA_T = []; }
@@ -1516,6 +1554,8 @@ async function recarregarDadosDaObra() {
     } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
     // v0.59.2: sobrescreve GESTAO_LABEL com a última gestão do histórico (se houver)
     atualizarGestaoLabelPelaHistoria();
+    // v0.60.2: se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+    aplicarFallbackGestaoDoHistorico();
     if (cfg['dados_projraw']) {
       try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {}
     } else { PROJ_RAW = []; }
@@ -4286,6 +4326,8 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
           ev.target.value = ''; return;
         }
         DATA_T = parseTendencia(txt);
+        // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
+        aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
@@ -4311,6 +4353,8 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
           HISTORICO = parsed;
           // v0.59.2: sobrescreve GESTAO_LABEL com última gestão cronológica
           atualizarGestaoLabelPelaHistoria();
+          // v0.60.2: se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+          aplicarFallbackGestaoDoHistorico();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
           throw new Error('Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.');
@@ -4561,6 +4605,8 @@ async function _processExcelSheets(workbook, mapping, file) {
           throw new Error('Cabeçalho da aba Tendência precisa conter LICITAÇÃO + IPCA + INCC + EVOLUÇÃO (formato v0.55)');
         }
         DATA_T = parseTendencia(csv);
+        // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
+        aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
       } else if (step.parser === 'flows') {
         if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
@@ -4580,6 +4626,8 @@ async function _processExcelSheets(workbook, mapping, file) {
           HISTORICO = parsed;
           // v0.59.2: sobrescreve GESTAO_LABEL com última gestão cronológica
           atualizarGestaoLabelPelaHistoria();
+          // v0.60.2: se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+          aplicarFallbackGestaoDoHistorico();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
           throw new Error('Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.');
@@ -5020,6 +5068,8 @@ function _parsearECarregar(kind, csv) {
       throw new Error('CSV Tendência em formato inesperado');
     }
     DATA_T = parseTendencia(csv);
+        // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
+        aplicarFallbackGestaoDoHistorico();
   } else if (kind === 'flows') {
     if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
       throw new Error('CSV Flows em formato inesperado');
@@ -5150,8 +5200,6 @@ function parseTendencia(text) {
   try {
     const headerCol9 = (rows[0][9] || '').trim().replace(/\s+/g, ' ');
     if (headerCol9 && headerCol9.length > 3) {
-      console.warn('[SPY-5 parseTendencia] mudando GESTAO_LABEL:', GESTAO_LABEL, '→', headerCol9);
-      console.trace();
       GESTAO_LABEL = headerCol9;
     }
   } catch(e) {}
@@ -5373,12 +5421,27 @@ function parseGestoes(text) {
     allGestoesSet.add(gestao);
     const aggKey = codigoObra + '|' + key;
     if (!agg.has(aggKey)) {
+      // v0.60.2 FIX: se Serviço/Insumo/Item vieram vazios no CSV, extrair da própria Key_planejamento.
+      // Formato da key: "PP-OO-N-XXXXX-SERVICO-INSUMO-ITEM"
+      // Ex: "42-21O-1-31005-S05765-ADM5189-01.01.01.02"
+      let servico = (r[iServ]||'').trim();
+      let insumo = (r[iInsumo]||'').trim();
+      let itemCod = (r[iItem]||'').trim();
+      if (!servico || !insumo || !itemCod) {
+        const partes = key.split('-');
+        // partes[0]=PP, [1]=OO, [2]=N, [3]=XXXXX, [4]=SERVICO, [5]=INSUMO, [6+]=ITEM
+        if (partes.length >= 7) {
+          if (!servico) servico = partes[4];
+          if (!insumo) insumo = partes[5];
+          if (!itemCod) itemCod = partes.slice(6).join('-');
+        }
+      }
       agg.set(aggKey, {
         meta: {
           codigo_obra: codigoObra,
-          servico: (r[iServ]||'').trim(),
-          insumo: (r[iInsumo]||'').trim(),
-          item_cod: (r[iItem]||'').trim(),
+          servico: servico,
+          insumo: insumo,
+          item_cod: itemCod,
         },
         gestoes: {},
       });
@@ -5452,10 +5515,20 @@ function parseGestoes(text) {
     const yyyy_mm = `${ano}-${String(mn).padStart(2, '0')}`;
     const valor = parseNum(r[iVal]) || 0;
     if (valor <= 0) continue;
+    // v0.60.2 FIX: mesmo fallback pra Serviço/Insumo vazios
+    let pServico = (r[iServ]||'').trim();
+    let pInsumo = (r[iInsumo]||'').trim();
+    if (!pServico || !pInsumo) {
+      const partes = key.split('-');
+      if (partes.length >= 6) {
+        if (!pServico) pServico = partes[4];
+        if (!pInsumo) pInsumo = partes[5];
+      }
+    }
     PROJ_RAW.push({
       codigo_obra: codigoObra,
-      servico: (r[iServ]||'').trim(),
-      insumo: (r[iInsumo]||'').trim(),
+      servico: pServico,
+      insumo: pInsumo,
       mes: yyyy_mm,
       valor,
     });
@@ -7586,5 +7659,5 @@ updateSupaBadge();
 
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17ef6d42b5452ee',t:'MTc4MzUxMjQwMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

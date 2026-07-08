@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.60 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.60.1-spy · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1430,7 +1430,8 @@ function atualizarGestaoLabelPelaHistoria() {
   if (!HISTORICO || !Array.isArray(HISTORICO.gestoes)) return;
   const ultima = acharUltimaGestaoCronologica(HISTORICO.gestoes);
   if (ultima) {
-    console.log('[GESTAO] label atualizado pela última gestão do histórico:', ultima);
+    console.warn('[SPY-1 atualizarGestaoLabelPelaHistoria] mudando GESTAO_LABEL:', GESTAO_LABEL, '→', ultima);
+    console.trace();
     GESTAO_LABEL = ultima;
   }
 }
@@ -1444,6 +1445,8 @@ async function recarregarDadosDaObra() {
   DATA_T = [];
   DATA_F = [];
   EVOL_GLOBAL = { teorica: null, financeira: null };
+  console.warn('[SPY-2 recarregarDadosDaObra] zerando GESTAO_LABEL. era:', GESTAO_LABEL);
+  console.trace();
   GESTAO_LABEL = 'Gestão Atual';
   // Carrega tudo em paralelo
   const [cls, manuals, projCfg, movs, cfg, ups] = await Promise.all([
@@ -1496,7 +1499,11 @@ async function recarregarDadosDaObra() {
         if (p) EVOL_GLOBAL = p;
       } catch(e) {}
     }
-    if (cfg[pref + 'gestao_label']) GESTAO_LABEL = cfg[pref + 'gestao_label'];
+    if (cfg[pref + 'gestao_label']) {
+      console.warn('[SPY-3 restore Supabase] mudando GESTAO_LABEL:', GESTAO_LABEL, '→', cfg[pref + 'gestao_label']);
+      console.trace();
+      GESTAO_LABEL = cfg[pref + 'gestao_label'];
+    }
     if (cfg[pref + 'dados_tendencia']) {
       try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {}
     } else { DATA_T = []; }
@@ -5143,6 +5150,8 @@ function parseTendencia(text) {
   try {
     const headerCol9 = (rows[0][9] || '').trim().replace(/\s+/g, ' ');
     if (headerCol9 && headerCol9.length > 3) {
+      console.warn('[SPY-5 parseTendencia] mudando GESTAO_LABEL:', GESTAO_LABEL, '→', headerCol9);
+      console.trace();
       GESTAO_LABEL = headerCol9;
     }
   } catch(e) {}
@@ -7577,5 +7586,5 @@ updateSupaBadge();
 
 </script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a179c031d884f1ce',t:'MTc4MzQ1NzczMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

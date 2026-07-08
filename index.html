@@ -443,6 +443,10 @@ body:not(.is-editor) [data-requires-edit]:hover {
 body:not(.is-editor) [data-editor-only] {
   display: none !important;
 }
+/* v0.61 — só admin geral (whitelist com codigo_obra IS NULL) vê estes elementos */
+body:not(.is-admin-geral) [data-admin-only] {
+  display: none !important;
+}
 
 
 /* ==== v0.52: Central de Uploads e cabeçalho de fontes ==== */
@@ -629,6 +633,7 @@ body:not(.is-editor) [data-editor-only] {
   <div class="tab" data-tab="detalhe">📋 Detalhamento</div>
   <div class="tab" data-tab="historico">📅 Histórico Mensal</div>
   <div class="tab" data-tab="uploads">📤 Uploads</div>
+  <div class="tab" data-tab="admin" data-admin-only>⚙️ Admin</div>
   <div class="tab" data-tab="manual">ℹ️ Manual</div>
 </div>
 </div><!-- /page-header -->
@@ -1082,6 +1087,143 @@ body:not(.is-editor) [data-editor-only] {
   </div>
 </div>
 
+<!-- ADMIN (só admin geral) -->
+<div class="tab-content" id="tab-admin">
+  <div class="card">
+    <h2>⚙️ Administração <span class="hint">só visível para admin geral</span></h2>
+    <p style="font-size:12.5px; color:#4b5563; margin: 8px 0 12px;">
+      Gerenciar o catálogo de obras e a lista de editores permitidos.
+      Todas as alterações são compartilhadas com toda a equipe em tempo real.
+    </p>
+  </div>
+
+  <!-- === OBRAS === -->
+  <div class="card">
+    <h2>🏗️ Obras
+      <span style="display:flex; gap:6px; align-items:center;">
+        <button class="btn-sm primary" onclick="openObraForm()" style="font-size:12px;">➕ Nova obra</button>
+        <button class="btn-sm" onclick="renderObrasAdmin()" style="font-size:12px;" title="Recarregar do Supabase">🔄</button>
+      </span>
+    </h2>
+    <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+      Obras <strong>inativas</strong> ficam fora do dropdown do header (mas todos os dados históricos são preservados).
+      Para excluir permanentemente use o SQL Editor (raro).
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px;">Código</th>
+            <th>Nome</th>
+            <th style="width:140px;">Key EmpObraTD</th>
+            <th style="width:110px;">Ativa</th>
+            <th style="width:150px;">Criada em</th>
+            <th style="width:160px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="obrasAdminTbody">
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- === EDITORES === -->
+  <div class="card">
+    <h2>👥 Editores permitidos
+      <span style="display:flex; gap:6px; align-items:center;">
+        <button class="btn-sm primary" onclick="openEditorForm()" style="font-size:12px;">➕ Adicionar editor</button>
+        <button class="btn-sm" onclick="renderEditoresAdmin()" style="font-size:12px;" title="Recarregar do Supabase">🔄</button>
+      </span>
+    </h2>
+    <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+      💡 <strong>Admin geral</strong> (linha com obra "— todas —") pode: gerenciar obras, gerenciar esta lista, editar dados de qualquer obra.<br>
+      <strong>Editor por obra</strong> pode: editar apenas os dados da obra vinculada. Um mesmo email pode aparecer em várias obras (linhas separadas).
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nome</th>
+            <th style="width:200px;">Obra</th>
+            <th>Observação</th>
+            <th style="width:150px;">Adicionado em</th>
+            <th style="width:100px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="editoresAdminTbody">
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- === FORM MODAL: NOVA/EDITAR OBRA === -->
+  <div id="obraFormBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <h3 id="obraFormTitle" style="margin:0 0 16px; color:#1e3a8a;">Nova obra</h3>
+      <div style="display:grid; gap:12px;">
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Código da obra <span style="color:#dc2626;">*</span></label>
+          <input type="text" id="obraFormCodigo" placeholder="ex: 42-21O" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px; font-family:monospace;">
+          <div style="font-size:11px; color:#6b7280; margin-top:3px;">Formato Key_planejamento (ex: <code>42-21O</code>, sem zero à esquerda). Imutável após criar.</div>
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Nome da obra <span style="color:#dc2626;">*</span></label>
+          <input type="text" id="obraFormNome" placeholder="ex: Jardins Zurique" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Key EmpObraTD (opcional)</label>
+          <input type="text" id="obraFormKey" placeholder="ex: 042-21O" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px; font-family:monospace;">
+          <div style="font-size:11px; color:#6b7280; margin-top:3px;">Formato alternativo com zero à esquerda. Usado em alguns exports.</div>
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Observação (opcional)</label>
+          <textarea id="obraFormObs" placeholder="notas internas" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px; min-height:60px; resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+        <button class="btn-sm" onclick="closeObraForm()">Cancelar</button>
+        <button class="btn-sm primary" onclick="salvarObraForm()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === FORM MODAL: NOVO/EDITAR EDITOR === -->
+  <div id="editorFormBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <h3 id="editorFormTitle" style="margin:0 0 16px; color:#1e3a8a;">Adicionar editor</h3>
+      <div style="display:grid; gap:12px;">
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Email <span style="color:#dc2626;">*</span></label>
+          <input type="email" id="editorFormEmail" placeholder="fulano@empresa.com" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+          <div style="font-size:11px; color:#6b7280; margin-top:3px;">Precisa ser o email do Google que a pessoa vai usar pra logar.</div>
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Nome (opcional)</label>
+          <input type="text" id="editorFormNome" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Escopo <span style="color:#dc2626;">*</span></label>
+          <select id="editorFormObra" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+            <option value="">— admin geral (todas as obras) —</option>
+          </select>
+          <div style="font-size:11px; color:#6b7280; margin-top:3px;">Para dar acesso a várias obras: adicione uma linha por obra (mesmo email, obras diferentes).</div>
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Observação (opcional)</label>
+          <textarea id="editorFormObs" placeholder="notas: cargo, contato, etc." style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px; min-height:60px; resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+        <button class="btn-sm" onclick="closeEditorForm()">Cancelar</button>
+        <button class="btn-sm primary" onclick="salvarEditorForm()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MANUAL -->
 <div class="tab-content" id="tab-manual">
   <div class="card">
@@ -1270,7 +1412,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.60.5 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.61 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2075,7 +2217,9 @@ function updateSupaBadge() {
 const AUTH = {
   user: null,          // objeto do Supabase (email, id, name, picture)
   session: null,       // sessão do Supabase (com JWT)
-  isEditor: false,     // true se logado E na whitelist
+  isEditor: false,     // true se logado E na whitelist (qualquer obra ou admin geral)
+  isAdminGeral: false, // v0.61: true se logado E na whitelist com codigo_obra IS NULL
+  editaObras: [],      // v0.61: lista de códigos de obra que pode editar (se não for admin geral)
   whitelistChecked: false,
   ready: false,        // primeira verificação de sessão concluída
 };
@@ -2095,16 +2239,20 @@ function authToast(msg, kind='info', ms=3500) {
 }
 
 async function checkEditorPermission(email) {
-  if (!SUPA || !email) return false;
+  // v0.61: retorna { isEditor, isAdminGeral, editaObras[] }
+  const nada = { isEditor: false, isAdminGeral: false, editaObras: [] };
+  if (!SUPA || !email) return nada;
   try {
     const { data, error } = await SUPA
       .from('editores_permitidos')
-      .select('email')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
-    if (error) { console.warn('[AUTH] erro checar whitelist:', error); return false; }
-    return !!data;
-  } catch (e) { console.warn('[AUTH] excecao whitelist:', e); return false; }
+      .select('email, codigo_obra')
+      .eq('email', email.toLowerCase());
+    if (error) { console.warn('[AUTH] erro checar whitelist:', error); return nada; }
+    if (!Array.isArray(data) || data.length === 0) return nada;
+    const isAdminGeral = data.some(r => r.codigo_obra == null);
+    const editaObras = data.filter(r => r.codigo_obra != null).map(r => r.codigo_obra);
+    return { isEditor: true, isAdminGeral, editaObras };
+  } catch (e) { console.warn('[AUTH] excecao whitelist:', e); return nada; }
 }
 
 function updateAuthUI() {
@@ -2113,6 +2261,7 @@ function updateAuthUI() {
   if (!badge || !btn) return;
 
   document.body.classList.toggle('is-editor', !!AUTH.isEditor);
+  document.body.classList.toggle('is-admin-geral', !!AUTH.isAdminGeral);
 
   if (!AUTH.ready) {
     badge.className = 'auth-badge pending';
@@ -2179,7 +2328,10 @@ async function applySession(session, isFreshLogin = false) {
   AUTH.session = session || null;
   AUTH.user = session?.user || null;
   if (AUTH.user) {
-    AUTH.isEditor = await checkEditorPermission(AUTH.user.email);
+    const _perm = await checkEditorPermission(AUTH.user.email);
+    AUTH.isEditor     = !!_perm.isEditor;
+    AUTH.isAdminGeral = !!_perm.isAdminGeral;
+    AUTH.editaObras   = Array.isArray(_perm.editaObras) ? _perm.editaObras : [];
     AUTH.whitelistChecked = true;
     // Toasts só na 1ª entrada (login novo) — não em cada refresh/boot
     if (isFreshLogin) {
@@ -2191,6 +2343,8 @@ async function applySession(session, isFreshLogin = false) {
     }
   } else {
     AUTH.isEditor = false;
+    AUTH.isAdminGeral = false;
+    AUTH.editaObras = [];
   }
   AUTH.ready = true;
   updateAuthUI();
@@ -2407,6 +2561,11 @@ document.querySelectorAll('.tab').forEach(t => {
     // Re-inicializar componentes ao entrar em abas específicas (garante DOM pronto)
     if (t.dataset.tab === 'projecao_ctrl' && typeof initProjCtrl === 'function') {
       initProjCtrl();
+    }
+    // v0.61: ao entrar na aba Admin, carregar os dados do Supabase
+    if (t.dataset.tab === 'admin') {
+      if (typeof renderObrasAdmin === 'function') renderObrasAdmin();
+      if (typeof renderEditoresAdmin === 'function') renderEditoresAdmin();
     }
   };
 });
@@ -8023,6 +8182,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f8af52df0f198',t:'MTc4MzUxODQ2Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-</body>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17fa66079dcd7eb',t:'MTc4MzUxOTU5MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

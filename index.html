@@ -913,6 +913,7 @@ body:not(.is-editor) [data-editor-only] {
       <span style="display:flex; gap:6px; align-items:center;">
         <button class="btn-sm" onclick="projExpandAll()" style="font-size:11px;">📂 Expandir tudo</button>
         <button class="btn-sm" onclick="projCollapseAll()" style="font-size:11px;">📁 Recolher tudo</button>
+        <button class="btn-sm" onclick="exportarProjecaoDetalhada()" style="font-size:11px;" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
         <span class="hint" style="margin-left:8px;">clique em uma linha para ver a curva individual</span>
       </span>
     </h2>
@@ -937,11 +938,10 @@ body:not(.is-editor) [data-editor-only] {
           <tr>
             <th style="width:24px;"></th>
             <th data-sort-proj="label" style="min-width:240px;">Grupo / Serviço / Insumo</th>
+            <th class="num" data-sort-proj="valor_gestao" style="width:130px;" title="Total da última gestão fechada (do HISTORICO)">Valor Gestão</th>
             <th class="num" data-sort-proj="realizado" style="width:120px;">Realizado</th>
-            <th class="num" data-sort-proj="planejado_total" style="width:120px;">Planejado Total</th>
             <th class="num" data-sort-proj="extrapolacao" style="width:120px;">Extrapolação</th>
             <th class="num" data-sort-proj="tendencia" style="width:130px;">Tendência</th>
-            <th class="num" data-sort-proj="diff" style="width:120px;">Δ vs Planejado</th>
             <th style="width:170px;">Status / Ação</th>
           </tr>
         </thead>
@@ -949,7 +949,7 @@ body:not(.is-editor) [data-editor-only] {
       </table>
     </div>
     <div style="margin-top:8px; font-size:11px; color:#6b7280;">
-      💡 <strong>Realizado</strong>: soma até a data de corte · <strong>Planejado Total</strong>: tudo no CSV (incluindo passado e futuro) · <strong>Extrapolação</strong>: valor adicional projetado quando obra ultrapassa o último mês planejado (só Indiretos) · <strong>Tendência</strong>: Planejado + Extrapolação · <strong>Δ</strong>: Tendência − Planejado (positivo = vai faltar)
+      💡 <strong>Valor Gestão</strong>: total da última gestão fechada (HISTORICO) · <strong>Realizado</strong>: soma até a data de corte · <strong>Extrapolação</strong>: valor adicional projetado quando obra ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos) · <strong>Tendência</strong>: Valor Gestão + Extrapolação · clique em qualquer linha para ver a curva individual
     </div>
   </div>
 </div>
@@ -1261,7 +1261,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.60.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.60.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -6004,6 +6004,23 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
   const fs = document.getElementById('projFilterStatus').value;
   const fg = document.getElementById('projFilterGrupo').value;
 
+  // v0.60.3: mapa de Valor Gestão por (servico|insumo|item_cod) da última gestão fechada do HISTORICO
+  // (filtrado pela obra ativa)
+  const mapaValorGestao = {};
+  let _ultGestaoLabel = null;
+  if (HISTORICO && Array.isArray(HISTORICO.gestoes) && Array.isArray(HISTORICO.items)) {
+    _ultGestaoLabel = acharUltimaGestaoCronologica(HISTORICO.gestoes);
+    if (_ultGestaoLabel) {
+      HISTORICO.items
+        .filter(it => it.codigo_obra === OBRA_ATIVA)
+        .forEach(it => {
+          if (!it.insumo) return;
+          const chaveComp = (it.servico||'') + '|' + (it.insumo||'') + '|' + (it.item_cod||'');
+          mapaValorGestao[chaveComp] = (mapaValorGestao[chaveComp] || 0) + (it[_ultGestaoLabel] || 0);
+        });
+    }
+  }
+
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
@@ -6107,11 +6124,17 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
         grupo: grupoDoServico(getServicoCod(idx)),
         empty: true,
       };
+      // v0.60.3: injetar Valor Gestão do HISTORICO por chave composta
+      const _servCod = getServicoCod(idx);
+      const _chaveVG = (_servCod||'') + '|' + (n.cod_insumo||'') + '|' + (n.cod||'');
+      const _vg = mapaValorGestao[_chaveVG] || 0;
+      baseProj.valor_gestao = _vg;
       // Adicionar flows pendentes na extrapolação (independente do grupo)
       const flowsPend = flowsPendentesInsumo(n.cod_insumo);
       if (Math.abs(flowsPend) > 0.01) {
         n.proj = {
           ...baseProj,
+          valor_gestao: baseProj.valor_gestao || 0,
           extrapolacao: (baseProj.extrapolacao || 0) + flowsPend,
           tendencia: (baseProj.tendencia || baseProj.planejado_total || 0) + flowsPend,
           diff: (baseProj.diff || 0) + flowsPend,
@@ -6121,13 +6144,14 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       } else {
         n.proj = baseProj;
       }
-      n.proj.empty = n.proj.empty || (n.proj.planejado_total === 0 && n.proj.realizado === 0 && Math.abs(flowsPend) < 0.01);
+      n.proj.empty = (n.proj.planejado_total === 0 && n.proj.realizado === 0 && Math.abs(flowsPend) < 0.01 && (n.proj.valor_gestao||0) === 0);
       return n.proj;
     }
     // Container: soma filhos
     const agg = {
       realizado: 0, planejado_total: 0, planejado_futuro: 0,
       extrapolacao: 0, tendencia: 0, diff: 0,
+      valor_gestao: 0,
       empty: true,
     };
     n.children.forEach(ci => {
@@ -6138,6 +6162,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       agg.extrapolacao += sub.extrapolacao || 0;
       agg.tendencia += sub.tendencia || 0;
       agg.diff += sub.diff || 0;
+      agg.valor_gestao += sub.valor_gestao || 0;
       if (!sub.empty) agg.empty = false;
     });
     n.proj = agg;
@@ -6311,14 +6336,18 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       clickHandler = '';
     }
 
+    // v0.60.3: Tendência exibida = Valor Gestão + Extrapolação (consistente com o que a tabela mostra)
+    const _vg = p.valor_gestao || 0;
+    const _tendUI = _vg + (p.extrapolacao || 0);
+    const vgEmpty = valuesEmpty && _vg === 0;
+
     html += `<tr style="${trStyle}" onclick="${clickHandler}">
       <td style="width:24px; padding-left:${4+indent}px;">${icon}</td>
       <td style="padding-left:${10+indent}px;">${labelHtml}</td>
+      <td class="num">${vgEmpty ? '<span style="color:#d1d5db;">—</span>' : fmtR$(_vg)}</td>
       <td class="num">${fmtVal(p.realizado)}</td>
-      <td class="num">${fmtVal(p.planejado_total)}</td>
       <td class="num">${extrapTxt}</td>
-      <td class="num">${valuesEmpty ? '<span style="color:#d1d5db;">—</span>' : '<strong>'+fmtR$(p.tendencia)+'</strong>'}</td>
-      <td class="num">${diffTxt}</td>
+      <td class="num">${(vgEmpty && Math.abs(p.extrapolacao||0)<0.01) ? '<span style="color:#d1d5db;">—</span>' : '<strong>'+fmtR$(_tendUI)+'</strong>'}</td>
       <td>${statusBadge[st]||''} ${acao}</td>
     </tr>`;
     count++;
@@ -6360,6 +6389,246 @@ function projExpandAll() {
 function projCollapseAll() {
   projExpanded.clear();
   renderProjecao();
+}
+
+// v0.60.3: Exporta a Projeção Detalhada COMPLETA (hierarquia toda expandida, sem filtros) em Excel
+function exportarProjecaoDetalhada() {
+  try {
+    const _proj = (typeof getProjRawObraAtiva === 'function') ? getProjRawObraAtiva() : PROJ_RAW;
+    if (!_proj || !_proj.length) {
+      alert('Não há dados de Projeção para exportar. Carregue o CSV de Gestões primeiro.');
+      return;
+    }
+    const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
+    const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
+    const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
+    const tolerancia = parseFloat(document.getElementById('projTolerancia').value) || 50000;
+
+    // Re-executa o pipeline pra pegar projServicos e projInsumos SEM depender do render (não muda estado)
+    // Reagrupa PROJ_RAW por (servico, insumo, mes)
+    const byServMes = {};
+    const byServInsMes = {};
+    _proj.forEach(r => {
+      byServMes[r.servico] = byServMes[r.servico] || {};
+      byServMes[r.servico][r.mes] = (byServMes[r.servico][r.mes] || 0) + r.valor;
+      const k = r.servico + '|' + r.insumo;
+      byServInsMes[k] = byServInsMes[k] || { servico: r.servico, insumo: r.insumo, meses: {} };
+      byServInsMes[k].meses[r.mes] = (byServInsMes[k].meses[r.mes] || 0) + r.valor;
+    });
+    const projServicos = Object.entries(byServMes).map(([servico, meses]) =>
+      projetarServico(servico, meses, dataCorte, dataFim, janelaMeses)
+    );
+    const projInsumos = Object.values(byServInsMes).map(x => {
+      const p = projetarServico(x.servico, x.meses, dataCorte, dataFim, janelaMeses);
+      return { ...p, insumo: x.insumo };
+    });
+    const idxServ = {}; projServicos.forEach(p => idxServ[p.servico] = p);
+    const idxIns = {}; projInsumos.forEach(p => idxIns[p.servico + '|' + p.insumo] = p);
+
+    // Mapa Valor Gestão (mesma lógica da render)
+    const mapaValorGestao = {};
+    let ultGestao = null;
+    if (HISTORICO && Array.isArray(HISTORICO.gestoes) && Array.isArray(HISTORICO.items)) {
+      ultGestao = acharUltimaGestaoCronologica(HISTORICO.gestoes);
+      if (ultGestao) {
+        HISTORICO.items.filter(it => it.codigo_obra === OBRA_ATIVA).forEach(it => {
+          if (!it.insumo) return;
+          const k = (it.servico||'') + '|' + (it.insumo||'') + '|' + (it.item_cod||'');
+          mapaValorGestao[k] = (mapaValorGestao[k] || 0) + (it[ultGestao] || 0);
+        });
+      }
+    }
+
+    // Flows pendentes por insumo (mesma lógica)
+    function flowsPendInsumo(cod_insumo) {
+      if (!cod_insumo || !Array.isArray(DATA_F)) return 0;
+      let total = 0;
+      DATA_F.forEach(f => {
+        if (f.dep === 'Cancelado') return;
+        const status = f.refletido_status || 'pendente';
+        if (status !== 'pendente') return;
+        const v = f.custo_flowmaster || 0;
+        if (Math.abs(v) < 0.01) return;
+        if (f.insumo_planejamento === cod_insumo) total += v;
+        if (f.insumo_remanejamento === cod_insumo) total -= v;
+      });
+      return total;
+    }
+
+    // Percorrer HIERARQUIA e montar linhas
+    const nodes = HIERARQUIA.map(n => ({ ...n, children: [], parent: null }));
+    const stack = [];
+    function depthOf(n) {
+      if (n.tipo === 'raiz') return 0;
+      if (n.tipo === 'grupo') return 1;
+      if (n.tipo === 'subgrupo') return 2;
+      if (n.tipo === 'servico' || n.tipo === 'outro') return 3;
+      if (n.tipo === 'insumo') return 4;
+      return n.nivel;
+    }
+    nodes.forEach((n) => {
+      const d = depthOf(n);
+      while (stack.length && depthOf(stack[stack.length-1]) >= d) stack.pop();
+      if (stack.length) { n.parent = stack[stack.length-1].ordem; stack[stack.length-1].children.push(n.ordem); }
+      stack.push(n);
+    });
+    function getServicoCod(ordem) {
+      let cur = ordem;
+      while (cur != null) {
+        const pn = nodes[cur];
+        if (pn.cod_servico) return pn.cod_servico;
+        cur = pn.parent;
+      }
+      return '';
+    }
+
+    function computeNode(idx) {
+      const n = nodes[idx];
+      if (n.tipo === 'insumo') {
+        // Buscar serviço pai
+        let cur = n.parent, servCod = '';
+        while (cur != null) {
+          const pn = nodes[cur];
+          if (pn.cod_servico) { servCod = pn.cod_servico; break; }
+          cur = pn.parent;
+        }
+        const proj = idxIns[servCod + '|' + n.cod_insumo] || {
+          realizado: 0, planejado_total: 0, planejado_futuro: 0, extrapolacao: 0, tendencia: 0, diff: 0,
+          ritmo_historico: 0, ultimo_mes_planejado: null, meses_gap: 0,
+          grupo: grupoDoServico(servCod),
+        };
+        const fp = flowsPendInsumo(n.cod_insumo);
+        const vg = mapaValorGestao[(servCod||'') + '|' + (n.cod_insumo||'') + '|' + (n.cod||'')] || 0;
+        n.proj = {
+          ...proj,
+          valor_gestao: vg,
+          flows_pendentes: fp,
+          extrapolacao: (proj.extrapolacao||0) + fp,
+          tendencia: (proj.planejado_total||0) + (proj.extrapolacao||0) + fp,
+        };
+        n.proj.empty = (n.proj.planejado_total === 0 && n.proj.realizado === 0 && vg === 0 && Math.abs(fp) < 0.01);
+        return n.proj;
+      }
+      const agg = { realizado:0, planejado_total:0, planejado_futuro:0, extrapolacao:0, tendencia:0, diff:0, valor_gestao:0, flows_pendentes:0, empty:true };
+      n.children.forEach(ci => {
+        const sub = computeNode(ci);
+        agg.realizado += sub.realizado || 0;
+        agg.planejado_total += sub.planejado_total || 0;
+        agg.planejado_futuro += sub.planejado_futuro || 0;
+        agg.extrapolacao += sub.extrapolacao || 0;
+        agg.tendencia += sub.tendencia || 0;
+        agg.valor_gestao += sub.valor_gestao || 0;
+        agg.flows_pendentes += sub.flows_pendentes || 0;
+        if (!sub.empty) agg.empty = false;
+      });
+      n.proj = agg;
+      return agg;
+    }
+    nodes.forEach(n => { if (n.parent === null) computeNode(n.ordem); });
+
+    // Grupo do nó (mesma lógica do render)
+    function nodeGrupo(n) {
+      if (n.cod === '01.01') return 'Custos Indiretos';
+      if (n.cod === '01.02') return 'Custos Diretos / Infraestrutura';
+      if (n.cod === '01.03') return 'Obras Civis';
+      if (n.cod === '01.04') return 'Projeção de Gastos';
+      let cur = n.parent;
+      while (cur != null) {
+        const pn = nodes[cur];
+        if (pn.cod === '01.01') return 'Custos Indiretos';
+        if (pn.cod === '01.02') return 'Custos Diretos / Infraestrutura';
+        if (pn.cod === '01.03') return 'Obras Civis';
+        if (pn.cod === '01.04') return 'Projeção de Gastos';
+        if (pn.cod_servico) return grupoDoServico(pn.cod_servico);
+        cur = pn.parent;
+      }
+      return (n.proj && n.proj.grupo) || 'Outros';
+    }
+    function statusLabel(n) {
+      const p = n.proj || {};
+      if (p.empty) return 'Sem valor';
+      const st = calcStatus(p.diff || 0, p.planejado_total || 0, tolerancia);
+      return ({ red: 'Vai estourar', amber: 'Atenção', green: 'No esperado', sobra: 'Vai sobrar' })[st] || st;
+    }
+
+    // Nível (indentação por prefixo)
+    function nivelDe(n) {
+      if (n.tipo === 'raiz') return 0;
+      if (n.tipo === 'grupo') return 1;
+      if (n.tipo === 'subgrupo') return 2;
+      if (n.tipo === 'servico' || n.tipo === 'outro') return 3;
+      if (n.tipo === 'insumo') return 4;
+      return 0;
+    }
+
+    // Montar linhas em ordem hierárquica (percurso pré-ordem)
+    const linhas = [];
+    function walk(idx) {
+      const n = nodes[idx];
+      const p = n.proj || {};
+      const grupo = nodeGrupo(n);
+      const nivel = nivelDe(n);
+      const prefixo = '  '.repeat(nivel);
+      let label = '';
+      if (n.tipo === 'insumo') label = `${n.cod_insumo || ''} · ${n.item || ''}`;
+      else if (n.cod_servico) label = `${n.cod_servico} · ${n.item || ''}`;
+      else label = `${n.cod || ''} · ${n.item || ''}`;
+      const tendUI = (p.valor_gestao || 0) + (p.extrapolacao || 0);
+      linhas.push({
+        'Nível': nivel,
+        'Tipo': n.tipo,
+        'Código': n.cod || '',
+        'Cod. Serviço': n.cod_servico || '',
+        'Cod. Insumo': n.cod_insumo || '',
+        'Grupo': grupo,
+        'Descrição': prefixo + label,
+        'Valor Gestão (R$)': Math.round((p.valor_gestao || 0) * 100) / 100,
+        'Realizado (R$)': Math.round((p.realizado || 0) * 100) / 100,
+        'Planejado Total (R$)': Math.round((p.planejado_total || 0) * 100) / 100,
+        'Planejado Futuro (R$)': Math.round((p.planejado_futuro || 0) * 100) / 100,
+        'Extrapolação (R$)': Math.round((p.extrapolacao || 0) * 100) / 100,
+        'Flows Pendentes (R$)': Math.round((p.flows_pendentes || 0) * 100) / 100,
+        'Tendência (R$)': Math.round(tendUI * 100) / 100,
+        'Δ vs Planejado (R$)': Math.round(((p.diff || 0)) * 100) / 100,
+        'Ritmo Histórico (R$/mês)': Math.round((p.ritmo_historico || 0) * 100) / 100,
+        'Último Mês Planejado': p.ultimo_mes_planejado || '',
+        'Meses Gap': p.meses_gap || 0,
+        'Status': statusLabel(n),
+      });
+      n.children.forEach(ci => walk(ci));
+    }
+    nodes.forEach(n => { if (n.parent === null) walk(n.ordem); });
+
+    // Aba de metadados
+    const meta = [
+      { 'Campo': 'Obra', 'Valor': OBRA_ATIVA || '' },
+      { 'Campo': 'Última gestão (Valor Gestão)', 'Valor': ultGestao || '' },
+      { 'Campo': 'Data de corte', 'Valor': dataCorte },
+      { 'Campo': 'Data fim', 'Valor': dataFim },
+      { 'Campo': 'Janela ritmo histórico (meses)', 'Valor': janelaMeses },
+      { 'Campo': 'Tolerância (R$)', 'Valor': tolerancia },
+      { 'Campo': 'Exportado em', 'Valor': new Date().toLocaleString('pt-BR') },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.json_to_sheet(linhas);
+    // Ajustar largura das colunas
+    ws1['!cols'] = [
+      {wch:6},{wch:10},{wch:14},{wch:12},{wch:12},{wch:28},{wch:60},
+      {wch:16},{wch:16},{wch:18},{wch:18},{wch:16},{wch:18},{wch:16},{wch:18},{wch:20},{wch:18},{wch:10},{wch:16},
+    ];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Projeção Detalhada');
+    const ws2 = XLSX.utils.json_to_sheet(meta);
+    ws2['!cols'] = [{wch:32},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Metadados');
+
+    const nomeArq = `projecao-detalhada_${OBRA_ATIVA || 'obra'}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, nomeArq);
+    console.log('[EXPORT] Projeção Detalhada exportada:', nomeArq, `(${linhas.length} linhas)`);
+  } catch (e) {
+    console.error('[EXPORT] erro:', e);
+    alert('Erro ao exportar: ' + (e.message || e));
+  }
 }
 
 function openProjDrill(servico, insumo) {
@@ -7658,6 +7927,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17ef6d42b5452ee',t:'MTc4MzUxMjQwMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f4566ac8a016e',t:'MTc4MzUxNTYxOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

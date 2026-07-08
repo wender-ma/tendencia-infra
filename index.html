@@ -968,17 +968,26 @@ body:not(.is-editor) [data-editor-only] {
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
       <div>
         <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">💰 Saldo inicial</label>
-        <input type="text" id="projCtrlSaldoInicial" placeholder="ex: 4.541.431,52" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px; font-variant-numeric:tabular-nums; text-align:right;">
+        <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
+          <input type="text" id="projCtrlSaldoInicial" placeholder="ex: 4.541.431,52" style="flex:1; min-width:0; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; font-variant-numeric:tabular-nums; text-align:right;">
+          <button type="button" id="lockBtnSaldo" data-editor-only onclick="toggleLockCampo('saldo')" title="Travar / destravar edição" style="padding:0 10px; border:1px solid #d1d5db; border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
+        </div>
         <div style="font-size:11px; color:#6b7280; margin-top:3px;">Verba inicial da Projeção de Gastos</div>
       </div>
       <div>
         <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">📅 Data de referência</label>
-        <input type="month" id="projCtrlDataRef" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
+          <input type="month" id="projCtrlDataRef" style="flex:1; min-width:0; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+          <button type="button" id="lockBtnData" data-editor-only onclick="toggleLockCampo('data')" title="Travar / destravar edição" style="padding:0 10px; border:1px solid #d1d5db; border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
+        </div>
         <div style="font-size:11px; color:#6b7280; margin-top:3px;">Mês em que o saldo inicial foi aportado</div>
       </div>
       <div>
         <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">📌 Insumo controlado</label>
-        <input type="text" id="projCtrlInsumo" value="I011890" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
+          <input type="text" id="projCtrlInsumo" value="I011890" style="flex:1; min-width:0; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;">
+          <button type="button" id="lockBtnInsumo" data-editor-only onclick="toggleLockCampo('insumo')" title="Travar / destravar edição" style="padding:0 10px; border:1px solid #d1d5db; border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
+        </div>
         <div style="font-size:11px; color:#6b7280; margin-top:3px;">Padrão: I011890 (Verba Viabilidade)</div>
       </div>
     </div>
@@ -1261,7 +1270,7 @@ body:not(.is-editor) [data-editor-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.60.4 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.60.5 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1517,6 +1526,11 @@ async function recarregarDadosDaObra() {
     saldo_inicial: projCfg?.saldo_inicial ?? null,
     data_ref: projCfg?.data_ref || null,
     movimentacoes: movs || [],
+    locks: {
+      saldo: !!(projCfg?.locked_saldo),
+      data: !!(projCfg?.locked_data),
+      insumo: !!(projCfg?.locked_insumo),
+    },
   };
   try { localStorage.setItem(PROJ_CTRL_KEY, JSON.stringify(projState)); } catch(e) {}
   // Aplicar dados persistidos (com prefixo da obra)
@@ -1564,6 +1578,16 @@ async function recarregarDadosDaObra() {
   Object.assign(LAST_UPLOADS, ups);
   // v0.59.1: repopular PROJ_CTRL_STATE a partir do localStorage recém-atualizado
   if (typeof loadProjCtrl === 'function') loadProjCtrl();
+  // v0.60.5: se os elementos da aba já existem (usuário estava na aba), atualizar valores + locks
+  try {
+    const elSaldo = document.getElementById('projCtrlSaldoInicial');
+    const elDataRef = document.getElementById('projCtrlDataRef');
+    const elIns = document.getElementById('projCtrlInsumo');
+    if (elSaldo) elSaldo.value = (PROJ_CTRL_STATE.saldo_inicial != null) ? fmt(PROJ_CTRL_STATE.saldo_inicial) : '';
+    if (elDataRef) elDataRef.value = PROJ_CTRL_STATE.data_ref || '';
+    if (elIns) elIns.value = PROJ_CTRL_STATE.insumo || 'I011890';
+    if (typeof applyLocksToUI === 'function') applyLocksToUI();
+  } catch(e) {}
   console.log('[OBRAS] dados recarregados para', OBRA_ATIVA, '— insumo controlado:', PROJ_CTRL_STATE?.insumo);
 }
 
@@ -1678,11 +1702,15 @@ async function supaLoadProjConfig() {
 async function supaSaveProjConfig(cfg) {
   if (!SUPA) return;
   if (!OBRA_ATIVA) { console.warn('[SUPA] saveProjConfig: sem OBRA_ATIVA'); return; }
+  const _locks = cfg.locks || { saldo: false, data: false, insumo: false };
   const { error } = await SUPA.from('projecao_config').upsert({
     codigo_obra: OBRA_ATIVA,
     insumo_controlado: cfg.insumo || 'I011890',
     saldo_inicial: cfg.saldo_inicial ?? null,
     data_ref: cfg.data_ref || null,
+    locked_saldo: !!_locks.saldo,
+    locked_data: !!_locks.data,
+    locked_insumo: !!_locks.insumo,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'codigo_obra' });
   if (error) { console.warn('[SUPA] saveProjConfig err:', error); }
@@ -6988,6 +7016,7 @@ let PROJ_CTRL_STATE = {
   data_ref: null,
   insumo: 'I011890',
   movimentacoes: [], // movimentações manuais (não-flow)
+  locks: { saldo: false, data: false, insumo: false }, // v0.60.5
 };
 
 function loadProjCtrl() {
@@ -7002,6 +7031,9 @@ function loadProjCtrl() {
           data_ref: obj.data_ref || null,
           insumo: obj.insumo || 'I011890',
           movimentacoes: Array.isArray(obj.movimentacoes) ? obj.movimentacoes : [],
+          locks: (obj.locks && typeof obj.locks === 'object')
+            ? { saldo: !!obj.locks.saldo, data: !!obj.locks.data, insumo: !!obj.locks.insumo }
+            : { saldo: false, data: false, insumo: false },
         };
         return;
       }
@@ -7012,6 +7044,7 @@ function loadProjCtrl() {
       data_ref: null,
       insumo: 'I011890',
       movimentacoes: [],
+      locks: { saldo: false, data: false, insumo: false },
     };
   } catch (e) { console.warn('Erro ao ler controle projeção:', e); }
 }
@@ -7025,6 +7058,7 @@ function saveProjCtrl() {
     insumo: PROJ_CTRL_STATE.insumo,
     saldo_inicial: PROJ_CTRL_STATE.saldo_inicial,
     data_ref: PROJ_CTRL_STATE.data_ref,
+    locks: PROJ_CTRL_STATE.locks || { saldo: false, data: false, insumo: false },
   }); } catch(e){}
   // Sync movimentações manuais (upsert todas — idempotente)
   if (SUPA && Array.isArray(PROJ_CTRL_STATE.movimentacoes)) {
@@ -7043,6 +7077,41 @@ function nextMovId() {
 
 let _projCtrlListenersAttached = false;
 
+// v0.60.5 — aplica o estado dos cadeados aos inputs e botões da UI
+function applyLocksToUI() {
+  const map = [
+    { key: 'saldo',  inputId: 'projCtrlSaldoInicial', btnId: 'lockBtnSaldo'  },
+    { key: 'data',   inputId: 'projCtrlDataRef',      btnId: 'lockBtnData'   },
+    { key: 'insumo', inputId: 'projCtrlInsumo',       btnId: 'lockBtnInsumo' },
+  ];
+  const locks = (PROJ_CTRL_STATE && PROJ_CTRL_STATE.locks) || { saldo:false, data:false, insumo:false };
+  map.forEach(m => {
+    const inp = document.getElementById(m.inputId);
+    const btn = document.getElementById(m.btnId);
+    const trancado = !!locks[m.key];
+    if (inp) {
+      inp.readOnly = trancado;
+      inp.style.background = trancado ? '#f3f4f6' : '';
+      inp.style.color = trancado ? '#6b7280' : '';
+      inp.style.cursor = trancado ? 'not-allowed' : '';
+    }
+    if (btn) {
+      btn.textContent = trancado ? '🔒' : '🔓';
+      btn.title = trancado ? 'Trancado — clique para destravar' : 'Destravado — clique para trancar';
+      btn.style.background = trancado ? '#fef3c7' : 'white';
+      btn.style.borderColor = trancado ? '#f59e0b' : '#d1d5db';
+    }
+  });
+}
+
+// v0.60.5 — alterna o cadeado de um campo (saldo | data | insumo)
+function toggleLockCampo(campo) {
+  if (!PROJ_CTRL_STATE.locks) PROJ_CTRL_STATE.locks = { saldo:false, data:false, insumo:false };
+  PROJ_CTRL_STATE.locks[campo] = !PROJ_CTRL_STATE.locks[campo];
+  applyLocksToUI();
+  saveProjCtrl();
+}
+
 function initProjCtrl() {
   try {
     loadProjCtrl();
@@ -7060,6 +7129,8 @@ function initProjCtrl() {
     }
     if (elDataRef && PROJ_CTRL_STATE.data_ref) elDataRef.value = PROJ_CTRL_STATE.data_ref;
     if (elIns) elIns.value = PROJ_CTRL_STATE.insumo || 'I011890';
+    // v0.60.5 — aplicar estado dos cadeados aos 3 campos
+    applyLocksToUI();
 
     // Anexar listeners SÓ UMA VEZ (idempotente)
     if (!_projCtrlListenersAttached) {
@@ -7952,6 +8023,6 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f57db7aac016e',t:'MTc4MzUxNjM3NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17f8af52df0f198',t:'MTc4MzUxODQ2Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
 </html>

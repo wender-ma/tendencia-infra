@@ -1110,8 +1110,8 @@ body:not(.is-admin-geral) [data-admin-only] {
       </span>
     </h2>
     <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
-      Usuários que criaram conta pelo botão "Criar conta" e ainda não têm permissão de edição.
-      Aprovar = escolher papel (admin ou editor de uma obra). Rejeitar = negar acesso permanente.
+      Usuários que criaram conta pelo botão "Criar conta" e ainda não têm permissão de edição.<br>
+      <strong>Aprovar</strong> = vira editor sem obras (defina depois em Editores via 🏗️). <strong>Rejeitar</strong> = nega acesso permanente.
     </p>
     <div class="table-wrap">
       <table>
@@ -1173,9 +1173,9 @@ body:not(.is-admin-geral) [data-admin-only] {
       </span>
     </h2>
     <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
-      💡 <strong>Admin</strong> (👑) pode gerenciar obras, aprovar cadastros e editar dados de qualquer obra.<br>
-      <strong>Editor</strong> (✏️) pode editar apenas os dados da obra vinculada. Um mesmo email pode aparecer em várias obras (linhas separadas).<br>
-      Use ⬆️/⬇️ para trocar entre editor e admin. Use 🗑️ para remover a permissão.
+      💡 <strong>Admin</strong> (👑) gerencia obras, aprova cadastros e edita dados de qualquer obra.<br>
+      <strong>Editor</strong> (✏️) edita só as obras marcadas na coluna "Obra". Editor sem obra atribuída não edita nada (⚠️).<br>
+      Use ⬆️/⬇️ para alternar admin↔editor · 🏗️ para escolher obras do editor (checkbox) · 🗑️ para remover totalmente.
     </p>
     <div class="table-wrap">
       <table>
@@ -1257,6 +1257,30 @@ body:not(.is-admin-geral) [data-admin-only] {
       <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
         <button class="btn-sm" onclick="closeEditorForm()">Cancelar</button>
         <button class="btn-sm primary" onclick="salvarEditorForm()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === MODAL: EDITAR OBRAS DO EDITOR (v0.62.1) === -->
+  <div id="editorObrasBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <h3 style="margin:0 0 8px; color:#1e3a8a;">🏗️ Obras que este editor pode editar</h3>
+      <p style="font-size:12px; color:#6b7280; margin:0 0 16px;">
+        <strong id="editorObrasEmail" style="color:#374151;"></strong><br>
+        Marque as obras que este editor pode alterar. Se não marcar nenhuma, ele permanece cadastrado mas <strong>não edita nada</strong>.
+      </p>
+      <div id="editorObrasCheckboxes" style="display:grid; gap:8px; margin-bottom:16px; max-height:300px; overflow-y:auto; padding:8px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb;">
+        <!-- checkboxes populados dinamicamente -->
+      </div>
+      <div style="display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:16px;">
+        <div style="display:flex; gap:6px;">
+          <button class="btn-sm" onclick="editorObrasMarcarTodas(true)" style="font-size:11px;">✅ Todas</button>
+          <button class="btn-sm" onclick="editorObrasMarcarTodas(false)" style="font-size:11px;">◻️ Nenhuma</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-sm" onclick="closeEditorObras()">Cancelar</button>
+          <button class="btn-sm primary" onclick="salvarObrasDoEditor()">💾 Salvar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1450,7 +1474,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.62 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.62.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1876,6 +1900,8 @@ async function deletarObra(codigo, nome) {
 
 // -------------- EDITORES (v0.62 — com role + pending) --------------
 
+// v0.62.1 — renderEditoresAdmin AGRUPADO por email + modal de obras via checkbox
+
 async function renderEditoresAdmin() {
   const tbody = document.getElementById('editoresAdminTbody');
   if (!tbody) return;
@@ -1887,7 +1913,7 @@ async function renderEditoresAdmin() {
   try {
     const { data, error } = await SUPA.from('editores_permitidos')
       .select('*')
-      .neq('role', 'pending')  // pending fica na outra tabela
+      .neq('role', 'pending')
       .order('role', { ascending: true })
       .order('email', { ascending: true });
     if (error) throw error;
@@ -1895,32 +1921,81 @@ async function renderEditoresAdmin() {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">Nenhum editor cadastrado.</td></tr>';
       return;
     }
+    // v0.62.1: agrupar por email — 1 linha por usuário, obras como badges
     const obrasByCodigo = {}; OBRAS.forEach(o => { obrasByCodigo[o.codigo_obra] = o; });
-    tbody.innerHTML = data.map(e => {
-      const isAdmin = e.role === 'admin';
+    const grupos = {};
+    data.forEach(e => {
+      const k = e.email;
+      if (!grupos[k]) {
+        grupos[k] = {
+          email: e.email,
+          nome: e.nome,
+          observacao: e.observacao,
+          adicionado_em: e.adicionado_em,
+          role: e.role,
+          obras: [],  // lista de codigo_obra (só quando role='editor')
+          hasAdminRow: false,
+        };
+      }
+      const g = grupos[k];
+      // Se qualquer linha for admin, marca como admin
+      if (e.role === 'admin') {
+        g.role = 'admin';
+        g.hasAdminRow = true;
+      }
+      // Coletar obras (só para editor)
+      if (e.role === 'editor' && e.codigo_obra) g.obras.push(e.codigo_obra);
+      // Manter a data mais antiga como "adicionado em"
+      if (e.adicionado_em && (!g.adicionado_em || e.adicionado_em < g.adicionado_em)) {
+        g.adicionado_em = e.adicionado_em;
+      }
+      // Priorizar nome/obs não-nulos
+      if (!g.nome && e.nome) g.nome = e.nome;
+      if (!g.observacao && e.observacao) g.observacao = e.observacao;
+    });
+
+    const linhas = Object.values(grupos).sort((a, b) => {
+      // admin primeiro, depois por email
+      if (a.role !== b.role) return a.role === 'admin' ? -1 : 1;
+      return a.email.localeCompare(b.email);
+    });
+
+    tbody.innerHTML = linhas.map(g => {
+      const isAdmin = g.role === 'admin';
       const roleBadge = isAdmin
         ? '<span class="badge purple">👑 Admin</span>'
         : '<span class="badge green">✏️ Editor</span>';
-      const obraLbl = isAdmin || e.codigo_obra == null
-        ? '<span style="color:#6b7280; font-size:11px;">— todas —</span>'
-        : (obrasByCodigo[e.codigo_obra]
-            ? `<code style="font-size:11px;">${escHtml(e.codigo_obra)}</code> · ${escHtml(obrasByCodigo[e.codigo_obra].nome)}`
-            : `<code style="font-size:11px;">${escHtml(e.codigo_obra)}</code> <span style="color:#dc2626; font-size:10px;">(órfã)</span>`);
-      const dt = e.adicionado_em ? new Date(e.adicionado_em).toLocaleString('pt-BR') : '—';
-      // Botão de trocar role
+      let obrasHtml;
+      if (isAdmin) {
+        obrasHtml = '<span style="color:#6b7280; font-size:11px;">— todas —</span>';
+      } else if (g.obras.length === 0) {
+        obrasHtml = '<span style="color:#dc2626; font-size:11px;" title="Editor sem obra atribuída — não edita nada">⚠️ nenhuma obra</span>';
+      } else {
+        obrasHtml = g.obras.map(cod => {
+          const info = obrasByCodigo[cod];
+          return `<span class="badge" style="background:#eff6ff; color:#1e3a8a; margin:2px; display:inline-block;" title="${escAttr(info?.nome || cod)}"><code style="font-size:10px;">${escHtml(cod)}</code></span>`;
+        }).join('');
+      }
+      const dt = g.adicionado_em ? new Date(g.adicionado_em).toLocaleString('pt-BR') : '—';
+      // Botão de trocar role: admin↔editor
       const trocarRoleBtn = isAdmin
-        ? `<button class="btn-sm" onclick="mudarRoleEditor('${escAttr(e.email)}', ${e.codigo_obra ? "'"+escAttr(e.codigo_obra)+"'" : 'null'}, 'editor')" title="Rebaixar pra editor" style="padding:3px 6px; font-size:10px;">⬇️</button>`
-        : `<button class="btn-sm" onclick="mudarRoleEditor('${escAttr(e.email)}', ${e.codigo_obra ? "'"+escAttr(e.codigo_obra)+"'" : 'null'}, 'admin')" title="Promover a admin" style="padding:3px 6px; font-size:10px;">⬆️</button>`;
+        ? `<button class="btn-sm" onclick="mudarRoleUsuario('${escAttr(g.email)}', 'editor')" title="Rebaixar pra editor" style="padding:3px 6px; font-size:10px;">⬇️</button>`
+        : `<button class="btn-sm" onclick="mudarRoleUsuario('${escAttr(g.email)}', 'admin')" title="Promover a admin" style="padding:3px 6px; font-size:10px;">⬆️</button>`;
+      // Botão editar obras (só faz sentido pra editor, admin já tem tudo)
+      const btnObras = isAdmin
+        ? `<button class="btn-sm" disabled style="padding:3px 6px; font-size:10px; opacity:0.4; cursor:not-allowed;" title="Admin edita todas — nada pra configurar">🏗️</button>`
+        : `<button class="btn-sm" onclick="openEditorObras('${escAttr(g.email)}')" title="Escolher obras que este editor pode alterar" style="padding:3px 6px; font-size:10px; background:#eff6ff; border:1px solid #1e3a8a; color:#1e3a8a;">🏗️</button>`;
       return `<tr>
-        <td style="font-family:monospace; font-size:12px;">${escHtml(e.email)}</td>
-        <td>${escHtml(e.nome||'—')}</td>
+        <td style="font-family:monospace; font-size:12px;">${escHtml(g.email)}</td>
+        <td>${escHtml(g.nome||'—')}</td>
         <td>${roleBadge}</td>
-        <td>${obraLbl}</td>
-        <td style="font-size:11px; color:#6b7280;">${escHtml(e.observacao||'')}</td>
+        <td>${obrasHtml}</td>
+        <td style="font-size:11px; color:#6b7280;">${escHtml(g.observacao||'')}</td>
         <td style="font-size:11px; color:#6b7280;">${dt}</td>
         <td>
           ${trocarRoleBtn}
-          <button class="btn-sm" onclick="removerEditor('${escAttr(e.email)}', ${e.codigo_obra ? "'"+escAttr(e.codigo_obra)+"'" : 'null'})" style="padding:3px 6px; font-size:10px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Remover permissão">🗑️</button>
+          ${btnObras}
+          <button class="btn-sm" onclick="removerUsuario('${escAttr(g.email)}')" style="padding:3px 6px; font-size:10px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Remover TODAS as permissões deste usuário">🗑️</button>
         </td>
       </tr>`;
     }).join('');
@@ -1930,27 +2005,142 @@ async function renderEditoresAdmin() {
   }
 }
 
-async function mudarRoleEditor(email, codigoObra, novoRole) {
+// v0.62.1: trocar role de UM usuário inteiro (não por linha)
+async function mudarRoleUsuario(email, novoRole) {
   if (!SUPA) return;
   const acao = novoRole === 'admin' ? 'promover a admin' : 'rebaixar a editor';
-  if (!confirm(`Deseja ${acao} o usuário ${email}?`)) return;
+  const obs = novoRole === 'admin'
+    ? 'Como admin, ele edita todas as obras + gerencia usuários. Todas as linhas específicas por obra serão consolidadas em 1 linha com codigo_obra NULL.'
+    : 'Como editor, ele volta a precisar de obras específicas atribuídas. Use o botão 🏗️ pra escolher quais.';
+  if (!confirm(`Deseja ${acao} o usuário ${email}?\n\n${obs}`)) return;
   try {
-    let q = SUPA.from('editores_permitidos').update({
+    // Estratégia: apagar todas as linhas do usuário e recriar UMA linha com o novo role
+    await SUPA.from('editores_permitidos').delete().eq('email', email);
+    const { error } = await SUPA.from('editores_permitidos').insert({
+      email,
       role: novoRole,
+      status: 'active',
+      codigo_obra: null,  // admin = null; editor sem obra também = null (admin define depois via 🏗️)
       aprovado_em: new Date().toISOString(),
       aprovado_por: (AUTH?.user?.email) || null,
-    }).eq('email', email);
-    if (codigoObra == null) q = q.is('codigo_obra', null);
-    else q = q.eq('codigo_obra', codigoObra);
-    const { error } = await q;
+    });
     if (error) throw error;
-    authToast('✅ Role atualizado', 'ok', 2500);
+    authToast(`✅ Usuário agora é ${novoRole}`, 'ok', 2500);
     await renderEditoresAdmin();
   } catch(e) {
-    console.warn('[ADMIN] mudarRoleEditor erro:', e);
+    console.warn('[ADMIN] mudarRoleUsuario erro:', e);
     alert('Erro: ' + (e.message||e));
   }
 }
+
+// v0.62.1: remover TODAS as permissões de um usuário (sai da whitelist)
+async function removerUsuario(email) {
+  if (!SUPA) return;
+  if (!confirm(`Remover TODAS as permissões de ${email}?\n\nO usuário some da whitelist. A conta em auth.users continua existindo — se ele logar de novo, entra como pending automaticamente.`)) return;
+  try {
+    const { error } = await SUPA.from('editores_permitidos').delete().eq('email', email);
+    if (error) throw error;
+    authToast('🗑️ Permissões removidas', 'ok', 2500);
+    await renderEditoresAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] removerUsuario erro:', e);
+    alert('Erro: ' + (e.message||e));
+  }
+}
+
+// ---------- MODAL EDITAR OBRAS DO EDITOR ----------
+
+let _editorObrasEditandoEmail = null;
+
+async function openEditorObras(email) {
+  if (!SUPA) return;
+  _editorObrasEditandoEmail = email;
+  const container = document.getElementById('editorObrasCheckboxes');
+  const emailEl = document.getElementById('editorObrasEmail');
+  if (emailEl) emailEl.textContent = email;
+  if (container) container.innerHTML = '<div style="padding:12px; color:#9ca3af;">carregando obras…</div>';
+  document.getElementById('editorObrasBackdrop').style.display = 'flex';
+  try {
+    // Buscar obras atuais do editor
+    const { data, error } = await SUPA.from('editores_permitidos')
+      .select('codigo_obra')
+      .eq('email', email)
+      .eq('role', 'editor');
+    if (error) throw error;
+    const obrasAtuais = new Set((data || []).map(r => r.codigo_obra).filter(x => x != null));
+    // Renderizar checkboxes de todas as obras ativas
+    const obrasAtivas = OBRAS.filter(o => o.ativa);
+    if (obrasAtivas.length === 0) {
+      container.innerHTML = '<div style="padding:12px; color:#9ca3af;">Nenhuma obra ativa cadastrada.</div>';
+      return;
+    }
+    container.innerHTML = obrasAtivas.map(o => {
+      const checked = obrasAtuais.has(o.codigo_obra) ? 'checked' : '';
+      return `<label style="display:flex; gap:8px; align-items:center; padding:6px 8px; border-radius:4px; cursor:pointer;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background=''">
+        <input type="checkbox" class="editor-obra-cb" value="${escAttr(o.codigo_obra)}" ${checked} style="width:16px; height:16px; cursor:pointer;">
+        <code style="font-size:11px; color:#6b7280;">${escHtml(o.codigo_obra)}</code>
+        <strong style="font-size:13px;">${escHtml(o.nome)}</strong>
+      </label>`;
+    }).join('');
+  } catch(e) {
+    console.warn('[ADMIN] openEditorObras erro:', e);
+    container.innerHTML = `<div style="padding:12px; color:#dc2626;">Erro: ${escHtml(e.message||String(e))}</div>`;
+  }
+}
+
+function closeEditorObras() {
+  document.getElementById('editorObrasBackdrop').style.display = 'none';
+  _editorObrasEditandoEmail = null;
+}
+
+function editorObrasMarcarTodas(marcar) {
+  document.querySelectorAll('.editor-obra-cb').forEach(cb => { cb.checked = marcar; });
+}
+
+async function salvarObrasDoEditor() {
+  const email = _editorObrasEditandoEmail;
+  if (!email || !SUPA) return;
+  const marcadas = [...document.querySelectorAll('.editor-obra-cb:checked')].map(cb => cb.value);
+  try {
+    // Estratégia atômica-ish: apaga todas as linhas do usuário e recria conforme marcadas
+    // (só apaga as linhas editor; se ele for admin, aquela linha admin ficaria — mas se está usando esse modal, é porque é editor)
+    await SUPA.from('editores_permitidos').delete().eq('email', email);
+    if (marcadas.length === 0) {
+      // Editor sem obra nenhuma — mantém cadastrado mas sem escopo
+      const { error } = await SUPA.from('editores_permitidos').insert({
+        email,
+        role: 'editor',
+        status: 'active',
+        codigo_obra: null,
+        aprovado_em: new Date().toISOString(),
+        aprovado_por: (AUTH?.user?.email) || null,
+        observacao: 'Sem obras atribuídas',
+      });
+      if (error) throw error;
+    } else {
+      // Insere uma linha por obra
+      const linhas = marcadas.map(cod => ({
+        email,
+        role: 'editor',
+        status: 'active',
+        codigo_obra: cod,
+        aprovado_em: new Date().toISOString(),
+        aprovado_por: (AUTH?.user?.email) || null,
+      }));
+      const { error } = await SUPA.from('editores_permitidos').insert(linhas);
+      if (error) throw error;
+    }
+    authToast(`✅ ${marcadas.length} obra(s) atribuída(s)`, 'ok', 2500);
+    closeEditorObras();
+    await renderEditoresAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] salvarObrasDoEditor erro:', e);
+    alert('Erro ao salvar: ' + (e.message||e));
+  }
+}
+
+// ---------- Form "Adicionar editor" v0.62.1 ----------
+// Simplificado: só email + nome + observação. O admin marca obras depois via botão 🏗️
 
 function openEditorForm() {
   document.getElementById('editorFormTitle').textContent = 'Adicionar editor';
@@ -1959,12 +2149,9 @@ function openEditorForm() {
   document.getElementById('editorFormEmail').style.background = '';
   document.getElementById('editorFormNome').value = '';
   document.getElementById('editorFormObs').value = '';
-  const sel = document.getElementById('editorFormObra');
-  sel.innerHTML = '<option value="">— admin (todas as obras) —</option>' +
-    OBRAS.filter(o => o.ativa).map(o =>
-      `<option value="${escAttr(o.codigo_obra)}">${escHtml(o.codigo_obra)} · ${escHtml(o.nome)}</option>`
-    ).join('');
-  sel.value = '';
+  // v0.62.1: esconde o dropdown de obra (não é mais aqui)
+  const selWrap = document.getElementById('editorFormObra')?.parentElement;
+  if (selWrap) selWrap.style.display = 'none';
   document.getElementById('editorFormBackdrop').style.display = 'flex';
 }
 
@@ -1975,54 +2162,34 @@ function closeEditorForm() {
 async function salvarEditorForm() {
   const email = document.getElementById('editorFormEmail').value.trim().toLowerCase();
   const nome  = document.getElementById('editorFormNome').value.trim();
-  const obra  = document.getElementById('editorFormObra').value.trim();
   const obs   = document.getElementById('editorFormObs').value.trim();
   if (!email) { alert('Email é obrigatório.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); return; }
   if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
-  // v0.62: se não informa obra → admin; se informa → editor
-  const role = obra ? 'editor' : 'admin';
   try {
+    // v0.62.1: cria como editor sem obra. Admin marca obras depois via 🏗️
     const { error } = await SUPA.from('editores_permitidos').insert({
       email,
       nome: nome || null,
-      codigo_obra: obra || null,
-      observacao: obs || null,
-      role,
+      codigo_obra: null,
+      observacao: obs || 'Adicionado manualmente pelo admin',
+      role: 'editor',
       status: 'active',
       aprovado_em: new Date().toISOString(),
       aprovado_por: (AUTH?.user?.email) || null,
     });
     if (error) {
       if (String(error.message||'').match(/duplicate|unique|conflict/i)) {
-        alert('Este email já tem permissão para esta obra (ou já é admin).');
+        alert('Este email já está na whitelist.');
       } else { throw error; }
       return;
     }
-    authToast('✅ Editor adicionado como ' + role, 'ok', 2500);
+    authToast('✅ Editor adicionado. Use 🏗️ pra escolher as obras.', 'ok', 3500);
     closeEditorForm();
     await renderEditoresAdmin();
   } catch(e) {
     console.warn('[ADMIN] salvarEditorForm erro:', e);
     alert('Erro ao salvar: ' + (e.message||e));
-  }
-}
-
-async function removerEditor(email, codigoObra) {
-  if (!SUPA) return;
-  const escopo = codigoObra ? `da obra ${codigoObra}` : 'como admin';
-  if (!confirm(`Remover a permissão de ${email} ${escopo}?\n\nSe for a última linha desse email, ele perde acesso de edição completo.`)) return;
-  try {
-    let q = SUPA.from('editores_permitidos').delete().eq('email', email);
-    if (codigoObra == null) q = q.is('codigo_obra', null);
-    else q = q.eq('codigo_obra', codigoObra);
-    const { error } = await q;
-    if (error) throw error;
-    authToast('🗑️ Editor removido', 'ok', 2500);
-    await renderEditoresAdmin();
-  } catch(e) {
-    console.warn('[ADMIN] removerEditor erro:', e);
-    alert('Erro ao remover: ' + (e.message||e));
   }
 }
 
@@ -2069,43 +2236,18 @@ async function renderPendentesAdmin() {
 }
 
 async function aprovarPendente(email) {
+  // v0.62.1: aprova como editor SEM obra (admin define depois via botão 🏗️)
   if (!SUPA) return;
-  // Perguntar escopo: admin (todas) ou editor de uma obra
-  const opcoes = OBRAS.filter(o => o.ativa).map((o, i) => `${i+1}. Editor de ${o.codigo_obra} (${o.nome})`).join('\n');
-  const resposta = prompt(
-    `Aprovar ${email}\n\n` +
-    `Escolha o papel:\n` +
-    `0. Admin (edita tudo + gerencia obras/usuários)\n` +
-    opcoes + '\n\n' +
-    `Digite o número:`
-  );
-  if (resposta == null) return;
-  const num = parseInt(resposta.trim());
-  if (isNaN(num) || num < 0) { alert('Número inválido.'); return; }
-  const obrasAtivas = OBRAS.filter(o => o.ativa);
-  if (num > obrasAtivas.length) { alert('Número fora do intervalo.'); return; }
+  if (!confirm(`Aprovar ${email} como editor?\n\nEle entra sem acesso a nenhuma obra. Depois, use o botão 🏗️ na tabela de editores pra escolher quais obras ele pode editar.`)) return;
   try {
-    if (num === 0) {
-      // Promover a admin: atualiza o próprio registro pending pra role='admin'
-      const { error } = await SUPA.from('editores_permitidos').update({
-        role: 'admin',
-        codigo_obra: null,
-        aprovado_em: new Date().toISOString(),
-        aprovado_por: AUTH?.user?.email || null,
-      }).eq('email', email).eq('role', 'pending');
-      if (error) throw error;
-    } else {
-      // Editor de uma obra específica: atualiza o pending E vincula obra
-      const obraEscolhida = obrasAtivas[num - 1];
-      const { error } = await SUPA.from('editores_permitidos').update({
-        role: 'editor',
-        codigo_obra: obraEscolhida.codigo_obra,
-        aprovado_em: new Date().toISOString(),
-        aprovado_por: AUTH?.user?.email || null,
-      }).eq('email', email).eq('role', 'pending');
-      if (error) throw error;
-    }
-    authToast('✅ Aprovado', 'ok', 2500);
+    const { error } = await SUPA.from('editores_permitidos').update({
+      role: 'editor',
+      codigo_obra: null,
+      aprovado_em: new Date().toISOString(),
+      aprovado_por: AUTH?.user?.email || null,
+    }).eq('email', email).eq('role', 'pending');
+    if (error) throw error;
+    authToast('✅ Aprovado como editor sem escopo. Defina as obras dele em Editores.', 'ok', 4000);
     await renderPendentesAdmin();
     await renderEditoresAdmin();
   } catch(e) {

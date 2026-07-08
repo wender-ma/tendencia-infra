@@ -447,6 +447,11 @@ body:not(.is-editor) [data-editor-only] {
 body:not(.is-admin-geral) [data-admin-only] {
   display: none !important;
 }
+/* v0.62: tabs do modal de login */
+#loginTabLogin.active, #loginTabSignup.active {
+  border-bottom-color: #1e3a8a !important;
+  color: #1e3a8a !important;
+}
 
 
 /* ==== v0.52: Central de Uploads e cabeçalho de fontes ==== */
@@ -1097,6 +1102,35 @@ body:not(.is-admin-geral) [data-admin-only] {
     </p>
   </div>
 
+  <!-- === PENDENTES DE APROVAÇÃO === -->
+  <div class="card">
+    <h2>🔔 Cadastros aguardando aprovação <span class="hint" id="pendentesCount"></span>
+      <span style="display:flex; gap:6px; align-items:center;">
+        <button class="btn-sm" onclick="renderPendentesAdmin()" style="font-size:12px;" title="Recarregar do Supabase">🔄</button>
+      </span>
+    </h2>
+    <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
+      Usuários que criaram conta pelo botão "Criar conta" e ainda não têm permissão de edição.
+      Aprovar = escolher papel (admin ou editor de uma obra). Rejeitar = negar acesso permanente.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nome</th>
+            <th>Observação</th>
+            <th style="width:150px;">Cadastrado em</th>
+            <th style="width:200px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="pendentesAdminTbody">
+          <tr><td colspan="5" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- === OBRAS === -->
   <div class="card">
     <h2>🏗️ Obras
@@ -1106,8 +1140,9 @@ body:not(.is-admin-geral) [data-admin-only] {
       </span>
     </h2>
     <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
-      Obras <strong>inativas</strong> ficam fora do dropdown do header (mas todos os dados históricos são preservados).
-      Para excluir permanentemente use o SQL Editor (raro).
+      Obras <strong>inativas</strong> ficam fora do dropdown do header (dados históricos preservados).<br>
+      Coluna <strong>Origem</strong>: <span class="badge purple">✍️ Manual</span> = criada aqui, pode ser deletada (🗑️).
+      <span class="badge gray">📥 Upload</span> = veio de arquivo de Gestões, só pode desativar.
     </p>
     <div class="table-wrap">
       <table>
@@ -1116,13 +1151,14 @@ body:not(.is-admin-geral) [data-admin-only] {
             <th style="width:120px;">Código</th>
             <th>Nome</th>
             <th style="width:140px;">Key EmpObraTD</th>
-            <th style="width:110px;">Ativa</th>
-            <th style="width:150px;">Criada em</th>
-            <th style="width:160px;">Ações</th>
+            <th style="width:100px;">Origem</th>
+            <th style="width:100px;">Ativa</th>
+            <th style="width:140px;">Criada em</th>
+            <th style="width:190px;">Ações</th>
           </tr>
         </thead>
         <tbody id="obrasAdminTbody">
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -1137,8 +1173,9 @@ body:not(.is-admin-geral) [data-admin-only] {
       </span>
     </h2>
     <p style="font-size:12px; color:#6b7280; margin-bottom:8px;">
-      💡 <strong>Admin geral</strong> (linha com obra "— todas —") pode: gerenciar obras, gerenciar esta lista, editar dados de qualquer obra.<br>
-      <strong>Editor por obra</strong> pode: editar apenas os dados da obra vinculada. Um mesmo email pode aparecer em várias obras (linhas separadas).
+      💡 <strong>Admin</strong> (👑) pode gerenciar obras, aprovar cadastros e editar dados de qualquer obra.<br>
+      <strong>Editor</strong> (✏️) pode editar apenas os dados da obra vinculada. Um mesmo email pode aparecer em várias obras (linhas separadas).<br>
+      Use ⬆️/⬇️ para trocar entre editor e admin. Use 🗑️ para remover a permissão.
     </p>
     <div class="table-wrap">
       <table>
@@ -1146,14 +1183,15 @@ body:not(.is-admin-geral) [data-admin-only] {
           <tr>
             <th>Email</th>
             <th>Nome</th>
+            <th style="width:100px;">Papel</th>
             <th style="width:200px;">Obra</th>
             <th>Observação</th>
-            <th style="width:150px;">Adicionado em</th>
-            <th style="width:100px;">Ações</th>
+            <th style="width:140px;">Adicionado em</th>
+            <th style="width:110px;">Ações</th>
           </tr>
         </thead>
         <tbody id="editoresAdminTbody">
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -1412,7 +1450,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.61 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.62 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1633,25 +1671,28 @@ function aplicarFallbackGestaoDoHistorico() {
 
 
 // ============================================================================
-// v0.61 — UI ADMIN (Obras + Editores)
-// Só visível para admin geral (whitelist com codigo_obra IS NULL)
+// v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
+// SUBSTITUI as funções v0.61: renderObrasAdmin, renderEditoresAdmin,
+// openEditorForm, salvarEditorForm, removerEditor, toggleObraAtiva
+// ADICIONA: renderPendentesAdmin, aprovarPendente, rejeitarPendente,
+//           mudarRoleEditor, deletarObra (hard delete)
 // ============================================================================
 
-// -------------- OBRAS --------------
+// -------------- OBRAS (v0.62) --------------
 
 async function renderObrasAdmin() {
   const tbody = document.getElementById('obrasAdminTbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
   if (!SUPA) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
     return;
   }
   try {
     const { data, error } = await SUPA.from('obras').select('*').order('nome', { ascending: true });
     if (error) throw error;
     if (!data || !data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">Nenhuma obra cadastrada.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">Nenhuma obra cadastrada.</td></tr>';
       return;
     }
     tbody.innerHTML = data.map(o => {
@@ -1659,30 +1700,40 @@ async function renderObrasAdmin() {
       const badge = ativa
         ? '<span class="badge green">✅ Ativa</span>'
         : '<span class="badge gray">⏸️ Inativa</span>';
+      const origem = o.origem || 'manual';
+      const origemBadge = origem === 'manual'
+        ? '<span class="badge purple" title="Criada pela UI Admin — pode ser deletada">✍️ Manual</span>'
+        : '<span class="badge gray" title="Detectada de upload de Gestões — só pode desativar">📥 Upload</span>';
       const dt = o.criada_em ? new Date(o.criada_em).toLocaleString('pt-BR') : '—';
       const toggleLbl = ativa ? '⏸️ Desativar' : '▶️ Ativar';
       const toggleStyle = ativa
         ? 'background:#fef3c7; border:1px solid #f59e0b; color:#92400e;'
         : 'background:#dcfce7; border:1px solid #16a34a; color:#166534;';
+      const podeDeletar = origem === 'manual';
+      const btnDeletar = podeDeletar
+        ? `<button class="btn-sm" onclick="deletarObra('${escAttr(o.codigo_obra)}', '${escAttr(o.nome)}')" style="padding:3px 8px; font-size:11px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Deletar permanentemente (obra manual)">🗑️</button>`
+        : `<button class="btn-sm" disabled style="padding:3px 8px; font-size:11px; opacity:0.4; cursor:not-allowed;" title="Obras de upload não podem ser deletadas — só desative">🗑️</button>`;
       return `<tr>
         <td style="font-family:monospace; font-size:12px;">${escHtml(o.codigo_obra)}</td>
         <td><strong>${escHtml(o.nome)}</strong></td>
         <td style="font-family:monospace; font-size:11px; color:#6b7280;">${escHtml(o.key_empobratd||'—')}</td>
+        <td>${origemBadge}</td>
         <td>${badge}</td>
         <td style="font-size:11px; color:#6b7280;">${dt}</td>
         <td>
           <button class="btn-sm" onclick="editarObraAdmin('${escAttr(o.codigo_obra)}')" title="Editar nome/key" style="padding:3px 8px; font-size:11px;">✏️</button>
           <button class="btn-sm" onclick="toggleObraAtiva('${escAttr(o.codigo_obra)}', ${ativa ? 'false' : 'true'})" style="padding:3px 8px; font-size:11px; ${toggleStyle}">${toggleLbl}</button>
+          ${btnDeletar}
         </td>
       </tr>`;
     }).join('');
   } catch(e) {
     console.warn('[ADMIN] renderObrasAdmin erro:', e);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Erro ao carregar: ${escHtml(e.message||String(e))}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Erro ao carregar: ${escHtml(e.message||String(e))}</td></tr>`;
   }
 }
 
-let _obraFormEditingCodigo = null; // null = criando; string = editando
+let _obraFormEditingCodigo = null;
 
 function openObraForm() {
   _obraFormEditingCodigo = null;
@@ -1727,10 +1778,7 @@ async function salvarObraForm() {
   const nome   = document.getElementById('obraFormNome').value.trim();
   const key    = document.getElementById('obraFormKey').value.trim();
   const obs    = document.getElementById('obraFormObs').value.trim();
-  if (!codigo || !nome) {
-    alert('Código e Nome são obrigatórios.');
-    return;
-  }
+  if (!codigo || !nome) { alert('Código e Nome são obrigatórios.'); return; }
   if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
   try {
     if (_obraFormEditingCodigo) {
@@ -1740,12 +1788,14 @@ async function salvarObraForm() {
       if (error) throw error;
       authToast('✅ Obra atualizada', 'ok', 2500);
     } else {
+      // v0.62: novas obras criadas pela UI ganham origem='manual' (default)
       const { error } = await SUPA.from('obras').insert({
         codigo_obra: codigo,
         nome,
         key_empobratd: key || null,
         observacao: obs || null,
         ativa: true,
+        origem: 'manual',
       });
       if (error) throw error;
       authToast('✅ Obra criada', 'ok', 2500);
@@ -1780,48 +1830,125 @@ async function toggleObraAtiva(codigo, novoValor) {
   }
 }
 
-// -------------- EDITORES --------------
+// v0.62: hard delete de obra manual — pede pra digitar o código
+async function deletarObra(codigo, nome) {
+  if (!SUPA) return;
+  const confirmacao = prompt(
+    `⚠️ DELETAR OBRA PERMANENTEMENTE\n\n` +
+    `Obra: ${codigo} (${nome})\n\n` +
+    `Isso vai apagar:\n` +
+    `- A obra do catálogo\n` +
+    `- Todos os aditivos, classificações, movimentações vinculadas\n` +
+    `- Todo o histórico de uploads dessa obra\n\n` +
+    `Digite o código exato da obra pra confirmar: ${codigo}`
+  );
+  if (confirmacao == null) return; // cancelou
+  if (confirmacao.trim() !== codigo) {
+    alert('Código não confere. Ação cancelada.');
+    return;
+  }
+  try {
+    // Deletar dados vinculados primeiro (a obra não deleta em cascata por padrão)
+    await SUPA.from('projecao_movimentacoes').delete().eq('codigo_obra', codigo);
+    await SUPA.from('projecao_config').delete().eq('codigo_obra', codigo);
+    await SUPA.from('flow_classifications').delete().eq('codigo_obra', codigo);
+    await SUPA.from('flow_manuals').delete().eq('codigo_obra', codigo);
+    await SUPA.from('upload_history').delete().eq('codigo_obra', codigo);
+    // Remover permissões de editores dessa obra
+    await SUPA.from('editores_permitidos').delete().eq('codigo_obra', codigo);
+    // Finalmente a obra
+    const { error } = await SUPA.from('obras').delete().eq('codigo_obra', codigo);
+    if (error) throw error;
+    authToast('🗑️ Obra deletada permanentemente', 'ok', 3000);
+    await renderObrasAdmin();
+    await renderEditoresAdmin();
+    await carregarObras();
+    renderObrasDropdown();
+    // Se a obra ativa era a deletada, trocar
+    if (codigo === OBRA_ATIVA && OBRAS.length > 0) {
+      await trocarObra(OBRAS[0].codigo_obra);
+    }
+  } catch(e) {
+    console.warn('[ADMIN] deletarObra erro:', e);
+    alert('Erro ao deletar: ' + (e.message||e));
+  }
+}
+
+// -------------- EDITORES (v0.62 — com role + pending) --------------
 
 async function renderEditoresAdmin() {
   const tbody = document.getElementById('editoresAdminTbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
   if (!SUPA) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
     return;
   }
   try {
     const { data, error } = await SUPA.from('editores_permitidos')
       .select('*')
+      .neq('role', 'pending')  // pending fica na outra tabela
+      .order('role', { ascending: true })
       .order('email', { ascending: true });
     if (error) throw error;
     if (!data || !data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">Nenhum editor cadastrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#9ca3af;">Nenhum editor cadastrado.</td></tr>';
       return;
     }
     const obrasByCodigo = {}; OBRAS.forEach(o => { obrasByCodigo[o.codigo_obra] = o; });
     tbody.innerHTML = data.map(e => {
-      const isAdmin = e.codigo_obra == null;
-      const obraLbl = isAdmin
-        ? '<span class="badge purple">— todas —</span>'
+      const isAdmin = e.role === 'admin';
+      const roleBadge = isAdmin
+        ? '<span class="badge purple">👑 Admin</span>'
+        : '<span class="badge green">✏️ Editor</span>';
+      const obraLbl = isAdmin || e.codigo_obra == null
+        ? '<span style="color:#6b7280; font-size:11px;">— todas —</span>'
         : (obrasByCodigo[e.codigo_obra]
             ? `<code style="font-size:11px;">${escHtml(e.codigo_obra)}</code> · ${escHtml(obrasByCodigo[e.codigo_obra].nome)}`
             : `<code style="font-size:11px;">${escHtml(e.codigo_obra)}</code> <span style="color:#dc2626; font-size:10px;">(órfã)</span>`);
       const dt = e.adicionado_em ? new Date(e.adicionado_em).toLocaleString('pt-BR') : '—';
+      // Botão de trocar role
+      const trocarRoleBtn = isAdmin
+        ? `<button class="btn-sm" onclick="mudarRoleEditor('${escAttr(e.email)}', ${e.codigo_obra ? "'"+escAttr(e.codigo_obra)+"'" : 'null'}, 'editor')" title="Rebaixar pra editor" style="padding:3px 6px; font-size:10px;">⬇️</button>`
+        : `<button class="btn-sm" onclick="mudarRoleEditor('${escAttr(e.email)}', ${e.codigo_obra ? "'"+escAttr(e.codigo_obra)+"'" : 'null'}, 'admin')" title="Promover a admin" style="padding:3px 6px; font-size:10px;">⬆️</button>`;
       return `<tr>
         <td style="font-family:monospace; font-size:12px;">${escHtml(e.email)}</td>
         <td>${escHtml(e.nome||'—')}</td>
+        <td>${roleBadge}</td>
         <td>${obraLbl}</td>
         <td style="font-size:11px; color:#6b7280;">${escHtml(e.observacao||'')}</td>
         <td style="font-size:11px; color:#6b7280;">${dt}</td>
         <td>
-          <button class="btn-sm" onclick="removerEditor('${escAttr(e.email)}', ${isAdmin ? 'null' : "'"+escAttr(e.codigo_obra)+"'"})" style="padding:3px 8px; font-size:11px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Remover permissão">🗑️</button>
+          ${trocarRoleBtn}
+          <button class="btn-sm" onclick="removerEditor('${escAttr(e.email)}', ${e.codigo_obra ? "'"+escAttr(e.codigo_obra)+"'" : 'null'})" style="padding:3px 6px; font-size:10px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Remover permissão">🗑️</button>
         </td>
       </tr>`;
     }).join('');
   } catch(err) {
     console.warn('[ADMIN] renderEditoresAdmin erro:', err);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Erro ao carregar: ${escHtml(err.message||String(err))}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Erro ao carregar: ${escHtml(err.message||String(err))}</td></tr>`;
+  }
+}
+
+async function mudarRoleEditor(email, codigoObra, novoRole) {
+  if (!SUPA) return;
+  const acao = novoRole === 'admin' ? 'promover a admin' : 'rebaixar a editor';
+  if (!confirm(`Deseja ${acao} o usuário ${email}?`)) return;
+  try {
+    let q = SUPA.from('editores_permitidos').update({
+      role: novoRole,
+      aprovado_em: new Date().toISOString(),
+      aprovado_por: (AUTH?.user?.email) || null,
+    }).eq('email', email);
+    if (codigoObra == null) q = q.is('codigo_obra', null);
+    else q = q.eq('codigo_obra', codigoObra);
+    const { error } = await q;
+    if (error) throw error;
+    authToast('✅ Role atualizado', 'ok', 2500);
+    await renderEditoresAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] mudarRoleEditor erro:', e);
+    alert('Erro: ' + (e.message||e));
   }
 }
 
@@ -1833,7 +1960,7 @@ function openEditorForm() {
   document.getElementById('editorFormNome').value = '';
   document.getElementById('editorFormObs').value = '';
   const sel = document.getElementById('editorFormObra');
-  sel.innerHTML = '<option value="">— admin geral (todas as obras) —</option>' +
+  sel.innerHTML = '<option value="">— admin (todas as obras) —</option>' +
     OBRAS.filter(o => o.ativa).map(o =>
       `<option value="${escAttr(o.codigo_obra)}">${escHtml(o.codigo_obra)} · ${escHtml(o.nome)}</option>`
     ).join('');
@@ -1853,22 +1980,26 @@ async function salvarEditorForm() {
   if (!email) { alert('Email é obrigatório.'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); return; }
   if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
+  // v0.62: se não informa obra → admin; se informa → editor
+  const role = obra ? 'editor' : 'admin';
   try {
     const { error } = await SUPA.from('editores_permitidos').insert({
       email,
       nome: nome || null,
       codigo_obra: obra || null,
       observacao: obs || null,
+      role,
+      status: 'active',
+      aprovado_em: new Date().toISOString(),
+      aprovado_por: (AUTH?.user?.email) || null,
     });
     if (error) {
       if (String(error.message||'').match(/duplicate|unique|conflict/i)) {
-        alert('Este email já tem permissão para esta obra (ou já é admin geral).');
-      } else {
-        throw error;
-      }
+        alert('Este email já tem permissão para esta obra (ou já é admin).');
+      } else { throw error; }
       return;
     }
-    authToast('✅ Editor adicionado', 'ok', 2500);
+    authToast('✅ Editor adicionado como ' + role, 'ok', 2500);
     closeEditorForm();
     await renderEditoresAdmin();
   } catch(e) {
@@ -1879,15 +2010,12 @@ async function salvarEditorForm() {
 
 async function removerEditor(email, codigoObra) {
   if (!SUPA) return;
-  const escopo = codigoObra ? `da obra ${codigoObra}` : 'como admin geral';
+  const escopo = codigoObra ? `da obra ${codigoObra}` : 'como admin';
   if (!confirm(`Remover a permissão de ${email} ${escopo}?\n\nSe for a última linha desse email, ele perde acesso de edição completo.`)) return;
   try {
     let q = SUPA.from('editores_permitidos').delete().eq('email', email);
-    if (codigoObra == null) {
-      q = q.is('codigo_obra', null);
-    } else {
-      q = q.eq('codigo_obra', codigoObra);
-    }
+    if (codigoObra == null) q = q.is('codigo_obra', null);
+    else q = q.eq('codigo_obra', codigoObra);
     const { error } = await q;
     if (error) throw error;
     authToast('🗑️ Editor removido', 'ok', 2500);
@@ -1895,6 +2023,112 @@ async function removerEditor(email, codigoObra) {
   } catch(e) {
     console.warn('[ADMIN] removerEditor erro:', e);
     alert('Erro ao remover: ' + (e.message||e));
+  }
+}
+
+// -------------- PENDENTES (v0.62) --------------
+
+async function renderPendentesAdmin() {
+  const tbody = document.getElementById('pendentesAdminTbody');
+  const badge = document.getElementById('pendentesCount');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
+  if (!SUPA) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
+    return;
+  }
+  try {
+    const { data, error } = await SUPA.from('editores_permitidos')
+      .select('*')
+      .eq('role', 'pending')
+      .eq('status', 'active')
+      .order('adicionado_em', { ascending: true });
+    if (error) throw error;
+    if (badge) badge.textContent = data?.length ? `(${data.length})` : '';
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#9ca3af;">Nenhum cadastro aguardando aprovação. 🎉</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(e => {
+      const dt = e.adicionado_em ? new Date(e.adicionado_em).toLocaleString('pt-BR') : '—';
+      return `<tr>
+        <td style="font-family:monospace; font-size:12px;">${escHtml(e.email)}</td>
+        <td>${escHtml(e.nome||'—')}</td>
+        <td style="font-size:11px; color:#6b7280;">${escHtml(e.observacao||'')}</td>
+        <td style="font-size:11px; color:#6b7280;">${dt}</td>
+        <td>
+          <button class="btn-sm" onclick="aprovarPendente('${escAttr(e.email)}')" style="padding:3px 8px; font-size:11px; background:#dcfce7; border:1px solid #16a34a; color:#166534;" title="Definir papel e aprovar">✅ Aprovar</button>
+          <button class="btn-sm" onclick="rejeitarPendente('${escAttr(e.email)}')" style="padding:3px 8px; font-size:11px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Negar acesso">❌ Rejeitar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(err) {
+    console.warn('[ADMIN] renderPendentesAdmin erro:', err);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#dc2626;">Erro: ${escHtml(err.message||String(err))}</td></tr>`;
+  }
+}
+
+async function aprovarPendente(email) {
+  if (!SUPA) return;
+  // Perguntar escopo: admin (todas) ou editor de uma obra
+  const opcoes = OBRAS.filter(o => o.ativa).map((o, i) => `${i+1}. Editor de ${o.codigo_obra} (${o.nome})`).join('\n');
+  const resposta = prompt(
+    `Aprovar ${email}\n\n` +
+    `Escolha o papel:\n` +
+    `0. Admin (edita tudo + gerencia obras/usuários)\n` +
+    opcoes + '\n\n' +
+    `Digite o número:`
+  );
+  if (resposta == null) return;
+  const num = parseInt(resposta.trim());
+  if (isNaN(num) || num < 0) { alert('Número inválido.'); return; }
+  const obrasAtivas = OBRAS.filter(o => o.ativa);
+  if (num > obrasAtivas.length) { alert('Número fora do intervalo.'); return; }
+  try {
+    if (num === 0) {
+      // Promover a admin: atualiza o próprio registro pending pra role='admin'
+      const { error } = await SUPA.from('editores_permitidos').update({
+        role: 'admin',
+        codigo_obra: null,
+        aprovado_em: new Date().toISOString(),
+        aprovado_por: AUTH?.user?.email || null,
+      }).eq('email', email).eq('role', 'pending');
+      if (error) throw error;
+    } else {
+      // Editor de uma obra específica: atualiza o pending E vincula obra
+      const obraEscolhida = obrasAtivas[num - 1];
+      const { error } = await SUPA.from('editores_permitidos').update({
+        role: 'editor',
+        codigo_obra: obraEscolhida.codigo_obra,
+        aprovado_em: new Date().toISOString(),
+        aprovado_por: AUTH?.user?.email || null,
+      }).eq('email', email).eq('role', 'pending');
+      if (error) throw error;
+    }
+    authToast('✅ Aprovado', 'ok', 2500);
+    await renderPendentesAdmin();
+    await renderEditoresAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] aprovarPendente erro:', e);
+    alert('Erro: ' + (e.message||e));
+  }
+}
+
+async function rejeitarPendente(email) {
+  if (!SUPA) return;
+  if (!confirm(`Rejeitar o cadastro de ${email}?\n\nO usuário continua com conta no sistema, mas nunca vai ganhar permissão de edição.\n\nVocê pode deletar totalmente depois pela aba Editores (não vai aparecer lá — precisará ativar filtro de rejeitados).`)) return;
+  try {
+    const { error } = await SUPA.from('editores_permitidos').update({
+      status: 'rejected',
+      aprovado_em: new Date().toISOString(),
+      aprovado_por: AUTH?.user?.email || null,
+    }).eq('email', email).eq('role', 'pending');
+    if (error) throw error;
+    authToast('❌ Cadastro rejeitado', 'warn', 2500);
+    await renderPendentesAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] rejeitarPendente erro:', e);
+    alert('Erro: ' + (e.message||e));
   }
 }
 
@@ -2485,9 +2719,11 @@ function updateSupaBadge() {
 const AUTH = {
   user: null,          // objeto do Supabase (email, id, name, picture)
   session: null,       // sessão do Supabase (com JWT)
-  isEditor: false,     // true se logado E na whitelist (qualquer obra ou admin geral)
-  isAdminGeral: false, // v0.61: true se logado E na whitelist com codigo_obra IS NULL
-  editaObras: [],      // v0.61: lista de códigos de obra que pode editar (se não for admin geral)
+  isEditor: false,     // true se logado E aprovado (editor ou admin)
+  isAdminGeral: false, // v0.61: true se role='admin'
+  editaObras: [],      // v0.61: lista de códigos de obra que pode editar (se não for admin)
+  isPending: false,    // v0.62: true se cadastrado mas aguardando aprovação
+  role: null,          // v0.62: 'admin' | 'editor' | 'pending' | null (anon)
   whitelistChecked: false,
   ready: false,        // primeira verificação de sessão concluída
 };
@@ -2507,19 +2743,43 @@ function authToast(msg, kind='info', ms=3500) {
 }
 
 async function checkEditorPermission(email) {
-  // v0.61: retorna { isEditor, isAdminGeral, editaObras[] }
-  const nada = { isEditor: false, isAdminGeral: false, editaObras: [] };
+  // v0.62: retorna { isEditor, isAdminGeral, editaObras[], isPending, role }
+  // Lê role/status novos (SQL 10). Rejeita rows com status='rejected' ou role='pending'
+  const nada = { isEditor: false, isAdminGeral: false, editaObras: [], isPending: false, role: null };
   if (!SUPA || !email) return nada;
   try {
     const { data, error } = await SUPA
       .from('editores_permitidos')
-      .select('email, codigo_obra')
+      .select('email, codigo_obra, role, status')
       .eq('email', email.toLowerCase());
     if (error) { console.warn('[AUTH] erro checar whitelist:', error); return nada; }
     if (!Array.isArray(data) || data.length === 0) return nada;
-    const isAdminGeral = data.some(r => r.codigo_obra == null);
-    const editaObras = data.filter(r => r.codigo_obra != null).map(r => r.codigo_obra);
-    return { isEditor: true, isAdminGeral, editaObras };
+
+    // Considerar só rows ativas
+    const ativos = data.filter(r => (r.status || 'active') === 'active');
+    if (ativos.length === 0) return nada;
+
+    // Pending = tem alguma linha pending E nenhuma admin/editor ativa
+    const isPending = ativos.every(r => r.role === 'pending');
+    if (isPending) return { ...nada, isPending: true, role: 'pending' };
+
+    // Admin?
+    const isAdminGeral = ativos.some(r => r.role === 'admin');
+    // Editor de obras específicas (rows com codigo_obra E role='editor')
+    const editaObras = ativos
+      .filter(r => r.role === 'editor' && r.codigo_obra != null)
+      .map(r => r.codigo_obra);
+
+    const isEditor = isAdminGeral || editaObras.length > 0;
+    if (!isEditor) return nada;
+
+    return {
+      isEditor: true,
+      isAdminGeral,
+      editaObras,
+      isPending: false,
+      role: isAdminGeral ? 'admin' : 'editor',
+    };
   } catch (e) { console.warn('[AUTH] excecao whitelist:', e); return nada; }
 }
 
@@ -2543,14 +2803,22 @@ function updateAuthUI() {
     // Logado — badge com 2 linhas: email + chip de papel
     const email = AUTH.user.email || 'usuário';
     const shortEmail = email.length > 26 ? email.slice(0, 24) + '…' : email;
-    if (AUTH.isEditor) {
+    if (AUTH.isAdminGeral) {
+      badge.className = 'auth-badge editor two-line';
+      badge.innerHTML = `<span class="auth-email">👑 ${shortEmail}</span><span class="auth-role">Admin</span>`;
+      badge.title = `Logado como ${email}\nModo: Admin (edita tudo + gerencia obras/usuários)`;
+    } else if (AUTH.isEditor) {
       badge.className = 'auth-badge editor two-line';
       badge.innerHTML = `<span class="auth-email">✏️ ${shortEmail}</span><span class="auth-role">Editor</span>`;
-      badge.title = `Logado como ${email}\nModo: Editor (pode alterar dados)`;
+      badge.title = `Logado como ${email}\nModo: Editor (pode alterar dados de ${AUTH.editaObras.length||0} obra(s))`;
+    } else if (AUTH.isPending) {
+      badge.className = 'auth-badge viewer two-line';
+      badge.innerHTML = `<span class="auth-email">⏳ ${shortEmail}</span><span class="auth-role">Aguardando</span>`;
+      badge.title = `Logado como ${email}\nAguardando aprovação do admin`;
     } else {
       badge.className = 'auth-badge viewer two-line';
       badge.innerHTML = `<span class="auth-email">👁️ ${shortEmail}</span><span class="auth-role">Sem permissão</span>`;
-      badge.title = `Logado como ${email}\nModo: Somente leitura (fale com o admin para liberar edição)`;
+      badge.title = `Logado como ${email}\nModo: Somente leitura`;
     }
     btn.style.display = '';
     btn.textContent = '🚪 Sair';
@@ -2600,6 +2868,8 @@ async function applySession(session, isFreshLogin = false) {
     AUTH.isEditor     = !!_perm.isEditor;
     AUTH.isAdminGeral = !!_perm.isAdminGeral;
     AUTH.editaObras   = Array.isArray(_perm.editaObras) ? _perm.editaObras : [];
+    AUTH.isPending    = !!_perm.isPending;
+    AUTH.role         = _perm.role || null;
     AUTH.whitelistChecked = true;
     // Toasts só na 1ª entrada (login novo) — não em cada refresh/boot
     if (isFreshLogin) {
@@ -2613,6 +2883,8 @@ async function applySession(session, isFreshLogin = false) {
     AUTH.isEditor = false;
     AUTH.isAdminGeral = false;
     AUTH.editaObras = [];
+    AUTH.isPending = false;
+    AUTH.role = null;
   }
   AUTH.ready = true;
   updateAuthUI();
@@ -2830,8 +3102,9 @@ document.querySelectorAll('.tab').forEach(t => {
     if (t.dataset.tab === 'projecao_ctrl' && typeof initProjCtrl === 'function') {
       initProjCtrl();
     }
-    // v0.61: ao entrar na aba Admin, carregar os dados do Supabase
+    // v0.61/0.62: ao entrar na aba Admin, carregar os dados do Supabase
     if (t.dataset.tab === 'admin') {
+      if (typeof renderPendentesAdmin === 'function') renderPendentesAdmin();
       if (typeof renderObrasAdmin === 'function') renderObrasAdmin();
       if (typeof renderEditoresAdmin === 'function') renderEditoresAdmin();
     }
@@ -8449,6 +8722,209 @@ updateSupaBadge();
   initAuth().catch(e => console.warn('[AUTH] initAuth err:', e));
 })();
 
+// ============================================================================
+// v0.62 — AUTH MULTI-PROVIDER (Google + Email/Senha + Roles)
+// Substitui: handleAuthClick() e checkEditorPermission()
+// Adiciona: openLoginModal, closeLoginModal, doSignInEmail, doSignUpEmail,
+//           doSignInGoogle, mostrar tela pending
+// ============================================================================
+
+// -------- MODAL DE LOGIN --------
+
+function openLoginModal(modo = 'login') {
+  // modo: 'login' | 'signup'
+  document.getElementById('loginModalBackdrop').style.display = 'flex';
+  switchLoginTab(modo);
+  // Limpar campos
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginSenha').value = '';
+  document.getElementById('signupEmail').value = '';
+  document.getElementById('signupSenha').value = '';
+  document.getElementById('signupSenha2').value = '';
+  document.getElementById('signupNome').value = '';
+  document.getElementById('loginErro').textContent = '';
+  document.getElementById('signupErro').textContent = '';
+}
+
+function closeLoginModal() {
+  document.getElementById('loginModalBackdrop').style.display = 'none';
+}
+
+function switchLoginTab(modo) {
+  const isLogin = modo === 'login';
+  document.getElementById('loginTabLogin').classList.toggle('active', isLogin);
+  document.getElementById('loginTabSignup').classList.toggle('active', !isLogin);
+  document.getElementById('loginPanelLogin').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('loginPanelSignup').style.display = isLogin ? 'none' : 'block';
+}
+
+// -------- HANDLERS DE LOGIN --------
+
+async function doSignInGoogle() {
+  if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
+  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e){}
+  closeLoginModal();
+  const { error } = await SUPA.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + window.location.pathname,
+      queryParams: { prompt: 'select_account' },
+    }
+  });
+  if (error) {
+    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e){}
+    authToast('Erro no login Google: ' + error.message, 'err');
+  }
+}
+
+async function doSignInEmail() {
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const senha = document.getElementById('loginSenha').value;
+  const erroEl = document.getElementById('loginErro');
+  erroEl.textContent = '';
+  if (!email || !senha) {
+    erroEl.textContent = 'Preencha email e senha.';
+    return;
+  }
+  if (!SUPA) { erroEl.textContent = 'Supabase não conectado.'; return; }
+  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e){}
+  const { error } = await SUPA.auth.signInWithPassword({ email, password: senha });
+  if (error) {
+    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e){}
+    // Mensagens mais amigáveis
+    let msg = error.message || 'Erro desconhecido';
+    if (msg.includes('Invalid login credentials')) msg = 'Email ou senha incorretos.';
+    if (msg.includes('Email not confirmed')) msg = 'Email ainda não confirmado. Verifique sua caixa de entrada.';
+    erroEl.textContent = msg;
+    return;
+  }
+  closeLoginModal();
+  // onAuthStateChange dispara e cuida do resto
+}
+
+async function doSignUpEmail() {
+  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+  const senha = document.getElementById('signupSenha').value;
+  const senha2 = document.getElementById('signupSenha2').value;
+  const nome  = document.getElementById('signupNome').value.trim();
+  const erroEl = document.getElementById('signupErro');
+  erroEl.textContent = '';
+  if (!email || !senha) { erroEl.textContent = 'Preencha email e senha.'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { erroEl.textContent = 'Email inválido.'; return; }
+  if (senha.length < 6) { erroEl.textContent = 'Senha precisa ter no mínimo 6 caracteres.'; return; }
+  if (senha !== senha2) { erroEl.textContent = 'As senhas não conferem.'; return; }
+  if (!SUPA) { erroEl.textContent = 'Supabase não conectado.'; return; }
+  const { error } = await SUPA.auth.signUp({
+    email,
+    password: senha,
+    options: {
+      data: { name: nome || undefined },
+      emailRedirectTo: window.location.origin + window.location.pathname,
+    }
+  });
+  if (error) {
+    let msg = error.message || 'Erro desconhecido';
+    if (msg.includes('already registered') || msg.includes('User already')) {
+      msg = 'Este email já está cadastrado. Tente entrar em vez de criar conta.';
+    }
+    erroEl.textContent = msg;
+    return;
+  }
+  authToast('✅ Cadastro realizado! Você entrou como "aguardando aprovação". Peça ao admin para liberar seu acesso.', 'ok', 6000);
+  closeLoginModal();
+  // Se auto-confirm estiver ativo, o Supabase já loga automaticamente e onAuthStateChange dispara.
+  // Se auto-confirm estiver desativado, o usuário precisa clicar no link do email.
+}
+
+// -------- OVERRIDE do handleAuthClick original --------
+// (a função abaixo substitui a antiga: se não logado, abre modal em vez de ir direto pro Google)
+
+async function handleAuthClickV062() {
+  if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
+  if (AUTH.user) {
+    // Logout — mesmo comportamento de antes
+    if (!confirm('Sair da sua conta? Você continuará vendo o dashboard, mas não conseguirá editar.')) return;
+    const { error } = await SUPA.auth.signOut();
+    if (error) authToast('Erro ao sair: ' + error.message, 'err');
+  } else {
+    // Abrir modal em vez de ir direto pro Google
+    openLoginModal('login');
+  }
+}
+// Sobrescrever a função global
+if (typeof window !== 'undefined') {
+  window.handleAuthClick = handleAuthClickV062;
+}
+
+
 </script>
+
+<!-- v0.62: Modal de login/cadastro -->
+<div id="loginModalBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:2000; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:12px; padding:24px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <h3 style="margin:0; color:#1e3a8a; font-size:16px;">🔐 Acesso ao Dashboard</h3>
+      <button onclick="closeLoginModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:#6b7280;" title="Fechar">×</button>
+    </div>
+
+    <!-- Tabs Login / Signup -->
+    <div style="display:flex; gap:4px; border-bottom:2px solid #e5e7eb; margin-bottom:16px;">
+      <button id="loginTabLogin" onclick="switchLoginTab('login')" style="flex:1; padding:8px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:#6b7280;">Entrar</button>
+      <button id="loginTabSignup" onclick="switchLoginTab('signup')" style="flex:1; padding:8px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:#6b7280;">Criar conta</button>
+    </div>
+
+    <!-- PAINEL LOGIN -->
+    <div id="loginPanelLogin">
+      <button onclick="doSignInGoogle()" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; background:white; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+        <span style="font-size:16px;">🔷</span> Entrar com Google
+      </button>
+      <div style="display:flex; align-items:center; gap:10px; margin:12px 0; color:#9ca3af; font-size:11px;">
+        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+        <span>ou com email</span>
+        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+      </div>
+      <div style="display:grid; gap:10px;">
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Email</label>
+          <input type="email" id="loginEmail" autocomplete="email" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Senha</label>
+          <input type="password" id="loginSenha" autocomplete="current-password" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;" onkeydown="if(event.key==='Enter') doSignInEmail()">
+        </div>
+        <div id="loginErro" style="color:#dc2626; font-size:12px; min-height:16px;"></div>
+        <button onclick="doSignInEmail()" style="width:100%; padding:10px; border:none; border-radius:8px; background:#1e3a8a; color:white; cursor:pointer; font-size:13px; font-weight:600;">Entrar</button>
+      </div>
+    </div>
+
+    <!-- PAINEL SIGNUP -->
+    <div id="loginPanelSignup" style="display:none;">
+      <p style="font-size:12px; color:#6b7280; margin:0 0 12px;">
+        Sua conta será criada como <strong>"aguardando aprovação"</strong>. Um administrador precisa liberar seu acesso pra editar dados.
+      </p>
+      <div style="display:grid; gap:10px;">
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Nome (opcional)</label>
+          <input type="text" id="signupNome" autocomplete="name" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Email <span style="color:#dc2626;">*</span></label>
+          <input type="email" id="signupEmail" autocomplete="email" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Senha <span style="color:#dc2626;">*</span></label>
+          <input type="password" id="signupSenha" autocomplete="new-password" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;">
+          <div style="font-size:11px; color:#6b7280; margin-top:3px;">Mínimo 6 caracteres.</div>
+        </div>
+        <div>
+          <label style="font-size:11px; text-transform:uppercase; color:#6b7280; font-weight:600;">Confirmar senha <span style="color:#dc2626;">*</span></label>
+          <input type="password" id="signupSenha2" autocomplete="new-password" style="width:100%; padding:8px 10px; border:1px solid #d1d5db; border-radius:6px; margin-top:4px; font-size:13px;" onkeydown="if(event.key==='Enter') doSignUpEmail()">
+        </div>
+        <div id="signupErro" style="color:#dc2626; font-size:12px; min-height:16px;"></div>
+        <button onclick="doSignUpEmail()" style="width:100%; padding:10px; border:none; border-radius:8px; background:#1e3a8a; color:white; cursor:pointer; font-size:13px; font-weight:600;">Criar conta</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

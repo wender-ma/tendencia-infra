@@ -1481,7 +1481,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.62.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.62.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -1595,6 +1595,8 @@ async function trocarObra(novoCodigo) {
   if (!novoCodigo || novoCodigo === OBRA_ATIVA) return;
   console.log('[OBRAS] trocando de', OBRA_ATIVA, '→', novoCodigo);
   OBRA_ATIVA = novoCodigo;
+  // v0.62.3: reavalia UI de auth pra esta obra (editor pode não ter permissão aqui)
+  if (typeof updateAuthUI === 'function') updateAuthUI();
   try { localStorage.setItem('jzurique_obra_ativa', novoCodigo); } catch(e) {}
   // Atualiza URL sem recarregar (bookmark limpo)
   try {
@@ -2907,12 +2909,23 @@ async function checkEditorPermission(email) {
   } catch (e) { console.warn('[AUTH] excecao whitelist:', e); return nada; }
 }
 
+// v0.62.3: retorna true se o usuário pode editar a OBRA_ATIVA atual
+// (admin edita tudo, editor precisa ter a obra no editaObras)
+function isEditorDaObraAtiva() {
+  if (!AUTH || !AUTH.isEditor) return false;
+  if (AUTH.isAdminGeral) return true;
+  if (!OBRA_ATIVA) return false;
+  return Array.isArray(AUTH.editaObras) && AUTH.editaObras.includes(OBRA_ATIVA);
+}
+
 function updateAuthUI() {
   const badge = document.getElementById('authBadge');
   const btn = document.getElementById('authBtn');
   if (!badge || !btn) return;
 
-  document.body.classList.toggle('is-editor', !!AUTH.isEditor);
+  // v0.62.3: só marca is-editor se o usuário pode editar a OBRA_ATIVA
+  // (antes marcava se era editor de QUALQUER obra — mostrava botões que a RLS rejeitava depois)
+  document.body.classList.toggle('is-editor', isEditorDaObraAtiva());
   document.body.classList.toggle('is-admin-geral', !!AUTH.isAdminGeral);
 
   if (!AUTH.ready) {
@@ -2932,9 +2945,18 @@ function updateAuthUI() {
       badge.innerHTML = `<span class="auth-email">👑 ${shortEmail}</span><span class="auth-role">Admin</span>`;
       badge.title = `Logado como ${email}\nModo: Admin (edita tudo + gerencia obras/usuários)`;
     } else if (AUTH.isEditor) {
-      badge.className = 'auth-badge editor two-line';
-      badge.innerHTML = `<span class="auth-email">✏️ ${shortEmail}</span><span class="auth-role">Editor</span>`;
-      badge.title = `Logado como ${email}\nModo: Editor (pode alterar dados de ${AUTH.editaObras.length||0} obra(s))`;
+      const podeEditarAqui = isEditorDaObraAtiva();
+      if (podeEditarAqui) {
+        badge.className = 'auth-badge editor two-line';
+        badge.innerHTML = `<span class="auth-email">✏️ ${shortEmail}</span><span class="auth-role">Editor</span>`;
+        badge.title = `Logado como ${email}\nModo: Editor (pode alterar esta obra)\nObras que edita: ${AUTH.editaObras.join(', ')||'—'}`;
+      } else {
+        // v0.62.3: é editor mas não desta obra — mostra como somente leitura aqui
+        badge.className = 'auth-badge viewer two-line';
+        badge.innerHTML = `<span class="auth-email">👁️ ${shortEmail}</span><span class="auth-role">Só leitura aqui</span>`;
+        const listaObras = AUTH.editaObras.length ? AUTH.editaObras.join(', ') : 'nenhuma';
+        badge.title = `Logado como ${email}\nVocê é editor de: ${listaObras}\nMas NÃO desta obra (${OBRA_ATIVA||'—'})\nTroque no dropdown pra editar suas obras`;
+      }
     } else if (AUTH.isPending) {
       badge.className = 'auth-badge viewer two-line';
       badge.innerHTML = `<span class="auth-email">⏳ ${shortEmail}</span><span class="auth-role">Aguardando</span>`;

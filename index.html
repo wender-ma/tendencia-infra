@@ -1631,6 +1631,274 @@ function aplicarFallbackGestaoDoHistorico() {
 }
 
 
+
+// ============================================================================
+// v0.61 — UI ADMIN (Obras + Editores)
+// Só visível para admin geral (whitelist com codigo_obra IS NULL)
+// ============================================================================
+
+// -------------- OBRAS --------------
+
+async function renderObrasAdmin() {
+  const tbody = document.getElementById('obrasAdminTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
+  if (!SUPA) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
+    return;
+  }
+  try {
+    const { data, error } = await SUPA.from('obras').select('*').order('nome', { ascending: true });
+    if (error) throw error;
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">Nenhuma obra cadastrada.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(o => {
+      const ativa = !!o.ativa;
+      const badge = ativa
+        ? '<span class="badge green">✅ Ativa</span>'
+        : '<span class="badge gray">⏸️ Inativa</span>';
+      const dt = o.criada_em ? new Date(o.criada_em).toLocaleString('pt-BR') : '—';
+      const toggleLbl = ativa ? '⏸️ Desativar' : '▶️ Ativar';
+      const toggleStyle = ativa
+        ? 'background:#fef3c7; border:1px solid #f59e0b; color:#92400e;'
+        : 'background:#dcfce7; border:1px solid #16a34a; color:#166534;';
+      return `<tr>
+        <td style="font-family:monospace; font-size:12px;">${escHtml(o.codigo_obra)}</td>
+        <td><strong>${escHtml(o.nome)}</strong></td>
+        <td style="font-family:monospace; font-size:11px; color:#6b7280;">${escHtml(o.key_empobratd||'—')}</td>
+        <td>${badge}</td>
+        <td style="font-size:11px; color:#6b7280;">${dt}</td>
+        <td>
+          <button class="btn-sm" onclick="editarObraAdmin('${escAttr(o.codigo_obra)}')" title="Editar nome/key" style="padding:3px 8px; font-size:11px;">✏️</button>
+          <button class="btn-sm" onclick="toggleObraAtiva('${escAttr(o.codigo_obra)}', ${ativa ? 'false' : 'true'})" style="padding:3px 8px; font-size:11px; ${toggleStyle}">${toggleLbl}</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    console.warn('[ADMIN] renderObrasAdmin erro:', e);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Erro ao carregar: ${escHtml(e.message||String(e))}</td></tr>`;
+  }
+}
+
+let _obraFormEditingCodigo = null; // null = criando; string = editando
+
+function openObraForm() {
+  _obraFormEditingCodigo = null;
+  document.getElementById('obraFormTitle').textContent = 'Nova obra';
+  document.getElementById('obraFormCodigo').value = '';
+  document.getElementById('obraFormCodigo').readOnly = false;
+  document.getElementById('obraFormCodigo').style.background = '';
+  document.getElementById('obraFormNome').value = '';
+  document.getElementById('obraFormKey').value = '';
+  document.getElementById('obraFormObs').value = '';
+  document.getElementById('obraFormBackdrop').style.display = 'flex';
+}
+
+function closeObraForm() {
+  document.getElementById('obraFormBackdrop').style.display = 'none';
+  _obraFormEditingCodigo = null;
+}
+
+async function editarObraAdmin(codigo) {
+  if (!SUPA) return;
+  try {
+    const { data, error } = await SUPA.from('obras').select('*').eq('codigo_obra', codigo).maybeSingle();
+    if (error) throw error;
+    if (!data) { alert('Obra não encontrada.'); return; }
+    _obraFormEditingCodigo = codigo;
+    document.getElementById('obraFormTitle').textContent = 'Editar obra: ' + codigo;
+    document.getElementById('obraFormCodigo').value = data.codigo_obra;
+    document.getElementById('obraFormCodigo').readOnly = true;
+    document.getElementById('obraFormCodigo').style.background = '#f3f4f6';
+    document.getElementById('obraFormNome').value = data.nome || '';
+    document.getElementById('obraFormKey').value = data.key_empobratd || '';
+    document.getElementById('obraFormObs').value = data.observacao || '';
+    document.getElementById('obraFormBackdrop').style.display = 'flex';
+  } catch(e) {
+    console.warn('[ADMIN] editarObraAdmin erro:', e);
+    alert('Erro ao carregar obra: ' + (e.message||e));
+  }
+}
+
+async function salvarObraForm() {
+  const codigo = document.getElementById('obraFormCodigo').value.trim();
+  const nome   = document.getElementById('obraFormNome').value.trim();
+  const key    = document.getElementById('obraFormKey').value.trim();
+  const obs    = document.getElementById('obraFormObs').value.trim();
+  if (!codigo || !nome) {
+    alert('Código e Nome são obrigatórios.');
+    return;
+  }
+  if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
+  try {
+    if (_obraFormEditingCodigo) {
+      const { error } = await SUPA.from('obras').update({
+        nome, key_empobratd: key || null, observacao: obs || null,
+      }).eq('codigo_obra', _obraFormEditingCodigo);
+      if (error) throw error;
+      authToast('✅ Obra atualizada', 'ok', 2500);
+    } else {
+      const { error } = await SUPA.from('obras').insert({
+        codigo_obra: codigo,
+        nome,
+        key_empobratd: key || null,
+        observacao: obs || null,
+        ativa: true,
+      });
+      if (error) throw error;
+      authToast('✅ Obra criada', 'ok', 2500);
+    }
+    closeObraForm();
+    await renderObrasAdmin();
+    await carregarObras();
+    renderObrasDropdown();
+  } catch(e) {
+    console.warn('[ADMIN] salvarObraForm erro:', e);
+    alert('Erro ao salvar: ' + (e.message||e));
+  }
+}
+
+async function toggleObraAtiva(codigo, novoValor) {
+  if (!SUPA) return;
+  const acao = novoValor ? 'ativar' : 'desativar';
+  if (!confirm(`Deseja ${acao} a obra ${codigo}?\n\n${novoValor ? 'Ela voltará a aparecer no dropdown.' : 'Ela desaparece do dropdown mas os dados históricos ficam preservados no banco.'}`)) return;
+  try {
+    const { error } = await SUPA.from('obras').update({ ativa: novoValor }).eq('codigo_obra', codigo);
+    if (error) throw error;
+    authToast(novoValor ? '✅ Obra ativada' : '⏸️ Obra desativada', 'ok', 2500);
+    await renderObrasAdmin();
+    await carregarObras();
+    renderObrasDropdown();
+    if (!novoValor && codigo === OBRA_ATIVA) {
+      authToast('⚠️ Você está vendo uma obra desativada. Troque no dropdown.', 'warn', 5000);
+    }
+  } catch(e) {
+    console.warn('[ADMIN] toggleObraAtiva erro:', e);
+    alert('Erro ao alterar: ' + (e.message||e));
+  }
+}
+
+// -------------- EDITORES --------------
+
+async function renderEditoresAdmin() {
+  const tbody = document.getElementById('editoresAdminTbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">carregando…</td></tr>';
+  if (!SUPA) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Sem conexão com o Supabase.</td></tr>';
+    return;
+  }
+  try {
+    const { data, error } = await SUPA.from('editores_permitidos')
+      .select('*')
+      .order('email', { ascending: true });
+    if (error) throw error;
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">Nenhum editor cadastrado.</td></tr>';
+      return;
+    }
+    const obrasByCodigo = {}; OBRAS.forEach(o => { obrasByCodigo[o.codigo_obra] = o; });
+    tbody.innerHTML = data.map(e => {
+      const isAdmin = e.codigo_obra == null;
+      const obraLbl = isAdmin
+        ? '<span class="badge purple">— todas —</span>'
+        : (obrasByCodigo[e.codigo_obra]
+            ? `<code style="font-size:11px;">${escHtml(e.codigo_obra)}</code> · ${escHtml(obrasByCodigo[e.codigo_obra].nome)}`
+            : `<code style="font-size:11px;">${escHtml(e.codigo_obra)}</code> <span style="color:#dc2626; font-size:10px;">(órfã)</span>`);
+      const dt = e.adicionado_em ? new Date(e.adicionado_em).toLocaleString('pt-BR') : '—';
+      return `<tr>
+        <td style="font-family:monospace; font-size:12px;">${escHtml(e.email)}</td>
+        <td>${escHtml(e.nome||'—')}</td>
+        <td>${obraLbl}</td>
+        <td style="font-size:11px; color:#6b7280;">${escHtml(e.observacao||'')}</td>
+        <td style="font-size:11px; color:#6b7280;">${dt}</td>
+        <td>
+          <button class="btn-sm" onclick="removerEditor('${escAttr(e.email)}', ${isAdmin ? 'null' : "'"+escAttr(e.codigo_obra)+"'"})" style="padding:3px 8px; font-size:11px; background:#fee2e2; border:1px solid #dc2626; color:#991b1b;" title="Remover permissão">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(err) {
+    console.warn('[ADMIN] renderEditoresAdmin erro:', err);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">Erro ao carregar: ${escHtml(err.message||String(err))}</td></tr>`;
+  }
+}
+
+function openEditorForm() {
+  document.getElementById('editorFormTitle').textContent = 'Adicionar editor';
+  document.getElementById('editorFormEmail').value = '';
+  document.getElementById('editorFormEmail').readOnly = false;
+  document.getElementById('editorFormEmail').style.background = '';
+  document.getElementById('editorFormNome').value = '';
+  document.getElementById('editorFormObs').value = '';
+  const sel = document.getElementById('editorFormObra');
+  sel.innerHTML = '<option value="">— admin geral (todas as obras) —</option>' +
+    OBRAS.filter(o => o.ativa).map(o =>
+      `<option value="${escAttr(o.codigo_obra)}">${escHtml(o.codigo_obra)} · ${escHtml(o.nome)}</option>`
+    ).join('');
+  sel.value = '';
+  document.getElementById('editorFormBackdrop').style.display = 'flex';
+}
+
+function closeEditorForm() {
+  document.getElementById('editorFormBackdrop').style.display = 'none';
+}
+
+async function salvarEditorForm() {
+  const email = document.getElementById('editorFormEmail').value.trim().toLowerCase();
+  const nome  = document.getElementById('editorFormNome').value.trim();
+  const obra  = document.getElementById('editorFormObra').value.trim();
+  const obs   = document.getElementById('editorFormObs').value.trim();
+  if (!email) { alert('Email é obrigatório.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); return; }
+  if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
+  try {
+    const { error } = await SUPA.from('editores_permitidos').insert({
+      email,
+      nome: nome || null,
+      codigo_obra: obra || null,
+      observacao: obs || null,
+    });
+    if (error) {
+      if (String(error.message||'').match(/duplicate|unique|conflict/i)) {
+        alert('Este email já tem permissão para esta obra (ou já é admin geral).');
+      } else {
+        throw error;
+      }
+      return;
+    }
+    authToast('✅ Editor adicionado', 'ok', 2500);
+    closeEditorForm();
+    await renderEditoresAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] salvarEditorForm erro:', e);
+    alert('Erro ao salvar: ' + (e.message||e));
+  }
+}
+
+async function removerEditor(email, codigoObra) {
+  if (!SUPA) return;
+  const escopo = codigoObra ? `da obra ${codigoObra}` : 'como admin geral';
+  if (!confirm(`Remover a permissão de ${email} ${escopo}?\n\nSe for a última linha desse email, ele perde acesso de edição completo.`)) return;
+  try {
+    let q = SUPA.from('editores_permitidos').delete().eq('email', email);
+    if (codigoObra == null) {
+      q = q.is('codigo_obra', null);
+    } else {
+      q = q.eq('codigo_obra', codigoObra);
+    }
+    const { error } = await q;
+    if (error) throw error;
+    authToast('🗑️ Editor removido', 'ok', 2500);
+    await renderEditoresAdmin();
+  } catch(e) {
+    console.warn('[ADMIN] removerEditor erro:', e);
+    alert('Erro ao remover: ' + (e.message||e));
+  }
+}
+
+
 // Recarrega dados da obra ativa (dados extraídos + configs + histórico de uploads)
 // Chamado ao trocar de obra e no boot inicial.
 async function recarregarDadosDaObra() {
@@ -8182,6 +8450,5 @@ updateSupaBadge();
 })();
 
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a17fa66079dcd7eb',t:'MTc4MzUxOTU5MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

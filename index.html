@@ -1529,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.4 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -4132,8 +4132,8 @@ function renderInsumoSelect(f, field) {
   // valor "amigável" para exibição: se for insumo da tendência, mostra "Ixxx — Nome"
   const displayValue = displayForValue(value);
   const cls = 'classif-select' + (edited ? ' edited' : '') + (isSpecial ? ' special' : '');
-  const marker = edited ? '<span class="edit-marker" title="Editado">✏️</span>' : '';
-  return `${marker}<input type="text" list="insumosDatalist" class="${cls}"
+  // v0.64.4: removido marker ✏️ — fundo amarelo já sinaliza edição
+  return `<input type="text" list="insumosDatalist" class="${cls}"
     value="${escAttr(displayValue)}"
     data-n="${escAttr(f.n_alteracao)}" data-field="${field}"
     data-rawvalue="${escAttr(value)}"
@@ -4258,16 +4258,8 @@ function onClassifChange(sel) {
       sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', misto:'<span class="badge gray">⚪ Misto</span>'};
     const tipoTd = tr.children[4];
     if (tipoTd) tipoTd.innerHTML = tipoLabel[f.tipo] || '';
-    // Marca select como editado
+    // v0.64.4: marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
-    // Adiciona marker se ainda não tiver
-    if (!sel.parentElement.querySelector('.edit-marker')) {
-      const marker = document.createElement('span');
-      marker.className = 'edit-marker';
-      marker.title = 'Editado';
-      marker.textContent = '✏️ ';
-      sel.parentElement.insertBefore(marker, sel);
-    }
   }
 }
 
@@ -4775,12 +4767,16 @@ function onValorChange(input) {
   if (!f) return;
   f.custo_flowmaster = novo;
   f._edited_v = true;
-  // Persistir
+  // v0.64.4: usar chave composta (codigo_obra:n_alteracao) + sync com Supabase
+  const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+  const key = codigoObra + ':' + nAlt;
   let map = {};
   try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
-  if (!map[nAlt]) map[nAlt] = {};
-  map[nAlt].custo_flowmaster = novo;
+  if (!map[key]) map[key] = { codigo_obra: codigoObra };
+  map[key].custo_flowmaster = novo;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  // Sync com Supabase (persiste entre uploads/dispositivos)
+  try { supaUpsertClassification(nAlt, { custo_flowmaster: novo }, codigoObra); } catch(e){}
   // Atualizar display canônico
   input.value = novo != null ? fmt(novo) : '';
   input.classList.add('edited');

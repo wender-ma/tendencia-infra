@@ -11,28 +11,28 @@
     /* Marca FGR */
     --fgr-red:        #B01818;   /* vermelho institucional (header, botões primários) */
     --fgr-red-dark:   #7A0F0F;   /* hover, borda de destaque */
-    --fgr-red-deep:   #4A0A0A;   /* substitui azul-marinho antigo (destaques escuros) */
-    --fgr-red-light:  var(--fgr-red-light);   /* fundo suave para cards de alerta */
+    --fgr-red-deep:   #4A0A0A;   /* destaque escuro (substitui azul-marinho antigo) */
+    --fgr-red-light:  #FEE2E2;   /* fundo suave para cards de alerta */
     --fgr-red-vivid:  #D82A2A;   /* vermelho mais claro, gradient e detalhes */
 
     /* Semáforo (vinho para não competir com marca) */
     --sem-erro:       #5A0808;   /* vinho quase preto — estouro/erro */
-    --sem-erro-bg:    var(--fgr-red-light);   /* fundo suave de erro */
-    --sem-alerta:     var(--sem-alerta);   /* âmbar — mantém */
-    --sem-alerta-bg:  var(--sem-alerta-bg);
-    --sem-ok:         var(--sem-ok);   /* verde — mantém */
-    --sem-ok-bg:      #D1FAE5;
+    --sem-erro-bg:    #FEE2E2;   /* fundo suave de erro */
+    --sem-alerta:     #B45309;   /* âmbar */
+    --sem-alerta-bg:  #FEF3C7;   /* fundo âmbar suave */
+    --sem-ok:         #065F46;   /* verde institucional */
+    --sem-ok-bg:      #D1FAE5;   /* fundo verde suave */
 
     /* Neutros */
-    --text-strong:    var(--text-strong);
-    --text-medium:    var(--text-medium);
-    --text-soft:      var(--text-soft);
-    --text-lighter:   var(--text-lighter);
-    --border:         var(--border);
-    --border-strong:  var(--border-strong);
-    --bg-page:        var(--bg-page);
-    --bg-card:        #FFFFFF;
-    --bg-soft:        var(--bg-soft);
+    --text-strong:    #1F2937;   /* títulos e valores fortes */
+    --text-medium:    #374151;   /* corpo principal */
+    --text-soft:      #6B7280;   /* labels e secundário */
+    --text-lighter:   #9CA3AF;   /* placeholder e hint */
+    --border:         #E5E7EB;   /* bordas padrão */
+    --border-strong:  #D1D5DB;   /* bordas com destaque */
+    --bg-page:        #F9FAFB;   /* fundo geral da página */
+    --bg-card:        #FFFFFF;   /* fundo dos cards */
+    --bg-soft:        #F3F4F6;   /* fundo suave (grupos, hover) */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1529,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>

@@ -1481,7 +1481,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.63.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.63.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -5233,8 +5233,8 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         linhas = DATA_T.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
-        if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
-          authToast('❌ CSV inválido para FLOWS (esperado cabeçalho INSUMO PLANEJAMENTO)', 'err', 5000);
+        if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
+          authToast('❌ CSV inválido para FLOWS (esperado cabeçalho começando com Cod_aditivo — formato v0.63 do Fabric)', 'err', 6000);
           if (cardMeta) renderUploadsCentral();
           ev.target.value = ''; return;
         }
@@ -5511,8 +5511,8 @@ async function _processExcelSheets(workbook, mapping, file) {
         aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
       } else if (step.parser === 'flows') {
-        if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
-          throw new Error('Cabeçalho da aba Flows precisa conter INSUMO PLANEJAMENTO ou CONTROLE DE ALTERAÇÕES');
+        if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
+          throw new Error('Cabeçalho da aba Flows precisa começar com Cod_aditivo (formato v0.63 do Fabric).');
         }
         DATA_F = parseFlowsValor(csv);
         applyManuals();
@@ -5973,7 +5973,7 @@ function _parsearECarregar(kind, csv) {
         // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
   } else if (kind === 'flows') {
-    if (!firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
+    if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
       throw new Error('CSV Flows em formato inesperado');
     }
     DATA_F = parseFlowsValor(csv);

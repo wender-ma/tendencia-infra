@@ -683,7 +683,11 @@ body:not(.is-admin-geral) [data-admin-only] {
 <div class="tab-content" id="tab-detalhe">
   <div class="sources-header" id="srcHeader_detalhe" data-sources="tendencia"></div>
   <div class="card">
-    <h2>📋 Detalhamento por Item</h2>
+    <h2>📋 Detalhamento por Item
+      <span style="display:flex; gap:6px; align-items:center;">
+        <button class="btn-sm" onclick="exportarDetalhamentoXLSX()" style="font-size:11px;" title="Exporta a tabela completa em Excel">💾 Exportar Excel</button>
+      </span>
+    </h2>
     <div class="toolbar">
       <input type="search" id="search" placeholder="🔍 Buscar item, código ou insumo...">
       <select id="filterGrupo"><option value="">Todos os grupos</option></select>
@@ -787,7 +791,8 @@ body:not(.is-admin-geral) [data-admin-only] {
         <span id="editCount" style="margin-left:8px;"></span>
       </div>
       <button class="btn-sm primary" data-editor-only onclick="openManualForm()" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo manual</button>
-      <button class="btn-sm primary" onclick="exportClassifications()" title="Baixa CSV com as alterações feitas">💾 Exportar alterações</button>
+      <button class="btn-sm primary" onclick="exportarFlowsXLSX()" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
+      <button class="btn-sm" onclick="exportClassifications()" title="Baixa CSV apenas com as alterações manuais feitas (edições de INSUMO_*)">📤 Exportar só alterações (CSV)</button>
       <button class="btn-sm" onclick="reloadClassifications()" title="Recarrega do navegador">⤴️ Recarregar salvas</button>
       <button class="btn-sm danger" data-editor-only onclick="clearClassifications()" title="Apaga edições deste navegador">🗑️ Limpar alterações</button>
     </div>
@@ -1015,7 +1020,7 @@ body:not(.is-admin-geral) [data-admin-only] {
     <h2>📋 Movimentações
       <span style="display:flex; gap:6px; align-items:center;">
         <button class="btn-sm primary" data-editor-only onclick="openMovForm()" style="font-size:12px;">➕ Nova movimentação</button>
-        <button class="btn-sm" onclick="exportMovs()" style="font-size:12px;">💾 Exportar CSV</button>
+        <button class="btn-sm" onclick="exportarControleProjXLSX()" style="font-size:12px;" title="Exporta movimentações + saldo acumulado em Excel">💾 Exportar Excel</button>
       </span>
     </h2>
 
@@ -1481,7 +1486,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.63.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.63.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -8651,35 +8656,242 @@ function deleteMov(id) {
   renderProjCtrl();
 }
 
-function exportMovs() {
-  const movs = getAllMovimentacoes();
-  if (!movs.length) { alert('Nenhuma movimentação para exportar.'); return; }
-  const lines = ['ID;Data;Tipo;Direção;Origem;Destino;Descrição;Justificativa;Responsável;Valor (R$);Origem do registro'];
-  const csvEsc = s => `"${String(s==null?'':s).replace(/"/g,'""').replace(/\r?\n/g,' ')}"`;
-  movs.forEach(m => {
-    lines.push([
-      m.id,
-      csvEsc(m.data_br || m.data),
-      m.tipo,
-      m.direcao,
-      csvEsc(m.origem),
-      csvEsc(m.destino),
-      csvEsc(m.descricao),
-      csvEsc(m.justificativa),
-      csvEsc(m.responsavel),
-      (m.valor != null ? String(m.valor).replace('.', ',') : ''),
-      m.origem_dado,
-    ].join(';'));
-  });
-  const csv = '\ufeff' + lines.join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `movimentacoes_projecao_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+// v0.63.3 — Exports XLSX padronizados
+// Adiciona: exportarDetalhamentoXLSX, exportarFlowsXLSX, exportarControleProjXLSX
+// Todos seguem o padrão da Projeção Detalhada (v0.60.3):
+//   - Aba principal com dados da OBRA ATIVA (tabela completa, ignora filtros)
+//   - Aba "Metadados" com contexto (obra, usuário, timestamp, data corte, etc)
+//   - Format code Excel nativo #,##0.00;-#,##0.00;"-" nas cols monetárias
+//   - Arquivo nomeado: <tipo>_<codigo_obra>_<AAAA-MM-DD>.xlsx
+
+// ============================================================================
+// HELPER GENÉRICO — cria WB de 2 abas com format code nas cols monetárias
+// ============================================================================
+function _criarWorkbookXLSX(nomeAba, linhas, larguras, metaEntries, colunasMonetariasIdx) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(linhas);
+  if (larguras && larguras.length) ws['!cols'] = larguras;
+
+  // Aplicar format code nativo Excel nas cols monetárias
+  if (Array.isArray(colunasMonetariasIdx) && colunasMonetariasIdx.length && ws['!ref']) {
+    const FMT = '#,##0.00;-#,##0.00;"-"';
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+      for (const C of colunasMonetariasIdx) {
+        const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+        const cell = ws[cellRef];
+        if (cell && typeof cell.v === 'number') {
+          cell.t = 'n';
+          cell.z = FMT;
+        }
+      }
+    }
+  }
+  XLSX.utils.book_append_sheet(wb, ws, nomeAba);
+
+  if (metaEntries && metaEntries.length) {
+    const wsMeta = XLSX.utils.json_to_sheet(metaEntries);
+    wsMeta['!cols'] = [{ wch: 32 }, { wch: 60 }];
+    XLSX.utils.book_append_sheet(wb, wsMeta, 'Metadados');
+  }
+
+  return wb;
 }
+
+function _metaBase(fonteAba) {
+  return [
+    { 'Campo': 'Aba de origem', 'Valor': fonteAba },
+    { 'Campo': 'Obra ativa', 'Valor': OBRA_ATIVA || '(não selecionada)' },
+    { 'Campo': 'Nome da obra', 'Valor': (getObraInfo && getObraInfo(OBRA_ATIVA)?.nome) || '' },
+    { 'Campo': 'Usuário logado', 'Valor': AUTH?.user?.email || '(anônimo)' },
+    { 'Campo': 'Papel do usuário', 'Valor': AUTH?.role || (AUTH?.isAdminGeral ? 'admin' : AUTH?.isEditor ? 'editor' : 'anônimo') },
+    { 'Campo': 'Versão do dashboard', 'Valor': 'v0.63.3' },
+    { 'Campo': 'Exportado em', 'Valor': new Date().toLocaleString('pt-BR') },
+  ];
+}
+
+// ============================================================================
+// EXPORT 1 — DETALHAMENTO
+// ============================================================================
+function exportarDetalhamentoXLSX() {
+  try {
+    if (!Array.isArray(DATA_T) || !DATA_T.length) {
+      alert('Sem dados de Tendência carregados para esta obra. Suba o arquivo primeiro.');
+      return;
+    }
+    // Ignora filtros — exporta TUDO da obra ativa (DATA_T já é por obra)
+    const linhas = DATA_T.map(d => ({
+      'Grupo': d.grupo || '',
+      'Código': d.cod || '',
+      'Item': d.item || '',
+      'Cód. Serviço': d.cod_servico || '',
+      'Cód. Insumo': d.cod_insumo || '',
+      'Nível': d.nivel || '',
+      'Tipo': d.tipo || '',
+      'É folha': d.is_folha ? 'Sim' : 'Não',
+      'Licitação (R$)': (d.licitacao != null) ? Math.round(d.licitacao * 100) / 100 : null,
+      'Corrigido IPCA (R$)': (d.corrigido_ipca != null) ? Math.round(d.corrigido_ipca * 100) / 100 : null,
+      'Corrigido INCC (R$)': (d.corrigido_incc != null) ? Math.round(d.corrigido_incc * 100) / 100 : null,
+      'Gestão (R$)': (d.gestao != null) ? Math.round(d.gestao * 100) / 100 : null,
+      'Δ R$ (Licitação - Gestão)': (d.diferenca != null) ? Math.round(d.diferenca * 100) / 100 : null,
+      'Δ % (vs Licitação)': (d.licitacao && d.gestao != null) ? Math.round(((d.gestao - d.licitacao) / d.licitacao) * 10000) / 100 : null,
+      'Aditivos Total (R$)': (d.aditivo_total != null) ? Math.round(d.aditivo_total * 100) / 100 : null,
+      'Evolução Teórica (%)': (d.evolucao_teorica != null) ? Math.round(d.evolucao_teorica * 100) / 100 : null,
+      'Evolução Financeira (%)': (d.evolucao_financeira != null) ? Math.round(d.evolucao_financeira * 100) / 100 : null,
+    }));
+    const larguras = [
+      { wch: 32 }, { wch: 14 }, { wch: 40 }, { wch: 14 }, { wch: 14 }, { wch: 8 }, { wch: 12 }, { wch: 8 },
+      { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 },
+    ];
+    // Cols monetárias (0-indexed): Licitação=8, IPCA=9, INCC=10, Gestão=11, Δ R$=12, Aditivos=14
+    const colsMon = [8, 9, 10, 11, 12, 14];
+    const wb = _criarWorkbookXLSX('Detalhamento', linhas, larguras, _metaBase('Detalhamento por Item'), colsMon);
+    const nome = `detalhamento_${OBRA_ATIVA || 'obra'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, nome);
+    console.log(`[EXPORT] Detalhamento exportado: ${nome} (${linhas.length} linhas)`);
+  } catch (e) {
+    console.error('[EXPORT] Detalhamento erro:', e);
+    alert('Erro ao exportar: ' + (e.message || e));
+  }
+}
+
+// ============================================================================
+// EXPORT 2 — FLOWS / ADITIVOS
+// ============================================================================
+function exportarFlowsXLSX() {
+  try {
+    const flows = (typeof getFlowsObraAtiva === 'function') ? getFlowsObraAtiva() : [];
+    if (!flows.length) {
+      alert('Sem aditivos carregados para esta obra. Suba o CSV do Flows primeiro.');
+      return;
+    }
+    const refletidoLabel = { sim: 'Sim', nao: 'Não', pendente: 'Pendente' };
+    const tipoLabel = {
+      aumento_real: 'Aumento real',
+      remanejamento: 'Remanejamento',
+      economia: 'Economia',
+      pendente: 'Pendente',
+      sem_classificacao: 'Sem classificação',
+      misto: 'Misto',
+    };
+    const linhas = flows.map(f => ({
+      'N° Alteração': f.n_alteracao || '',
+      'Data': f.data_br || '',
+      'Departamento': f.dep || '',
+      'Descrição': f.descricao || '',
+      'Motivo': f.motivo || '',
+      'Justificativa': f.justificativa || '',
+      'Custo Flowmaster (R$)': (f.custo_flowmaster != null) ? Math.round(f.custo_flowmaster * 100) / 100 : null,
+      'Custo Planejamento (R$)': (f.custo_planejamento != null) ? Math.round(f.custo_planejamento * 100) / 100 : null,
+      'Insumo Planejamento (destino)': f.insumo_planejamento || '',
+      'Insumo Remanejamento (origem)': f.insumo_remanejamento || '',
+      'Tipo classificação': tipoLabel[f.tipo] || f.tipo || '',
+      'Refletido?': refletidoLabel[f.refletido_status] || f.refletido_status || 'Pendente',
+      'Solicitante Dep.': f.solicitante_dep || '',
+      'É manual': f.is_manual ? 'Sim' : 'Não',
+    }));
+    const larguras = [
+      { wch: 14 }, { wch: 12 }, { wch: 16 }, { wch: 50 }, { wch: 28 }, { wch: 50 },
+      { wch: 18 }, { wch: 18 }, { wch: 28 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 16 }, { wch: 8 },
+    ];
+    // Cols monetárias: Custo Flow=6, Custo Planej=7
+    const colsMon = [6, 7];
+    const wb = _criarWorkbookXLSX('Aditivos', linhas, larguras, _metaBase('Flows / Aditivos'), colsMon);
+    const nome = `flows_${OBRA_ATIVA || 'obra'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, nome);
+    console.log(`[EXPORT] Flows exportado: ${nome} (${linhas.length} linhas)`);
+  } catch (e) {
+    console.error('[EXPORT] Flows erro:', e);
+    alert('Erro ao exportar: ' + (e.message || e));
+  }
+}
+
+// ============================================================================
+// EXPORT 3 — CONTROLE DE PROJEÇÃO (substitui exportMovs CSV)
+// ============================================================================
+function exportarControleProjXLSX() {
+  try {
+    const movs = (PROJ_CTRL_STATE?.movimentacoes) || [];
+    if (!movs.length) {
+      alert('Sem movimentações cadastradas para esta obra.');
+      return;
+    }
+    // Ordenar por data (mais antiga primeiro)
+    const movsOrd = [...movs].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+
+    const tipoLabel = {
+      aporte: 'Aporte',
+      devolucao: 'Devolução',
+      aditivo: 'Aditivo',
+      remanejamento: 'Remanejamento',
+    };
+
+    // Calcular saldo acumulado linha a linha
+    let saldo = PROJ_CTRL_STATE?.saldo_inicial || 0;
+    const linhas = [];
+    // Linha 1: saldo inicial (se configurado)
+    if (PROJ_CTRL_STATE?.saldo_inicial != null) {
+      linhas.push({
+        'ID': '(inicial)',
+        'Tipo': 'Saldo inicial',
+        'Data': PROJ_CTRL_STATE?.data_ref || '',
+        'Data (BR)': '',
+        'Origem/Descrição': 'Saldo inicial configurado',
+        'Destino': '',
+        'Valor (R$)': PROJ_CTRL_STATE.saldo_inicial,
+        'Saldo acumulado (R$)': saldo,
+        'Responsável': '',
+        'Justificativa': '',
+        'Criado em': '',
+        'Criado por': '',
+      });
+    }
+    movsOrd.forEach(m => {
+      const v = m.valor || 0;
+      const isEntrada = ['aporte', 'devolucao'].includes(m.tipo);
+      saldo += isEntrada ? v : -v;
+      linhas.push({
+        'ID': m.id || '',
+        'Tipo': tipoLabel[m.tipo] || m.tipo || '',
+        'Data': m.data || '',
+        'Data (BR)': m.data_br || '',
+        'Origem/Descrição': m.origem || m.descricao || '',
+        'Destino': m.destino || '',
+        'Valor (R$)': isEntrada ? v : -v,
+        'Saldo acumulado (R$)': saldo,
+        'Responsável': m.responsavel || '',
+        'Justificativa': m.justificativa || '',
+        'Criado em': m.created_at ? new Date(m.created_at).toLocaleString('pt-BR') : '',
+        'Criado por': m.created_by || '',
+      });
+    });
+
+    const larguras = [
+      { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 40 }, { wch: 24 },
+      { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 40 }, { wch: 18 }, { wch: 22 },
+    ];
+    // Cols monetárias: Valor=6, Saldo=7
+    const colsMon = [6, 7];
+
+    const metaExtra = _metaBase('Controle Projeção');
+    metaExtra.push({ 'Campo': 'Insumo controlado', 'Valor': PROJ_CTRL_STATE?.insumo || '' });
+    metaExtra.push({ 'Campo': 'Saldo inicial (R$)', 'Valor': PROJ_CTRL_STATE?.saldo_inicial ?? '' });
+    metaExtra.push({ 'Campo': 'Data de referência', 'Valor': PROJ_CTRL_STATE?.data_ref || '' });
+    metaExtra.push({ 'Campo': 'Total de movimentações', 'Valor': movs.length });
+    metaExtra.push({ 'Campo': 'Saldo final calculado (R$)', 'Valor': Math.round(saldo * 100) / 100 });
+
+    const wb = _criarWorkbookXLSX('Movimentações', linhas, larguras, metaExtra, colsMon);
+    const nome = `controle-projecao_${OBRA_ATIVA || 'obra'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, nome);
+    console.log(`[EXPORT] Controle Projeção exportado: ${nome} (${linhas.length} linhas)`);
+  } catch (e) {
+    console.error('[EXPORT] Controle Projeção erro:', e);
+    alert('Erro ao exportar: ' + (e.message || e));
+  }
+}
+
+// Alias pra retrocompat (código antigo chamava exportMovs())
+function exportMovs() { return exportarControleProjXLSX(); }
 
 
 // ============ HISTÓRICO ============

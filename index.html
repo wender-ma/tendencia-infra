@@ -398,8 +398,9 @@
   transition: background .15s;
 }
 .auth-btn:hover { background: rgba(255,255,255,0.25); }
+/* v0.64.2 — auth badge no header escuro: estilo translúcido branco (coeso com dropdown) */
 .auth-badge {
-  padding: 5px 10px;
+  padding: 5px 12px;
   border-radius: 12px;
   font-size: 11px;
   font-weight: 600;
@@ -407,16 +408,22 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(3px);
+  white-space: nowrap;
 }
-.auth-badge.editor  { background: #d1fae5; color: var(--sem-ok); }
-.auth-badge.viewer  { background: #e0e7ff; color: #3730a3; }
-.auth-badge.pending { background: var(--sem-alerta-bg); color: var(--sem-alerta); }
-/* Badge 2 linhas: email em cima + role chip embaixo */
+.auth-badge.editor  { background: rgba(255,255,255,0.15); color: white; }
+.auth-badge.viewer  { background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.85); }
+.auth-badge.pending { background: rgba(180,83,9,0.35); color: #fef3c7; border-color: rgba(255,200,100,0.4); }
+
+/* Badge 2 linhas: email + chip do role — mais compacto em 1 linha visual */
 .auth-badge.two-line {
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 3px;
-  padding: 4px 12px 5px;
+  gap: 8px;
+  padding: 5px 12px;
   line-height: 1.15;
 }
 .auth-badge .auth-email {
@@ -431,12 +438,15 @@
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 8px;
-  opacity: 0.95;
+  background: rgba(255,255,255,0.25);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.35);
 }
-.auth-badge.editor .auth-role { background: var(--sem-ok); color: #ecfdf5; }
-.auth-badge.viewer .auth-role { background: #3730a3; color: var(--fgr-red-light); }
+.auth-badge.editor .auth-role { background: rgba(255,255,255,0.25); color: white; }
+.auth-badge.viewer .auth-role { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); }
+.auth-badge.pending .auth-role { background: rgba(255,200,100,0.35); color: #fef3c7; }
 
 /* Toast */
 #authToast {
@@ -645,7 +655,7 @@ body:not(.is-admin-geral) [data-admin-only] {
     <div class="subtitle" style="margin-top:4px;">Orçamento × Gestão × Aditivos (Flows) | <span id="dataRef">—</span></div>
   </div>
   <div class="header-actions">
-    <span id="supaBadge" style="padding:5px 10px; border-radius:12px; font-size:11px; font-weight:600; align-self:center;">🔗 Conectando...</span>
+    <span id="supaBadge" style="padding:5px 12px; border-radius:12px; font-size:11px; font-weight:600; align-self:center; white-space:nowrap;">🔗 Conectando...</span>
     <span id="authBadge" class="auth-badge pending" title="Verificando autenticação...">⏳ ...</span>
     <button id="authBtn" class="auth-btn" onclick="handleAuthClick()" title="Entrar para editar">🔑 Entrar</button>
     <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
@@ -1519,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.2 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2859,28 +2869,34 @@ const LAST_UPLOADS = { tendencia: null, flows: null, gestoes: null };
 
 // ---------- Badge visual de sincronização ----------
 function updateSupaBadge() {
+  // v0.64.2: badges translúcidos brancos no header escuro (só ícone muda o "tom" de mensagem)
   const el = document.getElementById('supaBadge');
   if (!el) return;
+  const baseBg = 'rgba(255,255,255,0.15)';
+  const baseBorder = 'rgba(255,255,255,0.3)';
+  el.style.color = 'white';
+  el.style.border = '1px solid ' + baseBorder;
+  el.style.background = baseBg;
   if (!SUPA) {
-    el.innerHTML = '🔴 Offline (local)';
-    el.style.background = 'var(--fgr-red-light)'; el.style.color = 'var(--sem-erro)';
+    el.innerHTML = '🔴 Offline';
+    el.style.background = 'rgba(220,38,38,0.35)';
+    el.style.borderColor = 'rgba(255,150,150,0.4)';
     el.title = 'Não conectado ao Supabase - dados só ficam salvos aqui';
     return;
   }
   if (SUPA_STATUS.lastError) {
-    el.innerHTML = '⚠️ Erro ao sincronizar';
-    el.style.background = 'var(--sem-alerta-bg)'; el.style.color = 'var(--sem-alerta)';
+    el.innerHTML = '⚠️ Erro sync';
+    el.style.background = 'rgba(180,83,9,0.35)';
+    el.style.borderColor = 'rgba(255,200,100,0.4)';
     el.title = 'Último erro: ' + SUPA_STATUS.lastError;
     return;
   }
   if (SUPA_STATUS.lastSync) {
     el.innerHTML = '☁️ Sincronizado';
-    el.style.background = '#d1fae5'; el.style.color = 'var(--sem-ok)';
     el.title = 'Última sincronização: ' + SUPA_STATUS.lastSync.toLocaleTimeString('pt-BR');
     return;
   }
   el.innerHTML = '🔗 Conectado';
-  el.style.background = 'var(--fgr-red-light)'; el.style.color = 'var(--fgr-red)';
   el.title = 'Conectado ao Supabase (ainda sem sincronização recente)';
 }
 

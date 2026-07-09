@@ -1481,7 +1481,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.62.3 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.63.1 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2329,7 +2329,11 @@ async function recarregarDadosDaObra() {
     if (cfg[pref + 'dados_tendencia']) {
       try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {}
     } else { DATA_T = []; }
-    if (cfg[pref + 'dados_flows']) {
+    // v0.63: DATA_F agora é GLOBAL (sem prefixo por obra). Compat: se ainda existe a chave com prefixo, migra
+    if (cfg['dados_flows']) {
+      try { const d = JSON.parse(cfg['dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {}
+    } else if (cfg[pref + 'dados_flows']) {
+      // fallback: chave antiga por obra (transição)
       try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {}
     } else { DATA_F = []; }
     // v0.58b: HISTORICO e PROJ_RAW são globais (sem prefixo), compartilhados entre obras
@@ -2371,13 +2375,15 @@ function _lsGet(k) { try { return localStorage.getItem(k); } catch(e){ return nu
 // no Supabase: 1 linha por n_alteracao com colunas
 async function supaLoadClassifications() {
   if (!SUPA) return null;
-  if (!OBRA_ATIVA) return null;
-  const { data, error } = await SUPA.from('flow_classifications')
-    .select('*').eq('codigo_obra', OBRA_ATIVA);
+  // v0.63.1: DATA_F é global (multi-obra), então carregar classificações de TODAS as obras
+  // Chave do map agora é "codigo_obra:n_alteracao" pra evitar colisão de n_alteracao entre obras
+  const { data, error } = await SUPA.from('flow_classifications').select('*');
   if (error) { console.warn('[SUPA] loadClass err:', error); SUPA_STATUS.lastError = error.message; return null; }
   const map = {};
   data.forEach(r => {
-    map[r.n_alteracao] = {
+    const k = (r.codigo_obra || '') + ':' + r.n_alteracao;
+    map[k] = {
+      codigo_obra: r.codigo_obra,
       insumo_planejamento: r.insumo_planejamento,
       insumo_remanejamento: r.insumo_remanejamento,
       custo_flowmaster: r.custo_flowmaster,
@@ -2388,14 +2394,16 @@ async function supaLoadClassifications() {
   SUPA_STATUS.lastSync = new Date();
   return map;
 }
-async function supaUpsertClassification(nAlt, patch) {
+async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
   if (!SUPA) return;
-  if (!OBRA_ATIVA) { console.warn('[SUPA] upsertClass: sem OBRA_ATIVA'); return; }
+  // v0.63.1: aceita codigoObra explícito (chamado por saveClassification com aditivo achado)
+  const codigoObra = codigoObraArg || OBRA_ATIVA;
+  if (!codigoObra) { console.warn('[SUPA] upsertClass: sem codigo_obra'); return; }
   // Buscar registro atual pra fazer merge (evita sobrescrever campos que não estão no patch)
   const { data: cur } = await SUPA.from('flow_classifications')
-    .select('*').eq('codigo_obra', OBRA_ATIVA).eq('n_alteracao', nAlt).maybeSingle();
+    .select('*').eq('codigo_obra', codigoObra).eq('n_alteracao', nAlt).maybeSingle();
   const merged = {
-    codigo_obra: OBRA_ATIVA,
+    codigo_obra: codigoObra,
     n_alteracao: nAlt,
     insumo_planejamento: cur?.insumo_planejamento || null,
     insumo_remanejamento: cur?.insumo_remanejamento || null,
@@ -2585,7 +2593,8 @@ async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' *
     jobs.push(supaSaveDashboardKey(K(DATA_KEYS.GESTAO_LABEL), GESTAO_LABEL || ''));
   }
   if ((!kinds || kinds.includes('flows')) && Array.isArray(DATA_F) && DATA_F.length > 0) {
-    jobs.push(supaSaveDados(K(DATA_KEYS.DATA_F), DATA_F));
+    // v0.63: DATA_F é GLOBAL (multi-obra num só upload) — chave sem prefixo, igual HISTORICO
+    jobs.push(supaSaveDados(DATA_KEYS.DATA_F, DATA_F));
   }
   // v0.58b: Gestões (HISTORICO + PROJ_RAW) é GLOBAL — 1 arquivo compartilhado entre todas as obras
   if ((!kinds || kinds.includes('gestoes')) && HISTORICO && HISTORICO.items && HISTORICO.items.length > 0) {
@@ -3145,7 +3154,7 @@ let MAP_ORIGEM = {};    // insumo → [flows] (saída)
 function buildLinks() {
   MAP_DESTINO = {};
   MAP_ORIGEM = {};
-  DATA_F.forEach(f => {
+  getFlowsObraAtiva().forEach(f => {
     if (f.dep === 'Cancelado') return; // ignora cancelados
     const ip = f.insumo_planejamento;
     const ir = f.insumo_remanejamento;
@@ -3449,7 +3458,7 @@ function renderVisao() {
   // KPIs de flows por tipo
   const tipoSum = {};
   ['aumento_real','remanejamento','economia','pendente','sem_classificacao'].forEach(t => {
-    tipoSum[t] = DATA_F.filter(f => f.tipo === t && f.dep !== 'Cancelado')
+    tipoSum[t] = getFlowsObraAtiva().filter(f => f.tipo === t && f.dep !== 'Cancelado')
                        .reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
   });
   const totAumentoReal = tipoSum.aumento_real;
@@ -3928,28 +3937,33 @@ function loadClassifications() {
     if (!raw) return 0;
     const map = JSON.parse(raw);
     let n = 0;
-    DATA_F.forEach(f => {
-      const key = f.n_alteracao;
-      if (map[key]) {
-        if (map[key].insumo_planejamento !== undefined) {
-          f.insumo_planejamento = map[key].insumo_planejamento;
+    // v0.63.1: aplica em TODO DATA_F (não só obra ativa). Chave é "codigo_obra:n_alteracao"
+    // Compat: aceita também chave só com n_alteracao (legado)
+    const _DATA_F_ALL = Array.isArray(DATA_F) ? DATA_F : [];
+    _DATA_F_ALL.forEach(f => {
+      const keyComObra = (f.codigo_obra || '') + ':' + f.n_alteracao;
+      const keyLegacy = f.n_alteracao;
+      const entry = map[keyComObra] || map[keyLegacy];
+      if (entry) {
+        if (entry.insumo_planejamento !== undefined) {
+          f.insumo_planejamento = entry.insumo_planejamento;
           f._edited_p = true;
         }
-        if (map[key].insumo_remanejamento !== undefined) {
-          f.insumo_remanejamento = map[key].insumo_remanejamento;
+        if (entry.insumo_remanejamento !== undefined) {
+          f.insumo_remanejamento = entry.insumo_remanejamento;
           f._edited_r = true;
         }
-        if (map[key].custo_flowmaster !== undefined) {
-          f.custo_flowmaster = map[key].custo_flowmaster;
+        if (entry.custo_flowmaster !== undefined) {
+          f.custo_flowmaster = entry.custo_flowmaster;
           f._edited_v = true;
         }
-        if (map[key].refletido_status !== undefined) {
-          f.refletido_status = map[key].refletido_status;
-          f.refletido = (map[key].refletido_status === 'sim');
-        } else if (map[key].refletido !== undefined) {
+        if (entry.refletido_status !== undefined) {
+          f.refletido_status = entry.refletido_status;
+          f.refletido = (entry.refletido_status === 'sim');
+        } else if (entry.refletido !== undefined) {
           // compat com versões antigas (só checkbox)
-          f.refletido = map[key].refletido;
-          f.refletido_status = map[key].refletido ? 'sim' : 'pendente';
+          f.refletido = entry.refletido;
+          f.refletido_status = entry.refletido ? 'sim' : 'pendente';
         }
         f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
         n++;
@@ -3961,13 +3975,17 @@ function loadClassifications() {
 
 function saveClassification(nAlt, field, value) {
   if (!requireEditor('classificar aditivos')) return false;
+  // v0.63.1: acha o aditivo no DATA_F pra pegar codigo_obra e montar chave composta
+  const f = (Array.isArray(DATA_F) ? DATA_F : []).find(x => x.n_alteracao === nAlt);
+  const codigoObra = f?.codigo_obra || OBRA_ATIVA || '';
+  const key = codigoObra + ':' + nAlt;
   let map = {};
   try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
-  if (!map[nAlt]) map[nAlt] = {};
-  map[nAlt][field] = value;
+  if (!map[key]) map[key] = { codigo_obra: codigoObra };
+  map[key][field] = value;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   // Espelhar no Supabase
-  try { supaUpsertClassification(nAlt, { [field]: value }); } catch(e){}
+  try { supaUpsertClassification(nAlt, { [field]: value }, codigoObra); } catch(e){}
   return true;
 }
 
@@ -4003,7 +4021,7 @@ function exportClassifications() {
   const lines = ['Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Refletido (PENDENTE/SIM/NAO);Justificativa;Data exportação'];
   const now = new Date().toLocaleString('pt-BR');
   allKeys.forEach(k => {
-    const f = DATA_F.find(x => x.n_alteracao === k);
+    const f = getFlowsObraAtiva().find(x => x.n_alteracao === k);
     if (!f) return;
     const edit = map[k] || {};
     const ip = (edit.insumo_planejamento !== undefined) ? edit.insumo_planejamento : f.insumo_planejamento;
@@ -4165,7 +4183,7 @@ function onClassifChange(sel) {
   const nAlt = sel.dataset.n;
   const field = sel.dataset.field;
   const value = valueFromDisplay(sel.value);
-  const f = DATA_F.find(x => x.n_alteracao === nAlt);
+  const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
   if (!f) return;
   // Atualiza o input para o display canônico (caso usuário tenha digitado parcial)
   sel.value = displayForValue(value);
@@ -4214,13 +4232,13 @@ function updateEditCount() {
 
 // Helper: re-renderiza só os agregados da aba flows (cards e gráficos), preservando a tabela
 function renderFlowsAggregates() {
-  const total = DATA_F.length;
+  const total = getFlowsObraAtiva().length;
   const byDep = {};
-  DATA_F.forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
+  getFlowsObraAtiva().forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
   const sumFm = arr => arr.reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
   // "Vivos" = não cancelados E não marcados como ❌ Não refletir
   const isDescartado = f => f.dep === 'Cancelado' || (f.refletido_status === 'nao');
-  const active = DATA_F.filter(f => !isDescartado(f));
+  const active = getFlowsObraAtiva().filter(f => !isDescartado(f));
   // Tipos exibidos no donut (só os "vivos" que impactam a obra)
   const tipoSums = {};
   ['aumento_real','remanejamento','economia','pendente'].forEach(t => {
@@ -4233,12 +4251,12 @@ function renderFlowsAggregates() {
     tipoSums['sem_classificacao'] = {n: semClassVivos.length, v: sumFm(semClassVivos)};
   }
   // Descartados (não impactam)
-  const descartados = DATA_F.filter(isDescartado);
+  const descartados = getFlowsObraAtiva().filter(isDescartado);
   document.getElementById('flowSummary').innerHTML = `
-    <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(DATA_F))} flowmaster total</div></div>
-    <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado||0}</div><div class="sub">${fmtR$(sumFm(DATA_F.filter(f=>f.dep==='Finalizado')))}</div></div>
-    <div class="flow-card amber"><div class="lbl">Em andamento</div><div class="v">${(byDep.Projeto||0)+(byDep.Planejamento||0)+(byDep.Orçamento||0)+(byDep.Obra||0)}</div><div class="sub">${fmtR$(sumFm(DATA_F.filter(f=>!['Cancelado','Finalizado'].includes(f.dep))))}</div></div>
-    <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado||0}</div><div class="sub">${fmtR$(sumFm(DATA_F.filter(f=>f.dep==='Cancelado')))} (descartado)</div></div>
+    <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva()))} flowmaster total</div></div>
+    <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Finalizado')))}</div></div>
+    <div class="flow-card amber"><div class="lbl">Em andamento</div><div class="v">${(byDep.Projeto||0)+(byDep.Planejamento||0)+(byDep.Orçamento||0)+(byDep.Obra||0)}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>!['Cancelado','Finalizado'].includes(f.dep))))}</div></div>
+    <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Cancelado')))} (descartado)</div></div>
     <div class="flow-card purple"><div class="lbl">Aumento Real</div><div class="v">${fmtR$(tipoSums.aumento_real.v)}</div><div class="sub">${tipoSums.aumento_real.n} aditivos</div></div>
   `;
   const colors = {aumento_real:'#ef4444', remanejamento:'#06b6d4', economia:'#10b981', pendente:'#f59e0b', sem_classificacao:'#9ca3af'};
@@ -4311,9 +4329,9 @@ function msGetAllValues(key) {
   if (key === 'tipo') return MS_TIPO_OPTS.map(o => o.v);
   if (key === 'refletido') return MS_REFLETIDO_OPTS.map(o => o.v);
   if (key === 'destino') return MS_DESTINO_OPTS.map(o => o.v);
-  if (!DATA_F || !DATA_F.length) return [];
+  if (!getFlowsObraAtiva() || !getFlowsObraAtiva().length) return [];
   const field = (key === 'solicitante') ? 'solicitante' : key;
-  return [...new Set(DATA_F.map(f => f[field]).filter(v => v != null && v !== ''))].sort();
+  return [...new Set(getFlowsObraAtiva().map(f => f[field]).filter(v => v != null && v !== ''))].sort();
 }
 
 function msLabelFor(key, value) {
@@ -4356,13 +4374,13 @@ function msRenderPanel(key) {
   // contagem por valor nos dados
   const counts = {};
   if (key === 'refletido') {
-    DATA_F.forEach(f => {
+    getFlowsObraAtiva().forEach(f => {
       const v = f.refletido_status || 'pendente';
       counts[v] = (counts[v]||0) + 1;
     });
   } else if (key === 'destino') {
     const isReal = v => v && !['', '-', 'Não encontrado!', 'VERIFICAR'].includes(v) && !String(v).toUpperCase().includes('VERIFICAR');
-    DATA_F.forEach(f => {
+    getFlowsObraAtiva().forEach(f => {
       if (isReal(f.insumo_planejamento)) counts['com_destino'] = (counts['com_destino']||0) + 1;
       else counts['sem_destino'] = (counts['sem_destino']||0) + 1;
       if (isReal(f.insumo_remanejamento)) counts['com_origem'] = (counts['com_origem']||0) + 1;
@@ -4370,7 +4388,7 @@ function msRenderPanel(key) {
     });
   } else {
     const field = (key === 'solicitante') ? 'solicitante' : key;
-    DATA_F.forEach(f => {
+    getFlowsObraAtiva().forEach(f => {
       const v = f[field];
       if (v != null && v !== '') counts[v] = (counts[v]||0) + 1;
     });
@@ -4546,7 +4564,7 @@ function updateMassBar() {
   const n = MASS_SELECTED.size;
   if (n === 0) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
   // Soma dos valores selecionados
-  const selFlows = [...MASS_SELECTED].map(nAlt => DATA_F.find(f => f.n_alteracao === nAlt)).filter(Boolean);
+  const selFlows = [...MASS_SELECTED].map(nAlt => getFlowsObraAtiva().find(f => f.n_alteracao === nAlt)).filter(Boolean);
   const totVal = selFlows.reduce((s,f) => s + (f.custo_flowmaster||0), 0);
   bar.style.display = 'flex';
   bar.className = 'mass-bar';
@@ -4603,7 +4621,7 @@ function massAplicarDestino() {
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
     MASS_SELECTED.forEach(nAlt => {
-      const f = DATA_F.find(x => x.n_alteracao === nAlt);
+      const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
       if (!f) return;
       f.insumo_planejamento = novo;
       f._edited_p = true;
@@ -4629,7 +4647,7 @@ function massAplicarOrigem() {
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
     MASS_SELECTED.forEach(nAlt => {
-      const f = DATA_F.find(x => x.n_alteracao === nAlt);
+      const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
       if (!f) return;
       f.insumo_remanejamento = novo;
       f._edited_r = true;
@@ -4658,7 +4676,7 @@ function massAplicarRefletido() {
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
     MASS_SELECTED.forEach(nAlt => {
-      const f = DATA_F.find(x => x.n_alteracao === nAlt);
+      const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
       if (!f) return;
       f.refletido_status = status;
       f.refletido = (status === 'sim');
@@ -4699,7 +4717,7 @@ function parseNumBR(s) {
 function onValorChange(input) {
   const nAlt = input.dataset.n;
   const novo = parseNumBR(input.value);
-  const f = DATA_F.find(x => x.n_alteracao === nAlt);
+  const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
   if (!f) return;
   f.custo_flowmaster = novo;
   f._edited_v = true;
@@ -4893,7 +4911,7 @@ function deleteManual(id) {
 // ============ FLOWS TAB ============
 function renderFlows() {
   // v0.59: guard sem dados de Flows
-  if (!Array.isArray(DATA_F) || DATA_F.length === 0) {
+  if (!Array.isArray(getFlowsObraAtiva()) || getFlowsObraAtiva().length === 0) {
     const flowSummary = document.getElementById('flowSummary');
     const flowsByTipo = document.getElementById('flowsByTipo');
     const flowsTbody = document.getElementById('flowsTbody');
@@ -4902,13 +4920,13 @@ function renderFlows() {
     if (flowsTbody) flowsTbody.innerHTML = '';
     return;
   }
-  const total = DATA_F.length;
+  const total = getFlowsObraAtiva().length;
   const byDep = {};
-  DATA_F.forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
+  getFlowsObraAtiva().forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
   const sumFm = arr => arr.reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
   // "Vivos" = não cancelados E não marcados como ❌ Não refletir
   const isDescartado = f => f.dep === 'Cancelado' || (f.refletido_status === 'nao');
-  const active = DATA_F.filter(f => !isDescartado(f));
+  const active = getFlowsObraAtiva().filter(f => !isDescartado(f));
   const tipoSums = {};
   ['aumento_real','remanejamento','economia','pendente'].forEach(t => {
     const arr = active.filter(f => f.tipo === t);
@@ -4918,13 +4936,13 @@ function renderFlows() {
   if (semClassVivos.length) {
     tipoSums['sem_classificacao'] = {n: semClassVivos.length, v: sumFm(semClassVivos)};
   }
-  const descartados = DATA_F.filter(isDescartado);
+  const descartados = getFlowsObraAtiva().filter(isDescartado);
 
   document.getElementById('flowSummary').innerHTML = `
-    <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(DATA_F))} flowmaster total</div></div>
-    <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado||0}</div><div class="sub">${fmtR$(sumFm(DATA_F.filter(f=>f.dep==='Finalizado')))}</div></div>
-    <div class="flow-card amber"><div class="lbl">Em andamento</div><div class="v">${(byDep.Projeto||0)+(byDep.Planejamento||0)+(byDep.Orçamento||0)+(byDep.Obra||0)}</div><div class="sub">${fmtR$(sumFm(DATA_F.filter(f=>!['Cancelado','Finalizado'].includes(f.dep))))}</div></div>
-    <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado||0}</div><div class="sub">${fmtR$(sumFm(DATA_F.filter(f=>f.dep==='Cancelado')))} (descartado)</div></div>
+    <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva()))} flowmaster total</div></div>
+    <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Finalizado')))}</div></div>
+    <div class="flow-card amber"><div class="lbl">Em andamento</div><div class="v">${(byDep.Projeto||0)+(byDep.Planejamento||0)+(byDep.Orçamento||0)+(byDep.Obra||0)}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>!['Cancelado','Finalizado'].includes(f.dep))))}</div></div>
+    <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Cancelado')))} (descartado)</div></div>
     <div class="flow-card purple"><div class="lbl">Aumento Real</div><div class="v">${fmtR$(tipoSums.aumento_real.v)}</div><div class="sub">${tipoSums.aumento_real.n} aditivos</div></div>
   `;
 
@@ -5019,7 +5037,7 @@ function renderFlowTable() {
 
   const isRealVal = v => v && !['', '-', 'Não encontrado!', 'VERIFICAR'].includes(v) && !String(v).toUpperCase().includes('VERIFICAR');
 
-  let rows = DATA_F.filter(f => {
+  let rows = getFlowsObraAtiva().filter(f => {
     if (q) {
       const txt = `${f.descricao} ${f.justificativa} ${f.motivo} ${f.insumo_planejamento} ${f.insumo_remanejamento} ${f.solicitante||''}`.toLowerCase();
       if (!txt.includes(q)) return false;
@@ -5116,7 +5134,7 @@ function renderFlowTable() {
 function onRefletidoChange(sel) {
   const nAlt = sel.dataset.n;
   const status = sel.value; // 'pendente' | 'sim' | 'nao'
-  const f = DATA_F.find(x => x.n_alteracao === nAlt);
+  const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
   if (!f) return;
   f.refletido_status = status;
   // manter campo legado 'refletido' = (status === 'sim') por compatibilidade
@@ -6421,32 +6439,174 @@ function parseGestoes(text) {
   return { gestoes, items, totals };
 }
 
+// v0.63 — Parser Flows FORMATO NOVO (Fabric)
+// Substitui parseFlowsValor da v0.62
+//
+// Formato esperado:
+//   Linha 1: cabeçalho
+//   Linha 2+: dados
+//   12 colunas na ordem:
+//     Cod_aditivo | Cod_obra | Departamento | Data | Descrição | Motivo |
+//     Justificativa | Custo Flowmaster | Custo Planejamento |
+//     INSUMO PLANEJAMENTO | INSUMO DE REMANEJAMENTO | REFLETIDO
+//
+// Cod_obra vem só como sufixo (21O, JROMO, JFRAO, ...) — mapeia pra codigo_obra
+// completo via lookup na tabela OBRAS carregada do Supabase.
+
 function parseFlowsValor(text) {
+  // v0.63.1 — Parser Flows FORMATO FABRIC (ordem oficial)
+  //
+  // Ordem esperada das 15 colunas (linha 1 = header):
+  //   0: Cod_aditivo
+  //   1: Descr_status              — usado pra calcular Departamento (via fórmula Excel, mas guardamos raw também)
+  //   2: Descr_areaatual           — usado pra calcular Departamento
+  //   3: Descr_setorcriacao        — solicitante_dep
+  //   4: Data_criacao
+  //   5: Descr_motivo
+  //   6: Descr_observacao_motivo   — justificativa
+  //   7: Descr_descricaoaditivo    — descrição
+  //   8: Cod_obra                  — só sufixo (JROMO, 21O, ...) — mapeia pro codigo_obra completo
+  //   9: Valor Aprovado ou Solicitado — custo_flowmaster
+  //  10: Vlr_planejamento          — custo_planejamento
+  //  11: Departamento              — calculado no Excel via fórmula
+  //  12: Ins. Planej.              — MANUAL (preenchido no dashboard)
+  //  13: Ins. Remanej.             — MANUAL (preenchido no dashboard)
+  //  14: Refletido                 — MANUAL (preenchido no dashboard)
+
   const rows = parseCSVRows(text);
-  const out = [];
-  for (let i=2; i<rows.length; i++) {
-    const r = rows[i];
-    if (r.length < 19) continue;
-    const n = (r[0]||'').trim();
-    if (!/^\d+$/.test(n)) continue;
-    const ip = (r[17]||'').trim(); const ir = (r[18]||'').trim();
-    out.push({
-      n_alteracao: n, n_adt: (r[1]||'').trim(), dep: (r[2]||'').trim(),
-      descricao: (r[3]||'').trim().slice(0,300),
-      data: toIsoDate(r[4]), data_br: (r[4]||'').trim().split(' ')[0],
-      aprovador_dep: (r[5]||'').trim(), aprovador: (r[6]||'').trim(),
-      solicitante_dep: (r[7]||'').trim(), solicitante: (r[8]||'').trim(),
-      custo_flowmaster: parseNum(r[9]), custo_planejamento: parseNum(r[10]),
-      motivo: (r[11]||'').trim(), justificativa: (r[12]||'').trim().slice(0,400),
-      incl_orcamento: (r[13]||'').trim(), incl_planej: (r[14]||'').trim(),
-      incl_tendencia: (r[15]||'').trim(), revisao_tendencia: (r[16]||'').trim(),
-      insumo_planejamento: ip, insumo_remanejamento: ir,
-      obs: ((r[19]||'').trim()).slice(0,300),
-      tipo: classifyFlow(ip, ir),
+  if (!rows || rows.length < 2) {
+    throw new Error('CSV vazio ou sem dados.');
+  }
+
+  // Detectar formato pelo header (linha 1) — primeira col deve ser "Cod_aditivo"
+  const header = rows[0].map(x => String(x||'').trim());
+  const primeiraCol = (header[0] || '').toLowerCase().replace(/^\ufeff/, '');
+  if (primeiraCol !== 'cod_aditivo') {
+    throw new Error(
+      'Formato de Flows inválido. Esperado cabeçalho começando com "Cod_aditivo" na linha 1. ' +
+      'A partir da v0.63, use o layout novo do Fabric (15 colunas). ' +
+      'Formato antigo (21 cols, cabeçalho "PLANILHA CONTROLE...") não é mais suportado.'
+    );
+  }
+
+  // Mapa: sufixo da obra (Fabric) → codigo_obra completo do Supabase
+  // Ex: "21O" → "42-21O", "JROMO" → "18-JROMO"
+  const mapSufixoObra = {};
+  if (Array.isArray(OBRAS)) {
+    OBRAS.forEach(o => {
+      if (!o.codigo_obra) return;
+      const partes = String(o.codigo_obra).split('-');
+      if (partes.length >= 2) {
+        const sufixo = partes.slice(1).join('-');
+        mapSufixoObra[sufixo] = o.codigo_obra;
+      }
+      mapSufixoObra[o.codigo_obra] = o.codigo_obra;
     });
   }
+
+  const out = [];
+  let ignoradas = 0;
+  const obrasDesconhecidas = new Set();
+
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.length < 2) continue;
+
+    const codAditivo = String(r[0]||'').trim();
+    if (!codAditivo || !/^\d+$/.test(codAditivo)) continue;
+
+    // Cod_obra está na posição 8
+    const codObraFabric = String(r[8]||'').trim();
+    const codigoObraCompleto = mapSufixoObra[codObraFabric] || null;
+    if (!codigoObraCompleto) {
+      obrasDesconhecidas.add(codObraFabric);
+      ignoradas++;
+      continue;
+    }
+
+    const descrStatus       = String(r[1]||'').trim();
+    const descrAreaAtual    = String(r[2]||'').trim();
+    const solicitanteDep    = String(r[3]||'').trim();
+    const dataStr           = String(r[4]||'').trim();
+    const motivo            = String(r[5]||'').trim();
+    const justificativa     = String(r[6]||'').trim().slice(0, 400);
+    const descricao         = String(r[7]||'').trim().slice(0, 300);
+    // r[8] já foi consumido (Cod_obra)
+    const custoFlow         = parseNum(r[9]);
+    const custoPlan         = parseNum(r[10]);
+    const departamento      = String(r[11]||'').trim();
+    const insumoPlanejamento = String(r[12]||'').trim();
+    const insumoRemanejamento = String(r[13]||'').trim();
+    const refletido         = String(r[14]||'').trim();
+
+    // Normalizar REFLETIDO pra padrão do dashboard
+    let refletidoStatus = 'pendente';
+    const refLow = refletido.toLowerCase();
+    if (refLow === 'sim' || refLow === 's' || refLow === 'yes' || refLow === 'refletido') refletidoStatus = 'sim';
+    else if (refLow === 'não' || refLow === 'nao' || refLow === 'n' || refLow === 'no') refletidoStatus = 'nao';
+
+    // Fallback: se Departamento veio vazio no CSV, calcula aqui pela mesma regra
+    // (redundância defensiva — a fórmula do Excel já faz isso)
+    let dep = departamento;
+    if (!dep) {
+      dep = (descrAreaAtual === 'Fora da Esteira de Aprovação') ? descrStatus : descrAreaAtual;
+    }
+
+    out.push({
+      // Chave e obra
+      n_alteracao: codAditivo,
+      n_adt: codAditivo,
+      codigo_obra: codigoObraCompleto,
+
+      // Departamento
+      dep: dep,
+
+      // Data
+      data: toIsoDate(dataStr),
+      data_br: dataStr.split(' ')[0],
+
+      // Descrição / motivo / justificativa
+      descricao: descricao,
+      motivo: motivo,
+      justificativa: justificativa,
+
+      // Valores
+      custo_flowmaster: custoFlow,
+      custo_planejamento: custoPlan,
+
+      // Classificação manual (INSUMO_*)
+      insumo_planejamento: insumoPlanejamento,
+      insumo_remanejamento: insumoRemanejamento,
+      tipo: classifyFlow(insumoPlanejamento, insumoRemanejamento),
+
+      // Refletido
+      refletido_status: refletidoStatus,
+      incl_tendencia: refletido,
+
+      // Extras do Fabric
+      descr_status: descrStatus,           // valor cru (útil pra debug)
+      descr_areaatual: descrAreaAtual,     // valor cru
+      solicitante_dep: solicitanteDep,
+
+      // Campos vazios do formato antigo (compat de UI)
+      aprovador_dep: '',
+      aprovador: '',
+      solicitante: '',
+      incl_orcamento: '',
+      incl_planej: '',
+      revisao_tendencia: '',
+      obs: '',
+    });
+  }
+
+  if (ignoradas > 0) {
+    console.warn(`[FLOWS v0.63] ${ignoradas} linha(s) ignorada(s) — obras não cadastradas no catálogo: ${[...obrasDesconhecidas].join(', ')}`);
+  }
+  console.log(`[FLOWS v0.63] ${out.length} aditivo(s) importado(s).`);
+
   return out;
 }
+
 
 
 
@@ -6572,9 +6732,9 @@ function calcularRitmoHistorico(meses, dataCorte, janelaMeses) {
 // Retorna {indiretos: R$, diretos: R$, civis: R$, projecao: R$, outros: R$}
 function calcularFlowsPendentesPorGrupo() {
   const out = { 'Custos Indiretos': 0, 'Custos Diretos / Infraestrutura': 0, 'Obras Civis': 0, 'Projeção de Gastos': 0, 'Outros': 0 };
-  if (!Array.isArray(DATA_F)) return out;
+  if (!Array.isArray(getFlowsObraAtiva())) return out;
 
-  DATA_F.forEach(f => {
+  getFlowsObraAtiva().forEach(f => {
     if (f.dep === 'Cancelado') return;
     const status = f.refletido_status || 'pendente';
     if (status !== 'pendente') return;
@@ -6847,8 +7007,8 @@ function flowsPorInsumo(insumo) {
   if (!insumo) return null;
   // Só mostrar flows REFLETIDOS (status === 'sim')
   const refletidos = f => (f.refletido_status || 'pendente') === 'sim';
-  const entrada = DATA_F.filter(f => refletidos(f) && f.insumo_planejamento === insumo);
-  const saida = DATA_F.filter(f => refletidos(f) && f.insumo_remanejamento === insumo);
+  const entrada = getFlowsObraAtiva().filter(f => refletidos(f) && f.insumo_planejamento === insumo);
+  const saida = getFlowsObraAtiva().filter(f => refletidos(f) && f.insumo_remanejamento === insumo);
   if (!entrada.length && !saida.length) return null;
   const valEntrada = entrada.reduce((s,f) => s + (f.custo_flowmaster||0), 0);
   const valSaida = saida.reduce((s,f) => s + (f.custo_flowmaster||0), 0);
@@ -6982,9 +7142,9 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
   // Helper: soma de flows PENDENTES (refletido_status = 'pendente') que tocam um insumo
   // Entrada (destino) = positivo · Saída (origem) = negativo
   function flowsPendentesInsumo(cod_insumo) {
-    if (!cod_insumo || !Array.isArray(DATA_F)) return 0;
+    if (!cod_insumo || !Array.isArray(getFlowsObraAtiva())) return 0;
     let total = 0;
-    DATA_F.forEach(f => {
+    getFlowsObraAtiva().forEach(f => {
       if (f.dep === 'Cancelado') return;
       const status = f.refletido_status || 'pendente';
       if (status !== 'pendente') return;
@@ -7325,9 +7485,9 @@ function exportarProjecaoDetalhada() {
 
     // Flows pendentes por insumo (mesma lógica)
     function flowsPendInsumo(cod_insumo) {
-      if (!cod_insumo || !Array.isArray(DATA_F)) return 0;
+      if (!cod_insumo || !Array.isArray(getFlowsObraAtiva())) return 0;
       let total = 0;
-      DATA_F.forEach(f => {
+      getFlowsObraAtiva().forEach(f => {
         if (f.dep === 'Cancelado') return;
         const status = f.refletido_status || 'pendente';
         if (status !== 'pendente') return;
@@ -7727,11 +7887,11 @@ function renderFlowsRefletidosSection(servico, insumo) {
 
   function coletarFlows(filtroStatus) {
     if (insumo) {
-      return DATA_F.filter(f => filtroStatus(f) && f.dep !== 'Cancelado' && (f.insumo_planejamento === insumo || f.insumo_remanejamento === insumo))
+      return getFlowsObraAtiva().filter(f => filtroStatus(f) && f.dep !== 'Cancelado' && (f.insumo_planejamento === insumo || f.insumo_remanejamento === insumo))
                    .map(f => ({ ...f, _direcao: f.insumo_planejamento === insumo ? 'entrada' : 'saida' }));
     } else {
       const insumosSet = new Set(getProjRawObraAtiva().filter(r => r.servico === servico).map(r => r.insumo));
-      return DATA_F.filter(f => filtroStatus(f) && f.dep !== 'Cancelado' && (insumosSet.has(f.insumo_planejamento) || insumosSet.has(f.insumo_remanejamento)))
+      return getFlowsObraAtiva().filter(f => filtroStatus(f) && f.dep !== 'Cancelado' && (insumosSet.has(f.insumo_planejamento) || insumosSet.has(f.insumo_remanejamento)))
                    .map(f => {
                      const ehEntrada = insumosSet.has(f.insumo_planejamento);
                      return { ...f, _direcao: ehEntrada ? 'entrada' : 'saida', _insumoAlvo: ehEntrada ? f.insumo_planejamento : f.insumo_remanejamento };
@@ -8059,7 +8219,7 @@ function getAllMovimentacoes() {
   }
 
   // Flows refletidos que tocam o insumo
-  DATA_F.filter(f => (f.refletido_status || 'pendente') === 'sim').forEach(f => {
+  getFlowsObraAtiva().filter(f => (f.refletido_status || 'pendente') === 'sim').forEach(f => {
     let direcao = null;
     if (f.insumo_planejamento === insumo) direcao = 'entrada';
     else if (f.insumo_remanejamento === insumo) direcao = 'saida';
@@ -8545,6 +8705,13 @@ function getProjRawObraAtiva() {
   if (!Array.isArray(PROJ_RAW)) return [];
   if (!OBRA_ATIVA) return PROJ_RAW;
   return PROJ_RAW.filter(r => r.codigo_obra === OBRA_ATIVA);
+}
+
+// v0.63: Retorna DATA_F filtrado da obra ativa (Flows agora é global, 1 CSV cobre todas)
+function getFlowsObraAtiva() {
+  if (!Array.isArray(DATA_F)) return [];
+  if (!OBRA_ATIVA) return DATA_F;
+  return DATA_F.filter(f => f.codigo_obra === OBRA_ATIVA);
 }
 
 function renderHistorico() {

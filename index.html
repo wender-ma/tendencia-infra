@@ -1529,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.4 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.5 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2398,6 +2398,10 @@ async function recarregarDadosDaObra() {
   }
   // Aplicar uploads latest (agora já filtrado por obra)
   Object.assign(LAST_UPLOADS, ups);
+  // v0.64.5: aplicar aditivos manuais + classificações salvas por cima do DATA_F recém-carregado
+  // (antes só era chamado no boot; ao trocar de obra ficavam perdidas até dar F5)
+  try { if (typeof applyManuals === 'function') applyManuals(); } catch(e) { console.warn('[OBRAS] applyManuals err:', e); }
+  try { if (typeof loadClassifications === 'function') loadClassifications(); } catch(e) { console.warn('[OBRAS] loadClassifications err:', e); }
   // v0.59.1: repopular PROJ_CTRL_STATE a partir do localStorage recém-atualizado
   if (typeof loadProjCtrl === 'function') loadProjCtrl();
   // v0.60.5: se os elementos da aba já existem (usuário estava na aba), atualizar valores + locks

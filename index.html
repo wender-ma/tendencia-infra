@@ -1529,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.6 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.7 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -3956,7 +3956,7 @@ function openItem(idx) {
 }
 
 function renderFlowMini(f, isOrigem=false) {
-  const tipoLabel = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', sem_classificacao:'⚪ Sem class.', misto:'⚪ Misto'};
+  const tipoLabel = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', cancelado:'🚫 Cancelado', sem_classificacao:'⚪ Sem class.', misto:'⚪ Misto'};
   const depBadge = {Finalizado:'green', Projeto:'amber', Cancelado:'gray', Planejamento:'blue', Orçamento:'blue', Obra:'amber'};
   const linkTxt = isOrigem
     ? `→ destino: ${f.insumo_planejamento || '-'}`
@@ -3989,6 +3989,7 @@ const SPECIAL_OPTIONS = [
   { value: '', label: '— (em branco)' },
   { value: '-', label: '— Não se aplica (-)' },
   { value: 'Aumento de obra', label: '🆕 Aumento de obra' },
+  { value: 'Cancelado', label: '🚫 Cancelado' },
   { value: 'Não encontrado!', label: '❓ Não encontrado!' },
   { value: 'VERIFICAR QUANDO SERVIÇO FOR CONTRATADO', label: '⏳ Verificar quando contratar' },
 ];
@@ -4266,11 +4267,13 @@ function onClassifChange(sel) {
   // Atualiza apenas a linha desta tr (badge de tipo + estilo do select)
   const tr = sel.closest('tr');
   if (tr) {
-    // Atualiza o badge de tipo (5ª <td>)
+    // v0.64.7: Atualiza o badge de tipo (6ª <td> = índice 5)
+    // Ordem: 0=checkbox 1=refletido 2=Nº 3=Data 4=Departamento 5=Tipo 6=Destino ...
     const tipoLabel = {aumento_real:'<span class="badge red">🔴 Aum.real</span>', remanejamento:'<span class="badge cyan">🔵 Remanej.</span>',
       economia:'<span class="badge green">🟢 Economia</span>', pendente:'<span class="badge amber">🟡 Pendente</span>',
+      cancelado:'<span class="badge gray">🚫 Cancelado</span>',
       sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', misto:'<span class="badge gray">⚪ Misto</span>'};
-    const tipoTd = tr.children[4];
+    const tipoTd = tr.children[5];
     if (tipoTd) tipoTd.innerHTML = tipoLabel[f.tipo] || '';
     // v0.64.4: marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
@@ -4297,21 +4300,27 @@ function renderFlowsAggregates() {
   getFlowsObraAtiva().forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
   const sumFm = arr => arr.reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
   // "Vivos" = não cancelados E não marcados como ❌ Não refletir
-  const isDescartado = f => f.dep === 'Cancelado' || (f.refletido_status === 'nao');
-  const active = getFlowsObraAtiva().filter(f => !isDescartado(f));
-  // Tipos exibidos no donut (só os "vivos" que impactam a obra)
+  // v0.64.7: Cancelado agora é uma classificação própria (some pelo dep OU pelo tipo)
+  const isCancelado = f => f.dep === 'Cancelado' || f.tipo === 'cancelado';
+  const isNaoRefletir = f => !isCancelado(f) && f.refletido_status === 'nao';
+  // Vivos = os que impactam a obra (não cancelados, não marcados como não refletir)
+  const active = getFlowsObraAtiva().filter(f => !isCancelado(f) && !isNaoRefletir(f));
   const tipoSums = {};
   ['aumento_real','remanejamento','economia','pendente'].forEach(t => {
     const arr = active.filter(f => f.tipo === t);
     tipoSums[t] = {n: arr.length, v: sumFm(arr)};
   });
-  // "Sem classificação" dentro dos vivos é minoria, mas mostra à parte se houver
   const semClassVivos = active.filter(f => f.tipo === 'sem_classificacao');
   if (semClassVivos.length) {
     tipoSums['sem_classificacao'] = {n: semClassVivos.length, v: sumFm(semClassVivos)};
   }
-  // Descartados (não impactam)
-  const descartados = getFlowsObraAtiva().filter(isDescartado);
+  // v0.64.7: Cancelado vira LINHA da lista (com contador e valor), não caixa separada
+  const cancelados = getFlowsObraAtiva().filter(isCancelado);
+  if (cancelados.length) {
+    tipoSums['cancelado'] = {n: cancelados.length, v: sumFm(cancelados)};
+  }
+  // Ainda mantemos "não refletir" à parte (é decisão separada, não é cancelamento)
+  const descartados = getFlowsObraAtiva().filter(isNaoRefletir);
   document.getElementById('flowSummary').innerHTML = `
     <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva()))} flowmaster total</div></div>
     <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Finalizado')))}</div></div>
@@ -4319,8 +4328,8 @@ function renderFlowsAggregates() {
     <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Cancelado')))} (descartado)</div></div>
     <div class="flow-card purple"><div class="lbl">Aumento Real</div><div class="v">${fmtR$(tipoSums.aumento_real.v)}</div><div class="sub">${tipoSums.aumento_real.n} aditivos</div></div>
   `;
-  const colors = {aumento_real:'var(--fgr-red-vivid)', remanejamento:'var(--text-medium)', economia:'var(--sem-ok)', pendente:'var(--sem-alerta)', sem_classificacao:'var(--text-lighter)'};
-  const labels = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', sem_classificacao:'⚪ Sem classificação'};
+  const colors = {aumento_real:'var(--fgr-red-vivid)', remanejamento:'var(--text-medium)', economia:'var(--sem-ok)', pendente:'var(--sem-alerta)', cancelado:'var(--text-medium)', sem_classificacao:'var(--text-lighter)'};
+  const labels = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', cancelado:'🚫 Cancelado', sem_classificacao:'⚪ Sem classificação'};
   const maxV = Math.max(...Object.values(tipoSums).map(t => Math.abs(t.v)), 1);
   document.getElementById('flowsByTipo').innerHTML = Object.entries(tipoSums).map(([t,v]) => `
     <div class="top-item">
@@ -4328,19 +4337,14 @@ function renderFlowsAggregates() {
       <div class="val">${fmtR$(v.v)}</div>
       <div class="top-bar"><div class="top-bar-fill" style="width:${Math.abs(v.v)/maxV*100}%;background:${colors[t]};"></div></div>
     </div>`).join('');
-  // Card pequeno de descartados (não impactam a obra)
+  // v0.64.7: caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
   const elDesc = document.getElementById('flowsDescartados');
   if (elDesc) {
     if (descartados.length) {
       const valDesc = sumFm(descartados);
-      const nCanc = descartados.filter(f => f.dep === 'Cancelado').length;
-      const nNaoRef = descartados.filter(f => f.dep !== 'Cancelado' && f.refletido_status === 'nao').length;
-      const partes = [];
-      if (nCanc) partes.push(`${nCanc} cancelado${nCanc>1?'s':''}`);
-      if (nNaoRef) partes.push(`${nNaoRef} marcado${nNaoRef>1?'s':''} como ❌ Não refletir`);
       elDesc.innerHTML = `
         <div style="background:var(--bg-soft); border-left:3px solid var(--text-lighter); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-medium);">
-          <span>⚫ <strong>Não impactam a obra:</strong> ${descartados.length} aditivo(s) (${partes.join(' + ')})</span>
+          <span>❌ <strong>Marcados como "Não refletir":</strong> ${descartados.length} aditivo(s)</span>
           <strong style="color:var(--text-soft);">${fmtR$(valDesc)}</strong>
         </div>
       `;
@@ -4988,9 +4992,10 @@ function renderFlows() {
   const byDep = {};
   getFlowsObraAtiva().forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
   const sumFm = arr => arr.reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
-  // "Vivos" = não cancelados E não marcados como ❌ Não refletir
-  const isDescartado = f => f.dep === 'Cancelado' || (f.refletido_status === 'nao');
-  const active = getFlowsObraAtiva().filter(f => !isDescartado(f));
+  // v0.64.7: Cancelado agora é uma classificação própria (some pelo dep OU pelo tipo)
+  const isCancelado = f => f.dep === 'Cancelado' || f.tipo === 'cancelado';
+  const isNaoRefletir = f => !isCancelado(f) && f.refletido_status === 'nao';
+  const active = getFlowsObraAtiva().filter(f => !isCancelado(f) && !isNaoRefletir(f));
   const tipoSums = {};
   ['aumento_real','remanejamento','economia','pendente'].forEach(t => {
     const arr = active.filter(f => f.tipo === t);
@@ -5000,7 +5005,11 @@ function renderFlows() {
   if (semClassVivos.length) {
     tipoSums['sem_classificacao'] = {n: semClassVivos.length, v: sumFm(semClassVivos)};
   }
-  const descartados = getFlowsObraAtiva().filter(isDescartado);
+  const cancelados = getFlowsObraAtiva().filter(isCancelado);
+  if (cancelados.length) {
+    tipoSums['cancelado'] = {n: cancelados.length, v: sumFm(cancelados)};
+  }
+  const descartados = getFlowsObraAtiva().filter(isNaoRefletir);
 
   document.getElementById('flowSummary').innerHTML = `
     <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva()))} flowmaster total</div></div>
@@ -5011,8 +5020,8 @@ function renderFlows() {
   `;
 
   // Tipos com barras
-  const colors = {aumento_real:'var(--fgr-red-vivid)', remanejamento:'var(--text-medium)', economia:'var(--sem-ok)', pendente:'var(--sem-alerta)', sem_classificacao:'var(--text-lighter)'};
-  const labels = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', sem_classificacao:'⚪ Sem classificação'};
+  const colors = {aumento_real:'var(--fgr-red-vivid)', remanejamento:'var(--text-medium)', economia:'var(--sem-ok)', pendente:'var(--sem-alerta)', cancelado:'var(--text-medium)', sem_classificacao:'var(--text-lighter)'};
+  const labels = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', cancelado:'🚫 Cancelado', sem_classificacao:'⚪ Sem classificação'};
   const maxV = Math.max(...Object.values(tipoSums).map(t => Math.abs(t.v)), 1);
   document.getElementById('flowsByTipo').innerHTML = Object.entries(tipoSums).map(([t,v]) => `
     <div class="top-item">
@@ -5020,19 +5029,14 @@ function renderFlows() {
       <div class="val">${fmtR$(v.v)}</div>
       <div class="top-bar"><div class="top-bar-fill" style="width:${Math.abs(v.v)/maxV*100}%;background:${colors[t]};"></div></div>
     </div>`).join('');
-  // Card pequeno de descartados (não impactam a obra)
+  // v0.64.7: caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
   const elDesc = document.getElementById('flowsDescartados');
   if (elDesc) {
     if (descartados.length) {
       const valDesc = sumFm(descartados);
-      const nCanc = descartados.filter(f => f.dep === 'Cancelado').length;
-      const nNaoRef = descartados.filter(f => f.dep !== 'Cancelado' && f.refletido_status === 'nao').length;
-      const partes = [];
-      if (nCanc) partes.push(`${nCanc} cancelado${nCanc>1?'s':''}`);
-      if (nNaoRef) partes.push(`${nNaoRef} marcado${nNaoRef>1?'s':''} como ❌ Não refletir`);
       elDesc.innerHTML = `
         <div style="background:var(--bg-soft); border-left:3px solid var(--text-lighter); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-medium);">
-          <span>⚫ <strong>Não impactam a obra:</strong> ${descartados.length} aditivo(s) (${partes.join(' + ')})</span>
+          <span>❌ <strong>Marcados como "Não refletir":</strong> ${descartados.length} aditivo(s)</span>
           <strong style="color:var(--text-soft);">${fmtR$(valDesc)}</strong>
         </div>
       `;
@@ -5149,6 +5153,7 @@ function renderFlowTable() {
 
   const tipoLabel = {aumento_real:'<span class="badge red">🔴 Aum.real</span>', remanejamento:'<span class="badge cyan">🔵 Remanej.</span>',
     economia:'<span class="badge green">🟢 Economia</span>', pendente:'<span class="badge amber">🟡 Pendente</span>',
+    cancelado:'<span class="badge gray">🚫 Cancelado</span>',
     sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', misto:'<span class="badge gray">⚪ Misto</span>'};
   const depBadge = {Finalizado:'green', Projeto:'amber', Cancelado:'gray', Planejamento:'blue', Orçamento:'blue', Obra:'amber'};
 
@@ -6297,7 +6302,7 @@ function parseCSVRows(text) {
 
 function normInsumo(v) {
   v = (v||'').trim();
-  if (['', '-', 'Não encontrado!'].includes(v)) return v;
+  if (['', '-', 'Não encontrado!', 'Cancelado'].includes(v)) return v;
   if (v.toUpperCase().includes('VERIFICAR')) return 'VERIFICAR';
   return v;
 }
@@ -6305,7 +6310,9 @@ function normInsumo(v) {
 function classifyFlow(ip, ir) {
   const ipNorm = normInsumo(ip);
   const irNorm = normInsumo(ir);
-  const isReal = v => v && !['', '-', 'Não encontrado!', 'VERIFICAR'].includes(v);
+  // v0.64.7: se destino OU origem estão marcados como Cancelado, o aditivo é cancelado
+  if (ipNorm === 'Cancelado' || irNorm === 'Cancelado') return 'cancelado';
+  const isReal = v => v && !['', '-', 'Não encontrado!', 'VERIFICAR', 'Cancelado'].includes(v);
   if (ipNorm === 'Não encontrado!' || irNorm === 'VERIFICAR') return 'pendente';
   if (isReal(ipNorm) && isReal(irNorm)) return 'remanejamento';
   if (isReal(ipNorm) && irNorm === '-') return 'aumento_real';
@@ -7995,6 +8002,7 @@ function renderFlowsRefletidosSection(servico, insumo) {
     remanejamento:'<span class="badge cyan">🔵 Remanej.</span>',
     economia:'<span class="badge green">🟢 Economia</span>',
     pendente:'<span class="badge amber">🟡 Pendente</span>',
+    cancelado:'<span class="badge gray">🚫 Cancelado</span>',
     sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', 
     misto:'<span class="badge gray">⚪ Misto</span>',
   };
@@ -8836,6 +8844,7 @@ function exportarFlowsXLSX() {
       remanejamento: 'Remanejamento',
       economia: 'Economia',
       pendente: 'Pendente',
+      cancelado: 'Cancelado',
       sem_classificacao: 'Sem classificação',
       misto: 'Misto',
     };

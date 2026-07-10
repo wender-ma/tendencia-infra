@@ -1529,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.7 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.8 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2457,17 +2457,15 @@ async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
   // v0.63.1: aceita codigoObra explícito (chamado por saveClassification com aditivo achado)
   const codigoObra = codigoObraArg || OBRA_ATIVA;
   if (!codigoObra) { console.warn('[SUPA] upsertClass: sem codigo_obra'); return; }
-  // Buscar registro atual pra fazer merge (evita sobrescrever campos que não estão no patch)
+  // v0.64.8: buscar cur e espalhar (se existir) — NÃO forçar null nos campos ausentes,
+  // senão qualquer edição num campo apaga os outros que já estavam salvos.
   const { data: cur } = await SUPA.from('flow_classifications')
     .select('*').eq('codigo_obra', codigoObra).eq('n_alteracao', nAlt).maybeSingle();
   const merged = {
     codigo_obra: codigoObra,
     n_alteracao: nAlt,
-    insumo_planejamento: cur?.insumo_planejamento || null,
-    insumo_remanejamento: cur?.insumo_remanejamento || null,
-    custo_flowmaster: cur?.custo_flowmaster ?? null,
-    refletido_status: cur?.refletido_status || null,
-    ...patch,
+    ...(cur || {}),  // se já existe registro, mantém tudo que estava lá
+    ...patch,        // patch sobrescreve só os campos passados
     updated_at: new Date().toISOString(),
   };
   const { error } = await SUPA.from('flow_classifications').upsert(merged, { onConflict: 'codigo_obra,n_alteracao' });
@@ -4682,6 +4680,7 @@ function massAplicarDestino() {
   massPrompt('🎯 Aplicar Destino em massa', `Substitui o campo INSUMO PLANEJAMENTO em <strong>${MASS_SELECTED.size}</strong> aditivo(s) selecionado(s).`, opt, () => {
     const novo = valueFromDisplay(document.getElementById('massDestInput').value);
     if (novo === null || novo === undefined) throw new Error('Valor inválido');
+    // v0.64.8: chave composta + sync Supabase (antes salvava só no localStorage com chave errada)
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
     MASS_SELECTED.forEach(nAlt => {
@@ -4690,8 +4689,12 @@ function massAplicarDestino() {
       f.insumo_planejamento = novo;
       f._edited_p = true;
       f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
-      if (!map[nAlt]) map[nAlt] = {};
-      map[nAlt].insumo_planejamento = novo;
+      const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+      const key = codigoObra + ':' + nAlt;
+      if (!map[key]) map[key] = { codigo_obra: codigoObra };
+      map[key].insumo_planejamento = novo;
+      // Sync Supabase (fire-and-forget)
+      try { supaUpsertClassification(nAlt, { insumo_planejamento: novo }, codigoObra); } catch(e){}
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
     buildLinks();
@@ -4708,6 +4711,7 @@ function massAplicarOrigem() {
   massPrompt('🔄 Aplicar Origem em massa', `Substitui o campo INSUMO DE REMANEJAMENTO em <strong>${MASS_SELECTED.size}</strong> aditivo(s) selecionado(s).`, opt, () => {
     const novo = valueFromDisplay(document.getElementById('massOrigInput').value);
     if (novo === null || novo === undefined) throw new Error('Valor inválido');
+    // v0.64.8: chave composta + sync Supabase (antes salvava só no localStorage com chave errada)
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
     MASS_SELECTED.forEach(nAlt => {
@@ -4716,8 +4720,11 @@ function massAplicarOrigem() {
       f.insumo_remanejamento = novo;
       f._edited_r = true;
       f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
-      if (!map[nAlt]) map[nAlt] = {};
-      map[nAlt].insumo_remanejamento = novo;
+      const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+      const key = codigoObra + ':' + nAlt;
+      if (!map[key]) map[key] = { codigo_obra: codigoObra };
+      map[key].insumo_remanejamento = novo;
+      try { supaUpsertClassification(nAlt, { insumo_remanejamento: novo }, codigoObra); } catch(e){}
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
     buildLinks();
@@ -4744,9 +4751,13 @@ function massAplicarRefletido() {
       if (!f) return;
       f.refletido_status = status;
       f.refletido = (status === 'sim');
-      if (!map[nAlt]) map[nAlt] = {};
-      map[nAlt].refletido_status = status;
-      map[nAlt].refletido = (status === 'sim');
+      // v0.64.8: chave composta + sync Supabase
+      const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+      const key = codigoObra + ':' + nAlt;
+      if (!map[key]) map[key] = { codigo_obra: codigoObra };
+      map[key].refletido_status = status;
+      map[key].refletido = (status === 'sim');
+      try { supaUpsertClassification(nAlt, { refletido_status: status }, codigoObra); } catch(e){}
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   });
@@ -5208,13 +5219,16 @@ function onRefletidoChange(sel) {
   f.refletido_status = status;
   // manter campo legado 'refletido' = (status === 'sim') por compatibilidade
   f.refletido = (status === 'sim');
-  // persistir
+  // v0.64.8: chave composta + sync Supabase
+  const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+  const key = codigoObra + ':' + nAlt;
   let map = {};
   try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
-  if (!map[nAlt]) map[nAlt] = {};
-  map[nAlt].refletido_status = status;
-  map[nAlt].refletido = (status === 'sim'); // compat
+  if (!map[key]) map[key] = { codigo_obra: codigoObra };
+  map[key].refletido_status = status;
+  map[key].refletido = (status === 'sim'); // compat
   localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  try { supaUpsertClassification(nAlt, { refletido_status: status }, codigoObra); } catch(e){}
   // Atualizar visual: cor da linha e classe do select
   const tr = sel.closest('tr');
   if (tr) tr.style.background = status === 'sim' ? '#ecfdf5' : (status === 'nao' ? '#fef2f2' : '');

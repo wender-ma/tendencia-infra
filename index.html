@@ -1529,7 +1529,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.5 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.6 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
 </div>
 
 <script>
@@ -2402,6 +2402,12 @@ async function recarregarDadosDaObra() {
   // (antes só era chamado no boot; ao trocar de obra ficavam perdidas até dar F5)
   try { if (typeof applyManuals === 'function') applyManuals(); } catch(e) { console.warn('[OBRAS] applyManuals err:', e); }
   try { if (typeof loadClassifications === 'function') loadClassifications(); } catch(e) { console.warn('[OBRAS] loadClassifications err:', e); }
+  // v0.64.6: rebuildar datalist de insumos com o DATA_T da obra recém-carregada
+  // (antes só rodava no boot, quando DATA_T ainda estava vazio — datalist ficava sempre em branco)
+  try {
+    if (typeof buildInsumosList === 'function') INSUMOS_OPTIONS = buildInsumosList();
+    if (typeof buildDatalist === 'function') buildDatalist();
+  } catch(e) { console.warn('[OBRAS] rebuild datalist err:', e); }
   // v0.59.1: repopular PROJ_CTRL_STATE a partir do localStorage recém-atualizado
   if (typeof loadProjCtrl === 'function') loadProjCtrl();
   // v0.60.5: se os elementos da aba já existem (usuário estava na aba), atualizar valores + locks
@@ -4194,6 +4200,10 @@ function buildDatalist() {
     `<option value="${escAttr(cod + ' — ' + nome)}">`
   ).join('');
   dl.innerHTML = specials + insumos;
+  // v0.64.6: log discreto
+  if (INSUMOS_OPTIONS.length > 0) {
+    console.log(`[DATALIST] ${INSUMOS_OPTIONS.length} insumos disponíveis no dropdown de classificação (${OBRA_ATIVA||'—'})`);
+  }
 }
 
 
@@ -5284,6 +5294,8 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         DATA_T = parseTendencia(txt);
         // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
+        // v0.64.6: rebuildar datalist de insumos após upload novo
+        try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
         linhas = DATA_T.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
@@ -5561,6 +5573,8 @@ async function _processExcelSheets(workbook, mapping, file) {
           throw new Error('Cabeçalho da aba Tendência precisa conter LICITAÇÃO + IPCA + INCC + EVOLUÇÃO (formato v0.55)');
         }
         DATA_T = parseTendencia(csv);
+        // v0.64.6: rebuildar datalist de insumos após upload novo
+        try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
         // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
@@ -6024,6 +6038,8 @@ function _parsearECarregar(kind, csv) {
       throw new Error('CSV Tendência em formato inesperado');
     }
     DATA_T = parseTendencia(csv);
+    // v0.64.6: rebuildar datalist de insumos após upload novo
+    try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
         // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
   } else if (kind === 'flows') {

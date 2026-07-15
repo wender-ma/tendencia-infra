@@ -35,6 +35,85 @@
     --bg-soft:        #F3F4F6;   /* fundo suave (grupos, hover) */
   }
 
+  /* Modo Noturno — variáveis invertidas */
+  body.dark {
+    --fgr-red-light:  #3B0F0F;
+    --fgr-red-vivid:  #EF4444;
+    --sem-erro:       #FCA5A5;
+    --sem-erro-bg:    #3B0F0F;
+    --sem-alerta:     #FCD34D;
+    --sem-alerta-bg:  #451A03;
+    --sem-ok:         #6EE7B7;
+    --sem-ok-bg:      #052E16;
+    --text-strong:    #F1F5F9;
+    --text-medium:    #CBD5E1;
+    --text-soft:      #94A3B8;
+    --text-lighter:   #64748B;
+    --border:         #334155;
+    --border-strong:  #475569;
+    --bg-page:        #0F172A;
+    --bg-card:        #1E293B;
+    --bg-soft:        #1E293B;
+  }
+
+  /* Modo Noturno — overrides para elementos com cores hardcoded */
+  body.dark .tabs { background: var(--bg-card); }
+  body.dark .kpi { background: var(--bg-card); }
+  body.dark .card { background: var(--bg-card); }
+  body.dark .toolbar input, body.dark .toolbar select { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .donut::after { background: var(--bg-card); }
+  body.dark .modal { background: var(--bg-card); }
+  body.dark .btn-sm { background: var(--bg-card); color: var(--text-medium); border-color: var(--border-strong); }
+  body.dark .btn-sm:hover { background: var(--bg-soft); }
+  body.dark .classif-select { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .valor-input { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .ms-btn { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .ms-panel { background: var(--bg-card); }
+  body.dark .ms-actions button { background: var(--bg-card); color: var(--text-medium); }
+  body.dark .upload-card { background: var(--bg-card); }
+  body.dark .upload-excel-card { background: linear-gradient(135deg, #064E3B 0%, #052E16 100%); }
+  body.dark .upload-card-meta { background: var(--bg-soft); color: var(--text-medium); }
+  body.dark .flow-mini-card { background: var(--bg-soft); }
+  body.dark .sources-header { background: var(--bg-soft); color: var(--text-soft); border-color: var(--border); }
+  body.dark th { background: var(--bg-soft); }
+  body.dark .form-grid input, body.dark .form-grid select, body.dark .form-grid textarea { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .modal .modal-close { color: var(--text-soft); }
+  body.dark .modal .modal-close:hover { color: var(--text-strong); }
+  body.dark #obraSelector option { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .upload-card-meta.empty { background: #451A03; }
+  body.dark .upload-card-meta.filled { background: #052E16; }
+  body.dark .ms-opt:hover { background: var(--bg-soft); }
+  body.dark .ms-footer button { background: var(--fgr-red-dark); }
+
+  /* Modo Noturno — overrides para inline styles (modais, formulários) */
+  body.dark [style*="background:white"] { background: var(--bg-card) !important; }
+  body.dark [style*="background: white"] { background: var(--bg-card) !important; }
+  body.dark input, body.dark select, body.dark textarea { background: var(--bg-card); color: var(--text-strong); border-color: var(--border-strong); }
+  body.dark input:focus, body.dark select:focus, body.dark textarea:focus { border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
+  body.dark .refletido-select.status-sim { background: #052E16; color: var(--sem-ok); border-color: #065F46; }
+  body.dark .refletido-select.status-nao { background: #3B0F0F; color: var(--sem-erro); border-color: #5A0808; }
+  body.dark .refletido-select.status-pendente { background: #451A03; color: var(--sem-alerta); border-color: #92400E; }
+  body.dark tr.folha:hover { background: var(--bg-soft); }
+  body.dark .row-selected { background: var(--fgr-red-light) !important; }
+  body.dark .hist-cell.up { background: rgba(239, 68, 68, 0.25); }
+  body.dark .hist-cell.down { background: rgba(16, 185, 129, 0.25); }
+  body.dark .hist-cell.up-strong { background: rgba(239, 68, 68, 0.4); }
+  body.dark .hist-cell.down-strong { background: rgba(16, 185, 129, 0.4); }
+  body.dark .badge-manual { background: #92400E; color: #FCD34D; }
+
+  /* Modo Noturno — botão de toggle */
+  .theme-toggle {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,0.25); }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--bg-page); color: var(--text-strong); padding: 0; font-size: 14px; }
@@ -46,6 +125,42 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   }
   .page-body { padding: 0 20px 20px 20px; }
+
+  /* Loading states */
+  .loading-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15,23,42,0.3); z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .loading-overlay.show { opacity: 1; pointer-events: auto; }
+  .loading-spinner {
+    width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Skeleton loading */
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg-soft) 25%, var(--border) 50%, var(--bg-soft) 75%);
+    background-size: 200% 100%; animation: shimmer 1.5s infinite;
+    border-radius: 4px; min-height: 20px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton-text { height: 14px; margin-bottom: 8px; }
+  .skeleton-title { height: 24px; width: 60%; margin-bottom: 12px; }
+  .skeleton-value { height: 32px; width: 40%; margin-bottom: 8px; }
+
+  /* Pontos interativos nos gráficos */
+  .chart-dot {
+    cursor: pointer;
+    transition: r 0.15s, stroke-width 0.15s;
+  }
+  .chart-dot:hover {
+    r: 6;
+    stroke-width: 2.5;
+  }
   .header { display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 12px; padding: 14px 20px;
     background: linear-gradient(135deg, #0a0a0a 0%, #1a0a0a 50%, var(--fgr-red-deep) 100%);
@@ -77,8 +192,7 @@
   .kpi .value { font-size: 20px; font-weight: 700; margin-top: 6px; color: var(--text-strong); }
   .kpi .sub { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
-  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
   .card { background: white; border-radius: 10px; padding: 16px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
   .card h2 { font-size: 14px; margin-bottom: 12px; color: var(--text-strong);
@@ -146,11 +260,6 @@
     .donut { width: 240px; height: 240px; }
     .donut::after { top: 32px; left: 32px; right: 32px; bottom: 32px; }
   }
-  .drop-zone { border: 2px dashed var(--border-strong); border-radius: 8px;
-    padding: 20px; text-align: center; color: var(--text-soft);
-    margin-bottom: 16px; background: white; cursor: pointer; transition: all 0.2s; }
-  .drop-zone.dragover { border-color: var(--fgr-red-vivid); background: var(--fgr-red-light); color: var(--fgr-red); }
-  .drop-zone.hidden { display: none; }
   .footer { text-align: center; color: var(--text-lighter); font-size: 11px; margin-top: 20px; }
   .flow-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 12px; margin-bottom: 14px; }
@@ -187,7 +296,6 @@
   .flow-mini-card .head { display: flex; justify-content: space-between; margin-bottom: 4px; }
   .flow-mini-card .head strong { font-size: 13px; }
   .flow-mini-card .desc { color: var(--text-soft); font-size: 11.5px; margin-top: 4px; }
-  .tipo-icon { display: inline-block; font-size: 11px; margin-right: 4px; }
 
   .legend-tipos { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-soft); margin-top: 8px; }
   .legend-tipos span { display: inline-flex; align-items: center; gap: 4px; }
@@ -254,8 +362,6 @@
   }
   .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   td.classif-cell { padding: 4px 6px; vertical-align: middle; }
-  .edit-marker { color: #d97706; font-size: 11px; font-weight: 700; }
-
 
   /* Histórico */
   .hist-cell { padding: 4px 6px !important; text-align: right; font-variant-numeric: tabular-nums;
@@ -270,37 +376,13 @@
   th.hist-th.label { text-align: left; }
   svg.hist-line { width: 100%; height: 100%; }
 
-
   /* Upload contextual por aba */
-  .upload-bar {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    background: #ecfeff; border: 1px dashed #67e8f9; border-radius: 8px;
-    padding: 10px 14px; margin-bottom: 14px; font-size: 12.5px; color: #0e7490;
-  }
-  .upload-bar.dragover { background: #cffafe; border-color: var(--text-medium); border-style: solid; }
-  .upload-bar strong { color: #155e75; }
-  .upload-bar .upload-status { margin-left: auto; font-size: 11.5px; color: var(--text-soft); }
-  .upload-bar .upload-btn {
-    background: var(--text-medium); color: white; border: none;
-    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
-  }
-  .upload-bar .upload-btn:hover { background: var(--text-medium); }
-  .upload-bar .upload-btn.secondary { background: white; color: #0e7490; border: 1px solid #67e8f9; }
-  .upload-bar .upload-btn.secondary:hover { background: #ecfeff; }
-
-
-  .refletido-select {
-    padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: 5px;
-    font-size: 11.5px; font-weight: 600; cursor: pointer; width: 100%;
-    background: white; font-family: inherit;
-  }
   .refletido-select:focus { outline: none; border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
   .refletido-select.status-sim { background: #d1fae5; color: var(--sem-ok); border-color: #6ee7b7; }
   .refletido-select.status-nao { background: var(--fgr-red-light); color: var(--sem-erro); border-color: #fca5a5; }
   .refletido-select.status-pendente { background: var(--sem-alerta-bg); color: var(--sem-alerta); border-color: #fcd34d; }
   /* Alinhar todas as células da tabela de flows verticalmente */
   #flowTbody td { vertical-align: middle; }
-
 
   .mass-bar {
     background: linear-gradient(135deg, var(--fgr-red-dark) 0%, var(--fgr-red) 100%);
@@ -319,7 +401,6 @@
   .mass-bar .btn-mass.danger { background: rgba(239,68,68,0.35); }
   .row-selected { background: var(--fgr-red-light) !important; }
   .row-selected td { border-top: 1px solid var(--fgr-red-light); border-bottom: 1px solid var(--fgr-red-light); }
-
 
   /* Multi-select filtros (estilo Excel) */
   .ms-wrap { position: relative; display: inline-block; }
@@ -378,12 +459,10 @@
     cursor: pointer; font-weight: 600;
   }
 
-
   /* Cards "wide" da Visão Geral (Licitação e Gestão) — espaço para breakdown */
   .kpi-wide { padding: 18px 20px; }
   .kpi-wide .value { font-size: 24px; }
   .kpi-wide hr { margin-top: 12px; }
-
 
 /* ==== v0.48: Auth / Editor mode ==== */
 .auth-btn {
@@ -494,7 +573,6 @@ body:not(.is-admin-geral) [data-admin-only] {
   color: var(--fgr-red-deep) !important;
 }
 
-
 /* ==== v0.52: Central de Uploads e cabeçalho de fontes ==== */
 .uploads-central {
   display: grid;
@@ -571,7 +649,6 @@ body:not(.is-admin-geral) [data-admin-only] {
 .sources-header .src-item { display: inline-flex; align-items: center; gap: 4px; }
 .sources-header .src-empty { color: var(--sem-alerta); font-style: italic; }
 .sources-header .src-sep { color: var(--border-strong); }
-
 
 /* ==== v0.54: Excel upload + accordeon avançado ==== */
 .upload-excel-card {
@@ -658,6 +735,7 @@ body:not(.is-admin-geral) [data-admin-only] {
     <span id="supaBadge" style="padding:5px 12px; border-radius:12px; font-size:11px; font-weight:600; align-self:center; white-space:nowrap;">🔗 Conectando...</span>
     <span id="authBadge" class="auth-badge pending" title="Verificando autenticação...">⏳ ...</span>
     <button id="authBtn" class="auth-btn" onclick="handleAuthClick()" title="Entrar para editar">🔑 Entrar</button>
+    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Alternar modo claro/escuro">🌙</button>
     <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
   </div>
 </div>
@@ -685,6 +763,11 @@ body:not(.is-admin-geral) [data-admin-only] {
   <div class="tab" data-tab="manual">ℹ️ Manual</div>
 </div>
 </div><!-- /page-header -->
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-spinner"></div>
+</div>
 
 <div class="page-body">
 
@@ -862,7 +945,6 @@ body:not(.is-admin-geral) [data-admin-only] {
   </div>
 </div>
 
-
 <!-- HISTÓRICO -->
 <div class="tab-content" id="tab-historico">
   <div class="sources-header" id="srcHeader_historico" data-sources="gestoes"></div>
@@ -909,8 +991,6 @@ body:not(.is-admin-geral) [data-admin-only] {
     </div>
   </div>
 </div>
-
-
 
 <!-- PROJEÇÃO / TENDÊNCIA DE OBRA -->
 <div class="tab-content" id="tab-projecao">
@@ -1011,7 +1091,6 @@ body:not(.is-admin-geral) [data-admin-only] {
     </div>
   </div>
 </div>
-
 
 <!-- CONTROLE PROJEÇÃO -->
 <div class="tab-content" id="tab-projecao_ctrl">
@@ -1534,13 +1613,135 @@ body:not(.is-admin-geral) [data-admin-only] {
 
 <script>
 
-// ==========================================================
-// SUPA_STORAGE — camada de persistência híbrida
-// (Supabase = fonte da verdade compartilhada + localStorage como cache/fallback)
-// ==========================================================
+// ============================================================================
+// CONFIG — Constantes centralizadas do dashboard
+// ============================================================================
 
+// -- Supabase (chave anon; expira 2035) --
 const SUPA_URL = 'https://jmfgegnfctlyuevqadba.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
+
+// -- Chaves de localStorage (namespace 'jzurique_' por razões históricas) --
+const HEADER_KEY     = 'jzurique_header_title';
+const STORAGE_KEY    = 'jzurique_flow_classifications_v1';
+const MANUAL_KEY     = 'jzurique_flow_manuals_v1';
+const PROJ_CTRL_KEY  = 'jzurique_proj_ctrl_v1';
+
+// -- Objeto CONFIG centralizado (tolerâncias, limites, configurações) --
+const CONFIG = {
+  // Tolerâncias
+  tolerancia_centavos: 1,           // R$ 1,00 - variações abaixo são consideradas zero
+  tolerancia_conferencia: 1.00,     // R$ 1,00 - tolerância para conferência de saldo
+  tolerancia_projecao: 10000,       // R$ 10.000 - tolerância padrão para projeção
+  
+  // Limites
+  max_uploads_por_tipo: 12,         // rolling backup: mantém os N mais recentes por tipo
+  max_linhas_tabela: 1000,          // máximo de linhas renderizadas nas tabelas
+  max_descricao_flow: 300,          // máximo de caracteres na descrição de flows
+  max_justificativa_flow: 400,      // máximo de caracteres na justificativa de flows
+  
+  // Timeouts
+  debounce_render: 50,              // ms de debounce para renderizações
+  toast_duration_info: 3500,        // duração padrão do toast informativo
+  toast_duration_ok: 2500,          // duração do toast de sucesso
+  toast_duration_warn: 5000,        // duração do toast de aviso
+  toast_duration_err: 5000,         // duração do toast de erro
+  
+  // Defaults
+  obra_default: '42-21O',           // obra padrão (Jardins Zurique)
+  insumo_controlado: 'I011890',     // insumo controlado padrão (Verba Viabilidade)
+  janela_ritmo_historico: 6,        // meses para cálculo do ritmo histórico
+  
+  // Metadados de serviço e insumos (carregados do Supabase ou hardcoded)
+  grupos_map: {
+    '01.01': 'Custos Indiretos',
+    '01.02': 'Custos Diretos / Infraestrutura',
+    '01.03': 'Obras Civis',
+    '01.04': 'Projeção de Gastos',
+    '01.09': 'Serviços Iniciais',
+    '09.01': 'Serviços Iniciais Adicionais',
+    '09.02': 'Serviços Iniciais Adicionais',
+  },
+};
+
+// ============================================================================
+// FUNÇÕES UTILITÁRIAS UNIFICADAS
+// ============================================================================
+
+// Função unificada de parsing de números (substitui parseNum, parseNumBR, parsePct)
+// Aceita: formato BR ("1.614.494,59"), US ("1,614,494.59"), porcentagens ("31,5%")
+// Opções:
+//   - isPct: se true, trata frações 0-1 como porcentagens (multiplica por 100)
+//   - allowPlus: se true, remove '+' do início
+function parseNumero(s, opts = {}) {
+  if (s == null) return null;
+  s = String(s).trim();
+  if (!s || s === '-' || s.includes('#REF')) return null;
+  
+  // Limpeza básica
+  s = s.replace(/R\$/g, '').replace(/\s/g, '').replace(/%/g, '');
+  if (opts.allowPlus) s = s.replace(/^\+/, '');
+  if (!s) return null;
+  
+  // Detecta formato pelo separador que aparece por último (é o decimal)
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  let normalized;
+  
+  if (lastComma > lastDot) {
+    // Formato BR: vírgula decimal, ponto milhar → "1.614.494,59" → "1614494.59"
+    normalized = s.replace(/\./g, '').replace(',', '.');
+  } else if (lastDot > lastComma) {
+    // Formato US: ponto decimal, vírgula milhar → "1,614,494.59" → "1614494.59"
+    normalized = s.replace(/,/g, '');
+  } else {
+    // Só um separador ou nenhum: interpreta vírgula como decimal (padrão BR)
+    normalized = s.replace(',', '.');
+  }
+  
+  const n = parseFloat(normalized);
+  if (isNaN(n)) return null;
+  
+  // Se for porcentagem e o valor for uma fração 0-1, multiplica por 100
+  if (opts.isPct && n > 0 && n <= 1.5 && !s.includes('%')) {
+    return n * 100;
+  }
+  
+  return n;
+}
+
+// Aliases para compatibilidade (mantêm os nomes antigos)
+function parseNum(s) { return parseNumero(s); }
+function parseNumBR(s) { return parseNumero(s, { allowPlus: true }); }
+function parsePct(s) { return parseNumero(s, { isPct: true }); }
+
+// Função unificada de filtragem por obra ativa (substitui getHistoricoObraAtiva, getProjRawObraAtiva, getFlowsObraAtiva)
+function filtrarPorObraAtiva(arr, campo = 'codigo_obra') {
+  if (!Array.isArray(arr) || !OBRA_ATIVA) return arr;
+  return arr.filter(item => item[campo] === OBRA_ATIVA);
+}
+
+// Aliases para compatibilidade
+function getHistoricoObraAtiva() {
+  if (!HISTORICO || !HISTORICO.items) return { items: [], gestoes: [], totals: {} };
+  if (!OBRA_ATIVA) return HISTORICO;
+  const items = filtrarPorObraAtiva(HISTORICO.items);
+  const totals = (HISTORICO.totals && HISTORICO.totals[OBRA_ATIVA]) || {};
+  return { items, gestoes: HISTORICO.gestoes || [], totals };
+}
+
+function getProjRawObraAtiva() {
+  return filtrarPorObraAtiva(PROJ_RAW);
+}
+
+function getFlowsObraAtiva() {
+  return filtrarPorObraAtiva(DATA_F);
+}
+
+// ============================================================================
+// SUPA — Camada de persistência híbrida
+// (Supabase = fonte da verdade compartilhada + localStorage como cache/fallback)
+// ============================================================================
 
 let SUPA = null;
 try {
@@ -1553,6 +1754,21 @@ try {
 // Status global de conexão (pra UI mostrar "salvo" / "offline")
 const SUPA_STATUS = { online: !!SUPA, lastSync: null, lastError: null };
 
+// Helper de retry para chamadas ao Supabase
+// Tenta executar a função até maxTentativas vezes com delay exponencial
+async function supaRetry(fn, maxTentativas) {
+  maxTentativas = maxTentativas || 3;
+  for (var i = 0; i < maxTentativas; i++) {
+    try {
+      return await fn();
+    } catch(e) {
+      if (i === maxTentativas - 1) throw e;
+      // Delay exponencial: 1s, 2s, 4s...
+      await new Promise(function(r) { setTimeout(r, 1000 * Math.pow(2, i)); });
+      console.warn('[SUPA] retry ' + (i + 1) + '/' + maxTentativas + ' após erro:', e.message || e);
+    }
+  }
+}
 
 // ============================================================
 // v0.58a — MULTI-OBRA (multi-tenant)
@@ -1642,6 +1858,7 @@ function renderObrasDropdown() {
 async function trocarObra(novoCodigo) {
   if (!novoCodigo || novoCodigo === OBRA_ATIVA) return;
   console.log('[OBRAS] trocando de', OBRA_ATIVA, '→', novoCodigo);
+  showLoading();
   OBRA_ATIVA = novoCodigo;
   // v0.62.3: reavalia UI de auth pra esta obra (editor pode não ter permissão aqui)
   if (typeof updateAuthUI === 'function') updateAuthUI();
@@ -1674,6 +1891,8 @@ async function trocarObra(novoCodigo) {
   } catch(e) {
     console.error('[OBRAS] erro ao trocar:', e);
     authToast('❌ Erro ao carregar obra: ' + e.message, 'err', 5000);
+  } finally {
+    hideLoading();
   }
 }
 
@@ -1748,8 +1967,6 @@ function aplicarFallbackGestaoDoHistorico() {
     console.log(`[TEND] coluna Gestão vazia — usando HISTORICO (${ultima}). ${aplicados} folha(s) preenchida(s).`);
   }
 }
-
-
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -1838,7 +2055,7 @@ async function editarObraAdmin(codigo) {
   try {
     const { data, error } = await SUPA.from('obras').select('*').eq('codigo_obra', codigo).maybeSingle();
     if (error) throw error;
-    if (!data) { alert('Obra não encontrada.'); return; }
+    if (!data) { authToast('❌ Obra não encontrada.', 'err', 3000); return; }
     _obraFormEditingCodigo = codigo;
     document.getElementById('obraFormTitle').textContent = 'Editar obra: ' + codigo;
     document.getElementById('obraFormCodigo').value = data.codigo_obra;
@@ -1850,7 +2067,7 @@ async function editarObraAdmin(codigo) {
     document.getElementById('obraFormBackdrop').style.display = 'flex';
   } catch(e) {
     console.warn('[ADMIN] editarObraAdmin erro:', e);
-    alert('Erro ao carregar obra: ' + (e.message||e));
+    authToast('❌ Erro ao carregar obra: ' + (e.message||e), 'err', 5000);
   }
 }
 
@@ -1859,8 +2076,8 @@ async function salvarObraForm() {
   const nome   = document.getElementById('obraFormNome').value.trim();
   const key    = document.getElementById('obraFormKey').value.trim();
   const obs    = document.getElementById('obraFormObs').value.trim();
-  if (!codigo || !nome) { alert('Código e Nome são obrigatórios.'); return; }
-  if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
+  if (!codigo || !nome) { authToast('⚠️ Código e Nome são obrigatórios.', 'warn', 3000); return; }
+  if (!SUPA) { authToast('❌ Sem conexão com Supabase.', 'err', 3000); return; }
   try {
     if (_obraFormEditingCodigo) {
       const { error } = await SUPA.from('obras').update({
@@ -1887,7 +2104,7 @@ async function salvarObraForm() {
     renderObrasDropdown();
   } catch(e) {
     console.warn('[ADMIN] salvarObraForm erro:', e);
-    alert('Erro ao salvar: ' + (e.message||e));
+    authToast('❌ Erro ao salvar: ' + (e.message||e), 'err', 5000);
   }
 }
 
@@ -1907,7 +2124,7 @@ async function toggleObraAtiva(codigo, novoValor) {
     }
   } catch(e) {
     console.warn('[ADMIN] toggleObraAtiva erro:', e);
-    alert('Erro ao alterar: ' + (e.message||e));
+    authToast('❌ Erro ao alterar: ' + (e.message||e), 'err', 5000);
   }
 }
 
@@ -1925,7 +2142,7 @@ async function deletarObra(codigo, nome) {
   );
   if (confirmacao == null) return; // cancelou
   if (confirmacao.trim() !== codigo) {
-    alert('Código não confere. Ação cancelada.');
+    authToast('❌ Código não confere. Ação cancelada.', 'err', 3000);
     return;
   }
   try {
@@ -1951,7 +2168,7 @@ async function deletarObra(codigo, nome) {
     }
   } catch(e) {
     console.warn('[ADMIN] deletarObra erro:', e);
-    alert('Erro ao deletar: ' + (e.message||e));
+    authToast('❌ Erro ao deletar: ' + (e.message||e), 'err', 5000);
   }
 }
 
@@ -2141,9 +2358,9 @@ async function salvarEditorForm() {
   const role  = document.querySelector('input[name="editorFormRole"]:checked')?.value || 'editor';
   const marcadas = [...document.querySelectorAll('.editor-obra-cb:checked')].map(cb => cb.value);
 
-  if (!email) { alert('Email é obrigatório.'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email inválido.'); return; }
-  if (!SUPA) { alert('Sem conexão com Supabase.'); return; }
+  if (!email) { authToast('⚠️ Email é obrigatório.', 'warn', 3000); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { authToast('⚠️ Email inválido.', 'warn', 3000); return; }
+  if (!SUPA) { authToast('❌ Sem conexão com Supabase.', 'err', 3000); return; }
 
   try {
     // Se estava editando E o email existe → apaga tudo e recria
@@ -2184,7 +2401,7 @@ async function salvarEditorForm() {
     const { error } = await SUPA.from('editores_permitidos').insert(linhasInserir);
     if (error) {
       if (String(error.message||'').match(/duplicate|unique|conflict/i)) {
-        alert('Este email já está cadastrado (conflito de unicidade).');
+        authToast('⚠️ Este email já está cadastrado (conflito de unicidade).', 'warn', 4000);
       } else { throw error; }
       return;
     }
@@ -2197,7 +2414,7 @@ async function salvarEditorForm() {
     await renderEditoresAdmin();
   } catch(e) {
     console.warn('[ADMIN] salvarEditorForm erro:', e);
-    alert('Erro ao salvar: ' + (e.message||e));
+    authToast('❌ Erro ao salvar: ' + (e.message||e), 'err', 5000);
   }
 }
 
@@ -2214,16 +2431,9 @@ async function excluirUsuarioDoModal() {
     await renderEditoresAdmin();
   } catch(e) {
     console.warn('[ADMIN] excluirUsuarioDoModal erro:', e);
-    alert('Erro ao excluir: ' + (e.message||e));
+    authToast('❌ Erro ao excluir: ' + (e.message||e), 'err', 5000);
   }
 }
-
-// Compat: funções antigas viram no-ops ou alias, caso restem chamadas
-function closeEditorObras() { closeEditorForm(); }
-async function salvarObrasDoEditor() { await salvarEditorForm(); }
-async function openEditorObras(email) { await openEditorForm(email); }
-async function mudarRoleUsuario(email, novoRole) { await openEditorForm(email); }
-async function removerUsuario(email) { await openEditorForm(email); }
 
 // -------------- PENDENTES (v0.62) --------------
 
@@ -2284,7 +2494,7 @@ async function aprovarPendente(email) {
     await renderEditoresAdmin();
   } catch(e) {
     console.warn('[ADMIN] aprovarPendente erro:', e);
-    alert('Erro: ' + (e.message||e));
+    authToast('❌ Erro ao aprovar: ' + (e.message||e), 'err', 5000);
   }
 }
 
@@ -2302,10 +2512,9 @@ async function rejeitarPendente(email) {
     await renderPendentesAdmin();
   } catch(e) {
     console.warn('[ADMIN] rejeitarPendente erro:', e);
-    alert('Erro: ' + (e.message||e));
+    authToast('❌ Erro ao rejeitar: ' + (e.message||e), 'err', 5000);
   }
 }
-
 
 // Recarrega dados da obra ativa (dados extraídos + configs + histórico de uploads)
 // Chamado ao trocar de obra e no boot inicial.
@@ -2423,11 +2632,6 @@ async function recarregarDadosDaObra() {
   console.log('[OBRAS] dados recarregados para', OBRA_ATIVA, '— insumo controlado:', PROJ_CTRL_STATE?.insumo);
 }
 
-// Espelha em localStorage também (fallback)
-
-function _lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e){} }
-function _lsGet(k) { try { return localStorage.getItem(k); } catch(e){ return null; } }
-
 // ---------- FLOW CLASSIFICATIONS ----------
 // (formato antigo em localStorage: {n_alteracao: {campo: valor, ...}})
 // no Supabase: 1 linha por n_alteracao com colunas
@@ -2435,22 +2639,30 @@ async function supaLoadClassifications() {
   if (!SUPA) return null;
   // v0.63.1: DATA_F é global (multi-obra), então carregar classificações de TODAS as obras
   // Chave do map agora é "codigo_obra:n_alteracao" pra evitar colisão de n_alteracao entre obras
-  const { data, error } = await SUPA.from('flow_classifications').select('*');
-  if (error) { console.warn('[SUPA] loadClass err:', error); SUPA_STATUS.lastError = error.message; return null; }
-  const map = {};
-  data.forEach(r => {
-    const k = (r.codigo_obra || '') + ':' + r.n_alteracao;
-    map[k] = {
-      codigo_obra: r.codigo_obra,
-      insumo_planejamento: r.insumo_planejamento,
-      insumo_remanejamento: r.insumo_remanejamento,
-      custo_flowmaster: r.custo_flowmaster,
-      refletido_status: r.refletido_status,
-      refletido: r.refletido_status === 'sim',
-    };
-  });
-  SUPA_STATUS.lastSync = new Date();
-  return map;
+  try {
+    const { data, error } = await supaRetry(function() {
+      return SUPA.from('flow_classifications').select('*');
+    });
+    if (error) { console.warn('[SUPA] loadClass err:', error); SUPA_STATUS.lastError = error.message; return null; }
+    const map = {};
+    data.forEach(r => {
+      const k = (r.codigo_obra || '') + ':' + r.n_alteracao;
+      map[k] = {
+        codigo_obra: r.codigo_obra,
+        insumo_planejamento: r.insumo_planejamento,
+        insumo_remanejamento: r.insumo_remanejamento,
+        custo_flowmaster: r.custo_flowmaster,
+        refletido_status: r.refletido_status,
+        refletido: r.refletido_status === 'sim',
+      };
+    });
+    SUPA_STATUS.lastSync = new Date();
+    return map;
+  } catch(e) {
+    console.warn('[SUPA] loadClass err (após retries):', e);
+    SUPA_STATUS.lastError = e.message;
+    return null;
+  }
 }
 async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
   if (!SUPA) return;
@@ -2478,22 +2690,28 @@ async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
 async function supaLoadManuals() {
   if (!SUPA) return null;
   if (!OBRA_ATIVA) return null;
-  const { data, error } = await SUPA.from('flow_manuals')
-    .select('*').eq('codigo_obra', OBRA_ATIVA);
-  if (error) { console.warn('[SUPA] loadManuals err:', error); return null; }
-  return data.map(r => ({
-    n_alteracao: r.n_alteracao,
-    n_adt: r.n_adt || '', dep: r.dep || '',
-    descricao: r.descricao || '', data_br: r.data_br || '', data: r.data || '',
-    aprovador_dep: r.aprovador_dep || '', aprovador: r.aprovador || '',
-    solicitante_dep: r.solicitante_dep || '', solicitante: r.solicitante || '',
-    custo_flowmaster: r.custo_flowmaster, custo_planejamento: r.custo_planejamento,
-    motivo: r.motivo || '', justificativa: r.justificativa || '',
-    insumo_planejamento: r.insumo_planejamento || '', insumo_remanejamento: r.insumo_remanejamento || '',
-    obs: r.obs || '',
-    // campos vazios para compat
-    incl_orcamento: '', incl_planej: '', incl_tendencia: '', revisao_tendencia: '',
-  }));
+  try {
+    const { data, error } = await supaRetry(function() {
+      return SUPA.from('flow_manuals').select('*').eq('codigo_obra', OBRA_ATIVA);
+    });
+    if (error) { console.warn('[SUPA] loadManuals err:', error); return null; }
+    return data.map(r => ({
+      n_alteracao: r.n_alteracao,
+      n_adt: r.n_adt || '', dep: r.dep || '',
+      descricao: r.descricao || '', data_br: r.data_br || '', data: r.data || '',
+      aprovador_dep: r.aprovador_dep || '', aprovador: r.aprovador || '',
+      solicitante_dep: r.solicitante_dep || '', solicitante: r.solicitante || '',
+      custo_flowmaster: r.custo_flowmaster, custo_planejamento: r.custo_planejamento,
+      motivo: r.motivo || '', justificativa: r.justificativa || '',
+      insumo_planejamento: r.insumo_planejamento || '', insumo_remanejamento: r.insumo_remanejamento || '',
+      obs: r.obs || '',
+      // campos vazios para compat
+      incl_orcamento: '', incl_planej: '', incl_tendencia: '', revisao_tendencia: '',
+    }));
+  } catch(e) {
+    console.warn('[SUPA] loadManuals err (após retries):', e);
+    return null;
+  }
 }
 async function supaUpsertManual(m) {
   if (!SUPA) return;
@@ -2528,10 +2746,16 @@ async function supaDeleteManual(nAlt) {
 async function supaLoadProjConfig() {
   if (!SUPA) return null;
   if (!OBRA_ATIVA) return null;
-  const { data, error } = await SUPA.from('projecao_config')
-    .select('*').eq('codigo_obra', OBRA_ATIVA).maybeSingle();
-  if (error) { console.warn('[SUPA] loadProjConfig err:', error); return null; }
-  return data;
+  try {
+    const { data, error } = await supaRetry(function() {
+      return SUPA.from('projecao_config').select('*').eq('codigo_obra', OBRA_ATIVA).maybeSingle();
+    });
+    if (error) { console.warn('[SUPA] loadProjConfig err:', error); return null; }
+    return data;
+  } catch(e) {
+    console.warn('[SUPA] loadProjConfig err (após retries):', e);
+    return null;
+  }
 }
 async function supaSaveProjConfig(cfg) {
   if (!SUPA) return;
@@ -2593,11 +2817,18 @@ async function supaLoadDashboardConfig() {
   if (!SUPA) return {};
   // Carrega todas as chaves de uma vez (globais + prefixadas por obra).
   // Retorno: { 'header_title': '...', '42-21O:dados_tendencia': '...', ... }
-  const { data, error } = await SUPA.from('dashboard_config').select('*');
-  if (error) { console.warn('[SUPA] loadCfg err:', error); return {}; }
-  const map = {};
-  data.forEach(r => { map[r.chave] = r.valor; });
-  return map;
+  try {
+    const { data, error } = await supaRetry(function() {
+      return SUPA.from('dashboard_config').select('*');
+    });
+    if (error) { console.warn('[SUPA] loadCfg err:', error); return {}; }
+    const map = {};
+    data.forEach(r => { map[r.chave] = r.valor; });
+    return map;
+  } catch(e) {
+    console.warn('[SUPA] loadCfg err (após retries):', e);
+    return {};
+  }
 }
 async function supaSaveDashboardKey(chave, valor) {
   if (!SUPA) return;
@@ -2732,11 +2963,9 @@ async function apagarHistoricoUploads() {
   }
 }
 
-
-
 // ---------- UPLOAD HISTORY + STORAGE (v0.52 / v0.53) ----------
 const UPLOADS_BUCKET = 'uploads-history';
-const UPLOADS_MAX_PER_TYPE = 12; // rolling backup: mantém os N mais recentes por tipo
+const UPLOADS_MAX_PER_TYPE = CONFIG.max_uploads_por_tipo; // rolling backup: mantém os N mais recentes por tipo
 
 async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
   if (!SUPA) return null;
@@ -2846,8 +3075,9 @@ async function supaLoadUploadsLatest() {
   if (!SUPA) return {};
   if (!OBRA_ATIVA) return {};
   try {
-    const { data, error } = await SUPA.from('upload_history_latest')
-      .select('*').eq('codigo_obra', OBRA_ATIVA);
+    const { data, error } = await supaRetry(function() {
+      return SUPA.from('upload_history_latest').select('*').eq('codigo_obra', OBRA_ATIVA);
+    });
     if (error) {
       console.warn('[SUPA] view latest indisp, tentando fallback:', error.message);
       return await _supaLoadUploadsLatestFallback();
@@ -2856,7 +3086,7 @@ async function supaLoadUploadsLatest() {
     (data || []).forEach(r => { map[r.tipo] = r; });
     return map;
   } catch (e) {
-    console.warn('[SUPA] loadUploadsLatest err:', e);
+    console.warn('[SUPA] loadUploadsLatest err (após retries):', e);
     return {};
   }
 }
@@ -2907,8 +3137,6 @@ function updateSupaBadge() {
   el.innerHTML = '🔗 Conectado';
   el.title = 'Conectado ao Supabase (ainda sem sincronização recente)';
 }
-
-
 
 // ============================================================================
 // v0.48 — AUTH MODULE (Google login + whitelist)
@@ -3055,7 +3283,8 @@ async function handleAuthClick() {
   if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
   if (AUTH.user) {
     // Logout
-    if (!confirm('Sair da sua conta? Você continuará vendo o dashboard, mas não conseguirá editar.')) return;
+    const confirmed = await confirmModal('Sair da conta?', 'Você continuará vendo o dashboard, mas não conseguirá editar.', { confirmText: 'Sair', destructive: false });
+    if (!confirmed) return;
     const { error } = await SUPA.auth.signOut();
     if (error) authToast('Erro ao sair: ' + error.message, 'err');
     // onAuthStateChange cuida do resto
@@ -3170,7 +3399,6 @@ function requireEditor(actionDesc) {
   return false;
 }
 
-
 const TENDENCIA = []; // v0.59: hardcoded removido — dados vêm do Supabase
 const FLOWS = []; // v0.59: hardcoded removido — dados vêm do Supabase
 let DATA_T = TENDENCIA;
@@ -3243,9 +3471,8 @@ function buildLinks() {
   });
 }
 
-
 // ============ HEADER EDITÁVEL + SUBTÍTULO DINÂMICO ============
-const HEADER_KEY = 'jzurique_header_title';
+// (declarado em CONFIG no topo)
 // Carregar título salvo (se houver)
 (function loadSavedHeader() {
   try {
@@ -3253,6 +3480,37 @@ const HEADER_KEY = 'jzurique_header_title';
     if (saved) {
       const el = document.getElementById('headerTitle');
       if (el) el.textContent = saved;
+    }
+  } catch(e) {}
+})();
+
+// ============ LOADING STATES ============
+function showLoading() {
+  const el = document.getElementById('loadingOverlay');
+  if (el) el.classList.add('show');
+}
+
+function hideLoading() {
+  const el = document.getElementById('loadingOverlay');
+  if (el) el.classList.remove('show');
+}
+
+// ============ MODO NOTURNO ============
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('dark');
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+  try { localStorage.setItem('jzurique_theme', isDark ? 'dark' : 'light'); } catch(e) {}
+}
+
+// Restaurar tema no boot
+(function() {
+  try {
+    const saved = localStorage.getItem('jzurique_theme');
+    if (saved === 'dark') {
+      document.body.classList.add('dark');
+      const btn = document.getElementById('themeToggle');
+      if (btn) btn.textContent = '☀️';
     }
   } catch(e) {}
 })();
@@ -3308,13 +3566,61 @@ function refreshHeaderSubtitle() {
   }
 }
 
+// Verifica se os dados estão desatualizados e mostra aviso
+function verificarDadosDesatualizados() {
+  if (!GESTAO_LABEL || typeof GESTAO_LABEL !== 'string') return;
+  const m = GESTAO_LABEL.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
+  if (!m) return;
+  
+  const mesGestao = parseInt(m[1], 10);
+  const anoGestao = parseInt(m[2], 10);
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth() + 1;
+  const anoAtual = hoje.getFullYear();
+  
+  const mesesAtras = (anoAtual - anoGestao) * 12 + (mesAtual - mesGestao);
+  
+  const bannerEl = document.getElementById('alertBanner');
+  if (!bannerEl) return;
+  
+  if (mesesAtras > 90) {
+    // Mais de 3 meses: vermelho
+    bannerEl.innerHTML = '<div class="alert-banner" style="background:linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%); border-left-color:#DC2626;">'
+      + '🔴 <strong>Dados muito desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
+      + 'Atualize os dados na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#DC2626; font-weight:700;">📤 Uploads</a>.</div>';
+  } else if (mesesAtras > 60) {
+    // Mais de 2 meses: amarelo
+    bannerEl.innerHTML = '<div class="alert-banner">'
+      + '⚠️ <strong>Dados desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
+      + 'Considere atualizar na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#92400E; font-weight:700;">📤 Uploads</a>.</div>';
+  }
+}
+
 // ============ TABS ============
+// Salvar aba ativa no localStorage
+function salvarAbaAtiva(tabName) {
+  try { localStorage.setItem('jzurique_active_tab', tabName); } catch(e) {}
+}
+
+// Restaurar aba ativa do localStorage
+function restaurarAbaAtiva() {
+  try {
+    const saved = localStorage.getItem('jzurique_active_tab');
+    if (saved) {
+      const tab = document.querySelector('.tab[data-tab="' + saved + '"]');
+      if (tab) tab.click();
+    }
+  } catch(e) {}
+}
+
 document.querySelectorAll('.tab').forEach(t => {
   t.onclick = () => {
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
     document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+    // Salvar aba ativa
+    salvarAbaAtiva(t.dataset.tab);
     // Re-inicializar componentes ao entrar em abas específicas (garante DOM pronto)
     if (t.dataset.tab === 'projecao_ctrl' && typeof initProjCtrl === 'function') {
       initProjCtrl();
@@ -3460,7 +3766,6 @@ function renderAderenciaProj() {
   el.innerHTML = renderCardAderencia();
 }
 
-
 // v0.59.1: navegar entre abas via JS (usado em botões de CTA)
 function irParaAba(nomeAba) {
   const tab = document.querySelector(`.tab[data-tab="${nomeAba}"]`);
@@ -3506,6 +3811,7 @@ function renderVisao() {
     if (topUpEl) topUpEl.innerHTML = '';
     if (topDownEl) topDownEl.innerHTML = '';
     refreshHeaderSubtitle();
+    verificarDadosDesatualizados();
     return;
   }
   const folhas = DATA_T.filter(d => d.is_folha);
@@ -3701,6 +4007,9 @@ function renderVisao() {
         ⚠️ <strong>Atenção:</strong> existem ${fmtR$(totPendente)} em aditivos ainda <strong>pendentes de classificação</strong> (Insumo Planejamento = "Não encontrado!"). Classificá-los permitirá entender se são aumento real, remanejamento ou economia. Hoje só ${fmtR$(totAumentoReal)} de aumento real estão formalizados, mas o desvio total é de ${fmtR$(totDiff)} — boa parte ainda é tendência não rastreada.
       </div>`;
   } else { document.getElementById('alertBanner').innerHTML = ''; }
+  
+  // Verificar se dados estão desatualizados
+  verificarDadosDesatualizados();
 
   // Grupos
   const byGrupo = {};
@@ -3789,11 +4098,11 @@ function renderDonut(tipoSum) {
   }
   let acc = 0;
   const segs = [
-    {v:aum, cor:'var(--fgr-red-vivid)', lbl:'Aumento real'},
-    {v:rem, cor:'var(--text-medium)', lbl:'Remanejamento'},
-    {v:eco, cor:'var(--sem-ok)', lbl:'Economia'},
-    {v:pen, cor:'var(--sem-alerta)', lbl:'Pendente'},
-    {v:sem, cor:'var(--text-lighter)', lbl:'Sem class.'},
+    {v:aum, cor:'var(--fgr-red-vivid)', lbl:'Aumento real', icon:'🔴'},
+    {v:rem, cor:'var(--text-medium)', lbl:'Remanejamento', icon:'🔵'},
+    {v:eco, cor:'var(--sem-ok)', lbl:'Economia', icon:'🟢'},
+    {v:pen, cor:'var(--sem-alerta)', lbl:'Pendente', icon:'🟡'},
+    {v:sem, cor:'var(--text-lighter)', lbl:'Sem class.', icon:'⚪'},
   ];
   const grad = segs.map(s => {
     const start = (acc/total)*100;
@@ -3802,12 +4111,28 @@ function renderDonut(tipoSum) {
     return `${s.cor} ${start}% ${end}%`;
   }).join(', ');
   donut.style.background = `conic-gradient(${grad})`;
-  center.innerHTML = `<div class="val">${fmtR$k(total)}</div><div class="lbl">total flows</div>`;
-  legend.innerHTML = segs.filter(s => s.v > 0).map(s => `
-    <div class="donut-legend-item">
-      <div class="sq" style="background:${s.cor};"></div>
-      <div><strong>${s.lbl}</strong>: ${fmtR$(s.v)} (${((s.v/total)*100).toFixed(0)}%)</div>
-    </div>`).join('');
+  donut.style.transition = 'transform 0.3s ease';
+  center.innerHTML = `
+    <div class="val" style="font-size:28px;">${fmtR$k(total)}</div>
+    <div class="lbl" style="font-size:11px; margin-top:2px;">total flows</div>
+    <div style="font-size:10px; color:var(--text-lighter); margin-top:4px;">${segs.filter(s => s.v > 0).length} tipos</div>
+  `;
+  legend.innerHTML = segs.filter(s => s.v > 0).map(s => {
+    const pct = ((s.v/total)*100).toFixed(1);
+    return `
+    <div class="donut-legend-item" style="transition: background 0.15s; padding: 8px 6px; border-radius: 6px; cursor: default;" 
+         onmouseover="this.style.background='var(--bg-soft)'" 
+         onmouseout="this.style.background=''">
+      <div class="sq" style="background:${s.cor}; width:16px; height:16px; border-radius:4px;"></div>
+      <div style="flex:1;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <strong style="font-size:12px;">${s.icon} ${s.lbl}</strong>
+          <span style="font-size:11px; color:var(--text-soft);">${pct}%</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-soft); margin-top:2px;">${fmtR$(s.v)}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ============ DETALHAMENTO ============
@@ -3882,15 +4207,15 @@ function renderTable() {
     const badge = st ? `<span class="badge ${st}">${st==='red'?'🔴 Estouro':st==='amber'?'🟡 Atenção':'🟢 OK'}</span>` : '';
     if (!d.is_folha) {
       const cls = d.nivel <= 2 ? 'row-grupo' : 'row-sub';
-      return `<tr class="${cls}"><td colspan="11">${d.cod} · ${d.item}</td></tr>`;
+      return `<tr class="${cls}"><td colspan="11">${escHtml(d.cod)} · ${escHtml(d.item)}</td></tr>`;
     }
     const hasAdt = (d.flows_destino && d.flows_destino.length > 0) || (d.flows_origem && d.flows_origem.length > 0);
     const adt = d.aditivo_total || 0;
     const adtTxt = hasAdt ? `<span class="${adt<0?'pos':'neg'}">${adt>=0?'+':''}${fmt(adt)}</span> <span style="color:var(--text-lighter);font-size:10px;">(${(d.flows_destino?.length||0)+(d.flows_origem?.length||0)})</span>` : '<span style="color:var(--text-lighter);">-</span>';
     return `<tr class="folha ${hasAdt?'has-aditivo':''}" onclick="openItem(${DATA_T.indexOf(d)})">
-      <td>${d.grupo}</td>
-      <td>${d.item}</td>
-      <td style="color:var(--text-soft);font-size:11px;">${d.cod_insumo||''}</td>
+      <td>${escHtml(d.grupo)}</td>
+      <td>${escHtml(d.item)}</td>
+      <td style="color:var(--text-soft);font-size:11px;">${escHtml(d.cod_insumo||'')}</td>
       <td class="num">${fmtR$(d.licitacao)}</td>
       <td class="num">${fmtR$(d.gestao)}</td>
       <td class="num ${diff<=0?'pos':'neg'}">${diff!=null?(diff>=0?'+':'')+fmt(diff):'-'}</td>
@@ -3912,9 +4237,42 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
     renderTable();
   };
 });
+
+// Salvar filtros no localStorage
+function salvarFiltros() {
+  try {
+    const filtros = {
+      search: document.getElementById('search')?.value || '',
+      filterGrupo: document.getElementById('filterGrupo')?.value || '',
+      filterStatus: document.getElementById('filterStatus')?.value || '',
+      filterAditivo: document.getElementById('filterAditivo')?.value || '',
+      onlyFolhas: document.getElementById('onlyFolhas')?.checked ?? true,
+    };
+    localStorage.setItem('jzurique_filters_' + (OBRA_ATIVA || 'default'), JSON.stringify(filtros));
+  } catch(e) {}
+}
+
+// Restaurar filtros do localStorage
+function restaurarFiltros() {
+  try {
+    const raw = localStorage.getItem('jzurique_filters_' + (OBRA_ATIVA || 'default'));
+    if (!raw) return;
+    const filtros = JSON.parse(raw);
+    const el = (id) => document.getElementById(id);
+    if (el('search')) el('search').value = filtros.search || '';
+    if (el('filterGrupo')) el('filterGrupo').value = filtros.filterGrupo || '';
+    if (el('filterStatus')) el('filterStatus').value = filtros.filterStatus || '';
+    if (el('filterAditivo')) el('filterAditivo').value = filtros.filterAditivo || '';
+    if (el('onlyFolhas')) el('onlyFolhas').checked = filtros.onlyFolhas !== false;
+  } catch(e) {}
+}
+
 ['search','filterGrupo','filterStatus','filterAditivo','onlyFolhas'].forEach(id => {
-  document.getElementById(id).addEventListener('input', renderTable);
-  document.getElementById(id).addEventListener('change', renderTable);
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', function() { renderTable(); salvarFiltros(); });
+    el.addEventListener('change', function() { renderTable(); salvarFiltros(); });
+  }
 });
 
 // ============ MODAL DE ITEM ============
@@ -3929,8 +4287,8 @@ function openItem(idx) {
   const totOrig = orig.reduce((s,f)=>s+(f.custo_flowmaster||0), 0);
 
   document.getElementById('modalContent').innerHTML = `
-    <h2>${d.item}</h2>
-    <div class="meta">${d.grupo} · Código ${d.cod} · Insumo ${d.cod_insumo}</div>
+    <h2>${escHtml(d.item)}</h2>
+    <div class="meta">${escHtml(d.grupo)} · Código ${escHtml(d.cod)} · Insumo ${escHtml(d.cod_insumo)}</div>
     <div class="kpis" style="margin-bottom: 16px;">
       <div class="kpi"><div class="label">Licitação</div><div class="value">${fmtR$(d.licitacao)}</div></div>
       <div class="kpi"><div class="label">Gestão atual</div><div class="value">${fmtR$(d.gestao)}</div></div>
@@ -3957,30 +4315,68 @@ function renderFlowMini(f, isOrigem=false) {
   const tipoLabel = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', cancelado:'🚫 Cancelado', sem_classificacao:'⚪ Sem class.', misto:'⚪ Misto'};
   const depBadge = {Finalizado:'green', Projeto:'amber', Cancelado:'gray', Planejamento:'blue', Orçamento:'blue', Obra:'amber'};
   const linkTxt = isOrigem
-    ? `→ destino: ${f.insumo_planejamento || '-'}`
+    ? `→ destino: ${escHtml(f.insumo_planejamento || '-')}`
     : (f.insumo_remanejamento && !['', '-', 'Não encontrado!'].includes(f.insumo_remanejamento) && !f.insumo_remanejamento.includes('VERIFICAR')
-        ? `← origem: ${f.insumo_remanejamento}` : '');
+        ? `← origem: ${escHtml(f.insumo_remanejamento)}` : '');
   return `
-    <div class="flow-mini-card ${f.tipo}">
+    <div class="flow-mini-card ${escAttr(f.tipo)}">
       <div class="head">
-        <strong>Nº ${f.n_alteracao} ${f.n_adt ? '· '+f.n_adt : ''}</strong>
+        <strong>Nº ${escHtml(f.n_alteracao)} ${f.n_adt ? '· '+escHtml(f.n_adt) : ''}</strong>
         <span class="${(f.custo_flowmaster||0)<0?'pos':'neg'}" style="font-weight:700;">${fmtR$(f.custo_flowmaster)}</span>
       </div>
       <div style="font-size:11px;color:var(--text-soft);">
-        ${formatDate(f.data_br)} · <span class="badge ${depBadge[f.dep]||'gray'}">${f.dep}</span>
-        · ${tipoLabel[f.tipo]||f.tipo} · ${f.motivo} ${linkTxt ? '· '+linkTxt : ''}
+        ${formatDate(f.data_br)} · <span class="badge ${depBadge[f.dep]||'gray'}">${escHtml(f.dep)}</span>
+        · ${tipoLabel[f.tipo]||escHtml(f.tipo)} · ${escHtml(f.motivo)} ${linkTxt ? '· '+linkTxt : ''}
       </div>
-      <div class="desc">${f.descricao}</div>
-      ${f.justificativa ? `<div class="desc"><em>Justificativa:</em> ${f.justificativa}</div>` : ''}
+      <div class="desc">${escHtml(f.descricao)}</div>
+      ${f.justificativa ? `<div class="desc"><em>Justificativa:</em> ${escHtml(f.justificativa)}</div>` : ''}
     </div>`;
 }
 
 function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+// Modal de confirmação customizado (substitui confirm() nativo)
+function confirmModal(titulo, mensagem, opts) {
+  opts = opts || {};
+  const btnConfirmText = opts.confirmText || 'Confirmar';
+  const btnCancelText = opts.cancelText || 'Cancelar';
+  const isDestructive = opts.destructive !== false; // padrão: true
+  
+  return new Promise(function(resolve) {
+    const confirmBtnStyle = isDestructive 
+      ? 'background:var(--sem-erro); color:white; border:1px solid var(--sem-erro);'
+      : 'background:var(--fgr-red-dark); color:white; border:1px solid var(--fgr-red-dark);';
+    
+    document.getElementById('modalContent').innerHTML = ''
+      + '<h2>' + escHtml(titulo) + '</h2>'
+      + '<div style="white-space:pre-wrap; font-size:13px; line-height:1.6; color:var(--text-medium); margin:16px 0;">' + escHtml(mensagem) + '</div>'
+      + '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">'
+      + '  <button class="btn-sm" id="confirmModalCancel">' + escHtml(btnCancelText) + '</button>'
+      + '  <button class="btn-sm" id="confirmModalOk" style="' + confirmBtnStyle + '">' + escHtml(btnConfirmText) + '</button>'
+      + '</div>';
+    
+    document.getElementById('confirmModalCancel').onclick = function() { closeModal(); resolve(false); };
+    document.getElementById('confirmModalOk').onclick = function() { closeModal(); resolve(true); };
+    document.getElementById('modalBg').classList.add('show');
+  });
+}
+
+function showManualText(key) {
+  const text = MANUAL_TEXT[key];
+  if (!text) return;
+  document.getElementById('modalContent').innerHTML = `
+    <h2>ℹ️ Como exportar</h2>
+    <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: var(--text-medium); margin-top: 12px;">${escHtml(text)}</div>
+    <div style="margin-top: 16px; text-align: right;">
+      <button class="btn-sm" onclick="closeModal()">Fechar</button>
+    </div>
+  `;
+  document.getElementById('modalBg').classList.add('show');
+}
 
 // ============ EDIÇÃO DE CLASSIFICAÇÃO ============
-const STORAGE_KEY = 'jzurique_flow_classifications_v1';
+// (declarado em CONFIG no topo)
 
 // Opções especiais (aparecem no topo do dropdown)
 const SPECIAL_OPTIONS = [
@@ -4052,8 +4448,9 @@ function saveClassification(nAlt, field, value) {
   return true;
 }
 
-function clearClassifications() {
-  if (!confirm('Deseja apagar todas as alterações de classificação salvas neste navegador?\nOs aditivos manuais NÃO serão afetados.\nAs alterações exportadas em CSV também não serão afetadas.')) return;
+async function clearClassifications() {
+  const confirmed = await confirmModal('Limpar alterações?', 'Deseja apagar todas as alterações de classificação salvas neste navegador?\nOs aditivos manuais NÃO serão afetados.\nAs alterações exportadas em CSV também não serão afetadas.', { confirmText: 'Limpar', destructive: true });
+  if (!confirmed) return;
   localStorage.removeItem(STORAGE_KEY);
   location.reload();
 }
@@ -4061,8 +4458,9 @@ function clearClassifications() {
 function reloadClassifications() {
   const n = loadClassifications();
   buildLinks();
-  renderAll();
-  alert(`✅ ${n} aditivo(s) com classificação salva foram recarregados.`);
+  // Usar debounce para evitar múltiplas renderizações
+  debouncedRender();
+  authToast(`✅ ${n} aditivo(s) com classificação salva foram recarregados.`, 'ok', 3000);
 }
 
 function exportClassifications() {
@@ -4070,7 +4468,7 @@ function exportClassifications() {
   try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
   const keys = Object.keys(map);
   if (keys.length === 0) {
-    alert('Nenhuma alteração para exportar.');
+    authToast('⚠️ Nenhuma alteração para exportar.', 'warn', 3000);
     return;
   }
   // CSV: Nº Alteração; Nº ADT; Insumo Planejamento (novo); Insumo Remanejamento (novo); Tipo classificado
@@ -4078,7 +4476,7 @@ function exportClassifications() {
   const manuals = loadManuals();
   const allKeys = new Set([...keys, ...manuals.map(m => m.n_alteracao)]);
   if (allKeys.size === 0) {
-    alert('Nenhuma alteração ou aditivo manual para exportar.');
+    authToast('⚠️ Nenhuma alteração ou aditivo manual para exportar.', 'warn', 3000);
     return;
   }
   const lines = ['Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Refletido (PENDENTE/SIM/NAO);Justificativa;Data exportação'];
@@ -4205,7 +4603,6 @@ function buildDatalist() {
   }
 }
 
-
 // Converte data — aceita 'dd/mm/yyyy' OU número serial Excel (ex: 46147 = 26/05/2026)
 function formatDate(s) {
   if (!s) return '';
@@ -4234,15 +4631,14 @@ function formatDate(s) {
 function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escAttr(s) { return escHtml(s); }
 
-
 // Helper: re-renderizar TODAS as visões que dependem de DATA_F (refletido, classificação, valor, manuais)
 // Chamado sempre que algo nos Flows muda, para garantir que Visão Geral, Tendência de Obra e Controle Projeção atualizem
+// OTIMIZADO: usa debounce para evitar múltiplas renderizações em sequência
 function syncAllViewsFromFlows() {
   try { if (typeof buildLinks === 'function') buildLinks(); } catch(e) {}
-  try { if (typeof renderVisao === 'function') renderVisao(); } catch(e) {}
+  // Usa debounce para as renderizações mais pesadas
+  debouncedRender('visao');
   try { if (typeof renderFlowsAggregates === 'function') renderFlowsAggregates(); } catch(e) {}
-  try { if (typeof renderProjecao === 'function') renderProjecao(); } catch(e) {}
-  try { if (typeof renderProjCtrl === 'function') renderProjCtrl(); } catch(e) {}
   try { if (typeof updateEditCount === 'function') updateEditCount(); } catch(e) {}
 }
 
@@ -4351,9 +4747,6 @@ function renderFlowsAggregates() {
     }
   }
 }
-
-
-
 
 // ============ MULTI-SELECT (filtros estilo Excel) ============
 // Estado: por chave, conjunto de valores EXCLUÍDOS (vazio = todos selecionados)
@@ -4663,7 +5056,7 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
       renderFlows();
       // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
       syncAllViewsFromFlows();
-    } catch (e) { alert('Erro: ' + e.message); }
+    } catch (e) { authToast('❌ Erro: ' + e.message, 'err', 5000); }
   };
   document.getElementById('modalContent').innerHTML = html;
   document.getElementById('modalBg').classList.add('show');
@@ -4764,30 +5157,7 @@ function massAplicarRefletido() {
 }
 
 // ============ EDIÇÃO DE VALOR (Fluxo Planejamento) ============
-function parseNumBR(s) {
-  // v0.57.5: robusto pra formato BR e US (mesma lógica do parseNum principal).
-  // Nome mantido por compatibilidade — historicamente era só BR, hoje aceita ambos.
-  if (s == null) return null;
-  s = String(s).trim();
-  if (!s || s === '-') return null;
-  s = s.replace(/R\$/g, '').replace(/\s/g, '').replace(/^\+/, '');
-  if (!s) return null;
-  const lastComma = s.lastIndexOf(',');
-  const lastDot = s.lastIndexOf('.');
-  let normalized;
-  if (lastComma > lastDot) {
-    // BR: vírgula decimal
-    normalized = s.replace(/\./g, '').replace(',', '.');
-  } else if (lastDot > lastComma) {
-    // US: ponto decimal
-    normalized = s.replace(/,/g, '');
-  } else {
-    // só um separador ou nenhum: vírgula → ponto (padrão BR)
-    normalized = s.replace(',', '.');
-  }
-  const n = parseFloat(normalized);
-  return isNaN(n) ? null : n;
-}
+// parseNumBR agora é um alias para parseNumero (definido no início do script)
 
 function onValorChange(input) {
   const nAlt = input.dataset.n;
@@ -4828,12 +5198,11 @@ function refreshFlowCountFooter() {
   // baseado nos valores brutos das linhas — vamos simplesmente reaplicar render se mais simples
 }
 
-
 // Lista oficial de motivos (usada no formulário de aditivo manual)
 const MOTIVOS_OFICIAIS = ["ACRÉSCIMO ESCOPO COMERCIAL", "ALTERAÇÃO DE VENDA", "BAIXA PRODUTIVIDADE", "COMPRA / CONTRATAÇÃO EMERGENCIAL", "CONSUMO SUBESTIMADO", "DESPERDÍCIO / PERDAS INCORPORADAS", "DETALHAMENTO DE INSUMOS NA COMPOSIÇÃO PARA COMPRA", "DIRETRIZES DE CONCESSIONÁRIAS E ORGÃOS PÚBLICOS", "DIVERGENCIA DE QUANTITATIVOS COM PROJETO", "EMISSÃO DE PROJETO EXECUTIVO", "EXECUÇÃO DIVERGENTE DE PROJETO", "FALTA DE ESPECIFICAÇÃO TÉCNICA", "FURTO/ROUBO", "INDENIZAÇÕES", "INTERFERENCIA ENTRE PROJETOS", "INTERPÉRIES / PERIODO CHUVOSO", "MATERIAL COM MÁ QUALIDADE", "MODELO/ESTRATÉGIA DE CONTRATAÇÃO", "MUDANÇA DE ESTRATÉGIA COORPORATIVA", "MUDANÇA DE ESTRATÉGIA/METODOLOGIA EXECUTIVA", "OMISSÃO EM ESPOCO PARA CONTRATAÇÃO", "OMISSÃO EM LINHA DE BALANÇO", "OMISSÃO EM ORÇAMENTO", "OMISSÃO EM PROJETO", "PRODUÇÃO SUPERESTIMADA / SUBESTIMADA", "QUALIFICAÇÃO DA MÃO DE OBRA / EMPREITEIROS", "REVISÃO DE PROJETO EXECUTIVO", "SEQUENCIAMENTO PLANEJADO INADEQUADO", "VARIAÇÃO DE PREÇO UNITÁRIO"];
 
 // ============ MANUAIS ============
-const MANUAL_KEY = 'jzurique_flow_manuals_v1';
+// (declarado em CONFIG no topo)
 
 function loadManuals() {
   try {
@@ -4942,8 +5311,8 @@ function saveManualForm(editingId) {
   const orig = valueFromDisplay(get('m_orig'));
   const just = get('m_just');
 
-  if (!desc) { alert('Descrição é obrigatória.'); return; }
-  if (!dep) { alert('Departamento é obrigatório.'); return; }
+  if (!desc) { authToast('⚠️ Descrição é obrigatória.', 'warn', 3000); return; }
+  if (!dep) { authToast('⚠️ Departamento é obrigatório.', 'warn', 3000); return; }
 
   const manuals = loadManuals();
   const id = editingId || nextManualId();
@@ -4970,21 +5339,21 @@ function saveManualForm(editingId) {
   saveManuals(manuals);
   applyManuals();
   closeModal();
-  // Sincronizar todas as telas (renderAll já cobre, mas garantir explicitamente)
-  renderAll();
-  syncAllViewsFromFlows();
-  alert(`✅ Aditivo manual ${id} salvo.`);
+  // Sincronizar todas as telas com debounce (evita múltiplas renderizações)
+  debouncedRender();
+  authToast(`✅ Aditivo manual ${id} salvo.`, 'ok', 3000);
 }
 
-function deleteManual(id) {
+async function deleteManual(id) {
   if (!requireEditor('excluir aditivo manual')) return;
-  if (!confirm(`Excluir o aditivo manual ${id}?\nEssa ação não pode ser desfeita.`)) return;
+  const confirmed = await confirmModal('Excluir aditivo manual?', 'Excluir o aditivo manual ' + id + '?\nEssa ação não pode ser desfeita.', { confirmText: 'Excluir', destructive: true });
+  if (!confirmed) return;
   const manuals = loadManuals().filter(m => m.n_alteracao !== id);
   saveManuals(manuals);
   try { supaDeleteManual(id); } catch(e){}
   applyManuals();
-  renderAll();
-  syncAllViewsFromFlows();
+  // Sincronizar todas as telas com debounce (evita múltiplas renderizações)
+  debouncedRender();
 }
 
 // ============ FLOWS TAB ============
@@ -5076,14 +5445,6 @@ function renderFlows() {
   ['dep','tipo','motivo','solicitante','refletido','destino'].forEach(k => msUpdateBtn(k));
 
   renderFlowTable();
-}
-
-function flowItemLabel(insumo) {
-  if (!insumo || ['', '-', 'Não encontrado!'].includes(insumo)) return '<span style="color:var(--text-lighter);">-</span>';
-  if (insumo.includes('VERIFICAR')) return '<span class="badge amber">verificar</span>';
-  const match = DATA_T.find(t => t.cod_insumo === insumo);
-  if (match) return `<span title="${match.item}" style="cursor:help;">${insumo}<br><span style="font-size:10px;color:var(--text-soft);">${match.item.length>20?match.item.slice(0,18)+'..':match.item}</span></span>`;
-  return `<span title="Não localizado na tendência">${insumo}</span>`;
 }
 
 function flowMatchesDate(f, ini, fim) {
@@ -5183,15 +5544,15 @@ function renderFlowTable() {
         <input type="checkbox" ${isSelected ? 'checked' : ''} data-n="${escAttr(f.n_alteracao)}" onchange="toggleMassSelect(this)" style="cursor:pointer; transform:scale(1.15);">
       </td>
       <td style="vertical-align:middle; padding:6px;">
-        <select class="refletido-select status-${f.refletido_status || 'pendente'}" data-n="${escAttr(f.n_alteracao)}" onchange="onRefletidoChange(this)" title="Status de reflexo no planejamento">
+        <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-n="${escAttr(f.n_alteracao)}" onchange="onRefletidoChange(this)" title="Status de reflexo no planejamento">
           <option value="pendente" ${(f.refletido_status||'pendente')==='pendente'?'selected':''}>⏳ Pendente</option>
           <option value="sim" ${f.refletido_status==='sim'?'selected':''}>✅ Sim</option>
           <option value="nao" ${f.refletido_status==='nao'?'selected':''}>❌ Não</option>
         </select>
       </td>
-      <td>${f.n_alteracao}${manualBadge}${delBtn}</td>
+      <td>${escHtml(f.n_alteracao)}${manualBadge}${delBtn}</td>
       <td style="font-size:11px;color:var(--text-soft);">${formatDate(f.data_br)}</td>
-      <td><span class="badge ${depBadge[f.dep]||'gray'}">${f.dep||''}</span></td>
+      <td><span class="badge ${depBadge[f.dep]||'gray'}">${escHtml(f.dep||'')}</span></td>
       <td>${tipoLabel[f.tipo]||''}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_planejamento')}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_remanejamento')}</td>
@@ -5199,7 +5560,7 @@ function renderFlowTable() {
         value="${escAttr(valStr)}" data-n="${escAttr(f.n_alteracao)}"
         onchange="onValorChange(this)" onfocus="this.select()"
         title="Aceita valores como 1234,56 ou -1.234,56" placeholder="0,00"></td>
-      <td style="font-size:11px;"><strong>${f.motivo||''}</strong><br><span style="color:var(--text-soft);">${(f.descricao||'').length>110?(f.descricao||'').slice(0,107)+'...':(f.descricao||'')}</span></td>
+      <td style="font-size:11px;"><strong>${escHtml(f.motivo||'')}</strong><br><span style="color:var(--text-soft);">${escHtml((f.descricao||'').length>110?(f.descricao||'').slice(0,107)+'...':(f.descricao||''))}</span></td>
     </tr>`;
   }).join('');
   const refletidos = rows.filter(r => (r.refletido_status||'') === 'sim').length;
@@ -5291,6 +5652,23 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
   }
   const file = ev.target.files[0];
   if (!file) return;
+  
+  // Validação de tamanho (máx 50MB)
+  const MAX_SIZE = 50 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    authToast('❌ Arquivo muito grande (máx 50MB). Tamanho: ' + (file.size / 1024 / 1024).toFixed(1) + 'MB', 'err', 5000);
+    ev.target.value = '';
+    return;
+  }
+  
+  // Validação de extensão
+  const name = file.name.toLowerCase();
+  if (!name.endsWith('.csv')) {
+    authToast('❌ Formato inválido. Envie um arquivo .csv', 'err', 4000);
+    ev.target.value = '';
+    return;
+  }
+  
   const cardMeta = document.querySelector(`.upload-card[data-kind="${kind}"] .upload-card-meta`);
   if (cardMeta) cardMeta.innerHTML = '⏳ <em>Lendo arquivo...</em>';
 
@@ -5369,7 +5747,8 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
       // v0.56: persistir dados parseados no Supabase (sobrevive a refresh)
       try { await supaSaveAllData([kind]); } catch(e) { console.warn('supaSaveAllData:', e); }
 
-      renderAll();
+      // Usar debounce para evitar múltiplas renderizações
+      debouncedRender();
       renderUploadsCentral();
       renderSourcesHeaders();
       updateEditCount();
@@ -5441,6 +5820,20 @@ async function handleExcelUpload(ev) {
   const file = ev.target.files[0];
   if (!file) return;
   ev.target.value = '';
+  
+  // Validação de tamanho (máx 50MB)
+  const MAX_SIZE = 50 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    authToast('❌ Arquivo muito grande (máx 50MB). Tamanho: ' + (file.size / 1024 / 1024).toFixed(1) + 'MB', 'err', 5000);
+    return;
+  }
+  
+  // Validação de extensão
+  const name = file.name.toLowerCase();
+  if (!name.endsWith('.xlsx') && !name.endsWith('.xlsm') && !name.endsWith('.xls')) {
+    authToast('❌ Formato inválido. Envie um arquivo .xlsx ou .xlsm', 'err', 4000);
+    return;
+  }
 
   if (typeof XLSX === 'undefined') {
     authToast('❌ Biblioteca XLSX não carregou. Recarregue a página e tente de novo.', 'err', 5000);
@@ -5645,8 +6038,8 @@ async function _processExcelSheets(workbook, mapping, file) {
     if (processedKinds.length) await supaSaveAllData(processedKinds);
   } catch(e) { console.warn('supaSaveAllData:', e); }
 
-  // 5) Re-render tudo
-  renderAll();
+  // 5) Re-render tudo com debounce
+  debouncedRender();
   renderUploadsCentral();
   renderSourcesHeaders();
   updateEditCount();
@@ -5826,7 +6219,7 @@ function renderUploadsCentral() {
             📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
           </button>
           <button class="btn-sm" onclick="openUploadsHistory('${k}')" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
-          <button class="btn-sm" onclick="alert(MANUAL_TEXT['${meta.manualKey}'])">ℹ️ Como exportar?</button>
+          <button class="btn-sm" onclick="showManualText('${meta.manualKey}')">ℹ️ Como exportar?</button>
           <input type="file" id="fileInput_${k}" accept=".csv" style="display:none" onchange="handleUpload(event, '${k}')">
         </div>
       </div>`;
@@ -5872,7 +6265,6 @@ function renderUploadsCentral() {
     });
   });
 }
-
 
 // v0.53: modal com histórico completo de uploads de um tipo
 async function openUploadsHistory(kind) {
@@ -5920,7 +6312,7 @@ async function _renderUploadsHistoryList(kind) {
           const canReativar = isEditor && !isAtivo && !!r.storage_path;
           const canExcluir = isEditor && !isAtivo; // BLOQUEADO se ativo
           const btnDownload = canDownload
-            ? `<button class="btn-sm" onclick="downloadUploadFile('${r.storage_path.replace(/'/g, "\\'")}','${escAttr(r.nome_arquivo)}')" title="Baixar arquivo">📥</button>`
+            ? `<button class="btn-sm" onclick="downloadUploadFile('${escAttr(r.storage_path)}','${escAttr(r.nome_arquivo)}')" title="Baixar arquivo">📥</button>`
             : (r.storage_path
                 ? `<span style="color:var(--text-lighter); font-size:11px;" title="Faça login para baixar">🔒</span>`
                 : `<span style="color:var(--text-lighter); font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`);
@@ -6033,10 +6425,10 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     const { error: setErr } = await SUPA.from('upload_history')
       .update({ is_active: true }).eq('id', uploadId);
     if (setErr) throw setErr;
-    // 5) Persistir dados novos no dashboard_config + re-renderizar
+    // 5) Persistir dados novos no dashboard_config + re-renderizar com debounce
     await supaSaveAllData([kind]);
     LAST_UPLOADS[kind] = { ...alvo, is_active: true };
-    renderAll();
+    debouncedRender();
     renderUploadsCentral();
     renderSourcesHeaders();
     // 6) Re-renderizar o modal pra refletir o novo ativo
@@ -6130,7 +6522,6 @@ function renderSourcesHeaders() {
   });
 }
 
-
 const GRUPOS_MAP = {
   '01.01': 'Custos Indiretos', '01.02': 'Custos Diretos / Infraestrutura',
   '01.03': 'Obras Civis', '01.04': 'Projeção de Gastos',
@@ -6138,31 +6529,7 @@ const GRUPOS_MAP = {
   '09.02': 'Serviços Iniciais Adicionais',
 };
 
-function parseNum(s) {
-  // v0.57.3 FIX: aceita tanto formato BR ("1.614.494,59") quanto US ("1,614,494.59")
-  // Bug anterior: SheetJS entregava valores em formato US e o parser dividia por ~1000.
-  if (s == null) return null;
-  s = String(s).trim();
-  if (!s || s === '-' || s.includes('#REF')) return null;
-  s = s.replace(/R\$/g, '').replace(/\s/g, '');
-  if (!s) return null;
-  // Detecta formato pelo separador que aparece por último (é o decimal)
-  const lastComma = s.lastIndexOf(',');
-  const lastDot = s.lastIndexOf('.');
-  let normalized;
-  if (lastComma > lastDot) {
-    // Formato BR: vírgula decimal, ponto milhar → "1.614.494,59" → "1614494.59"
-    normalized = s.replace(/\./g, '').replace(',', '.');
-  } else if (lastDot > lastComma) {
-    // Formato US: ponto decimal, vírgula milhar → "1,614,494.59" → "1614494.59"
-    normalized = s.replace(/,/g, '');
-  } else {
-    // Só um separador ou nenhum: interpreta vírgula como decimal (padrão BR)
-    normalized = s.replace(',', '.');
-  }
-  const n = parseFloat(normalized);
-  return isNaN(n) ? null : n;
-}
+// parseNum agora é um alias para parseNumero (definido no início do script)
 
 // v0.55 — Formato novo da aba TENDÊNCIA (22 colunas)
 // Adiciona colunas EVOLUÇÃO TEÓRICA e EVOLUÇÃO FINANCEIRA (do Prevision)
@@ -6183,7 +6550,7 @@ function parseTendencia(text) {
   const isFormatoV055 = headerText.includes('LICITAÇÃO') && headerText.includes('IPCA')
                      && headerText.includes('INCC') && headerText.includes('EVOLUÇÃO');
   if (!isFormatoV055) {
-    alert('⚠️ CSV da aba TENDÊNCIA em formato não reconhecido.\n\nA partir da v0.55, o dashboard espera o formato novo com:\n· ORÇ. LICITAÇÃO\n· IPCA + INCC (colunas separadas)\n· EVOLUÇÃO TEÓRICA + FINANCEIRA\n\nExporte a aba TENDÊNCIA atualizada da planilha.');
+    authToast('❌ CSV da aba TENDÊNCIA em formato não reconhecido. A partir da v0.55, o dashboard espera o formato novo com ORÇ. LICITAÇÃO + IPCA + INCC + EVOLUÇÃO. Exporte a aba TENDÊNCIA atualizada da planilha.', 'err', 8000);
     return [];
   }
 
@@ -6365,7 +6732,6 @@ function toIsoDate(s) {
   if (isNaN(dn) || dn < 1 || dn > 31) return s;
   return `${ano}-${String(mn).padStart(2, '0')}-${String(dn).padStart(2, '0')}`;
 }
-
 
 // v0.58b: parseGestoes agora processa TODAS as obras (não filtra por empreendimento).
 // Cada item ganha campo `codigo_obra` derivado do prefixo da Key_planejamento.
@@ -6698,21 +7064,7 @@ function parseFlowsValor(text) {
   return out;
 }
 
-
-
-
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
-// Estrutura interna: { servico: { meses: {YYYY-MM: valor}, total: ..., insumos: [...] } }
-let PROJ_DATA = null;
-
-function buildProjData() {
-  if (!HISTORICO || !HISTORICO.items) return null;
-  // Vamos buscar todas as linhas da gestão Atual do RAW. Mas HISTORICO já é agregado por chave.
-  // Como não temos mês_pagamento agregado, precisamos do RAW.
-  // Solução: rodar parse dos dados crus pela última vez carregada.
-  // Mais simples: armazenar PROJ_RAW (lista de {servico, mes, valor}) ao parsear Gestões.
-  return PROJ_RAW;
-}
 
 // PROJ_RAW = lista de {servico, mes (YYYY-MM), valor} agregados
 let PROJ_RAW = []; // v0.59: hardcoded removido — dados vêm do Supabase
@@ -6816,7 +7168,6 @@ function calcularRitmoHistorico(meses, dataCorte, janelaMeses) {
   const total = dentroJanela.reduce((s, [m, v]) => s + v, 0);
   return total / janelaMeses;
 }
-
 
 // Calcula somatório de flows PENDENTES (refletido_status='pendente', exceto cancelados)
 // agrupados por grupo do insumo de destino
@@ -7033,16 +7384,22 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
     return { mes: m, valor: acumTend };
   });
 
-  // SVG
-  const w = 900, h = 380, pad = 55, padB = 55;
+  // SVG — dimensões melhoradas
+  const w = 920, h = 400, pad = 70, padB = 60, padT = 40;
   const xRange = extended.length - 1 || 1;
-  const yMax = Math.max(planAcumulado[planAcumulado.length-1].valor, tendAcumulada[tendAcumulada.length-1].valor);
+  const yMax = Math.max(planAcumulado[planAcumulado.length-1].valor, tendAcumulada[tendAcumulada.length-1].valor) * 1.08;
   const yMin = 0;
   const xScale = i => pad + (i / xRange) * (w - 2*pad);
-  const yScale = v => h - padB - ((v - yMin) / (yMax - yMin || 1)) * (h - pad - padB);
+  const yScale = v => h - padB - ((v - yMin) / (yMax - yMin || 1)) * (h - padT - padB);
 
-  const planPath = planAcumulado.map((p, i) => (i ? 'L' : 'M') + xScale(i) + ',' + yScale(p.valor)).join(' ');
-  const tendPath = tendAcumulada.map((p, i) => (i ? 'L' : 'M') + xScale(i) + ',' + yScale(p.valor)).join(' ');
+  const planPath = planAcumulado.map((p, i) => (i ? 'L' : 'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
+  const tendPath = tendAcumulada.map((p, i) => (i ? 'L' : 'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
+
+  // Área preenchida entre as curvas (gradiente)
+  const areaPath = planPath + ' ' + planAcumulado.map((p, i) => {
+    const idx = planAcumulado.length - 1 - i;
+    return (i === 0 ? 'L' : 'L') + xScale(idx).toFixed(1) + ',' + yScale(tendAcumulada[idx].valor).toFixed(1);
+  }).join(' ') + ' Z';
 
   // Posição do corte e do fim
   const findIdx = m => {
@@ -7058,32 +7415,117 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
   const corteX = xScale(corteIdx);
   const fimX = xScale(fimIdx);
 
-  // Eixos
-  const yTicks = 5;
+  // Grid lines horizontais melhoradas
+  const yTicks = 6;
   const yLines = [];
   for (let i = 0; i <= yTicks; i++) {
     const v = yMin + (yMax - yMin) * (1 - i/yTicks);
-    const y = pad + (h - pad - padB) * i / yTicks;
-    yLines.push(`<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="var(--border)"/><text x="${pad-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--text-soft)">${fmtR$k(v)}</text>`);
+    const y = padT + (h - padT - padB) * i / yTicks;
+    const isZero = i === yTicks;
+    yLines.push(
+      `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="${isZero ? 'var(--border-strong)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}"/>` +
+      `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
+    );
   }
 
-  const everyN = Math.max(1, Math.floor(extended.length / 12));
+  // Labels do eixo X melhorados
+  const everyN = Math.max(1, Math.floor(extended.length / 14));
   const xLabels = extended.map((m, i) => {
     if (i % everyN !== 0 && i !== extended.length - 1) return '';
-    return `<text x="${xScale(i)}" y="${h-padB+15}" text-anchor="middle" font-size="9.5" fill="var(--text-medium)" transform="rotate(-35 ${xScale(i)} ${h-padB+15})">${formatMonthLabel(m)}</text>`;
+    const lbl = formatMonthLabel(m);
+    const isCorte = m === dataCorte;
+    const isFim = m === dataFim;
+    const color = isCorte ? 'var(--fgr-red-vivid)' : isFim ? 'var(--text-soft)' : 'var(--text-medium)';
+    const weight = (isCorte || isFim) ? '700' : '400';
+    return `<text x="${xScale(i)}" y="${h-padB+18}" text-anchor="middle" font-size="9" fill="${color}" font-weight="${weight}" transform="rotate(-40 ${xScale(i)} ${h-padB+18})">${lbl}</text>`;
   }).join('');
+
+  // Pontos com tooltips nativos SVG (confiável, sem conflito de template literals)
+  const planDots = planAcumulado.map((p, i) => {
+    if (i % Math.max(1, Math.floor(extended.length / 8)) !== 0 && i !== extended.length - 1) return '';
+    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2">'
+      + '<title>📋 Planejado\nMês: ' + formatMonthLabel(p.mes) + '\nValor acumulado: ' + fmtR$(p.valor) + '</title>'
+      + '</circle>';
+  }).join('');
+
+  const tendDots = tendAcumulada.map((p, i) => {
+    if (i % Math.max(1, Math.floor(extended.length / 8)) !== 0 && i !== extended.length - 1) return '';
+    var planVal = planAcumulado[i] ? planAcumulado[i].valor : 0;
+    var diff = p.valor - planVal;
+    var diffFmt = (diff >= 0 ? '+' : '') + fmtR$(diff);
+    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--sem-alerta)" stroke="white" stroke-width="2">'
+      + '<title>🔮 Tendência Projetada\nMês: ' + formatMonthLabel(p.mes) + '\nTendência: ' + fmtR$(p.valor) + '\nPlanejado: ' + fmtR$(planVal) + '\nΔ diferença: ' + diffFmt + '</title>'
+      + '</circle>';
+  }).join('');
+
+  // Valores nos pontos do último mês
+  const lastPlanVal = planAcumulado[planAcumulado.length - 1];
+  const lastTendVal = tendAcumulada[tendAcumulada.length - 1];
+  const lastLabel = `
+    <text x="${xScale(planAcumulado.length - 1) + 8}" y="${yScale(lastPlanVal.valor) + 4}" font-size="10" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$k(lastPlanVal.valor)}</text>
+    <text x="${xScale(tendAcumulada.length - 1) + 8}" y="${yScale(lastTendVal.valor) + 4}" font-size="10" fill="var(--sem-alerta)" font-weight="700">${fmtR$k(lastTendVal.valor)}</text>
+  `;
+
+  // Legenda inline melhorada
+  const legendY = padT - 12;
+  const legend = `
+    <rect x="${pad}" y="${legendY - 10}" width="16" height="3" fill="var(--fgr-red-deep)" rx="1"/>
+    <text x="${pad + 20}" y="${legendY}" font-size="10" fill="var(--text-medium)">Planejado acumulado</text>
+    <rect x="${pad + 160}" y="${legendY - 10}" width="16" height="3" fill="var(--sem-alerta)" rx="1" stroke-dasharray="4,2"/>
+    <text x="${pad + 180}" y="${legendY}" font-size="10" fill="var(--text-medium)">Tendência projetada</text>
+    <rect x="${pad + 330}" y="${legendY - 10}" width="10" height="10" fill="var(--fgr-red-light)" rx="2"/>
+    <text x="${pad + 345}" y="${legendY}" font-size="10" fill="var(--text-medium)">Realizado (passado)</text>
+  `;
 
   document.getElementById('projChart').innerHTML = `
     <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;">
-      <rect x="${pad}" y="${pad}" width="${corteX - pad}" height="${h - pad - padB}" fill="var(--fgr-red-light)" opacity="0.5"/>
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--fgr-red-deep)" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="var(--fgr-red-deep)" stop-opacity="0.02"/>
+        </linearGradient>
+        <linearGradient id="tendGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="var(--sem-alerta)"/>
+          <stop offset="100%" stop-color="var(--sem-alerta)" stop-opacity="0.7"/>
+        </linearGradient>
+      </defs>
+      
+      <!-- Área de realização (passado) -->
+      <rect x="${pad}" y="${padT}" width="${corteX - pad}" height="${h - padT - padB}" fill="var(--fgr-red-light)" opacity="0.4" rx="2"/>
+      
+      <!-- Grid lines -->
       ${yLines.join('')}
-      <path d="${planPath}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5"/>
-      <path d="${tendPath}" fill="none" stroke="var(--sem-alerta)" stroke-width="2.5" stroke-dasharray="6,4"/>
-      <line x1="${corteX}" y1="${pad}" x2="${corteX}" y2="${h-padB}" stroke="var(--fgr-red-vivid)" stroke-width="2" stroke-dasharray="4,4"/>
-      <text x="${corteX}" y="${pad-6}" text-anchor="middle" font-size="11" fill="var(--fgr-red-vivid)" font-weight="700">Corte: ${formatMonthLabel(dataCorte)}</text>
-      <line x1="${fimX}" y1="${pad+10}" x2="${fimX}" y2="${h-padB}" stroke="var(--text-soft)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.7"/>
-      <text x="${fimX}" y="${pad+8}" text-anchor="middle" font-size="11" fill="var(--text-soft)" font-weight="700">Fim: ${formatMonthLabel(dataFim)}</text>
+      
+      <!-- Área entre as curvas -->
+      <path d="${areaPath}" fill="url(#areaGrad)" opacity="0.5"/>
+      
+      <!-- Curvas principais -->
+      <path d="${planPath}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${tendPath}" fill="none" stroke="url(#tendGrad)" stroke-width="2.5" stroke-dasharray="8,4" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <!-- Pontos interativos -->
+      ${planDots}
+      ${tendDots}
+      
+      <!-- Valores finais -->
+      ${lastLabel}
+      
+      <!-- Linhas de referência -->
+      <line x1="${corteX}" y1="${padT}" x2="${corteX}" y2="${h-padB}" stroke="var(--fgr-red-vivid)" stroke-width="2" stroke-dasharray="4,4"/>
+      <line x1="${fimX}" y1="${padT+10}" x2="${fimX}" y2="${h-padB}" stroke="var(--text-soft)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.6"/>
+      
+      <!-- Labels das linhas de referência -->
+      <rect x="${corteX - 35}" y="${padT - 18}" width="70" height="16" rx="4" fill="var(--fgr-red-vivid)" opacity="0.9"/>
+      <text x="${corteX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Corte: ${formatMonthLabel(dataCorte)}</text>
+      
+      <rect x="${fimX - 30}" y="${padT - 18}" width="60" height="16" rx="4" fill="var(--text-soft)" opacity="0.8"/>
+      <text x="${fimX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Fim: ${formatMonthLabel(dataFim)}</text>
+      
+      <!-- Eixo X -->
       ${xLabels}
+      
+      <!-- Legenda -->
+      ${legend}
     </svg>
   `;
 }
@@ -7091,7 +7533,6 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
 let projSortKey = 'diff';
 let projSortDir = -1;
 let projExpanded = new Set(); // chaves de grupos/serviços expandidos
-
 
 // Conta flows que apontam para um insumo (destino ou origem), ignorando cancelados
 function flowsPorInsumo(insumo) {
@@ -7508,7 +7949,6 @@ function toggleProjExpand(key) {
   renderProjecao();
 }
 
-
 function projExpandAll() {
   // Expandir todos os nós que tenham filhos
   if (typeof HIERARQUIA === 'undefined' || !HIERARQUIA) return;
@@ -7531,7 +7971,7 @@ function exportarProjecaoDetalhada() {
   try {
     const _proj = (typeof getProjRawObraAtiva === 'function') ? getProjRawObraAtiva() : PROJ_RAW;
     if (!_proj || !_proj.length) {
-      alert('Não há dados de Projeção para exportar. Carregue o CSV de Gestões primeiro.');
+      authToast('⚠️ Não há dados de Projeção para exportar. Carregue o CSV de Gestões primeiro.', 'warn', 5000);
       return;
     }
     const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
@@ -7777,7 +8217,7 @@ function exportarProjecaoDetalhada() {
     console.log('[EXPORT] Projeção Detalhada exportada:', nomeArq, `(${linhas.length} linhas)`);
   } catch (e) {
     console.error('[EXPORT] erro:', e);
-    alert('Erro ao exportar: ' + (e.message || e));
+    authToast('❌ Erro ao exportar: ' + (e.message || e), 'err', 5000);
   }
 }
 
@@ -7827,30 +8267,61 @@ function openProjDrill(servico, insumo) {
   const planAcum = extended.map(m => { acumP += (meses[m] || 0); return { mes: m, valor: acumP }; });
   const tendAcum = extended.map(m => { acumT += (meses[m] || 0) + (extrapPorMes[m] || 0); return { mes: m, valor: acumT }; });
 
-  const w = 800, h = 320, pad = 50, padB = 50;
+  const w = 820, h = 340, pad = 65, padB = 55, padT = 35;
   const xRange = extended.length - 1 || 1;
-  const yMax = Math.max(planAcum[planAcum.length-1].valor, tendAcum[tendAcum.length-1].valor, 1);
+  const yMax = Math.max(planAcum[planAcum.length-1].valor, tendAcum[tendAcum.length-1].valor, 1) * 1.08;
   const xScale = i => pad + (i / xRange) * (w - 2*pad);
-  const yScale = v => h - padB - (v / yMax) * (h - pad - padB);
+  const yScale = v => h - padB - (v / yMax) * (h - padT - padB);
   const findIdx = m => { let i = 0; for (let j = 0; j < extended.length; j++) if (extended[j] <= m) i = j; return i; };
   const corteX = xScale(findIdx(dataCorte));
   const fimX = xScale(findIdx(dataFim));
 
-  const planPath = planAcum.map((p, i) => (i?'L':'M') + xScale(i) + ',' + yScale(p.valor)).join(' ');
-  const tendPath = tendAcum.map((p, i) => (i?'L':'M') + xScale(i) + ',' + yScale(p.valor)).join(' ');
+  const planPath = planAcum.map((p, i) => (i?'L':'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
+  const tendPath = tendAcum.map((p, i) => (i?'L':'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
 
-  const yTicks = 4;
+  // Grid lines melhoradas
+  const yTicks = 5;
   const yLines = [];
   for (let i = 0; i <= yTicks; i++) {
     const v = yMax * (1 - i/yTicks);
-    const y = pad + (h-pad-padB) * i/yTicks;
-    yLines.push(`<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="var(--border)"/><text x="${pad-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--text-soft)">${fmtR$k(v)}</text>`);
+    const y = padT + (h - padT - padB) * i / yTicks;
+    yLines.push(
+      `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>` +
+      `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
+    );
   }
+  
   const everyN = Math.max(1, Math.floor(extended.length / 10));
   const xLabels = extended.map((m, i) => {
     if (i % everyN !== 0 && i !== extended.length - 1) return '';
-    return `<text x="${xScale(i)}" y="${h-padB+15}" text-anchor="middle" font-size="9" fill="var(--text-medium)" transform="rotate(-35 ${xScale(i)} ${h-padB+15})">${formatMonthLabel(m)}</text>`;
+    return `<text x="${xScale(i)}" y="${h-padB+18}" text-anchor="middle" font-size="9" fill="var(--text-medium)" transform="rotate(-40 ${xScale(i)} ${h-padB+18})">${formatMonthLabel(m)}</text>`;
   }).join('');
+
+  // Pontos com tooltips nativos SVG
+  const planDots = planAcum.map((p, i) => {
+    if (i % Math.max(1, Math.floor(extended.length / 6)) !== 0 && i !== extended.length - 1) return '';
+    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2">'
+      + '<title>📋 Planejado\nMês: ' + formatMonthLabel(p.mes) + '\nValor: ' + fmtR$(p.valor) + '</title>'
+      + '</circle>';
+  }).join('');
+
+  const tendDots = tendAcum.map((p, i) => {
+    if (i % Math.max(1, Math.floor(extended.length / 6)) !== 0 && i !== extended.length - 1) return '';
+    var planVal = planAcum[i] ? planAcum[i].valor : 0;
+    var diff = p.valor - planVal;
+    var diffFmt = (diff >= 0 ? '+' : '') + fmtR$(diff);
+    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--sem-alerta)" stroke="white" stroke-width="2">'
+      + '<title>🔮 Tendência\nMês: ' + formatMonthLabel(p.mes) + '\nTendência: ' + fmtR$(p.valor) + '\nPlanejado: ' + fmtR$(planVal) + '\nΔ: ' + diffFmt + '</title>'
+      + '</circle>';
+  }).join('');
+
+  // Valores finais
+  const lastPlan = planAcum[planAcum.length - 1];
+  const lastTend = tendAcum[tendAcum.length - 1];
+  const lastLabels = `
+    <text x="${xScale(planAcum.length - 1) + 8}" y="${yScale(lastPlan.valor) + 4}" font-size="10" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$k(lastPlan.valor)}</text>
+    <text x="${xScale(tendAcum.length - 1) + 8}" y="${yScale(lastTend.valor) + 4}" font-size="10" fill="var(--sem-alerta)" font-weight="700">${fmtR$k(lastTend.valor)}</text>
+  `;
 
   document.getElementById('modalContent').innerHTML = `
     <h2>🔮 Projeção · ${escHtml(titulo)}</h2>
@@ -7863,14 +8334,40 @@ function openProjDrill(servico, insumo) {
     </div>
     <h3 style="font-size:13px; margin-bottom:8px;">📈 Curva S individual</h3>
     <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="width:100%; height:300px;">
-      <rect x="${pad}" y="${pad}" width="${corteX - pad}" height="${h - pad - padB}" fill="var(--fgr-red-light)" opacity="0.5"/>
+      <defs>
+        <linearGradient id="areaGradInd" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--fgr-red-deep)" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="var(--fgr-red-deep)" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      
+      <!-- Área de realização -->
+      <rect x="${pad}" y="${padT}" width="${corteX - pad}" height="${h - padT - padB}" fill="var(--fgr-red-light)" opacity="0.4" rx="2"/>
+      
+      <!-- Grid lines -->
       ${yLines.join('')}
-      <path d="${planPath}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5"/>
-      <path d="${tendPath}" fill="none" stroke="var(--sem-alerta)" stroke-width="2.5" stroke-dasharray="6,4"/>
-      <line x1="${corteX}" y1="${pad}" x2="${corteX}" y2="${h-padB}" stroke="var(--fgr-red-vivid)" stroke-width="2" stroke-dasharray="4,4"/>
-      <text x="${corteX}" y="${pad-6}" text-anchor="middle" font-size="10" fill="var(--fgr-red-vivid)" font-weight="700">Corte</text>
-      <line x1="${fimX}" y1="${pad+8}" x2="${fimX}" y2="${h-padB}" stroke="var(--text-soft)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.7"/>
-      <text x="${fimX}" y="${pad+6}" text-anchor="middle" font-size="10" fill="var(--text-soft)" font-weight="700">Fim</text>
+      
+      <!-- Curvas -->
+      <path d="${planPath}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${tendPath}" fill="none" stroke="var(--sem-alerta)" stroke-width="2.5" stroke-dasharray="8,4" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <!-- Pontos -->
+      ${planDots}
+      ${tendDots}
+      
+      <!-- Valores finais -->
+      ${lastLabels}
+      
+      <!-- Linhas de referência -->
+      <line x1="${corteX}" y1="${padT}" x2="${corteX}" y2="${h-padB}" stroke="var(--fgr-red-vivid)" stroke-width="2" stroke-dasharray="4,4"/>
+      <line x1="${fimX}" y1="${padT+10}" x2="${fimX}" y2="${h-padB}" stroke="var(--text-soft)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.6"/>
+      
+      <!-- Labels -->
+      <rect x="${corteX - 25}" y="${padT - 18}" width="50" height="16" rx="4" fill="var(--fgr-red-vivid)" opacity="0.9"/>
+      <text x="${corteX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Corte</text>
+      <rect x="${fimX - 20}" y="${padT - 18}" width="40" height="16" rx="4" fill="var(--text-soft)" opacity="0.8"/>
+      <text x="${fimX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Fim</text>
+      
       ${xLabels}
     </svg>
     <div style="margin-top:10px; font-size:11px; color:var(--text-soft);">
@@ -8074,7 +8571,6 @@ function renderFlowsRefletidosSection(servico, insumo) {
   `;
 }
 
-
 // Recarregar ao mudar parâmetros
 document.addEventListener('DOMContentLoaded', () => {
   // já é chamado no boot
@@ -8106,9 +8602,8 @@ document.querySelectorAll('th[data-sort-proj]').forEach(th => {
   };
 });
 
-
 // ============ CONTROLE PROJEÇÃO ============
-const PROJ_CTRL_KEY = 'jzurique_proj_ctrl_v1'; // localStorage
+// (declarado em CONFIG no topo)
 let PROJ_CTRL_STATE = {
   saldo_inicial: null,
   data_ref: null,
@@ -8389,7 +8884,7 @@ function renderProjCtrl() {
                          .reduce((s, t) => s + (t.gestao || 0), 0);
     if (valorSistema === 0) valorSistema = null; // não encontrado
   }
-  const TOL_CONF = 1.00; // tolerância em R$
+  const TOL_CONF = CONFIG.tolerancia_conferencia; // tolerância em R$
   let confDiff = null, confStatus = 'na';
   if (valorSistema != null) {
     confDiff = valorSistema - saldoAtual;
@@ -8467,61 +8962,113 @@ function renderProjCtrlChart(movs) {
     return { data: isoData, saldo };
   });
 
-  const w = 900, h = 280, pad = 60, padB = 50;
+  const w = 920, h = 300, pad = 70, padB = 55, padT = 30;
   const n = pontos.length;
-  // Range adaptativo: usa min/max dos valores reais + padding de 5% acima e abaixo
-  // Não força o zero a aparecer (assim variações pequenas em torno de valores altos ficam visíveis)
+  // Range adaptativo
   const saldos = pontos.map(p => p.saldo);
   const dataMin = Math.min(...saldos);
   const dataMax = Math.max(...saldos);
   let dataRange = dataMax - dataMin;
-  // Se todos os pontos forem iguais, criar um range artificial pra não dividir por zero
   if (dataRange < 1) dataRange = Math.max(Math.abs(dataMax) * 0.1, 100);
-  const padPct = 0.05; // 5%
+  const padPct = 0.08;
   const yMin = dataMin - dataRange * padPct;
   const yMax = dataMax + dataRange * padPct;
   const range = (yMax - yMin) || 1;
   const xScale = i => pad + (i / Math.max(1, n - 1)) * (w - 2*pad);
-  const yScale = v => h - padB - ((v - yMin) / range) * (h - pad - padB);
+  const yScale = v => h - padB - ((v - yMin) / range) * (h - padT - padB);
 
-  // Linha do zero: só desenhamos se o zero estiver dentro do range visível
+  // Linha do zero
   const zeroVisible = (yMin <= 0 && yMax >= 0);
-  const yZero = zeroVisible ? yScale(0) : (h - padB); // referência da área
-  const path = pontos.map((p, i) => (i?'L':'M') + xScale(i) + ',' + yScale(p.saldo)).join(' ');
-  // Área de referência: fechar para baixo (no fundo do gráfico) em vez de no zero
-  const areaPath = path + ` L${xScale(n-1)},${h - padB} L${xScale(0)},${h - padB} Z`;
+  const yZero = zeroVisible ? yScale(0) : (h - padB);
+  const path = pontos.map((p, i) => (i?'L':'M') + xScale(i).toFixed(1) + ',' + yScale(p.saldo).toFixed(1)).join(' ');
+  const areaPath = path + ` L${xScale(n-1).toFixed(1)},${h - padB} L${xScale(0).toFixed(1)},${h - padB} Z`;
 
-  const yTicks = 4;
+  // Grid lines melhoradas
+  const yTicks = 5;
   const yLines = [];
   for (let i = 0; i <= yTicks; i++) {
     const v = yMin + range * (1 - i/yTicks);
-    const y = pad + (h-pad-padB) * i/yTicks;
-    yLines.push(`<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="var(--border)"/><text x="${pad-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--text-soft)">${fmtR$k(v)}</text>`);
+    const y = padT + (h - padT - padB) * i / yTicks;
+    const isZero = zeroVisible && Math.abs(v) < range * 0.01;
+    yLines.push(
+      `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="${isZero ? 'var(--text-lighter)' : 'var(--border)'}" stroke-width="${isZero ? 1.5 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}"/>` +
+      `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
+    );
   }
 
-  // Labels do eixo X (mostrar alguns)
-  const everyN = Math.max(1, Math.floor(n / 8));
+  // Labels do eixo X
+  const everyN = Math.max(1, Math.floor(n / 10));
   const xLabels = pontos.map((p, i) => {
     if (i % everyN !== 0 && i !== n-1) return '';
     const lbl = p.data ? p.data.slice(0,7) : '';
-    return `<text x="${xScale(i)}" y="${h-padB+15}" text-anchor="middle" font-size="9" fill="var(--text-medium)" transform="rotate(-30 ${xScale(i)} ${h-padB+15})">${lbl}</text>`;
+    return `<text x="${xScale(i)}" y="${h-padB+18}" text-anchor="middle" font-size="9" fill="var(--text-medium)" transform="rotate(-40 ${xScale(i)} ${h-padB+18})">${lbl}</text>`;
   }).join('');
 
-  // Pontos (entrada verde, saída vermelha)
+  // Pontos com tooltips nativos SVG
   const dots = pontos.map((p, i) => {
     const m = movs[i];
     const cor = m.direcao === 'entrada' ? 'var(--sem-ok)' : 'var(--fgr-red-vivid)';
-    return `<circle cx="${xScale(i)}" cy="${yScale(p.saldo)}" r="3.5" fill="${cor}" stroke="white" stroke-width="1.5"><title>${escAttr(m.data_br||p.data)} · ${m.tipo} · ${m.direcao} · ${fmtR$(m.valor)} → saldo ${fmtR$(p.saldo)}</title></circle>`;
+    const icon = m.direcao === 'entrada' ? '⬆' : '⬇';
+    const dirLabel = m.direcao === 'entrada' ? 'Entrada' : 'Saída';
+    const valorFmt = (m.direcao === 'entrada' ? '+' : '-') + fmtR$(m.valor);
+    const saldoFmt = fmtR$(p.saldo);
+    const dataFmt = m.data_br || p.data;
+    var titleText = (m.tipo || dirLabel) + '\nData: ' + dataFmt + '\nDireção: ' + dirLabel + '\nValor: ' + valorFmt + '\nSaldo: ' + saldoFmt;
+    if (m.descricao) titleText += '\n' + m.descricao.slice(0, 80);
+    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.saldo).toFixed(1) + '" r="4.5" fill="' + cor + '" stroke="white" stroke-width="2">'
+      + '<title>' + escAttr(titleText) + '</title>'
+      + '</circle>';
   }).join('');
+
+  // Valor final
+  const lastPonto = pontos[pontos.length - 1];
+  const lastLabel = `
+    <text x="${xScale(n-1) + 10}" y="${yScale(lastPonto.saldo) + 4}" font-size="11" fill="#7c3aed" font-weight="700">${fmtR$(lastPonto.saldo)}</text>
+  `;
+
+  // Legenda inline
+  const legendY = padT - 10;
+  const legend = `
+    <circle cx="${pad + 5}" cy="${legendY}" r="4" fill="var(--sem-ok)"/>
+    <text x="${pad + 14}" y="${legendY + 4}" font-size="9" fill="var(--text-medium)">Entrada</text>
+    <circle cx="${pad + 80}" cy="${legendY}" r="4" fill="var(--fgr-red-vivid)"/>
+    <text x="${pad + 89}" y="${legendY + 4}" font-size="9" fill="var(--text-medium)">Saída</text>
+    <line x1="${pad + 145}" y1="${legendY}" x2="${pad + 165}" y2="${legendY}" stroke="#7c3aed" stroke-width="2.5"/>
+    <text x="${pad + 170}" y="${legendY + 4}" font-size="9" fill="var(--text-medium)">Saldo acumulado</text>
+  `;
 
   document.getElementById('projCtrlChart').innerHTML = `
     <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;">
+      <defs>
+        <linearGradient id="saldoGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      
+      <!-- Grid lines -->
       ${yLines.join('')}
-      ${zeroVisible ? `<line x1="${pad}" y1="${yZero}" x2="${w-pad}" y2="${yZero}" stroke="var(--text-lighter)" stroke-width="1.5"/>` : ''}
-      <path d="${areaPath}" fill="#8b5cf6" opacity="0.15"/>
-      <path d="${path}" fill="none" stroke="#7c3aed" stroke-width="2.5"/>
+      
+      <!-- Linha do zero -->
+      ${zeroVisible ? `<line x1="${pad}" y1="${yZero}" x2="${w-pad}" y2="${yZero}" stroke="var(--text-lighter)" stroke-width="1.5" stroke-dasharray="4,4"/>` : ''}
+      
+      <!-- Área preenchida -->
+      <path d="${areaPath}" fill="url(#saldoGrad)"/>
+      
+      <!-- Curva principal -->
+      <path d="${path}" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <!-- Pontos com tooltips -->
       ${dots}
+      
+      <!-- Valor final -->
+      ${lastLabel}
+      
+      <!-- Eixo X -->
       ${xLabels}
+      
+      <!-- Legenda -->
+      ${legend}
     </svg>
   `;
 }
@@ -8677,7 +9224,7 @@ function openMovForm(editingId) {
   document.getElementById('modalBg').classList.add('show');
 }
 
-function saveMovForm(editingId) {
+async function saveMovForm(editingId) {
   const get = id => document.getElementById(id).value.trim();
   const tipo = get('mov_tipo');
   const data = get('mov_data');
@@ -8688,13 +9235,14 @@ function saveMovForm(editingId) {
   const valor = parseNumBR(get('mov_valor'));
   const just = get('mov_just');
 
-  if (!desc) { alert('Descrição é obrigatória.'); return; }
-  if (valor == null || valor === 0) { alert('Valor é obrigatório (e diferente de zero).'); return; }
-  if (!origem && !destino) { alert('Informe pelo menos Origem ou Destino.'); return; }
+  if (!desc) { authToast('⚠️ Descrição é obrigatória.', 'warn', 3000); return; }
+  if (valor == null || valor === 0) { authToast('⚠️ Valor é obrigatório (e diferente de zero).', 'warn', 3000); return; }
+  if (!origem && !destino) { authToast('⚠️ Informe pelo menos Origem ou Destino.', 'warn', 3000); return; }
 
   const insumo = PROJ_CTRL_STATE.insumo || 'I011890';
   if (origem !== insumo && destino !== insumo) {
-    if (!confirm(`Nem Origem (${origem}) nem Destino (${destino}) é o insumo controlado (${insumo}).\nSalvar mesmo assim?`)) return;
+    const confirmed = await confirmModal('Insumo controlado não encontrado', 'Nem Origem (' + origem + ') nem Destino (' + destino + ') é o insumo controlado (' + insumo + ').\nSalvar mesmo assim?', { confirmText: 'Salvar', destructive: false });
+    if (!confirmed) return;
   }
 
   // tentar converter data dd/mm/aaaa em ISO
@@ -8734,9 +9282,10 @@ function editMov(id) {
   openMovForm(id);
 }
 
-function deleteMov(id) {
+async function deleteMov(id) {
   if (!requireEditor('excluir movimentação')) return;
-  if (!confirm(`Excluir esta movimentação?\nEssa ação não pode ser desfeita.`)) return;
+  const confirmed = await confirmModal('Excluir movimentação?', 'Excluir esta movimentação?\nEssa ação não pode ser desfeita.', { confirmText: 'Excluir', destructive: true });
+  if (!confirmed) return;
   PROJ_CTRL_STATE.movimentacoes = PROJ_CTRL_STATE.movimentacoes.filter(m => m.id !== id);
   saveProjCtrl();
   try { supaDeleteMov(id); } catch(e){}
@@ -8803,7 +9352,7 @@ function _metaBase(fonteAba) {
 function exportarDetalhamentoXLSX() {
   try {
     if (!Array.isArray(DATA_T) || !DATA_T.length) {
-      alert('Sem dados de Tendência carregados para esta obra. Suba o arquivo primeiro.');
+      authToast('⚠️ Sem dados de Tendência carregados para esta obra. Suba o arquivo primeiro.', 'warn', 5000);
       return;
     }
     // Ignora filtros — exporta TUDO da obra ativa (DATA_T já é por obra)
@@ -8838,7 +9387,7 @@ function exportarDetalhamentoXLSX() {
     console.log(`[EXPORT] Detalhamento exportado: ${nome} (${linhas.length} linhas)`);
   } catch (e) {
     console.error('[EXPORT] Detalhamento erro:', e);
-    alert('Erro ao exportar: ' + (e.message || e));
+    authToast('❌ Erro ao exportar: ' + (e.message || e), 'err', 5000);
   }
 }
 
@@ -8849,7 +9398,7 @@ function exportarFlowsXLSX() {
   try {
     const flows = (typeof getFlowsObraAtiva === 'function') ? getFlowsObraAtiva() : [];
     if (!flows.length) {
-      alert('Sem aditivos carregados para esta obra. Suba o CSV do Flows primeiro.');
+      authToast('⚠️ Sem aditivos carregados para esta obra. Suba o CSV do Flows primeiro.', 'warn', 5000);
       return;
     }
     const refletidoLabel = { sim: 'Sim', nao: 'Não', pendente: 'Pendente' };
@@ -8890,7 +9439,7 @@ function exportarFlowsXLSX() {
     console.log(`[EXPORT] Flows exportado: ${nome} (${linhas.length} linhas)`);
   } catch (e) {
     console.error('[EXPORT] Flows erro:', e);
-    alert('Erro ao exportar: ' + (e.message || e));
+    authToast('❌ Erro ao exportar: ' + (e.message || e), 'err', 5000);
   }
 }
 
@@ -8901,7 +9450,7 @@ function exportarControleProjXLSX() {
   try {
     const movs = (PROJ_CTRL_STATE?.movimentacoes) || [];
     if (!movs.length) {
-      alert('Sem movimentações cadastradas para esta obra.');
+      authToast('⚠️ Sem movimentações cadastradas para esta obra.', 'warn', 5000);
       return;
     }
     // Ordenar por data (mais antiga primeiro)
@@ -8974,45 +9523,24 @@ function exportarControleProjXLSX() {
     console.log(`[EXPORT] Controle Projeção exportado: ${nome} (${linhas.length} linhas)`);
   } catch (e) {
     console.error('[EXPORT] Controle Projeção erro:', e);
-    alert('Erro ao exportar: ' + (e.message || e));
+    authToast('❌ Erro ao exportar: ' + (e.message || e), 'err', 5000);
   }
 }
 
 // Alias pra retrocompat (código antigo chamava exportMovs())
 function exportMovs() { return exportarControleProjXLSX(); }
 
-
 // ============ HISTÓRICO ============
 // Tolerância de centavos: variações abaixo disso são consideradas zero (arredondamento)
-const CENT_TOLERANCE = 1; // R$ 1,00
+const CENT_TOLERANCE = CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
 
 let HISTORICO = { gestoes: [], items: [], totals: {} }; // v0.59: hardcoded removido — dados vêm do Supabase
 
 // v0.58b: helpers de filtragem por obra ativa
 // HISTORICO e PROJ_RAW são globais (todas as obras), filtramos em memória ao renderizar.
-// Retorna items filtrados da obra ativa
-function getHistoricoObraAtiva() {
-  if (!HISTORICO || !HISTORICO.items) return { items: [], gestoes: [], totals: {} };
-  if (!OBRA_ATIVA) return HISTORICO; // fallback (sem obra: mostra tudo)
-  const items = HISTORICO.items.filter(it => it.codigo_obra === OBRA_ATIVA);
-  const totals = (HISTORICO.totals && HISTORICO.totals[OBRA_ATIVA]) || {};
-  return { items, gestoes: HISTORICO.gestoes || [], totals };
-}
-
-// Retorna PROJ_RAW filtrado da obra ativa
-function getProjRawObraAtiva() {
-  if (!Array.isArray(PROJ_RAW)) return [];
-  if (!OBRA_ATIVA) return PROJ_RAW;
-  return PROJ_RAW.filter(r => r.codigo_obra === OBRA_ATIVA);
-}
-
-// v0.63: Retorna DATA_F filtrado da obra ativa (Flows agora é global, 1 CSV cobre todas)
-function getFlowsObraAtiva() {
-  if (!Array.isArray(DATA_F)) return [];
-  if (!OBRA_ATIVA) return DATA_F;
-  return DATA_F.filter(f => f.codigo_obra === OBRA_ATIVA);
-}
+// getHistoricoObraAtiva, getProjRawObraAtiva, getFlowsObraAtiva agora são aliases
+// para filtrarPorObraAtiva (definidos no início do script)
 
 function renderHistorico() {
   // v0.58b: filtra pela obra ativa
@@ -9085,59 +9613,109 @@ function renderHistChart(gestoes, totals) {
   // Se a variação real for menor que a tolerância (R$1), tratar como reta horizontal
   const isFlatChart = realRange < CENT_TOLERANCE;
   const range = isFlatChart ? 1 : realRange;
-  const pad = 40;
-  const w = 800, h = 320;
+  const pad = 60, padT = 30, padB = 50;
+  const w = 850, h = 350;
   const xstep = (w - 2*pad) / (gestoes.length - 1 || 1);
   // Linha SVG — se flat, todos pontos ficam no meio
-  const midY = h - pad - (h - 2*pad - 30) * 0.5;
+  const midY = h - padB - (h - padT - padB) * 0.5;
   const points = vals.map((v, i) => {
     const x = pad + i * xstep;
-    const y = isFlatChart ? midY : (h - pad - ((v - min) / range) * (h - 2*pad - 30));
+    const y = isFlatChart ? midY : (h - padB - ((v - min) / range) * (h - padT - padB - 20));
     return [x, y, v];
   });
   const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-  const areaD = pathD + ` L${points[points.length-1][0]},${h-pad} L${points[0][0]},${h-pad} Z`;
-  // Eixos
+  const areaD = pathD + ` L${points[points.length-1][0].toFixed(1)},${h-padB} L${points[0][0].toFixed(1)},${h-padB} Z`;
+  
+  // Grid lines melhoradas
   const yLines = [];
   if (isFlatChart) {
-    // Só uma linha de referência com o valor
-    yLines.push(`<line x1="${pad}" y1="${midY}" x2="${w-pad}" y2="${midY}" stroke="var(--border)" stroke-dasharray="4,4"/><text x="${pad-6}" y="${midY+3}" text-anchor="end" font-size="10" fill="var(--text-soft)">${fmtR$k(vals[0])}</text>`);
+    yLines.push(`<line x1="${pad}" y1="${midY}" x2="${w-pad}" y2="${midY}" stroke="var(--border)" stroke-dasharray="4,4"/><text x="${pad-8}" y="${midY+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(vals[0])}</text>`);
   } else {
-    const yTicks = 4;
+    const yTicks = 5;
     for (let i = 0; i <= yTicks; i++) {
-      const y = pad + (h - 2*pad - 30) * i / yTicks;
+      const y = padT + (h - padT - padB - 20) * i / yTicks;
       const v = max - (range * i / yTicks);
-      yLines.push(`<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="var(--border)"/><text x="${pad-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--text-soft)">${fmtR$k(v)}</text>`);
+      const isZero = i === yTicks;
+      yLines.push(
+        `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="${isZero ? 'var(--border-strong)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}"/>` +
+        `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
+      );
     }
   }
+  
+  // Labels do eixo X
   const xLabels = gestoes.map((g, i) => {
     const x = pad + i * xstep;
-    return `<text x="${x}" y="${h-12}" text-anchor="middle" font-size="11" fill="var(--text-medium)" font-weight="600">${escHtml(g.replace('GESTÃO ',''))}</text>`;
+    const label = g.replace('GESTÃO ', '').replace('Atual', 'Atual');
+    return `<text x="${x}" y="${h-padB+20}" text-anchor="middle" font-size="10" fill="var(--text-medium)" font-weight="600">${escHtml(label)}</text>`;
   }).join('');
-  // Se flat: só pontos sem labels duplicados, e uma nota central
+  
+  // Pontos com tooltips nativos SVG
   const dots = points.map((p, i) => {
-    if (isFlatChart) {
-      return `<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2"/>`;
+    const gestaoLabel = gestoes[i];
+    const valor = p[2];
+    const prevVal = i > 0 ? vals[i-1] : null;
+    const variacao = prevVal != null ? valor - prevVal : 0;
+    const variacaoPct = prevVal && prevVal !== 0 ? ((variacao / prevVal) * 100).toFixed(2) : null;
+    const variacaoFmt = variacao >= 0 ? '+' + fmtR$(variacao) : fmtR$(variacao);
+    
+    var titleText = gestaoLabel + '\nTotal: ' + fmtR$(valor);
+    if (prevVal != null) {
+      titleText += '\nΔ vs anterior: ' + variacaoFmt;
+      if (variacaoPct !== null) titleText += ' (' + variacaoPct + '%)';
     }
-    return `<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2"/>
-      <text x="${p[0]}" y="${p[1]-12}" text-anchor="middle" font-size="11" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$k(p[2])}</text>`;
+    if (i === 0) titleText += '\n(Orçamento base)';
+    
+    return '<circle class="chart-dot" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2">'
+      + '<title>' + escAttr(titleText) + '</title>'
+      + '</circle>'
+      + '<text x="' + p[0].toFixed(1) + '" y="' + (p[1].toFixed(1) - 14) + '" text-anchor="middle" font-size="10" fill="var(--fgr-red-deep)" font-weight="700">' + fmtR$k(valor) + '</text>';
   }).join('');
+  
+  // Nota para gráfico flat
   const flatNote = isFlatChart ?
-    `<text x="${w/2}" y="${midY-22}" text-anchor="middle" font-size="13" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$(vals[0])}</text>
-     <text x="${w/2}" y="${midY+24}" text-anchor="middle" font-size="11" fill="var(--text-soft)">Valor total estável entre todas as gestões (variação &lt; R$ 1)</text>` : '';
+    `<text x="${w/2}" y="${midY-25}" text-anchor="middle" font-size="14" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$(vals[0])}</text>
+     <text x="${w/2}" y="${midY+28}" text-anchor="middle" font-size="11" fill="var(--text-soft)">Valor total estável entre todas as gestões (variação &lt; R$ 1)</text>` : '';
+  
+  // Legenda inline
+  const legendY = padT - 10;
+  const legend = `
+    <circle cx="${pad + 5}" cy="${legendY}" r="4" fill="var(--fgr-red-deep)"/>
+    <text x="${pad + 14}" y="${legendY + 4}" font-size="10" fill="var(--text-medium)">Total da obra por gestão</text>
+  `;
+  
   document.getElementById('histChart').innerHTML = `
     <svg class="hist-line" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="gradH" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--fgr-red-vivid)" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="var(--fgr-red-vivid)" stop-opacity="0.02"/>
+        </linearGradient>
+      </defs>
+      
+      <!-- Grid lines -->
       ${yLines.join('')}
-      <path d="${areaD}" fill="url(#gradH)" opacity="0.3"/>
-      <defs><linearGradient id="gradH" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--fgr-red-vivid)"/><stop offset="100%" stop-color="var(--fgr-red-vivid)" stop-opacity="0"/>
-      </linearGradient></defs>
-      <path d="${pathD}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5"/>
+      
+      <!-- Área preenchida -->
+      <path d="${areaD}" fill="url(#gradH)"/>
+      
+      <!-- Curva principal -->
+      <path d="${pathD}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <!-- Pontos com tooltips -->
       ${dots}
+      
+      <!-- Nota flat -->
       ${flatNote}
+      
+      <!-- Eixo X -->
       ${xLabels}
+      
+      <!-- Legenda -->
+      ${legend}
     </svg>
   `;
+  
   // Legenda com variação entre gestões consecutivas
   let leg = [];
   for (let i = 1; i < gestoes.length; i++) {
@@ -9272,7 +9850,52 @@ function renderHistHeatmap() {
   }
 });
 
+// ============ OTIMIZAÇÕES DE RENDERIZAÇÃO ============
+// Função para renderizar apenas a aba ativa (evita re-renderizar todas as abas)
+function renderTab(tabName) {
+  switch(tabName) {
+    case 'visao':
+      renderVisao();
+      break;
+    case 'flows':
+      renderFlows();
+      break;
+    case 'detalhe':
+      renderTable();
+      break;
+    case 'historico':
+      renderHistorico();
+      break;
+    case 'projecao':
+      if (PROJ_RAW && PROJ_RAW.length) {
+        try { renderProjecao(); } catch(e) { console.warn('renderProjecao err:', e); }
+      }
+      break;
+    case 'projecao_ctrl':
+      initProjCtrl();
+      break;
+    case 'uploads':
+      renderUploadsCentral();
+      renderSourcesHeaders();
+      break;
+    // Admin e Manual não precisam de re-renderização
+  }
+}
 
+// Debounce para evitar múltiplas renderizações em sequência
+let _renderTimeout = null;
+function debouncedRender(tabName) {
+  clearTimeout(_renderTimeout);
+  _renderTimeout = setTimeout(() => {
+    if (tabName) {
+      renderTab(tabName);
+    } else {
+      renderAll();
+    }
+  }, 50); // 50ms de debounce
+}
+
+// Função principal de renderização (mantida para compatibilidade)
 function renderAll() {
   buildLinks();
   populateFilters();
@@ -9331,6 +9954,11 @@ updateSupaBadge();
   renderAll();
   updateEditCount();
   if (_loaded > 0) console.log(`Carregadas ${_loaded} classificações no boot.`);
+  
+  // Restaurar aba ativa e filtros salvos
+  restaurarAbaAtiva();
+  restaurarFiltros();
+  
   // Inicializa auth (não bloqueia render — roda em paralelo)
   initAuth().catch(e => console.warn('[AUTH] initAuth err:', e));
 })();
@@ -9456,7 +10084,8 @@ async function handleAuthClickV062() {
   if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
   if (AUTH.user) {
     // Logout — mesmo comportamento de antes
-    if (!confirm('Sair da sua conta? Você continuará vendo o dashboard, mas não conseguirá editar.')) return;
+    const confirmed = await confirmModal('Sair da conta?', 'Você continuará vendo o dashboard, mas não conseguirá editar.', { confirmText: 'Sair', destructive: false });
+    if (!confirmed) return;
     const { error } = await SUPA.auth.signOut();
     if (error) authToast('Erro ao sair: ' + error.message, 'err');
   } else {
@@ -9468,7 +10097,6 @@ async function handleAuthClickV062() {
 if (typeof window !== 'undefined') {
   window.handleAuthClick = handleAuthClickV062;
 }
-
 
 </script>
 
@@ -9539,5 +10167,6 @@ if (typeof window !== 'undefined') {
     </div>
   </div>
 </div>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

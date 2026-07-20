@@ -29,7 +29,7 @@ Dashboard de tendência orçamentária
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
 - `scripts/audit_supabase_contract.sh`: valida o contrato anônimo nos perfis `baseline` e `hardened`.
-- `scripts/test_rls_migration.sh`: aplica migration, valida regras e testa o rollback em PostgreSQL descartável.
+- `scripts/test_rls_migration.sh`: aplica as migrations de RLS e operações administrativas, valida regras e testa os rollbacks em PostgreSQL descartável.
 - `supabase/audit/`: consultas somente leitura para inventariar o ambiente implantado, incluindo exportação em um único JSON.
 - `supabase/drafts/`: SQL em revisão que não deve ser aplicado diretamente.
 - `supabase/migrations/`: migrations incrementais revisadas e testadas localmente.
@@ -68,6 +68,7 @@ Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestõ
 ./scripts/test_classification_contract.js
 ./scripts/test_accessibility_contract.js
 ./scripts/test_upload_transaction_contract.js
+./scripts/test_admin_transaction_contract.js
 ```
 
 Os testes cobrem cabeçalhos, datas, contrato dos diálogos e ausência de blocos de erro silenciosos.

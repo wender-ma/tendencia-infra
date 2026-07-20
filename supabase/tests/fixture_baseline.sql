@@ -31,41 +31,58 @@ grant execute on function auth.role() to anon, authenticated;
 create table public.obras (
   codigo_obra text primary key,
   nome text not null,
-  origem text not null default 'manual'
+  key_empobratd text,
+  ativa boolean default true,
+  criada_em timestamptz default now(),
+  observacao text,
+  origem text not null default 'manual',
+  constraint obras_origem_check check (origem in ('manual', 'upload'))
 );
+
+insert into public.obras (codigo_obra, nome, origem)
+values
+  ('OBRA-A', 'Obra A', 'manual'),
+  ('OBRA-B', 'Obra B', 'manual');
 
 create table public.editores_permitidos (
   email text not null,
-  codigo_obra text,
+  nome text,
+  adicionado_em timestamptz default now(),
+  observacao text,
+  codigo_obra text references public.obras(codigo_obra),
   role text not null default 'editor',
-  status text not null default 'active'
+  status text not null default 'active',
+  aprovado_em timestamptz,
+  aprovado_por text,
+  constraint editores_permitidos_role_check check (role in ('pending', 'editor', 'admin')),
+  constraint editores_permitidos_status_check check (status in ('active', 'rejected'))
 );
 
 insert into public.editores_permitidos (email, codigo_obra, role, status)
 values
   ('admin@example.test', null, 'admin', 'active'),
   ('editor@example.test', 'OBRA-A', 'editor', 'active'),
-  ('inactive@example.test', 'OBRA-A', 'editor', 'inactive');
+  ('inactive@example.test', 'OBRA-A', 'editor', 'rejected');
 
 create table public.flow_classifications (
-  codigo_obra text not null,
+  codigo_obra text not null references public.obras(codigo_obra),
   n_alteracao text not null,
   primary key (codigo_obra, n_alteracao)
 );
 
 create table public.flow_manuals (
-  codigo_obra text not null,
+  codigo_obra text not null references public.obras(codigo_obra),
   n_alteracao text not null,
   primary key (codigo_obra, n_alteracao)
 );
 
 create table public.projecao_config (
-  codigo_obra text primary key
+  codigo_obra text primary key references public.obras(codigo_obra)
 );
 
 create table public.projecao_movimentacoes (
   id text primary key,
-  codigo_obra text
+  codigo_obra text references public.obras(codigo_obra)
 );
 
 create table public.dashboard_config (
@@ -75,7 +92,7 @@ create table public.dashboard_config (
 
 create table public.upload_history (
   id bigserial primary key,
-  codigo_obra text,
+  codigo_obra text references public.obras(codigo_obra),
   tipo text not null,
   nome_arquivo text not null,
   tamanho_bytes bigint,
@@ -84,13 +101,9 @@ create table public.upload_history (
   enviado_em timestamptz default now(),
   storage_path text,
   upload_group_id uuid,
-  is_active boolean default false
+  is_active boolean default false,
+  observacao text
 );
-
-insert into public.obras (codigo_obra, nome, origem)
-values
-  ('OBRA-A', 'Obra A', 'manual'),
-  ('OBRA-B', 'Obra B', 'manual');
 
 insert into public.upload_history (
   codigo_obra,

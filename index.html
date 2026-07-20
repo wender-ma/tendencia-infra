@@ -2525,6 +2525,48 @@ async function toggleObraAtiva(codigo, novoValor) {
   }
 }
 
+function getAdminRpcErrorMessage(error) {
+  const message = error?.message || String(error || 'Erro desconhecido');
+  if (/PGRST202|schema cache|function .* does not exist/i.test(`${error?.code || ''} ${message}`)) {
+    return 'A migration de operações administrativas ainda não foi aplicada no Supabase.';
+  }
+  return message;
+}
+
+async function cleanupDeletedObraStorage(codigo, rawPaths) {
+  const safePrefix = codigo.replace(/[^\w.\-]/g, '_') + '/';
+  const paths = [...new Set((Array.isArray(rawPaths) ? rawPaths : [])
+    .map(sanitizeStoragePath)
+    .filter(path => path && path.startsWith(safePrefix)))];
+  const failedBatches = [];
+
+  for (let i = 0; i < paths.length; i += 100) {
+    const batch = paths.slice(i, i + 100);
+    try {
+      const { error } = await SUPA.storage.from(UPLOADS_BUCKET).remove(batch);
+      if (error) failedBatches.push({ paths: batch, error });
+    } catch(error) {
+      failedBatches.push({ paths: batch, error });
+    }
+  }
+
+  return { total: paths.length, failedBatches };
+}
+
+function clearDeletedActiveObra() {
+  OBRA_ATIVA = null;
+  SafeStorage.remove('jzurique_obra_ativa');
+  resetDadosObra();
+  HISTORICO = { gestoes: [], items: [], totals: {} };
+  PROJ_RAW = [];
+  Object.keys(LAST_UPLOADS).forEach(key => { LAST_UPLOADS[key] = null; });
+  try {
+    const url = new URL(window.location);
+    url.searchParams.delete('obra');
+    window.history.replaceState({}, '', url);
+  } catch(e) { reportNonFatalError('Obras/limpar URL', e); }
+}
+
 // hard delete de obra manual — pede pra digitar o código
 async function deletarObra(codigo, nome) {
   if (!requireAdmin('excluir obras')) return;
@@ -2536,25 +2578,37 @@ async function deletarObra(codigo, nome) {
   );
   if (!confirmado) return;
   try {
-    // Deletar dados vinculados primeiro (a obra não deleta em cascata por padrão)
-    await SUPA.from('projecao_movimentacoes').delete().eq('codigo_obra', codigo);
-    await SUPA.from('projecao_config').delete().eq('codigo_obra', codigo);
-    await SUPA.from('flow_classifications').delete().eq('codigo_obra', codigo);
-    await SUPA.from('flow_manuals').delete().eq('codigo_obra', codigo);
-    await SUPA.from('upload_history').delete().eq('codigo_obra', codigo);
-    // Remover permissões de editores dessa obra
-    await SUPA.from('editores_permitidos').delete().eq('codigo_obra', codigo);
-    // Finalmente a obra
-    const { error } = await SUPA.from('obras').delete().eq('codigo_obra', codigo);
-    if (error) throw error;
-    authToast('🗑️ Obra deletada permanentemente', 'ok', 3000);
+    const { data, error } = await SUPA.rpc('admin_delete_obra', { p_codigo_obra: codigo });
+    if (error) throw new Error(getAdminRpcErrorMessage(error));
+
+    // Storage não participa da transação PostgreSQL. A limpeza ocorre depois do
+    // commit para nunca deixar metadados apontando para arquivos já removidos.
+    const storageCleanup = await cleanupDeletedObraStorage(codigo, data?.storage_paths);
     await renderObrasAdmin();
     await renderEditoresAdmin();
     await carregarObras();
-    renderObrasDropdown();
-    // Se a obra ativa era a deletada, trocar
-    if (codigo === OBRA_ATIVA && OBRAS.length > 0) {
-      await trocarObra(OBRAS[0].codigo_obra);
+
+    if (codigo === OBRA_ATIVA) {
+      const proximaObra = OBRAS.find(obra => obra.ativa);
+      if (proximaObra) await trocarObra(proximaObra.codigo_obra);
+      else {
+        clearDeletedActiveObra();
+        renderObrasDropdown();
+        renderAll();
+      }
+    } else {
+      renderObrasDropdown();
+    }
+
+    if (storageCleanup.failedBatches.length) {
+      console.warn('[ADMIN] arquivos órfãos após excluir obra:', storageCleanup.failedBatches);
+      authToast(
+        `⚠️ Obra excluída, mas ${storageCleanup.failedBatches.flatMap(item => item.paths).length} arquivo(s) não puderam ser limpos do Storage.`,
+        'warn',
+        7000
+      );
+    } else {
+      authToast('🗑️ Obra deletada permanentemente', 'ok', 3000);
     }
   } catch(e) {
     console.warn('[ADMIN] deletarObra erro:', e);
@@ -2755,7 +2809,7 @@ function editorFormOnRoleChange() {
   if (block) block.style.display = (role === 'admin') ? 'none' : '';
 }
 
-// Salvar: apaga TUDO do email e recria conforme escolhido
+// Salvar todas as permissões em uma única transação no banco.
 async function salvarEditorForm() {
   if (!requireAdmin('salvar usuários')) return;
   const email = document.getElementById('editorFormEmail').value.trim().toLowerCase();
@@ -2769,48 +2823,14 @@ async function salvarEditorForm() {
   if (!SUPA) { authToast('❌ Sem conexão com Supabase.', 'err', 3000); return; }
 
   try {
-    // Se estava editando E o email existe → apaga tudo e recria
-    // Se novo → só insere
-    if (_editorFormEditandoEmail) {
-      // Delete todas as linhas antigas
-      const { error: delErr } = await SUPA.from('editores_permitidos').delete().eq('email', email);
-      if (delErr) throw delErr;
-    }
-
-    const agora = new Date().toISOString();
-    const aprovador = AUTH?.user?.email || null;
-
-    let linhasInserir;
-    if (role === 'admin') {
-      // Admin: 1 linha só, codigo_obra=null
-      linhasInserir = [{
-        email, nome: nome || null, observacao: obs || null,
-        role: 'admin', status: 'active', codigo_obra: null,
-        aprovado_em: agora, aprovado_por: aprovador,
-      }];
-    } else if (marcadas.length === 0) {
-      // Editor sem obras: 1 linha com codigo_obra=null
-      linhasInserir = [{
-        email, nome: nome || null, observacao: obs || 'Sem obras atribuídas',
-        role: 'editor', status: 'active', codigo_obra: null,
-        aprovado_em: agora, aprovado_por: aprovador,
-      }];
-    } else {
-      // Editor com N obras: 1 linha por obra
-      linhasInserir = marcadas.map(cod => ({
-        email, nome: nome || null, observacao: obs || null,
-        role: 'editor', status: 'active', codigo_obra: cod,
-        aprovado_em: agora, aprovado_por: aprovador,
-      }));
-    }
-
-    const { error } = await SUPA.from('editores_permitidos').insert(linhasInserir);
-    if (error) {
-      if (String(error.message||'').match(/duplicate|unique|conflict/i)) {
-        authToast('⚠️ Este email já está cadastrado (conflito de unicidade).', 'warn', 4000);
-      } else { throw error; }
-      return;
-    }
+    const { error } = await SUPA.rpc('admin_replace_user_permissions', {
+      p_email: email,
+      p_nome: nome || null,
+      p_observacao: obs || null,
+      p_role: role,
+      p_codigos_obra: role === 'editor' ? marcadas : [],
+    });
+    if (error) throw new Error(getAdminRpcErrorMessage(error));
 
     const resumo = role === 'admin'
       ? 'Salvo como 👑 Admin'
@@ -2836,8 +2856,8 @@ async function excluirUsuarioDoModal() {
   );
   if (!confirmed) return;
   try {
-    const { error } = await SUPA.from('editores_permitidos').delete().eq('email', email);
-    if (error) throw error;
+    const { error } = await SUPA.rpc('admin_delete_user_permissions', { p_email: email });
+    if (error) throw new Error(getAdminRpcErrorMessage(error));
     authToast('🗑️ Usuário removido da whitelist', 'ok', 3000);
     closeEditorForm();
     await renderEditoresAdmin();

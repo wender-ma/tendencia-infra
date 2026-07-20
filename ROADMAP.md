@@ -114,10 +114,10 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 ### 5. Tornar operações compostas atômicas
 
-- [ ] Criar RPC transacional para alteração de permissões de usuário.
-- [ ] Evitar apagar permissões antes de validar e inserir as novas.
-- [ ] Criar RPC transacional para exclusão completa de obra.
-- [ ] Configurar chaves estrangeiras e cascatas controladas.
+- [x] Criar RPC transacional para alteração de permissões de usuário (`20260720203000_admin_transactions.sql`).
+- [x] Evitar apagar permissões antes de validar e inserir as novas (`20260720203000_admin_transactions.sql`).
+- [x] Criar RPC transacional para exclusão completa de obra (`20260720203000_admin_transactions.sql`).
+- [x] Configurar chaves estrangeiras e cascatas controladas (`20260720203000_admin_transactions.sql`).
 - [x] Interromper upload quando Storage, metadata ou persistência falhar.
 - [x] Adicionar estados `processing`, `active` e `failed` aos uploads.
 - [x] Ativar um novo dataset somente após persistência completa.
@@ -278,3 +278,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade | `1cb9096` |
 | 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |
 | 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados | `supabase/migrations/20260720172000_rls_hardening.sql` |
+| 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |

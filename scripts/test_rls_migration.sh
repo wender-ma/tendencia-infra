@@ -42,6 +42,10 @@ run_sql() {
 run_sql "Criando baseline auditado" "supabase/tests/fixture_baseline.sql"
 run_sql "Aplicando migration RLS" "supabase/migrations/20260720172000_rls_hardening.sql"
 run_sql "Validando estado endurecido" "supabase/tests/assert_hardened.sql"
+run_sql "Aplicando operacoes administrativas atomicas" "supabase/migrations/20260720203000_admin_transactions.sql"
+run_sql "Validando transacoes administrativas" "supabase/tests/assert_admin_transactions.sql"
+run_sql "Aplicando rollback das transacoes administrativas" "supabase/rollback/20260720203000_admin_transactions_rollback.sql"
+run_sql "Validando rollback das transacoes administrativas" "supabase/tests/assert_admin_transactions_rollback.sql"
 run_sql "Aplicando rollback emergencial" "supabase/rollback/20260720172000_rls_hardening_rollback.sql"
 run_sql "Validando estado restaurado" "supabase/tests/assert_rollback.sql"
 

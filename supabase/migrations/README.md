@@ -1,16 +1,16 @@
 # Migrations do Supabase
 
-Este diretório contém apenas migrations incrementais revisadas. A migration `20260720172000_rls_hardening.sql` foi comparada com o baseline administrativo de 20/07/2026 e validada localmente em PostgreSQL 15.
+Este diretório contém apenas migrations incrementais revisadas. As migrations `20260720172000_rls_hardening.sql` e `20260720203000_admin_transactions.sql` foram comparadas com o baseline administrativo de 20/07/2026 e validadas localmente em PostgreSQL 15.
 
 O baseline versionado em `../../docs/supabase_metadata_2026-07-20.json` inclui relações, colunas, tipos, constraints, índices, grants, policies, funções, trigger, view e bucket. Ele não contém linhas das tabelas nem credenciais.
 
 Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 
-## Estado da migration de RLS
+## Estado das migrations
 
 - Revisão contra o baseline administrativo: concluída.
-- Teste local de aplicação: concluído.
-- Teste local do rollback: concluído.
+- Teste local de aplicação das duas migrations: concluído.
+- Teste local dos dois rollbacks: concluído.
 - Aplicação em Supabase de desenvolvimento: pendente.
 - Aplicação em produção: pendente.
 
@@ -20,7 +20,12 @@ Teste local reproduzível:
 ./scripts/test_rls_migration.sh
 ```
 
-Rollback emergencial correspondente: `../rollback/20260720172000_rls_hardening_rollback.sql`.
+Ordem de aplicação:
+
+1. `20260720172000_rls_hardening.sql`
+2. `20260720203000_admin_transactions.sql`
+
+Em uma reversão completa, execute os arquivos de `../rollback/` na ordem inversa. A segunda migration adiciona RPCs atômicas para permissões e exclusão de obra, além de seis chaves estrangeiras com cascata controlada.
 
 ## Fluxo obrigatório
 

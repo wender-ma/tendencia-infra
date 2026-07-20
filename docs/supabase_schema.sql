@@ -2,6 +2,10 @@
 -- SCHEMA DO DASHBOARD DE TENDÊNCIA - JARDINS ZURIQUE
 -- Versão 1.0 (fase 1: sem auth, dados compartilhados)
 -- ==========================================================
+-- ATENÇÃO: ARQUIVO HISTÓRICO E INCOMPLETO. NÃO EXECUTAR EM PRODUÇÃO.
+-- O frontend atual é multiobra, usa autenticação e espera tabelas/campos
+-- que ainda não estão versionados aqui. Exporte o schema implantado e crie
+-- migrations revisadas antes de alterar qualquer política RLS.
 
 -- Tabela 1: Classificações e edições dos flows do sistema
 CREATE TABLE flow_classifications (

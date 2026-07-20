@@ -13,15 +13,22 @@ Dashboard de tendência orçamentária
 ├── docs/                   # Documentação e scripts de banco de dados
 ├── experiments/            # Protótipos e telas isoladas
 ├── scripts/                 # Scripts auxiliares do projeto
+├── ROADMAP.md               # Prioridades e acompanhamento das melhorias
 └── README.md
 ```
 
 ## Arquivos importantes
 
 - `index.html`: arquivo principal do dashboard.
-- `docs/supabase_schema.sql`: schema do banco Supabase.
+- `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
+- `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
 - `experiments/preview-modal.html`: protótipo isolado do modal.
 - `backups/`: versões antigas preservadas para consulta.
+- `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
+- `scripts/audit_supabase_contract.sh`: valida tabelas, colunas e contagens anônimas com `limit=0`.
+- `supabase/audit/`: consultas somente leitura para inventariar o ambiente implantado, incluindo exportação em um único JSON.
+- `supabase/drafts/`: SQL em revisão que não deve ser aplicado diretamente.
+- `supabase/migrations/`: migrations aprovadas e testadas; atualmente sem migration executável.
 
 ## Backup frequente
 

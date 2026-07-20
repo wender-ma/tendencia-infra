@@ -659,6 +659,13 @@ body:not(.is-editor) [data-editor-only] {
 body:not(.is-admin-geral) [data-admin-only] {
   display: none !important;
 }
+body:not(.is-editor) [data-edit-control],
+body:not(.is-admin-geral) [data-admin-control],
+[data-edit-control]:disabled,
+[data-admin-control]:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.65;
+}
 /* v0.62: tabs do modal de login */
 #loginTabLogin.active, #loginTabSignup.active {
   border-bottom-color: var(--fgr-red-deep) !important;
@@ -826,7 +833,7 @@ body:not(.is-admin-geral) [data-admin-only] {
   <div style="flex:1; min-width:0;">
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span id="headerTitle" style="font-size:13px; font-weight:500; opacity:0.85; cursor:default; outline:none;">Tendência Orçamentária</span>
-      <button id="headerLockBtn" type="button" onclick="toggleHeaderEdit()" data-requires-edit title="Editar título" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">🔒 Editar</button>
+      <button id="headerLockBtn" type="button" onclick="toggleHeaderEdit()" data-requires-edit data-admin-control title="Editar título" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">🔒 Editar</button>
     </div>
     <!-- v0.58a: nome grande da obra + dropdown -->
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:2px;">
@@ -1028,7 +1035,7 @@ body:not(.is-admin-geral) [data-admin-only] {
       <table>
         <thead>
           <tr>
-            <th style="width:30px;"><input type="checkbox" id="flowSelectAll" onchange="toggleSelectAllVisible(this)" title="Selecionar/desmarcar todos os visíveis" style="cursor:pointer; transform:scale(1.15);"></th>
+            <th style="width:30px;"><input type="checkbox" id="flowSelectAll" data-edit-control onchange="toggleSelectAllVisible(this)" title="Selecionar/desmarcar todos os visíveis" style="cursor:pointer; transform:scale(1.15);"></th>
             <th style="width:110px;" title="Status de reflexo no planejamento da obra">Refletido?</th>
             <th data-sort-flow="n_alteracao" style="width:55px;">Nº</th>
             <th data-sort-flow="data" style="width:90px;">Data</th>
@@ -1207,7 +1214,7 @@ body:not(.is-admin-geral) [data-admin-only] {
       <div>
         <label style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">💰 Saldo inicial</label>
         <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
-          <input type="text" id="projCtrlSaldoInicial" placeholder="ex: 4.541.431,52" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px; font-variant-numeric:tabular-nums; text-align:right;">
+          <input type="text" id="projCtrlSaldoInicial" data-edit-control placeholder="ex: 4.541.431,52" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px; font-variant-numeric:tabular-nums; text-align:right;">
           <button type="button" id="lockBtnSaldo" data-editor-only onclick="toggleLockCampo('saldo')" title="Travar / destravar edição" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
         </div>
         <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Verba inicial da Projeção de Gastos</div>
@@ -1215,7 +1222,7 @@ body:not(.is-admin-geral) [data-admin-only] {
       <div>
         <label style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">📅 Data de referência</label>
         <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
-          <input type="month" id="projCtrlDataRef" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
+          <input type="month" id="projCtrlDataRef" data-edit-control style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
           <button type="button" id="lockBtnData" data-editor-only onclick="toggleLockCampo('data')" title="Travar / destravar edição" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
         </div>
         <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Mês em que o saldo inicial foi aportado</div>
@@ -1223,7 +1230,7 @@ body:not(.is-admin-geral) [data-admin-only] {
       <div>
         <label style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">📌 Insumo controlado</label>
         <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
-          <input type="text" id="projCtrlInsumo" value="I011890" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
+          <input type="text" id="projCtrlInsumo" data-edit-control value="I011890" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
           <button type="button" id="lockBtnInsumo" data-editor-only onclick="toggleLockCampo('insumo')" title="Travar / destravar edição" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
         </div>
         <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Padrão: I011890 (Verba Viabilidade)</div>
@@ -1692,8 +1699,8 @@ body:not(.is-admin-geral) [data-admin-only] {
       <li>Valores em R$ podem vir com <code>.</code> de milhar e <code>,</code> de decimal — o dashboard converte automaticamente.</li>
       <li>Datas podem ser <code>dd/mm/aaaa</code> ou número serial Excel (ex: <code>46147</code>) — converte automaticamente.</li>
       <li>O dashboard <strong>detecta automaticamente</strong> o tipo do CSV pelo cabeçalho e rejeita se você subir o errado.</li>
-      <li>Tudo roda <strong>offline</strong> no navegador — nada é enviado para servidores.</li>
-      <li>Aditivos manuais e classificações ficam salvos no <code>localStorage</code> do navegador. Para mover para outra máquina, exporte o CSV de alterações (botão na aba Flows).</li>
+      <li>O processamento dos arquivos ocorre no navegador. Arquivos e dados consolidados são enviados ao <strong>Supabase</strong> para sincronização entre usuários autorizados.</li>
+      <li>Aditivos manuais e classificações também usam o <code>localStorage</code> como cache local e são sincronizados com o Supabase quando o usuário possui permissão de edição na obra ativa.</li>
     </ul>
   </div>
 </div>
@@ -1755,7 +1762,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 </div>
 
 <div class="footer">
-  Dashboard v0.64.8 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · 100% offline
+  Dashboard v0.64.8 · Gerado em <span id="now"></span> · Fontes: TENDÊNCIA + FlowsValor · Dados sincronizados via Supabase
 </div>
 
 <script>
@@ -1870,7 +1877,7 @@ const SafeStorage = {
 function uiCriarKpi({ titulo, valor, subtitulo, cor, icon }) {
   const cls = cor ? `kpi ${cor}` : 'kpi';
   const iconPrefix = icon ? `${icon} ` : '';
-  let html = `<div class="${cls}"><div class="label">${iconPrefix}${escHtml(titulo)}</div><div class="value">${valor}</div>`;
+  let html = `<div class="${cls}"><div class="label">${iconPrefix}${escHtml(titulo)}</div><div class="value">${escHtml(valor)}</div>`;
   if (subtitulo) html += `<div class="sub">${escHtml(subtitulo)}</div>`;
   html += '</div>';
   return html;
@@ -2220,6 +2227,10 @@ function aplicarFallbackGestaoDoHistorico() {
 async function renderObrasAdmin() {
   const tbody = document.getElementById('obrasAdminTbody');
   if (!tbody) return;
+  if (!isAdminGeral()) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-soft);">Acesso restrito a administradores.</td></tr>';
+    return;
+  }
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>';
   if (!SUPA) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Sem conexão com o Supabase.</td></tr>';
@@ -2294,6 +2305,7 @@ const ObraForm = (function() {
   let editingCodigo = null;
 
   function open() {
+    if (!requireAdmin('criar obras')) return;
     editingCodigo = null;
     document.getElementById('obraFormTitle').textContent = 'Nova obra';
     document.getElementById('obraFormCodigo').value = '';
@@ -2311,6 +2323,7 @@ const ObraForm = (function() {
   }
 
   async function editar(codigo) {
+    if (!requireAdmin('editar obras')) return;
     if (!SUPA) return;
     try {
       const { data, error } = await SUPA.from('obras').select('*').eq('codigo_obra', codigo).maybeSingle();
@@ -2332,6 +2345,7 @@ const ObraForm = (function() {
   }
 
   async function salvar() {
+    if (!requireAdmin('salvar obras')) return;
     const codigo = document.getElementById('obraFormCodigo').value.trim();
     const nome   = document.getElementById('obraFormNome').value.trim();
     const key    = document.getElementById('obraFormKey').value.trim();
@@ -2368,6 +2382,7 @@ function editarObraAdmin(codigo) { ObraForm.editar(codigo); }
 function salvarObraForm() { ObraForm.salvar(); }
 
 async function toggleObraAtiva(codigo, novoValor) {
+  if (!requireAdmin('alterar obras')) return;
   if (!SUPA) return;
   const acao = novoValor ? 'ativar' : 'desativar';
   if (!confirm(`Deseja ${acao} a obra ${codigo}?\n\n${novoValor ? 'Ela voltará a aparecer no dropdown.' : 'Ela desaparece do dropdown mas os dados históricos ficam preservados no banco.'}`)) return;
@@ -2389,6 +2404,7 @@ async function toggleObraAtiva(codigo, novoValor) {
 
 // hard delete de obra manual — pede pra digitar o código
 async function deletarObra(codigo, nome) {
+  if (!requireAdmin('excluir obras')) return;
   if (!SUPA) return;
   const confirmado = await confirmModal(
     'Deletar obra permanentemente?',
@@ -2436,6 +2452,10 @@ let _editorFormOriginalRole = null;    // pra saber se mudou
 async function renderEditoresAdmin() {
   const tbody = document.getElementById('editoresAdminTbody');
   if (!tbody) return;
+  if (!isAdminGeral()) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-soft);">Acesso restrito a administradores.</td></tr>';
+    return;
+  }
   tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>';
   if (!SUPA) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Sem conexão com o Supabase.</td></tr>';
@@ -2522,6 +2542,7 @@ async function renderEditoresAdmin() {
 
 // Abre o modal. Se email não informado → criando novo. Se informado → editando.
 async function openEditorForm(email) {
+  if (!requireAdmin('gerenciar usuários')) return;
   _editorFormEditandoEmail = email || null;
   const isEditando = !!email;
 
@@ -2613,6 +2634,7 @@ function editorFormOnRoleChange() {
 
 // Salvar: apaga TUDO do email e recria conforme escolhido
 async function salvarEditorForm() {
+  if (!requireAdmin('salvar usuários')) return;
   const email = document.getElementById('editorFormEmail').value.trim().toLowerCase();
   const nome  = document.getElementById('editorFormNome').value.trim();
   const obs   = document.getElementById('editorFormObs').value.trim();
@@ -2681,6 +2703,7 @@ async function salvarEditorForm() {
 
 // Excluir usuário direto do modal (com confirmação)
 async function excluirUsuarioDoModal() {
+  if (!requireAdmin('excluir usuários')) return;
   const email = _editorFormEditandoEmail;
   if (!email || !SUPA) return;
   if (!confirm(`Excluir TODAS as permissões de ${email}?\n\nO usuário some da whitelist. A conta em auth.users continua existindo — se ele logar de novo, entra como "pending" automaticamente e você precisa aprovar/rejeitar.\n\nEsta ação é irreversível.`)) return;
@@ -2702,6 +2725,11 @@ async function renderPendentesAdmin() {
   const tbody = document.getElementById('pendentesAdminTbody');
   const badge = document.getElementById('pendentesCount');
   if (!tbody) return;
+  if (!isAdminGeral()) {
+    if (badge) badge.textContent = '';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-soft);">Acesso restrito a administradores.</td></tr>';
+    return;
+  }
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>';
   if (!SUPA) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--sem-erro);">Sem conexão com o Supabase.</td></tr>';
@@ -2753,6 +2781,7 @@ async function renderPendentesAdmin() {
 })();
 
 async function aprovarPendente(email) {
+  if (!requireAdmin('aprovar cadastros')) return;
   // aprova como editor SEM obra (admin define depois via botão 🏗️)
   if (!SUPA) return;
   if (!confirm(`Aprovar ${email} como editor?\n\nEle entra sem acesso a nenhuma obra. Depois, use o botão 🏗️ na tabela de editores pra escolher quais obras ele pode editar.`)) return;
@@ -2774,6 +2803,7 @@ async function aprovarPendente(email) {
 }
 
 async function rejeitarPendente(email) {
+  if (!requireAdmin('rejeitar cadastros')) return;
   if (!SUPA) return;
   if (!confirm(`Rejeitar o cadastro de ${email}?\n\nO usuário continua com conta no sistema, mas nunca vai ganhar permissão de edição.\n\nVocê pode deletar totalmente depois pela aba Editores (não vai aparecer lá — precisará ativar filtro de rejeitados).`)) return;
   try {
@@ -2903,10 +2933,11 @@ async function supaLoadClassifications() {
   }
 }
 async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
-  if (!SUPA) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
   // aceita codigoObra explícito (chamado por saveClassification com aditivo achado)
   const codigoObra = codigoObraArg || OBRA_ATIVA;
   if (!codigoObra) { console.warn('[SUPA] upsertClass: sem codigo_obra'); return; }
+  if (codigoObra !== OBRA_ATIVA) { console.warn('[SUPA] upsertClass: obra fora do escopo ativo'); return; }
   // buscar cur e espalhar (se existir) — NÃO forçar null nos campos ausentes,
   // senão qualquer edição num campo apaga os outros que já estavam salvos.
   const { data: cur } = await SUPA.from('flow_classifications')
@@ -2952,7 +2983,7 @@ async function supaLoadManuals() {
   }
 }
 async function supaUpsertManual(m) {
-  if (!SUPA) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
   if (!OBRA_ATIVA) { console.warn('[SUPA] upsertManual: sem OBRA_ATIVA'); return; }
   const { error } = await SUPA.from('flow_manuals').upsert({
     codigo_obra: OBRA_ATIVA,
@@ -2971,7 +3002,7 @@ async function supaUpsertManual(m) {
   updateSupaBadge();
 }
 async function supaDeleteManual(nAlt) {
-  if (!SUPA) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
   if (!OBRA_ATIVA) return;
   const { error } = await SUPA.from('flow_manuals').delete()
     .eq('codigo_obra', OBRA_ATIVA).eq('n_alteracao', nAlt);
@@ -2996,7 +3027,7 @@ async function supaLoadProjConfig() {
   }
 }
 async function supaSaveProjConfig(cfg) {
-  if (!SUPA) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
   if (!OBRA_ATIVA) { console.warn('[SUPA] saveProjConfig: sem OBRA_ATIVA'); return; }
   const _locks = cfg.locks || { saldo: false, data: false, insumo: false };
   const { error } = await SUPA.from('projecao_config').upsert({
@@ -3028,7 +3059,7 @@ async function supaLoadMovs() {
   }));
 }
 async function supaUpsertMov(m) {
-  if (!SUPA) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
   if (!OBRA_ATIVA) { console.warn('[SUPA] upsertMov: sem OBRA_ATIVA'); return; }
   const { error } = await SUPA.from('projecao_movimentacoes').upsert({
     codigo_obra: OBRA_ATIVA,
@@ -3041,7 +3072,7 @@ async function supaUpsertMov(m) {
   updateSupaBadge();
 }
 async function supaDeleteMov(id) {
-  if (!SUPA) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
   if (!OBRA_ATIVA) return;
   const { error } = await SUPA.from('projecao_movimentacoes').delete()
     .eq('codigo_obra', OBRA_ATIVA).eq('id', id);
@@ -3070,6 +3101,11 @@ async function supaLoadDashboardConfig() {
 }
 async function supaSaveDashboardKey(chave, valor) {
   if (!SUPA) return;
+  const chaveStr = String(chave || '');
+  const codigoObra = chaveStr.includes(':') ? chaveStr.split(':', 1)[0] : null;
+  const canEditKey = isAdminGeral()
+    || (codigoObra === OBRA_ATIVA && isEditorDaObraAtiva());
+  if (!canEditKey) return;
   const { error } = await SUPA.from('dashboard_config').upsert({
     chave, valor: String(valor||''), updated_at: new Date().toISOString(),
   }, { onConflict: 'chave' });
@@ -3095,7 +3131,7 @@ const DATA_KEYS = {
 
 async function supaSaveDados(chave, obj) {
   if (!SUPA) return;
-  if (!AUTH || !AUTH.isEditor) return; // RLS bloqueia mas evita ruído no console
+  if (!isEditorDaObraAtiva()) return;
   try {
     const json = JSON.stringify(obj);
     console.log(`[SUPA] persistindo ${chave}: ${(json.length/1024).toFixed(1)} KB`);
@@ -3108,7 +3144,8 @@ async function supaSaveDados(chave, obj) {
 // Persistir tudo de uma vez após um upload (chamado em handleUpload/Excel)
 // v0.58a: chaves prefixadas com codigo_obra ("42-21O:dados_tendencia", etc.)
 async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' */) {
-  if (!SUPA || !AUTH || !AUTH.isEditor) return;
+  if (!SUPA || !isEditorDaObraAtiva()) return;
+  if ((!Array.isArray(kinds) || kinds.some(isGlobalUploadKind)) && !isAdminGeral()) return;
   if (!OBRA_ATIVA) { console.warn('[SUPA] supaSaveAllData: sem OBRA_ATIVA'); return; }
   const jobs = [];
   const K = (chave) => keyPorObra(chave); // prefixa com codigo_obra
@@ -3149,7 +3186,7 @@ async function resetCacheDados() {
   // Chaves POR OBRA
   const chavesObra = ['dados_tendencia', 'dados_flows', 'gestao_label', 'evol_global'].map(c => keyPorObra(c));
   // Perguntar sobre as chaves GLOBAIS (Histórico Mensal + Curva S — compartilhadas entre todas as obras)
-  const apagarGlobal = confirm(`\n\n📋 EXTRA: também apagar dados GLOBAIS (Histórico e Curva S)?\n\nEsses dados são compartilhados entre TODAS as obras — apagar aqui afeta o dashboard de todas.\n\nOK = apaga também os globais\nCancelar = mantém globais (só apaga os individuais desta obra)`);
+  const apagarGlobal = isAdminGeral() && confirm(`\n\n📋 EXTRA: também apagar dados GLOBAIS (Histórico e Curva S)?\n\nEsses dados são compartilhados entre TODAS as obras — apagar aqui afeta o dashboard de todas.\n\nOK = apaga também os globais\nCancelar = mantém globais (só apaga os individuais desta obra)`);
   const chavesGlobais = apagarGlobal ? ['dados_historico', 'dados_projraw'] : [];
   const chaves = [...chavesObra, ...chavesGlobais];
   authToast('🧹 Limpando cache...', 'info', 2000);
@@ -3169,7 +3206,7 @@ async function resetCacheDados() {
 
 // apagar todo o histórico de uploads (metadados + arquivos no Storage)
 async function apagarHistoricoUploads() {
-  if (!requireEditor('apagar histórico de uploads')) return;
+  if (!requireAdmin('apagar o histórico global de uploads')) return;
   if (!confirm('⚠️ IRREVERSÍVEL!\n\nIsto vai APAGAR:\n- Todo o histórico de uploads (metadados)\n- Todos os arquivos armazenados no Storage\n\nOs dados parseados NÃO serão afetados (dashboard continua funcionando com o que já tem).\n\nConfirma?')) return;
   authToast('🗑️ Apagando histórico...', 'info', 2000);
   try {
@@ -3208,7 +3245,7 @@ const UPLOADS_BUCKET = 'uploads-history';
 const UPLOADS_MAX_PER_TYPE = CONFIG.max_uploads_por_tipo; // rolling backup: mantém os N mais recentes por tipo
 
 async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
-  if (!SUPA) return null;
+  if (!SUPA || !requireUploadPermission(tipo, 'registrar este upload')) return null;
   if (!OBRA_ATIVA) { console.warn('[SUPA] logUpload: sem OBRA_ATIVA'); return null; }
   const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
   // desativa TODOS os anteriores do mesmo (obra, tipo) antes de inserir novo como ativo
@@ -3236,7 +3273,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
 
 // sobe arquivo original pro Storage. Retorna storage_path ou null se falhar.
 async function supaUploadFile(tipo, file) {
-  if (!SUPA || !SUPA.storage) return null;
+  if (!SUPA || !SUPA.storage || !requireUploadPermission(tipo, 'enviar este arquivo')) return null;
   if (!OBRA_ATIVA) { console.warn('[SUPA] uploadFile: sem OBRA_ATIVA'); return null; }
   // Nome único: YYYYMMDD_HHMMSS_original.csv (evita colisão + facilita ordenação)
   const now = new Date();
@@ -3273,7 +3310,9 @@ async function supaListUploadsByType(tipo, limit = 50) {
 
 // gera signed URL de download (válida por 60s)
 async function supaGetDownloadURL(storagePath) {
-  if (!SUPA || !storagePath) return null;
+  if (!SUPA || !storagePath || !AUTH || !AUTH.user || !OBRA_ATIVA) return null;
+  const safeObra = OBRA_ATIVA.replace(/[^\w.\-]/g, '_');
+  if (!String(storagePath).startsWith(safeObra + '/')) return null;
   const { data, error } = await SUPA.storage.from(UPLOADS_BUCKET)
     .createSignedUrl(storagePath, 60);
   if (error) { console.warn('[SUPA] signedUrl err:', error); return null; }
@@ -3282,7 +3321,7 @@ async function supaGetDownloadURL(storagePath) {
 
 // rolling backup — remove uploads mais antigos que passaram do limite
 async function supaEnforceRollingBackup(tipo) {
-  if (!SUPA) return;
+  if (!SUPA || !requireUploadPermission(tipo, 'gerenciar os backups deste upload')) return;
   try {
     const all = await supaListUploadsByType(tipo, 100);
     if (all.length <= UPLOADS_MAX_PER_TYPE) return;
@@ -3455,6 +3494,29 @@ function isEditorDaObraAtiva() {
   return Array.isArray(AUTH.editaObras) && AUTH.editaObras.includes(OBRA_ATIVA);
 }
 
+function isAdminGeral() {
+  return !!(AUTH && AUTH.ready && AUTH.user && AUTH.isAdminGeral);
+}
+
+function syncEditingControls() {
+  const canEdit = isEditorDaObraAtiva();
+  document.querySelectorAll('[data-edit-control]').forEach(el => {
+    el.disabled = !canEdit;
+  });
+  document.querySelectorAll('[data-admin-control]').forEach(el => {
+    el.disabled = !isAdminGeral();
+  });
+  if (!canEdit && typeof MASS_SELECTED !== 'undefined') {
+    MASS_SELECTED.clear();
+    const massBar = document.getElementById('massBar');
+    if (massBar) {
+      massBar.style.display = 'none';
+      massBar.innerHTML = '';
+    }
+  }
+  if (typeof applyLocksToUI === 'function') applyLocksToUI();
+}
+
 function updateAuthUI() {
   const badge = document.getElementById('authBadge');
   const btn = document.getElementById('authBtn');
@@ -3464,6 +3526,7 @@ function updateAuthUI() {
   // (antes marcava se era editor de QUALQUER obra — mostrava botões que a RLS rejeitava depois)
   document.body.classList.toggle('is-editor', isEditorDaObraAtiva());
   document.body.classList.toggle('is-admin-geral', !!AUTH.isAdminGeral);
+  syncEditingControls();
 
   if (!AUTH.ready) {
     badge.className = 'auth-badge pending';
@@ -3479,28 +3542,28 @@ function updateAuthUI() {
     const shortEmail = email.length > 26 ? email.slice(0, 24) + '…' : email;
     if (AUTH.isAdminGeral) {
       badge.className = 'auth-badge editor two-line';
-      badge.innerHTML = `<span class="auth-email">👑 ${shortEmail}</span><span class="auth-role">Admin</span>`;
+      badge.innerHTML = `<span class="auth-email">👑 ${escHtml(shortEmail)}</span><span class="auth-role">Admin</span>`;
       badge.title = `Logado como ${email}\nModo: Admin (edita tudo + gerencia obras/usuários)`;
     } else if (AUTH.isEditor) {
       const podeEditarAqui = isEditorDaObraAtiva();
       if (podeEditarAqui) {
         badge.className = 'auth-badge editor two-line';
-        badge.innerHTML = `<span class="auth-email">✏️ ${shortEmail}</span><span class="auth-role">Editor</span>`;
+        badge.innerHTML = `<span class="auth-email">✏️ ${escHtml(shortEmail)}</span><span class="auth-role">Editor</span>`;
         badge.title = `Logado como ${email}\nModo: Editor (pode alterar esta obra)\nObras que edita: ${AUTH.editaObras.join(', ')||'—'}`;
       } else {
         // é editor mas não desta obra — mostra como somente leitura aqui
         badge.className = 'auth-badge viewer two-line';
-        badge.innerHTML = `<span class="auth-email">👁️ ${shortEmail}</span><span class="auth-role">Só leitura aqui</span>`;
+        badge.innerHTML = `<span class="auth-email">👁️ ${escHtml(shortEmail)}</span><span class="auth-role">Só leitura aqui</span>`;
         const listaObras = AUTH.editaObras.length ? AUTH.editaObras.join(', ') : 'nenhuma';
         badge.title = `Logado como ${email}\nVocê é editor de: ${listaObras}\nMas NÃO desta obra (${OBRA_ATIVA||'—'})\nTroque no dropdown pra editar suas obras`;
       }
     } else if (AUTH.isPending) {
       badge.className = 'auth-badge viewer two-line';
-      badge.innerHTML = `<span class="auth-email">⏳ ${shortEmail}</span><span class="auth-role">Aguardando</span>`;
+      badge.innerHTML = `<span class="auth-email">⏳ ${escHtml(shortEmail)}</span><span class="auth-role">Aguardando</span>`;
       badge.title = `Logado como ${email}\nAguardando aprovação do admin`;
     } else {
       badge.className = 'auth-badge viewer two-line';
-      badge.innerHTML = `<span class="auth-email">👁️ ${shortEmail}</span><span class="auth-role">Sem permissão</span>`;
+      badge.innerHTML = `<span class="auth-email">👁️ ${escHtml(shortEmail)}</span><span class="auth-role">Sem permissão</span>`;
       badge.title = `Logado como ${email}\nModo: Somente leitura`;
     }
     btn.style.display = '';
@@ -3627,14 +3690,42 @@ async function initAuth() {
 }
 
 // ---- GUARD helper: uso nos handlers de edição ----
-function requireEditor(actionDesc) {
-  if (AUTH.isEditor) return true;
+function requireEditorForActiveProject(actionDesc) {
+  if (isEditorDaObraAtiva()) return true;
   if (!AUTH.user) {
     authToast('🔑 Faça login para ' + (actionDesc || 'editar'), 'warn', 3500);
+  } else if (AUTH.isEditor) {
+    authToast('🚫 Sua conta não pode ' + (actionDesc || 'editar') + ' nesta obra.', 'err', 4500);
   } else {
     authToast('🚫 Sua conta não tem permissão para editar. Fale com o admin.', 'err', 4500);
   }
   return false;
+}
+
+function requireEditor(actionDesc) {
+  return requireEditorForActiveProject(actionDesc);
+}
+
+function requireAdmin(actionDesc) {
+  if (isAdminGeral()) return true;
+  if (!AUTH || !AUTH.ready) {
+    authToast('⏳ Aguarde a verificação da sua sessão.', 'warn', 2500);
+  } else if (!AUTH.user) {
+    authToast('🔑 Faça login como administrador para ' + (actionDesc || 'continuar'), 'warn', 3500);
+  } else {
+    authToast('🚫 Apenas administradores podem ' + (actionDesc || 'realizar esta ação') + '.', 'err', 4500);
+  }
+  return false;
+}
+
+function isGlobalUploadKind(kind) {
+  return kind === 'excel' || kind === 'flows' || kind === 'gestoes';
+}
+
+function requireUploadPermission(kind, actionDesc) {
+  return isGlobalUploadKind(kind)
+    ? requireAdmin(actionDesc)
+    : requireEditorForActiveProject(actionDesc);
 }
 
 // ============================================================================
@@ -3820,7 +3911,7 @@ function toggleHeaderEdit() {
   const el = document.getElementById('headerTitle');
   const btn = document.getElementById('headerLockBtn');
   if (!el || !btn) return;
-  if (!_headerEditable && !requireEditor('editar título')) return;
+  if (!_headerEditable && !requireAdmin('editar o título global')) return;
   _headerEditable = !_headerEditable;
   if (_headerEditable) {
     el.contentEditable = 'true';
@@ -3907,6 +3998,10 @@ function restaurarAbaAtiva() {
   try {
     const saved = localStorage.getItem('jzurique_active_tab');
     if (saved) {
+      if (saved === 'admin' && !isAdminGeral()) {
+        SafeStorage.remove('jzurique_active_tab');
+        return;
+      }
       const tab = document.querySelector('.tab[data-tab="' + saved + '"]');
       if (tab) tab.click();
     }
@@ -3915,6 +4010,7 @@ function restaurarAbaAtiva() {
 
 document.querySelectorAll('.tab').forEach(t => {
   t.onclick = () => {
+    if (t.dataset.tab === 'admin' && !requireAdmin('acessar a administração')) return;
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
@@ -3941,7 +4037,7 @@ document.querySelectorAll('.tab').forEach(t => {
 function setCard3Modo(v) {
   CARD3_MODO = v;
   SafeStorage.set('jzurique_card3_modo', v);
-  if (AUTH && AUTH.isEditor) {
+  if (isAdminGeral()) {
     try { supaSaveDashboardKey('card3_modo', v); } catch(e){}
   }
   if (typeof renderVisao === 'function') renderVisao();
@@ -3950,7 +4046,7 @@ function setCard3Modo(v) {
 function setCorrecaoIndice(v) {
   CORRECAO_INDICE = v;
   SafeStorage.set('jzurique_indice_correcao', v);
-  if (AUTH && AUTH.isEditor) {
+  if (isAdminGeral()) {
     try { supaSaveDashboardKey('indice_correcao', v); } catch(e){}
   }
   if (Array.isArray(DATA_T)) {
@@ -4323,7 +4419,7 @@ function renderVisao() {
     const aditInfo = Math.abs(v.aditivos) > 0.01 ? ` · <span style="color:#8b5cf6;">📎 ${fmtR$k(v.aditivos)} em aditivos</span>` : '';
     return `
       <div class="grupo-row">
-        <div class="grupo-nome"><span class="dot ${st}"></span>${g}<span style="font-weight:400;color:var(--text-soft);font-size:11px;">(${v.n})${aditInfo}</span></div>
+        <div class="grupo-nome"><span class="dot ${st}"></span>${escHtml(g)}<span style="font-weight:400;color:var(--text-soft);font-size:11px;">(${v.n})${aditInfo}</span></div>
         <div style="font-size:11px;color:var(--text-soft);">${fmtR$k(v.licit)} → ${fmtR$k(v.gestao)}</div>
         <div class="${diff<=0?'pos':'neg'}" style="font-weight:700;font-size:13px;">${pct != null ? fmtPct(pct) : 'novo'}</div>
         <div class="grupo-bar"><div class="grupo-bar-fill" style="width:${barWidth}%;background:${barColor};"></div></div>
@@ -4505,7 +4601,10 @@ function populateFilters() {
   const grupos = [...new Set(DATA_T.map(d => d.grupo))].sort();
   const sel = document.getElementById('filterGrupo');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Todos os grupos</option>' + grupos.map(g => `<option value="${g}">${g}</option>`).join('');
+  sel.replaceChildren(
+    new Option('Todos os grupos', ''),
+    ...grupos.map(g => new Option(String(g || ''), String(g || '')))
+  );
   sel.value = cur;
 }
 
@@ -4705,7 +4804,7 @@ function renderFlowMini(f, isOrigem=false) {
         <span class="${(f.custo_flowmaster||0)<0?'pos':'neg'}" style="font-weight:700;">${fmtR$(f.custo_flowmaster)}</span>
       </div>
       <div style="font-size:11px;color:var(--text-soft);">
-        ${formatDate(f.data_br)} · <span class="badge ${depBadge[f.dep]||'gray'}">${escHtml(f.dep)}</span>
+        ${escHtml(formatDate(f.data_br))} · <span class="badge ${depBadge[f.dep]||'gray'}">${escHtml(f.dep)}</span>
         · ${tipoLabel[f.tipo]||escHtml(f.tipo)} · ${escHtml(f.motivo)} ${linkTxt ? '· '+linkTxt : ''}
       </div>
       <div class="desc">${escHtml(f.descricao)}</div>
@@ -4953,8 +5052,9 @@ function renderInsumoSelect(f, field) {
   // valor "amigável" para exibição: se for insumo da tendência, mostra "Ixxx — Nome"
   const displayValue = displayForValue(value);
   const cls = 'classif-select' + (edited ? ' edited' : '') + (isSpecial ? ' special' : '');
+  const disabled = isEditorDaObraAtiva() ? '' : ' disabled';
   // removido marker ✏️ — fundo amarelo já sinaliza edição
-  return `<input type="text" list="insumosDatalist" class="${cls}"
+  return `<input type="text" list="insumosDatalist" class="${cls}" data-edit-control${disabled}
     value="${escAttr(displayValue)}"
     data-n="${escAttr(f.n_alteracao)}" data-field="${field}"
     data-rawvalue="${escAttr(value)}"
@@ -5048,7 +5148,7 @@ function formatDate(s) {
   return s;
 }
 
-function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escAttr(s) { return escHtml(s); }
 
 // ============ TOOLTIP SYSTEM (gráficos) ============
@@ -5092,6 +5192,10 @@ function syncAllViewsFromFlows() {
 }
 
 function onClassifChange(sel) {
+  if (!requireEditorForActiveProject('classificar aditivos')) {
+    renderFlowTable();
+    return;
+  }
   const nAlt = sel.dataset.n;
   const field = sel.dataset.field;
   const value = valueFromDisplay(sel.value);
@@ -5310,9 +5414,8 @@ function msRenderPanel(key) {
         const checked = !MS_EXCLUDED[key].has(v);
         const label = msLabelFor(key, v);
         const c = counts[v] || 0;
-        const safeVal = String(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         return `<label class="ms-opt" data-search="${escAttr(String(label).toLowerCase())}">
-          <input type="checkbox" ${checked?'checked':''} onchange="msOnCheck('${key}', '${safeVal}', this.checked)">
+          <input type="checkbox" ${checked?'checked':''} data-ms-value="${escAttr(String(v))}">
           <span>${escHtml(label)}</span>
           <span class="ms-count">${c}</span>
         </label>`;
@@ -5324,6 +5427,11 @@ function msRenderPanel(key) {
     </div>
   `;
   panel.innerHTML = html;
+  panel.querySelectorAll('input[data-ms-value]').forEach(input => {
+    input.addEventListener('change', () => {
+      msOnCheck(key, input.dataset.msValue, input.checked);
+    });
+  });
   msUpdateStatus(key);
 }
 
@@ -5465,6 +5573,12 @@ function clearMassSelection() {
 function updateMassBar() {
   const bar = document.getElementById('massBar');
   if (!bar) return;
+  if (!isEditorDaObraAtiva()) {
+    MASS_SELECTED.clear();
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+    return;
+  }
   const n = MASS_SELECTED.size;
   if (n === 0) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
   // Soma dos valores selecionados
@@ -5513,7 +5627,8 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
 
 // Bulk upsert helper — evita N requisições individuais ao Supabase
 async function supaBulkUpsertClassifications(payloads) {
-  if (!SUPA || !payloads.length) return;
+  if (!isEditorDaObraAtiva() || !SUPA || !payloads.length) return;
+  if (payloads.some(item => item.codigo_obra !== OBRA_ATIVA)) return;
   try {
     const { error } = await SUPA.from('flow_classifications').upsert(payloads, { onConflict: 'codigo_obra,n_alteracao' });
     if (error) console.warn('[SUPA] bulk upsert err:', error);
@@ -5523,6 +5638,7 @@ async function supaBulkUpsertClassifications(payloads) {
 }
 
 function massAplicarDestino() {
+  if (!requireEditorForActiveProject('classificar aditivos em massa')) return;
   const opt = `
     <div class="full">
       <label>INSUMO PLANEJAMENTO (destino) a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
@@ -5558,6 +5674,7 @@ function massAplicarDestino() {
 }
 
 function massAplicarOrigem() {
+  if (!requireEditorForActiveProject('classificar aditivos em massa')) return;
   const opt = `
     <div class="full">
       <label>INSUMO DE REMANEJAMENTO (origem) a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
@@ -5589,6 +5706,7 @@ function massAplicarOrigem() {
 }
 
 function massAplicarRefletido() {
+  if (!requireEditorForActiveProject('classificar aditivos em massa')) return;
   const opt = `
     <div class="full">
       <label>Status de reflexo a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
@@ -5625,6 +5743,10 @@ function massAplicarRefletido() {
 // parseNumBR agora é um alias para parseNumero (definido no início do script)
 
 function onValorChange(input) {
+  if (!requireEditorForActiveProject('alterar valores de aditivos')) {
+    renderFlowTable();
+    return;
+  }
   const nAlt = input.dataset.n;
   const novo = parseNumero(input.value);
   const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
@@ -5680,6 +5802,7 @@ function loadManuals() {
 }
 
 function saveManuals(arr) {
+  if (!isEditorDaObraAtiva()) return false;
   localStorage.setItem(MANUAL_KEY, JSON.stringify(arr));
   // Sync com Supabase: identifica quais mudaram desde a última chamada é caro,
   // então faz upsert de todos (idempotente). Para excluídos, chamamos supaDeleteManual quando o botão é clicado.
@@ -5712,6 +5835,7 @@ function nextManualId() {
 }
 
 function openManualForm(editing) {
+  if (!requireEditorForActiveProject('adicionar ou editar aditivos manuais')) return;
   const f = editing || {};
   const today = new Date().toLocaleDateString('pt-BR');
   const tpl = document.getElementById('tpl-manual-form').content.cloneNode(true);
@@ -5768,6 +5892,7 @@ function openManualForm(editing) {
 }
 
 function saveManualForm(editingId) {
+  if (!requireEditorForActiveProject('salvar aditivos manuais')) return;
   const get = id => document.getElementById(id).value.trim();
   const dep = get('m_dep');
   const data = get('m_data');
@@ -5903,7 +6028,7 @@ function renderFlows() {
   const maxM = Math.max(...motArr.map(m => Math.abs(m[1].v)), 1);
   document.getElementById('flowsByMotivo').innerHTML = motArr.map(([m,v]) => `
     <div class="top-item">
-      <div class="name">${m} <span style="color:var(--text-soft);font-size:11px;">(${v.n})</span></div>
+      <div class="name">${escHtml(m)} <span style="color:var(--text-soft);font-size:11px;">(${v.n})</span></div>
       <div class="val ${v.v<0?'pos':'neg'}">${v.v>=0?'+':''}${fmtR$(v.v)}</div>
       <div class="top-bar"><div class="top-bar-fill ${v.v<0?'green':''}" style="width:${Math.abs(v.v)/maxM*100}%;"></div></div>
     </div>`).join('');
@@ -5941,6 +6066,7 @@ function renderFlowTable() {
   const fdf = document.getElementById('flowFilterDataFim')?.value || '';
   const fvmin = parseFloat(document.getElementById('flowFilterValMin')?.value);
   const fvmax = parseFloat(document.getElementById('flowFilterValMax')?.value);
+  const editDisabled = isEditorDaObraAtiva() ? '' : ' disabled';
 
   const isRealVal = v => v && !['', '-', 'Não encontrado!', 'VERIFICAR'].includes(v) && !String(v).toUpperCase().includes('VERIFICAR');
 
@@ -6008,22 +6134,22 @@ function renderFlowTable() {
     return `
     <tr style="${trStyle}" class="${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
       <td style="text-align:center; vertical-align:middle;">
-        <input type="checkbox" ${isSelected ? 'checked' : ''} data-n="${escAttr(f.n_alteracao)}" onchange="toggleMassSelect(this)" style="cursor:pointer; transform:scale(1.15);">
+        <input type="checkbox" ${isSelected ? 'checked' : ''} data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" onchange="toggleMassSelect(this)" style="cursor:pointer; transform:scale(1.15);">
       </td>
       <td style="vertical-align:middle; padding:6px;">
-        <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-n="${escAttr(f.n_alteracao)}" onchange="onRefletidoChange(this)" title="Status de reflexo no planejamento">
+        <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" onchange="onRefletidoChange(this)" title="Status de reflexo no planejamento">
           <option value="pendente" ${(f.refletido_status||'pendente')==='pendente'?'selected':''}>⏳ Pendente</option>
           <option value="sim" ${f.refletido_status==='sim'?'selected':''}>✅ Sim</option>
           <option value="nao" ${f.refletido_status==='nao'?'selected':''}>❌ Não</option>
         </select>
       </td>
       <td>${escHtml(f.n_alteracao)}${manualBadge}${delBtn}</td>
-      <td style="font-size:11px;color:var(--text-soft);">${formatDate(f.data_br)}</td>
+      <td style="font-size:11px;color:var(--text-soft);">${escHtml(formatDate(f.data_br))}</td>
       <td><span class="badge ${depBadge[f.dep]||'gray'}">${escHtml(f.dep||'')}</span></td>
       <td>${tipoLabel[f.tipo]||''}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_planejamento')}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_remanejamento')}</td>
-      <td class="classif-cell"><input type="text" class="valor-input ${valCls}${valEdited}"
+      <td class="classif-cell"><input type="text" class="valor-input ${valCls}${valEdited}" data-edit-control${editDisabled}
         value="${escAttr(valStr)}" data-n="${escAttr(f.n_alteracao)}"
         onchange="onValorChange(this)" onfocus="this.select()"
         title="Aceita valores como 1234,56 ou -1.234,56" placeholder="0,00"></td>
@@ -6040,6 +6166,10 @@ function renderFlowTable() {
 
 // Handler do select de "refletido" (3 estados: pendente / sim / nao)
 function onRefletidoChange(sel) {
+  if (!requireEditorForActiveProject('alterar o status de reflexo')) {
+    renderFlowTable();
+    return;
+  }
   const nAlt = sel.dataset.n;
   const status = sel.value; // 'pendente' | 'sim' | 'nao'
   const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
@@ -6114,8 +6244,7 @@ const MANUAL_TEXT = {
 // v0.52 — Upload handler (refatorado pra usar Central de Uploads)
 // ============================================================
 function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
-  // Guard editor
-  if (!requireEditor('enviar arquivo')) {
+  if (!requireUploadPermission(kind, 'enviar este arquivo')) {
     ev.target.value = '';
     return;
   }
@@ -6285,7 +6414,7 @@ function _sheetToCSV(workbook, sheetName) {
 // Handler principal do upload Excel
 // ============================================================
 async function handleExcelUpload(ev) {
-  if (!requireEditor('enviar planilha Excel')) { ev.target.value = ''; return; }
+  if (!requireAdmin('enviar a planilha Excel completa')) { ev.target.value = ''; return; }
   // v0.58a: guard obra ativa
   if (!OBRA_ATIVA) {
     authToast('❌ Nenhuma obra selecionada. Escolha uma obra no header antes de fazer upload.', 'err', 5000);
@@ -6414,6 +6543,7 @@ function _promptSheetMapping(sheetNames, autoDetected) {
 // Processar as abas selecionadas do Excel
 // ============================================================
 async function _processExcelSheets(workbook, mapping, file) {
+  if (!requireAdmin('processar a planilha Excel completa')) return;
   // upload_group_id = todos os 3 registros do mesmo Excel compartilham este UUID
   const groupId = _uuid4();
   const results = {};
@@ -6542,9 +6672,12 @@ async function _processExcelSheets(workbook, mapping, file) {
 function _renderExcelProgress(msg) {
   const card = document.querySelector('.upload-excel-card .upload-progress');
   if (!card) return;
-  if (!msg) { card.innerHTML = ''; card.style.display = 'none'; return; }
+  if (!msg) { card.replaceChildren(); card.style.display = 'none'; return; }
   card.style.display = 'block';
-  card.innerHTML = `<div class="prog-step">${msg}</div>`;
+  const step = document.createElement('div');
+  step.className = 'prog-step';
+  step.textContent = String(msg);
+  card.replaceChildren(step);
 }
 
 // UUID v4 (não precisa de biblioteca)
@@ -6579,6 +6712,7 @@ const UPLOAD_META = {
     color: 'var(--text-medium)',
     desc: 'Alimenta: aba Flows/Aditivos, decomposição do desvio na Visão Geral e Controle de Projeção. Fonte: aba FlowsValor da planilha.',
     manualKey: 'flows',
+    global: true,
   },
   gestoes: {
     label: 'GESTÕES 🌐',
@@ -6637,7 +6771,7 @@ function renderUploadsCentral() {
   const excelMeta = lastExcel ? `
     <div class="upload-card-meta filled">
       📁 <strong>${escHtml(lastExcel.nome_arquivo)}</strong>${lastExcel.tamanho_bytes ? ' <span style="color:var(--text-soft);">('+fmtBytes(lastExcel.tamanho_bytes)+')</span>' : ''}<br>
-      📅 Enviado ${lastExcel.enviado_por ? 'por <code>'+escHtml(lastExcel.enviado_por)+'</code> ' : ''}em ${fmtUploadDate(lastExcel.enviado_em)}<br>
+      📅 Enviado ${lastExcel.enviado_por ? 'por <code>'+escHtml(lastExcel.enviado_por)+'</code> ' : ''}em ${escHtml(fmtUploadDate(lastExcel.enviado_em))}<br>
       📊 Abas processadas: ${lastExcel.relatedKinds.map(k => `${UPLOAD_META[k].icon} ${UPLOAD_META[k].label.split(' ')[0]}`).join(' · ')}
     </div>` : `
     <div class="upload-card-meta empty">📭 Nenhuma planilha Excel enviada ainda. Você pode enviar 1 arquivo <code>.xlsx</code>/<code>.xlsm</code> com as 3 abas ou usar o modo avançado abaixo.</div>`;
@@ -6649,7 +6783,7 @@ function renderUploadsCentral() {
       ${excelMeta}
       <div class="upload-progress" style="display:none;"></div>
       <div class="upload-card-actions">
-        <button class="btn-sm primary" data-editor-only onclick="document.getElementById('fileInput_excel').click()">
+        <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() ? '' : 'disabled'} onclick="document.getElementById('fileInput_excel').click()">
           📊 ${lastExcel ? 'Substituir planilha' : 'Escolher planilha Excel'}
         </button>
         <button class="btn-sm" onclick="openUploadsHistory('tendencia')" title="Ver todos os uploads">📜 Histórico</button>
@@ -6663,6 +6797,9 @@ function renderUploadsCentral() {
   const csvCardsHtml = kinds.map(k => {
     const meta = UPLOAD_META[k];
     const last = LAST_UPLOADS[k];
+    const permissionAttr = meta.global
+      ? `data-admin-control ${isAdminGeral() ? '' : 'disabled'}`
+      : `data-edit-control ${isEditorDaObraAtiva() ? '' : 'disabled'}`;
     let metaBlock;
     if (last) {
       const detalhes = [
@@ -6675,7 +6812,7 @@ function renderUploadsCentral() {
       metaBlock = `
         <div class="upload-card-meta filled">
           📁 <strong>${escHtml(last.nome_arquivo)}</strong>${sourceTag}${detalhes ? ' <span style="color:var(--text-soft);">('+detalhes+')</span>' : ''}<br>
-          📅 Enviado ${last.enviado_por ? 'por <code>'+escHtml(last.enviado_por)+'</code> ' : ''}em ${fmtUploadDate(last.enviado_em)}
+          📅 Enviado ${last.enviado_por ? 'por <code>'+escHtml(last.enviado_por)+'</code> ' : ''}em ${escHtml(fmtUploadDate(last.enviado_em))}
         </div>`;
     } else {
       metaBlock = `<div class="upload-card-meta empty">📭 Nenhum arquivo carregado ainda.</div>`;
@@ -6690,7 +6827,7 @@ function renderUploadsCentral() {
         </div>
         ${metaBlock}
         <div class="upload-card-actions">
-          <button class="btn-sm primary" data-editor-only onclick="document.getElementById('fileInput_${k}').click()">
+          <button class="btn-sm primary" data-editor-only ${permissionAttr} onclick="document.getElementById('fileInput_${k}').click()">
             📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
           </button>
           <button class="btn-sm" onclick="openUploadsHistory('${k}')" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
@@ -6766,8 +6903,9 @@ async function _renderUploadsHistoryList(kind) {
     box.innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:30px;">Nenhum upload registrado ainda.</div>';
     return;
   }
-  const isEditor = AUTH && AUTH.isEditor;
+  const isEditor = isEditorDaObraAtiva();
   const isGlobal = meta.global === true; // Gestões é compartilhado entre obras
+  const canManage = isGlobal ? isAdminGeral() : isEditor;
   box.innerHTML = `
     <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
       <thead>
@@ -6784,8 +6922,8 @@ async function _renderUploadsHistoryList(kind) {
         ${list.map(r => {
           const isAtivo = !!r.is_active;
           const canDownload = !!r.storage_path && AUTH && AUTH.user;
-          const canReativar = isEditor && !isAtivo && !!r.storage_path;
-          const canExcluir = isEditor && !isAtivo; // BLOQUEADO se ativo
+          const canReativar = canManage && !isAtivo && !!r.storage_path;
+          const canExcluir = canManage && !isAtivo; // BLOQUEADO se ativo
           const btnDownload = canDownload
             ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(r.storage_path)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo">📥</button>`
             : (r.storage_path
@@ -6798,12 +6936,12 @@ async function _renderUploadsHistoryList(kind) {
                 : `<span style="color:var(--text-lighter); font-size:11px;" title="Arquivo sem storage_path — não pode ser reativado">—</span>`);
           const btnExcluir = canExcluir
             ? `<button class="btn-sm danger" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" style="background:var(--fgr-red-light); border:1px solid #fca5a5; color:var(--sem-erro);">🗑️</button>`
-            : (isAtivo && isEditor
+            : (isAtivo && canManage
                 ? `<span style="color:var(--text-lighter); font-size:11px;" title="Ative outro arquivo antes de excluir este">🔒</span>`
                 : '');
           return `
             <tr style="border-bottom:1px solid #f1f5f9; ${isAtivo?'background:#f0fdf4;':''}">
-              <td style="padding:8px;">${fmtUploadDate(r.enviado_em)} ${isAtivo?'<span style="display:inline-block; margin-left:4px; padding:2px 8px; background:#059669; color:white; font-size:9px; font-weight:700; border-radius:10px; letter-spacing:0.3px;">📌 ATIVO</span>':''}</td>
+              <td style="padding:8px;">${escHtml(fmtUploadDate(r.enviado_em))} ${isAtivo?'<span style="display:inline-block; margin-left:4px; padding:2px 8px; background:#059669; color:white; font-size:9px; font-weight:700; border-radius:10px; letter-spacing:0.3px;">📌 ATIVO</span>':''}</td>
               <td style="padding:8px; font-family:monospace; font-size:11.5px;">${escHtml(r.nome_arquivo)}</td>
               <td style="padding:8px; color:var(--text-soft);">${fmtBytes(r.tamanho_bytes)}</td>
               <td style="padding:8px; color:var(--text-soft);">${r.linhas != null ? r.linhas.toLocaleString('pt-BR') : '-'}</td>
@@ -6866,7 +7004,7 @@ async function downloadUploadFile(storagePath, filename) {
 // Marca um upload específico como ativo (desativa os anteriores do mesmo obra+tipo)
 // Depois: baixa o arquivo do Storage, re-parseia e substitui os dados no Supabase.
 async function marcarUploadComoAtivo(uploadId, kind) {
-  if (!requireEditor('trocar arquivo ativo')) return;
+  if (!requireUploadPermission(kind, 'trocar este arquivo ativo')) return;
   const meta = UPLOAD_META[kind];
   const isGlobal = meta && meta.global === true;
   // Aviso especial pra Gestões (global)
@@ -6881,6 +7019,7 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     const { data: alvo, error: readErr } = await SUPA.from('upload_history')
       .select('*').eq('id', uploadId).maybeSingle();
     if (readErr || !alvo) throw new Error('Arquivo não encontrado no banco');
+    if (alvo.codigo_obra !== OBRA_ATIVA) throw new Error('Arquivo fora do escopo da obra ativa');
     if (!alvo.storage_path) throw new Error('Arquivo não tem cópia no Storage (upload muito antigo). Impossível reativar.');
     // 2) Baixar o arquivo do Storage
     const url = await supaGetDownloadURL(alvo.storage_path);
@@ -6911,7 +7050,7 @@ async function marcarUploadComoAtivo(uploadId, kind) {
       .eq('codigo_obra', alvo.codigo_obra).eq('tipo', kind).eq('is_active', true);
     if (updErr) console.warn('[v0.60] desativar anteriores:', updErr);
     const { error: setErr } = await SUPA.from('upload_history')
-      .update({ is_active: true }).eq('id', uploadId);
+      .update({ is_active: true }).eq('codigo_obra', OBRA_ATIVA).eq('id', uploadId);
     if (setErr) throw setErr;
     // 5) Persistir dados novos no dashboard_config + re-renderizar com debounce
     await supaSaveAllData([kind]);
@@ -6964,13 +7103,14 @@ function _parsearECarregar(kind, csv) {
 
 // Exclui um upload específico (bloqueado se for o ativo — check no HTML)
 async function excluirUpload(uploadId, kind) {
-  if (!requireEditor('excluir arquivo')) return;
+  if (!requireUploadPermission(kind, 'excluir este arquivo')) return;
   try {
     // Buscar pra confirmar que não é o ativo
     const { data: rec, error: readErr } = await SUPA.from('upload_history')
       .select('id, nome_arquivo, storage_path, is_active, codigo_obra')
       .eq('id', uploadId).maybeSingle();
     if (readErr || !rec) throw new Error('Arquivo não encontrado');
+    if (rec.codigo_obra !== OBRA_ATIVA) throw new Error('Arquivo fora do escopo da obra ativa');
     if (rec.is_active) {
       authToast('🔒 Não é possível excluir o arquivo ativo. Ative outro primeiro.', 'warn', 4500);
       return;
@@ -6983,7 +7123,8 @@ async function excluirUpload(uploadId, kind) {
       if (sErr) console.warn('[v0.60] storage remove:', sErr);
     }
     // 2) Apagar do banco
-    const { error: dbErr } = await SUPA.from('upload_history').delete().eq('id', uploadId);
+    const { error: dbErr } = await SUPA.from('upload_history').delete()
+      .eq('codigo_obra', OBRA_ATIVA).eq('id', uploadId);
     if (dbErr) throw dbErr;
     // 3) Re-render do modal
     await _renderUploadsHistoryList(kind);
@@ -7004,7 +7145,7 @@ function renderSourcesHeaders() {
         return `<span class="src-item src-empty" title="Nenhum arquivo enviado ainda para ${meta ? meta.label : k}">${meta ? meta.icon : ''} ${meta ? meta.label : k}: (sem dados)</span>`;
       }
       const tip = `${last.nome_arquivo} · ${fmtUploadDate(last.enviado_em)}${last.enviado_por ? ' · '+last.enviado_por : ''}`;
-      return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span style="color:var(--text-soft);">(${fmtUploadDateShort(last.enviado_em)})</span></span>`;
+      return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span style="color:var(--text-soft);">(${escHtml(fmtUploadDateShort(last.enviado_em))})</span></span>`;
     });
     el.innerHTML = '📎 ' + parts.join(' <span class="src-sep">·</span> ');
   });
@@ -7096,7 +7237,7 @@ function parseTendencia(text) {
                 '(bruto: [12]="' + sub[12] + '", [13]="' + sub[13] + '")');
     // v0.55.2 + v0.58a: persistir no Supabase (chave prefixada com codigo_obra)
     try {
-      if (typeof AUTH !== 'undefined' && AUTH && AUTH.isEditor && OBRA_ATIVA) {
+      if (isEditorDaObraAtiva() && OBRA_ATIVA) {
         localStorage.setItem('jzurique_evol_global', JSON.stringify(EVOL_GLOBAL));
         if (typeof supaSaveDashboardKey === 'function') {
           supaSaveDashboardKey(keyPorObra('evol_global'), JSON.stringify(EVOL_GLOBAL));
@@ -8301,17 +8442,17 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const valuesEmpty = p.empty;
     const fmtVal = v => valuesEmpty ? '<span style="color:var(--border-strong);">—</span>' : fmtR$(v||0);
 
-    // Click handler
-    let clickHandler;
+    // A ação fica em data attributes para não misturar dados importados com JavaScript inline.
+    let actionAttrs;
     if (hasChildren) {
-      clickHandler = `toggleProjExpand('${escAttr(key)}')`;
+      actionAttrs = `data-proj-action="expand" data-proj-key="${escAttr(key)}"`;
     } else if (n.tipo === 'insumo') {
       const servicoCod = getServicoCod(idx);
-      clickHandler = `openProjDrill('${escAttr(servicoCod)}', '${escAttr(n.cod_insumo)}')`;
+      actionAttrs = `data-proj-action="drill" data-servico-cod="${escAttr(servicoCod)}" data-insumo-cod="${escAttr(n.cod_insumo)}"`;
     } else if (n.cod_servico) {
-      clickHandler = `openProjDrill('${escAttr(n.cod_servico)}')`;
+      actionAttrs = `data-proj-action="drill" data-servico-cod="${escAttr(n.cod_servico)}"`;
     } else {
-      clickHandler = '';
+      actionAttrs = '';
     }
 
     // Tendência exibida = Valor Gestão + Extrapolação (consistente com o que a tabela mostra)
@@ -8319,7 +8460,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const _tendUI = _vg + (p.extrapolacao || 0);
     const vgEmpty = valuesEmpty && _vg === 0;
 
-    html += `<tr style="${trStyle}" onclick="${clickHandler}">
+    html += `<tr style="${trStyle}" ${actionAttrs}>
       <td style="width:24px; padding-left:${4+indent}px;">${icon}</td>
       <td style="padding-left:${10+indent}px;">${labelHtml}</td>
       <td class="num">${vgEmpty ? '<span style="color:var(--border-strong);">—</span>' : fmtR$(_vg)}</td>
@@ -8344,6 +8485,18 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
   document.getElementById('projTbody').innerHTML = html;
   document.getElementById('projCount').textContent = `${count} linhas`;
 }
+
+document.getElementById('projTbody')?.addEventListener('click', event => {
+  const row = event.target.closest('tr[data-proj-action]');
+  if (!row) return;
+  if (row.dataset.projAction === 'expand') {
+    toggleProjExpand(row.dataset.projKey || '');
+    return;
+  }
+  if (row.dataset.projAction === 'drill') {
+    openProjDrill(row.dataset.servicoCod || '', row.dataset.insumoCod || undefined);
+  }
+});
 
 function toggleProjExpand(key) {
   if (projExpanded.has(key)) projExpanded.delete(key);
@@ -8891,7 +9044,7 @@ function renderFlowsRefletidosSection(servico, insumo) {
             ${f.is_manual ? '<span class="badge-manual">✋ Manual</span>' : ''}
             <span class="badge ${depBadge[f.dep]||'gray'}">${escHtml(f.dep||'')}</span>
             ${tipoLabel[f.tipo]||''}
-            <span style="font-size:10.5px; color:var(--text-soft);">${formatDate(f.data_br)}</span>
+            <span style="font-size:10.5px; color:var(--text-soft);">${escHtml(formatDate(f.data_br))}</span>
             <span style="font-size:10.5px; color:${dirColor}; font-weight:700;">${dirIcon}</span>
             ${insAlvoTxt}
           </div>
@@ -9002,9 +9155,8 @@ function loadProjCtrl() {
 }
 
 function saveProjCtrl() {
+  if (!isEditorDaObraAtiva()) return false;
   localStorage.setItem(PROJ_CTRL_KEY, JSON.stringify(PROJ_CTRL_STATE));
-  // Só sincroniza no Supabase se for editor (senão o Supabase rejeita e polui o console de erros)
-  if (!AUTH || !AUTH.isEditor) return;
   // Sync config
   try { supaSaveProjConfig({
     insumo: PROJ_CTRL_STATE.insumo,
@@ -9037,15 +9189,17 @@ function applyLocksToUI() {
     { key: 'insumo', inputId: 'projCtrlInsumo',       btnId: 'lockBtnInsumo' },
   ];
   const locks = (PROJ_CTRL_STATE && PROJ_CTRL_STATE.locks) || { saldo:false, data:false, insumo:false };
+  const canEdit = isEditorDaObraAtiva();
   map.forEach(m => {
     const inp = document.getElementById(m.inputId);
     const btn = document.getElementById(m.btnId);
     const trancado = !!locks[m.key];
     if (inp) {
-      inp.readOnly = trancado;
-      inp.style.background = trancado ? 'var(--bg-soft)' : '';
-      inp.style.color = trancado ? 'var(--text-soft)' : '';
-      inp.style.cursor = trancado ? 'not-allowed' : '';
+      inp.readOnly = trancado || !canEdit;
+      inp.disabled = !canEdit;
+      inp.style.background = (trancado || !canEdit) ? 'var(--bg-soft)' : '';
+      inp.style.color = (trancado || !canEdit) ? 'var(--text-soft)' : '';
+      inp.style.cursor = (trancado || !canEdit) ? 'not-allowed' : '';
     }
     if (btn) {
       btn.textContent = trancado ? '🔒' : '🔓';
@@ -9058,6 +9212,7 @@ function applyLocksToUI() {
 
 // v0.60.5 — alterna o cadeado de um campo (saldo | data | insumo)
 function toggleLockCampo(campo) {
+  if (!requireEditorForActiveProject('alterar os bloqueios da projeção')) return;
   if (!PROJ_CTRL_STATE.locks) PROJ_CTRL_STATE.locks = { saldo:false, data:false, insumo:false };
   PROJ_CTRL_STATE.locks[campo] = !PROJ_CTRL_STATE.locks[campo];
   applyLocksToUI();
@@ -9452,7 +9607,7 @@ function renderMovTable(movs, saldoFinal) {
     const trStyle = m.origem_dado === 'flow' ? 'background:#fafbff;' : m.origem_dado === 'inicial' ? 'background:#fef9c3;' : '';
     return `<tr style="${trStyle}">
       <td style="font-size:11.5px; color:var(--text-soft);">${escHtml(m.data_br || m.data || '')}</td>
-      <td>${tipoBadge[m.tipo] || m.tipo}</td>
+      <td>${tipoBadge[m.tipo] || escHtml(m.tipo)}</td>
       <td style="text-align:center;">${dirIcon}</td>
       <td style="font-size:11.5px;">${escHtml(m.origem || '—')}</td>
       <td style="font-size:11.5px;">${escHtml(m.destino || '—')}</td>
@@ -9556,6 +9711,7 @@ function openMovForm(editingId) {
 }
 
 async function saveMovForm(editingId) {
+  if (!requireEditorForActiveProject('salvar movimentações')) return;
   const get = id => document.getElementById(id).value.trim();
   const tipo = get('mov_tipo');
   const data = get('mov_data');

@@ -3987,16 +3987,18 @@ function verificarDadosDesatualizados() {
   const bannerEl = document.getElementById('alertBanner');
   if (!bannerEl) return;
   
-  if (mesesAtras > 90) {
+  if (mesesAtras > 3) {
     // Mais de 3 meses: vermelho
     bannerEl.innerHTML = '<div class="alert-banner" style="background:linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%); border-left-color:#DC2626;">'
       + '🔴 <strong>Dados muito desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
       + 'Atualize os dados na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#DC2626; font-weight:700;">📤 Uploads</a>.</div>';
-  } else if (mesesAtras > 60) {
+  } else if (mesesAtras > 2) {
     // Mais de 2 meses: amarelo
     bannerEl.innerHTML = '<div class="alert-banner">'
       + '⚠️ <strong>Dados desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
       + 'Considere atualizar na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#92400E; font-weight:700;">📤 Uploads</a>.</div>';
+  } else {
+    bannerEl.innerHTML = '';
   }
 }
 

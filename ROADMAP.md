@@ -126,7 +126,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 ### 6. Corrigir bugs conhecidos
 
-- [ ] Corrigir os limites de dados desatualizados de `90/60` para `3/2` meses.
+- [x] Corrigir os limites de dados desatualizados de `90/60` para `3/2` meses.
 - [ ] Resolver `confirmModal(false)` ao fechar com Escape, backdrop ou botão X.
 - [ ] Unificar o fechamento e a resolução de todos os modais.
 - [ ] Remover a implementação antiga de `handleAuthClick()`.

@@ -302,7 +302,15 @@
   .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid var(--border-strong);
     border-radius: 6px; font-size: 12.5px; background: var(--bg-card); }
   .toolbar input[type=search] { min-width: 220px; }
-  .table-wrap { max-height: 600px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
+  .table-wrap {
+    max-height: 600px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .table-wrap > table { min-width: 720px; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th { background: var(--bg-page); color: var(--text-medium); text-align: left; padding: 8px 10px;
     border-bottom: 2px solid var(--border); position: sticky; top: 0;
@@ -814,6 +822,71 @@ body:not(.is-admin-geral) [data-admin-control],
 .apexcharts-menu-item:hover { background: var(--bg-soft) !important; }
 .apexcharts-toolbar { padding: 4px !important; }
 .apexcharts-toolbar svg { fill: var(--text-soft) !important; }
+
+@media (max-width: 700px) {
+  .page-header {
+    position: static;
+    padding: 8px 8px 0;
+  }
+  .page-body { padding: 0 8px 16px; }
+  .header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .header > img {
+    height: 36px !important;
+    margin-right: 4px !important;
+  }
+  #obraNomeGrande { font-size: 18px !important; }
+  #obraSelector { max-width: 100%; }
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .header-actions #supaBadge,
+  .header-actions #authBadge {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    border-radius: 8px;
+  }
+  .tab {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+  }
+  .kpis { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 12px; }
+  .card h2 {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .card h2 > span { flex-wrap: wrap; }
+  .toolbar { align-items: stretch; }
+  .toolbar input,
+  .toolbar select,
+  .toolbar .ms-wrap {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+  .toolbar input[type=search] { min-width: 0; }
+  .toolbar > span[style*="margin-left:auto"] {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  .classif-bar > .btn-sm { flex: 1 1 180px; }
+}
 
 </style>
 
@@ -3593,33 +3666,6 @@ function updateAuthUI() {
   }
 }
 
-async function handleAuthClick() {
-  if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
-  if (AUTH.user) {
-    // Logout
-    const confirmed = await confirmModal('Sair da conta?', 'Você continuará vendo o dashboard, mas não conseguirá editar.', { confirmText: 'Sair', destructive: false });
-    if (!confirmed) return;
-    const { error } = await SUPA.auth.signOut();
-    if (error) authToast('Erro ao sair: ' + error.message, 'err');
-    // onAuthStateChange cuida do resto
-  } else {
-    // Login com Google (redirect) — marca flag COM timestamp pra saber que é login FRESCO ao voltar
-    try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e){}
-    const { error } = await SUPA.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname,
-        queryParams: { prompt: 'select_account' },
-      }
-    });
-    if (error) {
-      try { sessionStorage.removeItem('jz_fresh_login'); } catch(e){}
-      authToast('Erro no login: ' + error.message, 'err');
-    }
-    // O navegador redireciona pro Google. Ao voltar, onAuthStateChange dispara.
-  }
-}
-
 async function applySession(session, isFreshLogin = false) {
   AUTH.session = session || null;
   AUTH.user = session?.user || null;
@@ -3674,7 +3720,7 @@ async function initAuth() {
   // 2) Ouve mudanças (login, logout, refresh de token)
   SUPA.auth.onAuthStateChange(async (event, session) => {
     console.log('[AUTH] evento:', event);
-    // Detecta login FRESCO: consome flag setada em handleAuthClick antes do redirect.
+    // Detecta login FRESCO: consome a flag criada pelo fluxo de login antes da autenticação.
     // Aceita SIGNED_IN OU INITIAL_SESSION (SDK v2 pode disparar qualquer um após OAuth).
     // Só válido se flag tem <60s (evita toast fantasma em sessão restaurada dias depois).
     let isFreshLogin = false;
@@ -10442,7 +10488,7 @@ updateSupaBadge();
 
 // ============================================================================
 // v0.62 — AUTH MULTI-PROVIDER (Google + Email/Senha + Roles)
-// Substitui: handleAuthClick() e checkEditorPermission()
+// Centraliza: handleAuthClick(), provedores de login e permissões por papel
 // Adiciona: openLoginModal, closeLoginModal, doSignInEmail, doSignUpEmail,
 //           doSignInGoogle, mostrar tela pending
 // ============================================================================
@@ -10554,10 +10600,9 @@ async function doSignUpEmail() {
   // Se auto-confirm estiver desativado, o usuário precisa clicar no link do email.
 }
 
-// -------- OVERRIDE do handleAuthClick original --------
-// (a função abaixo substitui a antiga: se não logado, abre modal em vez de ir direto pro Google)
+// -------- AÇÃO PRINCIPAL DE AUTENTICAÇÃO --------
 
-async function handleAuthClickV062() {
+async function handleAuthClick() {
   if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
   if (AUTH.user) {
     // Logout — mesmo comportamento de antes
@@ -10569,10 +10614,6 @@ async function handleAuthClickV062() {
     // Abrir modal em vez de ir direto pro Google
     openLoginModal('login');
   }
-}
-// Sobrescrever a função global
-if (typeof window !== 'undefined') {
-  window.handleAuthClick = handleAuthClickV062;
 }
 
 </script>

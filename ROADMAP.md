@@ -129,7 +129,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Corrigir os limites de dados desatualizados de `90/60` para `3/2` meses.
 - [x] Resolver `confirmModal(false)` ao fechar com Escape, backdrop ou botão X.
 - [ ] Unificar o fechamento e a resolução de todos os modais.
-- [ ] Remover a implementação antiga de `handleAuthClick()`.
+- [x] Remover a implementação antiga de `handleAuthClick()`.
 - [ ] Corrigir interpretação ambígua de datas brasileiras e americanas.
 - [ ] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
 - [ ] Evitar concorrência no fluxo read-merge-write das classificações.
@@ -138,12 +138,12 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 ### 7. Corrigir responsividade
 
 - [x] Adicionar meta `viewport`.
-- [ ] Adicionar rolagem horizontal aos containers de tabela.
-- [ ] Adaptar header e ações para telas pequenas.
-- [ ] Adaptar abas para mobile sem perda de acesso.
-- [ ] Reorganizar toolbars e filtros em telas estreitas.
-- [ ] Revisar larguras mínimas e fixas de inputs e colunas.
-- [ ] Garantir que o header sticky não esconda conteúdo.
+- [x] Adicionar rolagem horizontal aos containers de tabela.
+- [x] Adaptar header e ações para telas pequenas.
+- [x] Adaptar abas para mobile sem perda de acesso.
+- [x] Reorganizar toolbars e filtros em telas estreitas.
+- [x] Revisar larguras mínimas e fixas de inputs e colunas.
+- [x] Garantir que o header sticky não esconda conteúdo.
 - [ ] Testar em larguras de 320, 375, 768, 1024 e 1440 pixels.
 
 ### 8. Implementar acessibilidade essencial

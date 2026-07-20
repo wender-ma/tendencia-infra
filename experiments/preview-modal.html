@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preview - Modal Projeção Drill-down</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --text: #e2e8f0;
+    --text-soft: #94a3b8;
+    --border: #334155;
+    --sem-erro: #f87171;
+    --sem-ok: #34d399;
+    --sem-alerta: #fbbf24;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 40px; }
+  
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; }
+  .modal { background: var(--bg-card); border-radius: 12px; padding: 24px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; position: relative; }
+  .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--text-soft); font-size: 24px; cursor: pointer; }
+  
+  h2 { font-size: 18px; margin-bottom: 8px; }
+  .meta { color: var(--text-soft); font-size: 13px; margin-bottom: 20px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge.purple { background: #7c3aed20; color: #a78bfa; }
+  
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 700px) { .kpis { grid-template-columns: 1fr; } }
+  
+  .kpi { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+  .kpi-wide { padding: 18px 20px; }
+  .kpi-wide .value { font-size: 24px; }
+  .kpi-wide hr { margin-top: 12px; }
+  
+  .kpi .label { color: var(--text-soft); font-size: 12px; margin-bottom: 6px; }
+  .kpi .value { font-size: 24px; font-weight: 700; }
+  .kpi .sub { color: var(--text-soft); font-size: 12px; margin-top: 4px; }
+  .kpi.red { border-color: var(--sem-erro); }
+  .kpi.red .value { color: var(--sem-erro); }
+  .kpi.green { border-color: var(--sem-ok); }
+  .kpi.green .value { color: var(--sem-ok); }
+  .kpi.purple { border-color: #a78bfa; }
+  .kpi.purple .value { color: #a78bfa; }
+  
+  .border-top-soft { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
+  .section-label { color: var(--text-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value-md { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  
+  h3 { font-size: 13px; margin-bottom: 8px; }
+  .chart-placeholder { background: var(--bg); border: 1px dashed var(--border); border-radius: 8px; height: 300px; display: flex; align-items: center; justify-content: center; color: var(--text-soft); }
+</style>
+</head>
+<body>
+
+<div class="modal-bg">
+  <div class="modal">
+    <button class="modal-close">×</button>
+    
+    <h2>🔮 Projeção · SERV001 · I011890</h2>
+    <div class="meta">Cimento CP-II 50kg · Grupo: <strong>MATERIAIS</strong> <span class="badge purple">extrapola</span></div>
+    
+    <!-- KPIs em 2 cards largos -->
+    <div class="kpis kpi-2col" style="margin-bottom:14px;">
+      <!-- Card 1: Planejado vs Realizado -->
+      <div class="kpi kpi-wide">
+        <div class="label">📊 Planejado vs Realizado</div>
+        <div class="value">R$ 1.250.000</div>
+        <div class="sub">Planejado Total · até Dez/2026</div>
+        <hr class="border-top-soft" style="margin:10px 0;">
+        <div>
+          <div class="section-label">Realizado (até Jul/2026)</div>
+          <div class="kpi-value-md" style="margin-top:4px;">R$ 875.000</div>
+        </div>
+      </div>
+      
+      <!-- Card 2: Extrapolação + Tendência Final -->
+      <div class="kpi kpi-wide red">
+        <div class="label">🔮 Extrapolação</div>
+        <div class="value">+R$ 180.000</div>
+        <div class="sub">6 meses × R$30.000/m</div>
+        <hr class="border-top-soft" style="margin:10px 0;">
+        <div>
+          <div class="section-label">Tendência Final</div>
+          <div class="kpi-value-md" style="margin-top:4px;">R$ 1.430.000</div>
+          <div class="sub">Δ +R$ 180.000</div>
+        </div>
+      </div>
+    </div>
+    
+    <h3 style="font-size:13px; margin-bottom:8px;">📈 Curva S individual</h3>
+    <div class="chart-placeholder">[Gráfico ApexCharts aqui]</div>
+    
+  </div>
+</div>
+
+</body>
+</html>

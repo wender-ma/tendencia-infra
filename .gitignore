@@ -1,0 +1,6 @@
+.mimocode/
+.mimocode/node_modules/
+.mimocode/.cron-lock
+/*.bak
+backups/snapshots/
+backups/backup.log

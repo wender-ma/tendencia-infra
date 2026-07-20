@@ -4827,7 +4827,16 @@ function renderFlowMini(f, isOrigem=false) {
     </div>`;
 }
 
-function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
+let MODAL_CLOSE_RESOLVER = null;
+
+function closeModal(result = false) {
+  document.getElementById('modalBg').classList.remove('show');
+  if (MODAL_CLOSE_RESOLVER) {
+    const resolve = MODAL_CLOSE_RESOLVER;
+    MODAL_CLOSE_RESOLVER = null;
+    resolve(result);
+  }
+}
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 // Event delegation para ações dentro de modais (saveManualForm, editMov, deleteMov, saveMovForm)
@@ -4848,6 +4857,7 @@ function confirmModal(titulo, mensagem, opts) {
   const requireText = opts.requireText || null; // texto que o usuário deve digitar para habilitar OK
 
   return new Promise(function(resolve) {
+    MODAL_CLOSE_RESOLVER = resolve;
     const confirmBtnStyle = isDestructive
       ? 'background:var(--sem-erro); color:white; border:1px solid var(--sem-erro);'
       : 'background:var(--fgr-red-dark); color:white; border:1px solid var(--fgr-red-dark);';
@@ -4880,12 +4890,12 @@ function confirmModal(titulo, mensagem, opts) {
       });
       okBtn.onclick = () => {
         if (reqInput.value.trim() !== requireText) return;
-        closeModal(); resolve(true);
+        closeModal(true);
       };
     } else {
-      okBtn.onclick = function() { closeModal(); resolve(true); };
+      okBtn.onclick = function() { closeModal(true); };
     }
-    cancelBtn.onclick = function() { closeModal(); resolve(false); };
+    cancelBtn.onclick = function() { closeModal(false); };
     document.getElementById('modalBg').classList.add('show');
   });
 }

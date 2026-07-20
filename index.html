@@ -6921,7 +6921,8 @@ async function _renderUploadsHistoryList(kind) {
       <tbody>
         ${list.map(r => {
           const isAtivo = !!r.is_active;
-          const canDownload = !!r.storage_path && AUTH && AUTH.user;
+          const canDownload = !!r.storage_path && AUTH && AUTH.user
+            && (isGlobal ? isAdminGeral() : isEditor);
           const canReativar = canManage && !isAtivo && !!r.storage_path;
           const canExcluir = canManage && !isAtivo; // BLOQUEADO se ativo
           const btnDownload = canDownload

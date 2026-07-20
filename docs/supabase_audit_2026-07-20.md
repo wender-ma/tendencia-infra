@@ -42,26 +42,26 @@ As tabelas operacionais também possuem linhas visíveis anonimamente. O fronten
 
 ## Limitações
 
-- O endpoint OpenAPI completo exige uma chave `service_role`.
-- A auditoria pública não revela tipos, constraints, índices, triggers, funções ou políticas RLS.
+- Esta primeira auditoria usou somente a API pública e não revelou tipos, constraints, índices, triggers, funções ou políticas RLS. Esses itens foram analisados depois no baseline administrativo versionado.
 - Não foram realizados testes anônimos de escrita para evitar qualquer mutação no banco.
-- As políticas do bucket `uploads-history` ainda precisam ser exportadas e revisadas.
+- Nenhuma alteração foi aplicada ao banco remoto.
+
+Veja `supabase_security_baseline_2026-07-20.md` para a segunda fase da auditoria.
 
 ## Próximas ações
 
-1. Exportar schema, policies, grants, triggers e views do ambiente implantado.
-2. Criar um projeto Supabase separado para testes.
-3. Revisar o rascunho de RLS em `supabase/drafts/` contra o dump real.
-4. Aplicar primeiro no ambiente de teste.
-5. Testar como anônimo, pendente, editor de outra obra, editor da obra e administrador.
-6. Aplicar em produção somente com backup e plano de rollback.
+1. Criar um projeto Supabase separado para testes.
+2. Aplicar a migration incremental primeiro no ambiente de teste.
+3. Testar como anônimo, pendente, editor de outra obra, editor da obra e administrador.
+4. Executar o auditor com o perfil `hardened`.
+5. Aplicar em produção somente com backup e plano de rollback.
 
 ## Reprodução
 
 Execute:
 
 ```bash
-./scripts/audit_supabase_contract.sh
+./scripts/audit_supabase_contract.sh baseline
 ```
 
 O script valida apenas o contrato esperado e contagens anônimas; ele não baixa registros.

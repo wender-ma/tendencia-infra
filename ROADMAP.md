@@ -40,22 +40,28 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 
 > Auditoria pública em 20/07/2026: todas as tabelas/colunas esperadas foram confirmadas com `limit=0`, mas a role anônima consegue contabilizar linhas em `editores_permitidos`, `upload_history` e tabelas operacionais. Nenhum registro foi baixado. Evidências em `docs/supabase_audit_2026-07-20.md`.
 
-- [ ] Exportar e revisar o schema realmente implantado no Supabase.
-- [ ] Comparar o schema implantado com `docs/supabase_schema.sql`.
+> Baseline administrativo recebido e revisado em 20/07/2026: 11 relações com RLS, 24 policies, 231 grants, 25 índices, 21 constraints, quatro funções e um trigger. O JSON sem valores de negócio foi versionado em `docs/supabase_metadata_2026-07-20.json`; conclusões em `docs/supabase_security_baseline_2026-07-20.md`.
+
+- [x] Exportar e revisar os metadados do schema realmente implantado no Supabase.
+- [x] Comparar o schema implantado com `docs/supabase_schema.sql`.
 - [x] Validar o contrato público de tabelas e colunas esperado pelo frontend (implementado em `1cb9096`).
 - [x] Criar auditor somente leitura e inventário para o SQL Editor (implementado em `1cb9096`).
 - [x] Criar diretório `supabase/migrations/` e separar rascunhos não executáveis (implementado em `1cb9096`).
-- [ ] Promover o rascunho de RLS para migration após comparar com o dump real.
-- [ ] Versionar as tabelas `obras`, `editores_permitidos` e `upload_history`.
-- [ ] Versionar todos os campos `codigo_obra` esperados pelo frontend.
+- [x] Promover o rascunho de RLS para migration após comparar com o baseline real.
+- [x] Versionar as tabelas `obras`, `editores_permitidos` e `upload_history` no baseline de metadados.
+- [x] Versionar todos os campos `codigo_obra` esperados pelo frontend no baseline de metadados.
+- [x] Criar rollback emergencial que restaura o baseline auditado.
+- [x] Testar migration e rollback em PostgreSQL descartável com asserções por papel e obra.
+- [ ] Aplicar a migration primeiro em um projeto Supabase de desenvolvimento.
 - [ ] Remover políticas `anon_all_*` permissivas.
-- [ ] Criar políticas RLS separadas para leitura, inserção, atualização e exclusão.
-- [ ] Restringir administradores pelo papel `admin` ativo.
-- [ ] Restringir editores às obras atribuídas em `editores_permitidos`.
-- [ ] Revisar as políticas do bucket privado `uploads-history`.
+- [x] Criar na migration políticas RLS separadas para leitura, inserção, atualização e exclusão.
+- [x] Restringir na migration administradores pelo papel `admin` ativo.
+- [x] Restringir na migration editores às obras atribuídas em `editores_permitidos`.
+- [x] Revisar e endurecer na migration as políticas do bucket privado `uploads-history`.
 - [ ] Confirmar se visualização anônima de dados é permitida pelo negócio.
 - [ ] Auditar logs e dados para identificar alterações indevidas anteriores.
 - [ ] Testar a API diretamente como anônimo, usuário pendente, editor e administrador.
+- [ ] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
 
 Critério de conclusão: chamadas anônimas de escrita, operações administrativas por não administradores e alterações em obras não atribuídas são rejeitadas pelo banco.
 
@@ -259,7 +265,8 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | --- | --- | --- | --- |
 | 20/07/2026 | Priorizar auditoria do Supabase antes das mudanças visuais | Segurança e integridade dos dados dependem da camada de banco | A definir |
 | 20/07/2026 | Reservar uploads de Flows, Gestões e Excel completo para administradores | Esses arquivos alteram conjuntos globais ou multiobra | A definir |
-| 20/07/2026 | Tratar o dashboard como interno no rascunho de RLS | É o perfil mais seguro até o negócio aprovar explicitamente leitura pública | A definir |
+| 20/07/2026 | Planejar o dashboard como interno no primeiro rascunho de RLS | É o perfil mais seguro até o negócio aprovar explicitamente leitura pública | A definir |
+| 20/07/2026 | Preservar temporariamente a leitura pública apenas das tabelas operacionais | Evita mudar o produto sem decisão do negócio; whitelist, histórico e arquivos passam a exigir autenticação | A definir |
 
 ## Histórico de progresso
 
@@ -268,3 +275,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Roadmap inicial criado a partir da revisão técnica do `index.html` | `1cb9096` |
 | 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade | `1cb9096` |
 | 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |
+| 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados | `supabase/migrations/20260720172000_rls_hardening.sql` |

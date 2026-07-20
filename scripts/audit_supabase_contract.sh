@@ -3,6 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INDEX_FILE="$ROOT_DIR/index.html"
+PROFILE="${1:-baseline}"
+
+if [[ "$PROFILE" != "baseline" && "$PROFILE" != "hardened" ]]; then
+  echo "Uso: $0 [baseline|hardened]" >&2
+  exit 2
+fi
 
 SUPA_URL="$(sed -n "s/^const SUPA_URL = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
 SUPA_KEY="$(sed -n "s/^const SUPA_KEY = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
@@ -31,6 +37,7 @@ trap 'rm -f "$TMP_BODY" "$TMP_HEADERS"' EXIT
 failures=0
 echo "Auditoria publica do contrato Supabase (GET com limit=0)"
 echo "Projeto: ${SUPA_URL#https://}"
+echo "Perfil esperado: $PROFILE"
 echo
 
 for contract in "${CONTRACTS[@]}"; do
@@ -48,7 +55,19 @@ for contract in "${CONTRACTS[@]}"; do
     -w '%{http_code}' \
     "$SUPA_URL/rest/v1/$table")"
 
-  if [[ "$status" == "200" || "$status" == "206" ]]; then
+  sensitive=false
+  case "$table" in
+    editores_permitidos|upload_history|upload_history_latest) sensitive=true ;;
+  esac
+
+  if [[ "$PROFILE" == "hardened" && "$sensitive" == true ]]; then
+    if [[ "$status" == "401" || "$status" == "403" ]]; then
+      printf 'OK   %-30s acesso anonimo bloqueado (HTTP %s)\n' "$table" "$status"
+    else
+      printf 'ERRO %-30s deveria bloquear anonimo; recebeu HTTP %s\n' "$table" "$status"
+      failures=$((failures + 1))
+    fi
+  elif [[ "$status" == "200" || "$status" == "206" ]]; then
     visible_rows="$(sed -n 's/^content-range: .*\/\([0-9][0-9]*\)\r$/\1/p' "$TMP_HEADERS" | tail -n 1)"
     visible_rows="${visible_rows:-desconhecido}"
     printf 'OK   %-30s %2s colunas; linhas anonimas visiveis: %s\n' \
@@ -67,4 +86,8 @@ if (( failures > 0 )); then
   exit 1
 fi
 
-echo "Resultado: todos os contratos esperados foram encontrados."
+if [[ "$PROFILE" == "hardened" ]]; then
+  echo "Resultado: perfil endurecido confirmado para acessos anonimos."
+else
+  echo "Resultado: baseline publico confirmado."
+fi

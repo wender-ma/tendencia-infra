@@ -13,6 +13,7 @@ Dashboard de tendência orçamentária
 ├── docs/                   # Documentação e scripts de banco de dados
 ├── experiments/            # Protótipos e telas isoladas
 ├── scripts/                 # Scripts auxiliares do projeto
+├── supabase/                # Auditoria, migrations, rollback e testes SQL
 ├── ROADMAP.md               # Prioridades e acompanhamento das melhorias
 └── README.md
 ```
@@ -22,13 +23,28 @@ Dashboard de tendência orçamentária
 - `index.html`: arquivo principal do dashboard.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
+- `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
+- `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
 - `experiments/preview-modal.html`: protótipo isolado do modal.
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
-- `scripts/audit_supabase_contract.sh`: valida tabelas, colunas e contagens anônimas com `limit=0`.
+- `scripts/audit_supabase_contract.sh`: valida o contrato anônimo nos perfis `baseline` e `hardened`.
+- `scripts/test_rls_migration.sh`: aplica migration, valida regras e testa o rollback em PostgreSQL descartável.
 - `supabase/audit/`: consultas somente leitura para inventariar o ambiente implantado, incluindo exportação em um único JSON.
 - `supabase/drafts/`: SQL em revisão que não deve ser aplicado diretamente.
-- `supabase/migrations/`: migrations aprovadas e testadas; atualmente sem migration executável.
+- `supabase/migrations/`: migrations incrementais revisadas e testadas localmente.
+- `supabase/rollback/`: recuperação emergencial correspondente às migrations.
+- `supabase/tests/`: fixture e asserções SQL de segurança.
+
+## Validação de RLS
+
+Com Docker disponível, execute:
+
+```bash
+./scripts/test_rls_migration.sh
+```
+
+O teste sobe um PostgreSQL temporário, recria o baseline auditado, aplica a migration, valida policies e permissões, executa o rollback e confirma a restauração. Nenhum banco remoto é alterado.
 
 ## Backup frequente
 

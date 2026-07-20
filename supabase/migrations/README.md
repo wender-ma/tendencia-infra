@@ -1,10 +1,26 @@
 # Migrations do Supabase
 
-Este diretório receberá apenas migrations revisadas e testadas contra um ambiente Supabase de desenvolvimento.
+Este diretório contém apenas migrations incrementais revisadas. A migration `20260720172000_rls_hardening.sql` foi comparada com o baseline administrativo de 20/07/2026 e validada localmente em PostgreSQL 15.
 
-Ainda não há migration executável aqui porque o dump completo do ambiente implantado não está disponível. O contrato público confirma tabelas e colunas, mas não revela tipos, constraints, triggers, grants ou policies existentes.
+O baseline versionado em `../../docs/supabase_metadata_2026-07-20.json` inclui relações, colunas, tipos, constraints, índices, grants, policies, funções, trigger, view e bucket. Ele não contém linhas das tabelas nem credenciais.
 
 Rascunhos que não devem ser aplicados ficam em `../drafts/`.
+
+## Estado da migration de RLS
+
+- Revisão contra o baseline administrativo: concluída.
+- Teste local de aplicação: concluído.
+- Teste local do rollback: concluído.
+- Aplicação em Supabase de desenvolvimento: pendente.
+- Aplicação em produção: pendente.
+
+Teste local reproduzível:
+
+```bash
+./scripts/test_rls_migration.sh
+```
+
+Rollback emergencial correspondente: `../rollback/20260720172000_rls_hardening_rollback.sql`.
 
 ## Fluxo obrigatório
 

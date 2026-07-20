@@ -1,0 +1,3492 @@
+{
+    "rls": [
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "dashboard_config",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "editores_permitidos",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "flow_classifications",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "flow_manuals",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "obras",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "projecao_config",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "projecao_movimentacoes",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "upload_history",
+            "rls_enabled": true,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "v",
+            "rls_forced": false,
+            "table_name": "upload_history_latest",
+            "rls_enabled": false,
+            "table_schema": "public"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "buckets",
+            "rls_enabled": true,
+            "table_schema": "storage"
+        },
+        {
+            "relkind": "r",
+            "rls_forced": false,
+            "table_name": "objects",
+            "rls_enabled": true,
+            "table_schema": "storage"
+        }
+    ],
+    "views": [
+        {
+            "viewname": "upload_history_latest",
+            "viewowner": "postgres",
+            "definition": " SELECT id,\n    codigo_obra,\n    tipo,\n    nome_arquivo,\n    tamanho_bytes,\n    linhas,\n    enviado_por,\n    enviado_em,\n    storage_path,\n    upload_group_id,\n    is_active\n   FROM upload_history\n  WHERE (is_active = true);",
+            "schemaname": "public"
+        }
+    ],
+    "grants": [
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "dashboard_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "editores_permitidos",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_classifications",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "flow_manuals",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "obras",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_config",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "projecao_movimentacoes",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "upload_history_latest",
+            "is_grantable": "NO",
+            "table_schema": "public",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "buckets",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "anon",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "authenticated",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "UPDATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "DELETE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "INSERT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "REFERENCES"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "SELECT"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRIGGER"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "TRUNCATE"
+        },
+        {
+            "grantee": "service_role",
+            "table_name": "objects",
+            "is_grantable": "NO",
+            "table_schema": "storage",
+            "privilege_type": "UPDATE"
+        }
+    ],
+    "buckets": [
+        {
+            "id": "uploads-history",
+            "name": "uploads-history",
+            "public": false,
+            "file_size_limit": null,
+            "allowed_mime_types": null
+        }
+    ],
+    "columns": [
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "dashboard_config",
+            "column_name": "chave",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "dashboard_config",
+            "column_name": "valor",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "dashboard_config",
+            "column_name": "updated_at",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "email",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "nome",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "editores_permitidos",
+            "column_name": "adicionado_em",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "observacao",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "codigo_obra",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "role",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "'editor'::text",
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "status",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "'active'::text",
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "editores_permitidos",
+            "column_name": "aprovado_em",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "editores_permitidos",
+            "column_name": "aprovado_por",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_classifications",
+            "column_name": "n_alteracao",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_classifications",
+            "column_name": "insumo_planejamento",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_classifications",
+            "column_name": "insumo_remanejamento",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "table_name": "flow_classifications",
+            "column_name": "custo_flowmaster",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_classifications",
+            "column_name": "refletido_status",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "flow_classifications",
+            "column_name": "updated_at",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_classifications",
+            "column_name": "updated_by",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_classifications",
+            "column_name": "codigo_obra",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "n_alteracao",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "n_adt",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "dep",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "descricao",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "data_br",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "data",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "aprovador_dep",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "aprovador",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "solicitante_dep",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "solicitante",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 10
+        },
+        {
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "table_name": "flow_manuals",
+            "column_name": "custo_flowmaster",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 11
+        },
+        {
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "table_name": "flow_manuals",
+            "column_name": "custo_planejamento",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 12
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "motivo",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 13
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "justificativa",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 14
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "insumo_planejamento",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 15
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "insumo_remanejamento",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 16
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "obs",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 17
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "flow_manuals",
+            "column_name": "created_at",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 18
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "created_by",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 19
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "flow_manuals",
+            "column_name": "codigo_obra",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 20
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "obras",
+            "column_name": "codigo_obra",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "obras",
+            "column_name": "nome",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "obras",
+            "column_name": "key_empobratd",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "obras",
+            "column_name": "ativa",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "true",
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "obras",
+            "column_name": "criada_em",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "obras",
+            "column_name": "observacao",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "obras",
+            "column_name": "origem",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "'manual'::text",
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_config",
+            "column_name": "insumo_controlado",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "'I011890'::text",
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "table_name": "projecao_config",
+            "column_name": "saldo_inicial",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_config",
+            "column_name": "data_ref",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "projecao_config",
+            "column_name": "updated_at",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_config",
+            "column_name": "codigo_obra",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "projecao_config",
+            "column_name": "locked_saldo",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "false",
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "projecao_config",
+            "column_name": "locked_data",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "false",
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "projecao_config",
+            "column_name": "locked_insumo",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "false",
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "id",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "tipo",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "data",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "data_br",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "origem",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "destino",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "descricao",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "justificativa",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "responsavel",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "numeric",
+            "data_type": "numeric",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "valor",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 10
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "created_at",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 11
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "created_by",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 12
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "projecao_movimentacoes",
+            "column_name": "codigo_obra",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 13
+        },
+        {
+            "udt_name": "int8",
+            "data_type": "bigint",
+            "table_name": "upload_history",
+            "column_name": "id",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": "nextval('upload_history_id_seq'::regclass)",
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history",
+            "column_name": "tipo",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history",
+            "column_name": "nome_arquivo",
+            "is_nullable": "NO",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "int8",
+            "data_type": "bigint",
+            "table_name": "upload_history",
+            "column_name": "tamanho_bytes",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "int4",
+            "data_type": "integer",
+            "table_name": "upload_history",
+            "column_name": "linhas",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history",
+            "column_name": "enviado_por",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "upload_history",
+            "column_name": "enviado_em",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "now()",
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history",
+            "column_name": "observacao",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history",
+            "column_name": "storage_path",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "table_name": "upload_history",
+            "column_name": "upload_group_id",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 10
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history",
+            "column_name": "codigo_obra",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 11
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "upload_history",
+            "column_name": "is_active",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": "false",
+            "ordinal_position": 12
+        },
+        {
+            "udt_name": "int8",
+            "data_type": "bigint",
+            "table_name": "upload_history_latest",
+            "column_name": "id",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history_latest",
+            "column_name": "codigo_obra",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history_latest",
+            "column_name": "tipo",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history_latest",
+            "column_name": "nome_arquivo",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "int8",
+            "data_type": "bigint",
+            "table_name": "upload_history_latest",
+            "column_name": "tamanho_bytes",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "int4",
+            "data_type": "integer",
+            "table_name": "upload_history_latest",
+            "column_name": "linhas",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history_latest",
+            "column_name": "enviado_por",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "upload_history_latest",
+            "column_name": "enviado_em",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "upload_history_latest",
+            "column_name": "storage_path",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "table_name": "upload_history_latest",
+            "column_name": "upload_group_id",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 10
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "upload_history_latest",
+            "column_name": "is_active",
+            "is_nullable": "YES",
+            "table_schema": "public",
+            "column_default": null,
+            "ordinal_position": 11
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "buckets",
+            "column_name": "id",
+            "is_nullable": "NO",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "buckets",
+            "column_name": "name",
+            "is_nullable": "NO",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "table_name": "buckets",
+            "column_name": "owner",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "buckets",
+            "column_name": "created_at",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "now()",
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "buckets",
+            "column_name": "updated_at",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "now()",
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "buckets",
+            "column_name": "public",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "false",
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "bool",
+            "data_type": "boolean",
+            "table_name": "buckets",
+            "column_name": "avif_autodetection",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "false",
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "int8",
+            "data_type": "bigint",
+            "table_name": "buckets",
+            "column_name": "file_size_limit",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "_text",
+            "data_type": "ARRAY",
+            "table_name": "buckets",
+            "column_name": "allowed_mime_types",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "buckets",
+            "column_name": "owner_id",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 10
+        },
+        {
+            "udt_name": "buckettype",
+            "data_type": "USER-DEFINED",
+            "table_name": "buckets",
+            "column_name": "type",
+            "is_nullable": "NO",
+            "table_schema": "storage",
+            "column_default": "'STANDARD'::storage.buckettype",
+            "ordinal_position": 11
+        },
+        {
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "table_name": "objects",
+            "column_name": "id",
+            "is_nullable": "NO",
+            "table_schema": "storage",
+            "column_default": "gen_random_uuid()",
+            "ordinal_position": 1
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "objects",
+            "column_name": "bucket_id",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 2
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "objects",
+            "column_name": "name",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 3
+        },
+        {
+            "udt_name": "uuid",
+            "data_type": "uuid",
+            "table_name": "objects",
+            "column_name": "owner",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 4
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "objects",
+            "column_name": "created_at",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "now()",
+            "ordinal_position": 5
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "objects",
+            "column_name": "updated_at",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "now()",
+            "ordinal_position": 6
+        },
+        {
+            "udt_name": "timestamptz",
+            "data_type": "timestamp with time zone",
+            "table_name": "objects",
+            "column_name": "last_accessed_at",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": "now()",
+            "ordinal_position": 7
+        },
+        {
+            "udt_name": "jsonb",
+            "data_type": "jsonb",
+            "table_name": "objects",
+            "column_name": "metadata",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 8
+        },
+        {
+            "udt_name": "_text",
+            "data_type": "ARRAY",
+            "table_name": "objects",
+            "column_name": "path_tokens",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 9
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "objects",
+            "column_name": "version",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 10
+        },
+        {
+            "udt_name": "text",
+            "data_type": "text",
+            "table_name": "objects",
+            "column_name": "owner_id",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 11
+        },
+        {
+            "udt_name": "jsonb",
+            "data_type": "jsonb",
+            "table_name": "objects",
+            "column_name": "user_metadata",
+            "is_nullable": "YES",
+            "table_schema": "storage",
+            "column_default": null,
+            "ordinal_position": 12
+        }
+    ],
+    "indexes": [
+        {
+            "indexdef": "CREATE UNIQUE INDEX dashboard_config_pkey ON public.dashboard_config USING btree (chave)",
+            "indexname": "dashboard_config_pkey",
+            "tablename": "dashboard_config",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX editores_email_obra_unique ON public.editores_permitidos USING btree (email, COALESCE(codigo_obra, '__ADMIN_GERAL__'::text))",
+            "indexname": "editores_email_obra_unique",
+            "tablename": "editores_permitidos",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_editores_codigo_obra ON public.editores_permitidos USING btree (codigo_obra)",
+            "indexname": "idx_editores_codigo_obra",
+            "tablename": "editores_permitidos",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX flow_classifications_pkey ON public.flow_classifications USING btree (codigo_obra, n_alteracao)",
+            "indexname": "flow_classifications_pkey",
+            "tablename": "flow_classifications",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_flow_class_status ON public.flow_classifications USING btree (refletido_status)",
+            "indexname": "idx_flow_class_status",
+            "tablename": "flow_classifications",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX flow_manuals_pkey ON public.flow_manuals USING btree (codigo_obra, n_alteracao)",
+            "indexname": "flow_manuals_pkey",
+            "tablename": "flow_manuals",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX obras_pkey ON public.obras USING btree (codigo_obra)",
+            "indexname": "obras_pkey",
+            "tablename": "obras",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX projecao_config_pkey ON public.projecao_config USING btree (codigo_obra)",
+            "indexname": "projecao_config_pkey",
+            "tablename": "projecao_config",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_projecao_mov_data ON public.projecao_movimentacoes USING btree (data)",
+            "indexname": "idx_projecao_mov_data",
+            "tablename": "projecao_movimentacoes",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_projecao_mov_destino ON public.projecao_movimentacoes USING btree (destino)",
+            "indexname": "idx_projecao_mov_destino",
+            "tablename": "projecao_movimentacoes",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_projecao_mov_origem ON public.projecao_movimentacoes USING btree (origem)",
+            "indexname": "idx_projecao_mov_origem",
+            "tablename": "projecao_movimentacoes",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_projecao_movs_obra ON public.projecao_movimentacoes USING btree (codigo_obra)",
+            "indexname": "idx_projecao_movs_obra",
+            "tablename": "projecao_movimentacoes",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX projecao_movimentacoes_pkey ON public.projecao_movimentacoes USING btree (id)",
+            "indexname": "projecao_movimentacoes_pkey",
+            "tablename": "projecao_movimentacoes",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_upload_history_ativo ON public.upload_history USING btree (codigo_obra, tipo, is_active) WHERE (is_active = true)",
+            "indexname": "idx_upload_history_ativo",
+            "tablename": "upload_history",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_upload_history_group ON public.upload_history USING btree (upload_group_id) WHERE (upload_group_id IS NOT NULL)",
+            "indexname": "idx_upload_history_group",
+            "tablename": "upload_history",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_upload_history_obra_tipo ON public.upload_history USING btree (codigo_obra, tipo, enviado_em DESC)",
+            "indexname": "idx_upload_history_obra_tipo",
+            "tablename": "upload_history",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_upload_history_tipo_data ON public.upload_history USING btree (tipo, enviado_em DESC)",
+            "indexname": "idx_upload_history_tipo_data",
+            "tablename": "upload_history",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX upload_history_pkey ON public.upload_history USING btree (id)",
+            "indexname": "upload_history_pkey",
+            "tablename": "upload_history",
+            "schemaname": "public"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX bname ON storage.buckets USING btree (name)",
+            "indexname": "bname",
+            "tablename": "buckets",
+            "schemaname": "storage"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX buckets_pkey ON storage.buckets USING btree (id)",
+            "indexname": "buckets_pkey",
+            "tablename": "buckets",
+            "schemaname": "storage"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX bucketid_objname ON storage.objects USING btree (bucket_id, name)",
+            "indexname": "bucketid_objname",
+            "tablename": "objects",
+            "schemaname": "storage"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_objects_bucket_id_name ON storage.objects USING btree (bucket_id, name COLLATE \"C\")",
+            "indexname": "idx_objects_bucket_id_name",
+            "tablename": "objects",
+            "schemaname": "storage"
+        },
+        {
+            "indexdef": "CREATE INDEX idx_objects_bucket_id_name_lower ON storage.objects USING btree (bucket_id, lower(name) COLLATE \"C\")",
+            "indexname": "idx_objects_bucket_id_name_lower",
+            "tablename": "objects",
+            "schemaname": "storage"
+        },
+        {
+            "indexdef": "CREATE INDEX name_prefix_search ON storage.objects USING btree (name text_pattern_ops)",
+            "indexname": "name_prefix_search",
+            "tablename": "objects",
+            "schemaname": "storage"
+        },
+        {
+            "indexdef": "CREATE UNIQUE INDEX objects_pkey ON storage.objects USING btree (id)",
+            "indexname": "objects_pkey",
+            "tablename": "objects",
+            "schemaname": "storage"
+        }
+    ],
+    "database": "postgres",
+    "policies": [
+        {
+            "cmd": "ALL",
+            "qual": "public.is_editor()",
+            "roles": [
+                "public"
+            ],
+            "tablename": "dashboard_config",
+            "permissive": "PERMISSIVE",
+            "policyname": "escrita whitelist",
+            "schemaname": "public",
+            "with_check": "public.is_editor()"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "dashboard_config",
+            "permissive": "PERMISSIVE",
+            "policyname": "leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "DELETE",
+            "qual": "is_admin()",
+            "roles": [
+                "public"
+            ],
+            "tablename": "editores_permitidos",
+            "permissive": "PERMISSIVE",
+            "policyname": "editores delete admin",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": [
+                "public"
+            ],
+            "tablename": "editores_permitidos",
+            "permissive": "PERMISSIVE",
+            "policyname": "editores insert admin",
+            "schemaname": "public",
+            "with_check": "is_admin()"
+        },
+        {
+            "cmd": "UPDATE",
+            "qual": "is_admin()",
+            "roles": [
+                "public"
+            ],
+            "tablename": "editores_permitidos",
+            "permissive": "PERMISSIVE",
+            "policyname": "editores update admin",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "editores_permitidos",
+            "permissive": "PERMISSIVE",
+            "policyname": "whitelist leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "ALL",
+            "qual": "is_editor(codigo_obra)",
+            "roles": [
+                "public"
+            ],
+            "tablename": "flow_classifications",
+            "permissive": "PERMISSIVE",
+            "policyname": "escrita whitelist",
+            "schemaname": "public",
+            "with_check": "is_editor(codigo_obra)"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "flow_classifications",
+            "permissive": "PERMISSIVE",
+            "policyname": "leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "ALL",
+            "qual": "is_editor(codigo_obra)",
+            "roles": [
+                "public"
+            ],
+            "tablename": "flow_manuals",
+            "permissive": "PERMISSIVE",
+            "policyname": "escrita whitelist",
+            "schemaname": "public",
+            "with_check": "is_editor(codigo_obra)"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "flow_manuals",
+            "permissive": "PERMISSIVE",
+            "policyname": "leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "DELETE",
+            "qual": "(is_admin() AND (origem = 'manual'::text))",
+            "roles": [
+                "public"
+            ],
+            "tablename": "obras",
+            "permissive": "PERMISSIVE",
+            "policyname": "obras delete admin",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": [
+                "public"
+            ],
+            "tablename": "obras",
+            "permissive": "PERMISSIVE",
+            "policyname": "obras insert admin",
+            "schemaname": "public",
+            "with_check": "is_admin()"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "obras",
+            "permissive": "PERMISSIVE",
+            "policyname": "obras leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "UPDATE",
+            "qual": "is_admin()",
+            "roles": [
+                "public"
+            ],
+            "tablename": "obras",
+            "permissive": "PERMISSIVE",
+            "policyname": "obras update admin",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "ALL",
+            "qual": "is_editor(codigo_obra)",
+            "roles": [
+                "public"
+            ],
+            "tablename": "projecao_config",
+            "permissive": "PERMISSIVE",
+            "policyname": "escrita whitelist",
+            "schemaname": "public",
+            "with_check": "is_editor(codigo_obra)"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "projecao_config",
+            "permissive": "PERMISSIVE",
+            "policyname": "leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "ALL",
+            "qual": "is_editor(codigo_obra)",
+            "roles": [
+                "public"
+            ],
+            "tablename": "projecao_movimentacoes",
+            "permissive": "PERMISSIVE",
+            "policyname": "escrita whitelist",
+            "schemaname": "public",
+            "with_check": "is_editor(codigo_obra)"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "projecao_movimentacoes",
+            "permissive": "PERMISSIVE",
+            "policyname": "leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "ALL",
+            "qual": "is_editor(codigo_obra)",
+            "roles": [
+                "public"
+            ],
+            "tablename": "upload_history",
+            "permissive": "PERMISSIVE",
+            "policyname": "escrita whitelist",
+            "schemaname": "public",
+            "with_check": "is_editor(codigo_obra)"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "true",
+            "roles": [
+                "public"
+            ],
+            "tablename": "upload_history",
+            "permissive": "PERMISSIVE",
+            "policyname": "leitura pública",
+            "schemaname": "public",
+            "with_check": null
+        },
+        {
+            "cmd": "DELETE",
+            "qual": "((bucket_id = 'uploads-history'::text) AND public.is_editor())",
+            "roles": [
+                "public"
+            ],
+            "tablename": "objects",
+            "permissive": "PERMISSIVE",
+            "policyname": "uploads-history delete editor",
+            "schemaname": "storage",
+            "with_check": null
+        },
+        {
+            "cmd": "INSERT",
+            "qual": null,
+            "roles": [
+                "public"
+            ],
+            "tablename": "objects",
+            "permissive": "PERMISSIVE",
+            "policyname": "uploads-history insert editor",
+            "schemaname": "storage",
+            "with_check": "((bucket_id = 'uploads-history'::text) AND public.is_editor())"
+        },
+        {
+            "cmd": "SELECT",
+            "qual": "((bucket_id = 'uploads-history'::text) AND (auth.role() = 'authenticated'::text))",
+            "roles": [
+                "public"
+            ],
+            "tablename": "objects",
+            "permissive": "PERMISSIVE",
+            "policyname": "uploads-history read logado",
+            "schemaname": "storage",
+            "with_check": null
+        },
+        {
+            "cmd": "UPDATE",
+            "qual": "((bucket_id = 'uploads-history'::text) AND public.is_editor())",
+            "roles": [
+                "public"
+            ],
+            "tablename": "objects",
+            "permissive": "PERMISSIVE",
+            "policyname": "uploads-history update editor",
+            "schemaname": "storage",
+            "with_check": null
+        }
+    ],
+    "triggers": [
+        {
+            "trigger_name": "on_auth_user_created",
+            "action_timing": "AFTER",
+            "action_statement": "EXECUTE FUNCTION handle_new_user()",
+            "event_manipulation": "INSERT",
+            "event_object_table": "users",
+            "event_object_schema": "auth"
+        }
+    ],
+    "functions": [
+        {
+            "arguments": "",
+            "volatility": "v",
+            "function_name": "handle_new_user",
+            "function_schema": "public",
+            "security_definer": true
+        },
+        {
+            "arguments": "",
+            "volatility": "s",
+            "function_name": "is_admin",
+            "function_schema": "public",
+            "security_definer": false
+        },
+        {
+            "arguments": "",
+            "volatility": "s",
+            "function_name": "is_editor",
+            "function_schema": "public",
+            "security_definer": false
+        },
+        {
+            "arguments": "obra_alvo text",
+            "volatility": "s",
+            "function_name": "is_editor",
+            "function_schema": "public",
+            "security_definer": false
+        }
+    ],
+    "constraints": [
+        {
+            "definition": "PRIMARY KEY (chave)",
+            "table_name": "dashboard_config",
+            "table_schema": "public",
+            "constraint_name": "dashboard_config_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "FOREIGN KEY (codigo_obra) REFERENCES obras(codigo_obra)",
+            "table_name": "editores_permitidos",
+            "table_schema": "public",
+            "constraint_name": "editores_permitidos_codigo_obra_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "CHECK (role = ANY (ARRAY['pending'::text, 'editor'::text, 'admin'::text]))",
+            "table_name": "editores_permitidos",
+            "table_schema": "public",
+            "constraint_name": "editores_permitidos_role_check",
+            "constraint_type": "c"
+        },
+        {
+            "definition": "CHECK (status = ANY (ARRAY['active'::text, 'rejected'::text]))",
+            "table_name": "editores_permitidos",
+            "table_schema": "public",
+            "constraint_name": "editores_permitidos_status_check",
+            "constraint_type": "c"
+        },
+        {
+            "definition": "FOREIGN KEY (codigo_obra) REFERENCES obras(codigo_obra)",
+            "table_name": "flow_classifications",
+            "table_schema": "public",
+            "constraint_name": "flow_classifications_codigo_obra_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "PRIMARY KEY (codigo_obra, n_alteracao)",
+            "table_name": "flow_classifications",
+            "table_schema": "public",
+            "constraint_name": "flow_classifications_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "CHECK (refletido_status = ANY (ARRAY['pendente'::text, 'sim'::text, 'nao'::text]))",
+            "table_name": "flow_classifications",
+            "table_schema": "public",
+            "constraint_name": "flow_classifications_refletido_status_check",
+            "constraint_type": "c"
+        },
+        {
+            "definition": "FOREIGN KEY (codigo_obra) REFERENCES obras(codigo_obra)",
+            "table_name": "flow_manuals",
+            "table_schema": "public",
+            "constraint_name": "flow_manuals_codigo_obra_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "PRIMARY KEY (codigo_obra, n_alteracao)",
+            "table_name": "flow_manuals",
+            "table_schema": "public",
+            "constraint_name": "flow_manuals_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "CHECK (origem = ANY (ARRAY['manual'::text, 'upload'::text]))",
+            "table_name": "obras",
+            "table_schema": "public",
+            "constraint_name": "obras_origem_check",
+            "constraint_type": "c"
+        },
+        {
+            "definition": "PRIMARY KEY (codigo_obra)",
+            "table_name": "obras",
+            "table_schema": "public",
+            "constraint_name": "obras_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "FOREIGN KEY (codigo_obra) REFERENCES obras(codigo_obra)",
+            "table_name": "projecao_config",
+            "table_schema": "public",
+            "constraint_name": "projecao_config_codigo_obra_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "PRIMARY KEY (codigo_obra)",
+            "table_name": "projecao_config",
+            "table_schema": "public",
+            "constraint_name": "projecao_config_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "FOREIGN KEY (codigo_obra) REFERENCES obras(codigo_obra)",
+            "table_name": "projecao_movimentacoes",
+            "table_schema": "public",
+            "constraint_name": "projecao_movimentacoes_codigo_obra_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "PRIMARY KEY (id)",
+            "table_name": "projecao_movimentacoes",
+            "table_schema": "public",
+            "constraint_name": "projecao_movimentacoes_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "CHECK (tipo = ANY (ARRAY['aditivo'::text, 'remanejamento'::text, 'aporte'::text, 'devolucao'::text]))",
+            "table_name": "projecao_movimentacoes",
+            "table_schema": "public",
+            "constraint_name": "projecao_movimentacoes_tipo_check",
+            "constraint_type": "c"
+        },
+        {
+            "definition": "FOREIGN KEY (codigo_obra) REFERENCES obras(codigo_obra)",
+            "table_name": "upload_history",
+            "table_schema": "public",
+            "constraint_name": "upload_history_codigo_obra_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "PRIMARY KEY (id)",
+            "table_name": "upload_history",
+            "table_schema": "public",
+            "constraint_name": "upload_history_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "PRIMARY KEY (id)",
+            "table_name": "buckets",
+            "table_schema": "storage",
+            "constraint_name": "buckets_pkey",
+            "constraint_type": "p"
+        },
+        {
+            "definition": "FOREIGN KEY (bucket_id) REFERENCES storage.buckets(id)",
+            "table_name": "objects",
+            "table_schema": "storage",
+            "constraint_name": "objects_bucketId_fkey",
+            "constraint_type": "f"
+        },
+        {
+            "definition": "PRIMARY KEY (id)",
+            "table_name": "objects",
+            "table_schema": "storage",
+            "constraint_name": "objects_pkey",
+            "constraint_type": "p"
+        }
+    ],
+    "generated_at": "2026-07-20T17:01:04.84252+00:00"
+}

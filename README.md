@@ -63,9 +63,11 @@ Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestõ
 ```bash
 ./scripts/test_import_headers.js
 ./scripts/test_import_dates.js
+./scripts/test_modal_contract.js
+./scripts/test_error_contract.js
 ```
 
-Os testes cobrem cabeçalhos, normalização de acentos e espaços, BOM de arquivos CSV e conversão segura de datas ISO, brasileiras e americanas.
+Os testes cobrem cabeçalhos, datas, contrato dos diálogos e ausência de blocos de erro silenciosos.
 
 ## Backup frequente
 

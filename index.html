@@ -1919,6 +1919,20 @@ function debounce(func, wait) {
   };
 }
 
+function reportNonFatalError(context, error, userMessage) {
+  console.warn(`[${context}]`, error);
+  if (userMessage && typeof authToast === 'function') {
+    authToast(`⚠️ ${userMessage}`, 'warn', CONFIG.toast_duration_warn);
+  }
+}
+
+function runAsyncSafely(operation, context, userMessage) {
+  return Promise.resolve(operation).catch(error => {
+    reportNonFatalError(context, error, userMessage);
+    return null;
+  });
+}
+
 // SafeStorage — wrapper seguro para localStorage com tratamento de erros
 const SafeStorage = {
   set(key, value) {
@@ -2025,7 +2039,7 @@ const _apexCharts = {};
 function renderApexChart(containerId, options) {
   // Destruir instância anterior se existir
   if (_apexCharts[containerId]) {
-    try { _apexCharts[containerId].destroy(); } catch(e) {}
+    try { _apexCharts[containerId].destroy(); } catch(e) { reportNonFatalError('ApexCharts/destroy', e); }
     delete _apexCharts[containerId];
   }
   const el = document.querySelector('#' + containerId);
@@ -2131,11 +2145,11 @@ function resolverObraInicial() {
     const params = new URLSearchParams(window.location.search);
     const fromUrl = params.get('obra');
     if (fromUrl && OBRAS.find(o => o.codigo_obra === fromUrl)) return fromUrl;
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Obras/URL inicial', e); }
   try {
     const fromLS = localStorage.getItem('jzurique_obra_ativa');
     if (fromLS && OBRAS.find(o => o.codigo_obra === fromLS)) return fromLS;
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Obras/preferência local', e); }
   const primeiraAtiva = OBRAS.find(o => o.ativa);
   if (primeiraAtiva) return primeiraAtiva.codigo_obra;
   if (OBRAS.length === 0) {
@@ -2200,7 +2214,7 @@ async function trocarObra(novoCodigo) {
     const url = new URL(window.location);
     url.searchParams.set('obra', novoCodigo);
     window.history.replaceState({}, '', url);
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Obras/atualizar URL', e); }
   // Reset em RAM dos dados extraídos (serão recarregados)
   DATA_T = [];
   DATA_F = [];
@@ -2973,18 +2987,18 @@ function aplicarDadosPersistidos(cfg) {
   if (cfg.card3_modo) { CARD3_MODO = cfg.card3_modo; SafeStorage.set('jzurique_card3_modo', cfg.card3_modo); }
   // Chaves por obra (com prefixo)
   const pref = OBRA_ATIVA + ':';
-  if (cfg[pref + 'evol_global']) { try { const p = JSON.parse(cfg[pref + 'evol_global']); if (p) EVOL_GLOBAL = p; } catch(e) {} }
+  if (cfg[pref + 'evol_global']) { try { const p = JSON.parse(cfg[pref + 'evol_global']); if (p) EVOL_GLOBAL = p; } catch(e) { reportNonFatalError('Dados/evolução global inválida', e, 'A evolução salva está inválida e não pôde ser carregada.'); } }
   if (cfg[pref + 'gestao_label']) GESTAO_LABEL = cfg[pref + 'gestao_label'];
-  if (cfg[pref + 'dados_tendencia']) { try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {} } else { DATA_T = []; }
+  if (cfg[pref + 'dados_tendencia']) { try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) { reportNonFatalError('Dados/tendência inválida', e, 'Os dados salvos de Tendência estão inválidos.'); } } else { DATA_T = []; }
   // DATA_F é GLOBAL (sem prefixo por obra). Compat: chave antiga com prefixo
-  if (cfg['dados_flows']) { try { const d = JSON.parse(cfg['dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {} }
-  else if (cfg[pref + 'dados_flows']) { try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {} }
+  if (cfg['dados_flows']) { try { const d = JSON.parse(cfg['dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) { reportNonFatalError('Dados/Flows inválido', e, 'Os dados salvos de Flows estão inválidos.'); } }
+  else if (cfg[pref + 'dados_flows']) { try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) { reportNonFatalError('Dados/Flows legado inválido', e, 'Os dados salvos de Flows estão inválidos.'); } }
   else { DATA_F = []; }
   // HISTORICO e PROJ_RAW são globais (compartilhados entre obras)
-  if (cfg['dados_historico']) { try { const d = JSON.parse(cfg['dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {} } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
+  if (cfg['dados_historico']) { try { const d = JSON.parse(cfg['dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) { reportNonFatalError('Dados/histórico inválido', e, 'O histórico salvo está inválido.'); } } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
   atualizarGestaoLabelPelaHistoria();
   aplicarFallbackGestaoDoHistorico();
-  if (cfg['dados_projraw']) { try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {} } else { PROJ_RAW = []; }
+  if (cfg['dados_projraw']) { try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) { reportNonFatalError('Dados/projeção inválida', e, 'A projeção salva está inválida.'); } } else { PROJ_RAW = []; }
 }
 
 function posCarregarDados() {
@@ -3003,7 +3017,7 @@ function posCarregarDados() {
     if (elDataRef) elDataRef.value = PROJ_CTRL_STATE.data_ref || '';
     if (elIns) elIns.value = PROJ_CTRL_STATE.insumo || 'I011890';
     if (typeof applyLocksToUI === 'function') applyLocksToUI();
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Projeção/restaurar controles', e); }
 }
 
 // ---------- FLOW CLASSIFICATIONS ----------
@@ -3056,7 +3070,7 @@ async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
     updated_at: new Date().toISOString(),
   };
   const { error } = await SUPA.from('flow_classifications').upsert(merged, { onConflict: 'codigo_obra,n_alteracao' });
-  if (error) { console.warn('[SUPA] upsertClass err:', error); SUPA_STATUS.lastError = error.message; }
+  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
@@ -3103,7 +3117,7 @@ async function supaUpsertManual(m) {
     insumo_planejamento: m.insumo_planejamento, insumo_remanejamento: m.insumo_remanejamento,
     obs: m.obs,
   }, { onConflict: 'codigo_obra,n_alteracao' });
-  if (error) { console.warn('[SUPA] upsertManual err:', error); SUPA_STATUS.lastError = error.message; }
+  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
@@ -3112,7 +3126,7 @@ async function supaDeleteManual(nAlt) {
   if (!OBRA_ATIVA) return;
   const { error } = await SUPA.from('flow_manuals').delete()
     .eq('codigo_obra', OBRA_ATIVA).eq('n_alteracao', nAlt);
-  if (error) { console.warn('[SUPA] delManual err:', error); SUPA_STATUS.lastError = error.message; }
+  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
@@ -3146,7 +3160,7 @@ async function supaSaveProjConfig(cfg) {
     locked_insumo: !!_locks.insumo,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'codigo_obra' });
-  if (error) { console.warn('[SUPA] saveProjConfig err:', error); }
+  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
@@ -3173,7 +3187,7 @@ async function supaUpsertMov(m) {
     origem: m.origem, destino: m.destino, descricao: m.descricao,
     justificativa: m.justificativa, responsavel: m.responsavel, valor: m.valor,
   }, { onConflict: 'id' });
-  if (error) { console.warn('[SUPA] upsertMov err:', error); }
+  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
@@ -3182,7 +3196,7 @@ async function supaDeleteMov(id) {
   if (!OBRA_ATIVA) return;
   const { error } = await SUPA.from('projecao_movimentacoes').delete()
     .eq('codigo_obra', OBRA_ATIVA).eq('id', id);
-  if (error) { console.warn('[SUPA] delMov err:', error); }
+  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
   else SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
@@ -3309,7 +3323,7 @@ async function resetCacheDados() {
       const { error } = await SUPA.from('dashboard_config').delete().eq('chave', chave);
       if (error) console.warn(`[SUPA] delete ${chave}:`, error);
     }
-    try { localStorage.removeItem('jzurique_evol_global'); } catch(e) {}
+    try { localStorage.removeItem('jzurique_evol_global'); } catch(e) { reportNonFatalError('Cache/remover evolução local', e); }
     authToast(`✅ Cache limpo (${chaves.length} chaves). Recarregando...`, 'ok', 2000);
     setTimeout(() => location.reload(), 1500);
   } catch(e) {
@@ -3740,7 +3754,7 @@ async function applySession(session, isFreshLogin = false) {
     if (typeof renderFlows === 'function') renderFlows();
     if (typeof renderProjCtrl === 'function' && document.getElementById('projCtrlMovsList')) renderProjCtrl();
     if (typeof renderUploadsCentral === 'function') renderUploadsCentral();
-  } catch(e){}
+  } catch(e){ reportNonFatalError('Auth/atualizar interface', e); }
 }
 
 async function initAuth() {
@@ -3776,7 +3790,7 @@ async function initAuth() {
           // Consome sempre (mesmo se expirada) pra não vazar pra próxima
           sessionStorage.removeItem('jz_fresh_login');
         }
-      } catch(e){}
+      } catch(e){ reportNonFatalError('Auth/sessão de login recente', e); }
     }
     await applySession(session, isFreshLogin);
     // Limpar params residuais (?code=... ou #access_token=...) após login bem-sucedido
@@ -3852,7 +3866,7 @@ const AppState = {
   config: {
     gestaoLabel: 'Gestão Atual',
     evolGlobal: (function() {
-      try { const raw = localStorage.getItem('jzurique_evol_global'); if (raw) { const p = JSON.parse(raw); if (p && (p.teorica != null || p.financeira != null)) return p; } } catch(e) {}
+      try { const raw = localStorage.getItem('jzurique_evol_global'); if (raw) { const p = JSON.parse(raw); if (p && (p.teorica != null || p.financeira != null)) return p; } } catch(e) { reportNonFatalError('Estado/evolução local', e); }
       return { teorica: null, financeira: null };
     })(),
     card3Modo: (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_card3_modo')) || 'bruto',
@@ -3972,7 +3986,7 @@ function buildLinks() {
       const el = document.getElementById('headerTitle');
       if (el) el.textContent = saved;
     }
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Header/restaurar título', e); }
 })();
 
 // ============ LOADING STATES ============
@@ -4003,7 +4017,7 @@ function toggleTheme() {
       const btn = document.getElementById('themeToggle');
       if (btn) btn.textContent = '☀️';
     }
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Tema/restaurar preferência', e); }
 })();
 
 // _headerEditable declarado na seção ESTADO GLOBAL acima
@@ -4036,7 +4050,9 @@ function toggleHeaderEdit() {
     el.style.padding = '';
     el.style.borderRadius = '';
     el.style.outline = 'none';
-    const _t = el.textContent.trim(); SafeStorage.set(HEADER_KEY, _t); try { supaSaveDashboardKey('header_title', _t); } catch(e){}
+    const _t = el.textContent.trim();
+    SafeStorage.set(HEADER_KEY, _t);
+    void runAsyncSafely(supaSaveDashboardKey('header_title', _t), 'Config/salvar título', 'O título foi salvo apenas neste navegador.');
     btn.innerHTML = '🔒 Editar';
     btn.title = 'Editar título';
   }
@@ -4107,7 +4123,7 @@ function restaurarAbaAtiva() {
       const tab = document.querySelector('.tab[data-tab="' + saved + '"]');
       if (tab) tab.click();
     }
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Abas/restaurar aba ativa', e); }
 }
 
 function activateTab(tab) {
@@ -4170,7 +4186,7 @@ function setCard3Modo(v) {
   CARD3_MODO = v;
   SafeStorage.set('jzurique_card3_modo', v);
   if (isAdminGeral()) {
-    try { supaSaveDashboardKey('card3_modo', v); } catch(e){}
+    void runAsyncSafely(supaSaveDashboardKey('card3_modo', v), 'Config/salvar modo do card', 'A configuração foi salva apenas neste navegador.');
   }
   if (typeof renderVisao === 'function') renderVisao();
 }
@@ -4179,7 +4195,7 @@ function setCorrecaoIndice(v) {
   CORRECAO_INDICE = v;
   SafeStorage.set('jzurique_indice_correcao', v);
   if (isAdminGeral()) {
-    try { supaSaveDashboardKey('indice_correcao', v); } catch(e){}
+    void runAsyncSafely(supaSaveDashboardKey('indice_correcao', v), 'Config/salvar índice', 'O índice foi salvo apenas neste navegador.');
   }
   if (Array.isArray(DATA_T)) {
     DATA_T.forEach(d => {
@@ -4399,7 +4415,10 @@ function renderVisao() {
       const totSai = movs.filter(m => m.direcao === 'saida').reduce((s,m) => s + (m.valor||0), 0);
       reservaProj = totEnt - totSai;
     }
-  } catch(e) { reservaProj = 0; }
+  } catch(e) {
+    reservaProj = 0;
+    reportNonFatalError('Visão geral/calcular reserva de projeção', e);
+  }
   const reservaPct = totLicit ? (reservaProj/totLicit*100) : 0;
   const tendFinalLiq = tendFinal - reservaProj;
   const tendVsLicLiq = tendVsLic - reservaProj;
@@ -4858,7 +4877,7 @@ function salvarFiltros() {
       onlyFolhas: document.getElementById('onlyFolhas')?.checked ?? true,
     };
     localStorage.setItem('jzurique_filters_' + (OBRA_ATIVA || 'default'), JSON.stringify(filtros));
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Filtros/salvar', e); }
 }
 
 // Restaurar filtros do localStorage
@@ -4873,7 +4892,7 @@ function restaurarFiltros() {
     if (el('filterStatus')) el('filterStatus').value = filtros.filterStatus || '';
     if (el('filterAditivo')) el('filterAditivo').value = filtros.filterAditivo || '';
     if (el('onlyFolhas')) el('onlyFolhas').checked = filtros.onlyFolhas !== false;
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Filtros/restaurar', e); }
 }
 
 // Debounce para filtros — evita re-renderização a cada tecla digitada
@@ -5198,19 +5217,32 @@ function loadClassifications() {
   } catch (e) { console.warn('Erro ao carregar classificações:', e); return 0; }
 }
 
+function readClassificationMap() {
+  try {
+    const parsed = JSON.parse(SafeStorage.get(STORAGE_KEY, '{}'));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (error) {
+    reportNonFatalError('Classificações/estado local inválido', error, 'As classificações locais não puderam ser lidas.');
+    return {};
+  }
+}
+
 function saveClassification(nAlt, field, value) {
   if (!requireEditor('classificar aditivos')) return false;
   // acha o aditivo no DATA_F pra pegar codigo_obra e montar chave composta
   const f = (Array.isArray(DATA_F) ? DATA_F : []).find(x => x.n_alteracao === nAlt);
   const codigoObra = f?.codigo_obra || OBRA_ATIVA || '';
   const key = codigoObra + ':' + nAlt;
-  let map = {};
-  try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+  const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
   map[key][field] = value;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   // Espelhar no Supabase
-  try { supaUpsertClassification(nAlt, { [field]: value }, codigoObra); } catch(e){}
+  void runAsyncSafely(
+    supaUpsertClassification(nAlt, { [field]: value }, codigoObra),
+    'Classificações/salvar no Supabase',
+    'A classificação foi salva apenas neste navegador.'
+  );
   return true;
 }
 
@@ -5230,8 +5262,7 @@ function reloadClassifications() {
 }
 
 function exportClassifications() {
-  let map = {};
-  try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+  const map = readClassificationMap();
   const keys = Object.keys(map);
   if (keys.length === 0) {
     authToast('⚠️ Nenhuma alteração para exportar.', 'warn', 3000);
@@ -5437,11 +5468,11 @@ function ttDiv() { return '<div class="tt-divider"></div>'; }
 // Chamado sempre que algo nos Flows muda, para garantir que Visão Geral, Tendência de Obra e Controle Projeção atualizem
 // OTIMIZADO: usa debounce para evitar múltiplas renderizações em sequência
 function syncAllViewsFromFlows() {
-  try { if (typeof buildLinks === 'function') buildLinks(); } catch(e) {}
+  try { if (typeof buildLinks === 'function') buildLinks(); } catch(e) { reportNonFatalError('Flows/recalcular vínculos', e); }
   // Usa debounce para as renderizações mais pesadas
   debouncedRender('visao');
-  try { if (typeof renderFlowsAggregates === 'function') renderFlowsAggregates(); } catch(e) {}
-  try { if (typeof updateEditCount === 'function') updateEditCount(); } catch(e) {}
+  try { if (typeof renderFlowsAggregates === 'function') renderFlowsAggregates(); } catch(e) { reportNonFatalError('Flows/renderizar agregados', e); }
+  try { if (typeof updateEditCount === 'function') updateEditCount(); } catch(e) { reportNonFatalError('Flows/atualizar contador', e); }
 }
 
 function onClassifChange(sel) {
@@ -5481,8 +5512,7 @@ function onClassifChange(sel) {
 }
 
 function updateEditCount() {
-  let map = {};
-  try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+  const map = readClassificationMap();
   const n = Object.keys(map).length;
   const m = loadManuals().length;
   const el = document.getElementById('editCount');
@@ -5882,12 +5912,10 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
 async function supaBulkUpsertClassifications(payloads) {
   if (!isEditorDaObraAtiva() || !SUPA || !payloads.length) return;
   if (payloads.some(item => item.codigo_obra !== OBRA_ATIVA)) return;
-  try {
-    const { error } = await SUPA.from('flow_classifications').upsert(payloads, { onConflict: 'codigo_obra,n_alteracao' });
-    if (error) console.warn('[SUPA] bulk upsert err:', error);
-    else SUPA_STATUS.lastSync = new Date();
-    updateSupaBadge();
-  } catch(e) { console.warn('[SUPA] bulk upsert exception:', e); }
+  const { error } = await SUPA.from('flow_classifications').upsert(payloads, { onConflict: 'codigo_obra,n_alteracao' });
+  if (error) throw error;
+  SUPA_STATUS.lastSync = new Date();
+  updateSupaBadge();
 }
 
 function massAplicarDestino() {
@@ -5903,8 +5931,7 @@ function massAplicarDestino() {
     const novo = valueFromDisplay(document.getElementById('massDestInput').value);
     if (novo === null || novo === undefined) throw new Error('Valor inválido');
     // localStorage lido UMA vez antes do loop
-    let map = {};
-    try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    const map = readClassificationMap();
     const bulkPayloads = [];
     MASS_SELECTED.forEach(nAlt => {
       const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
@@ -5919,9 +5946,9 @@ function massAplicarDestino() {
       bulkPayloads.push({ codigo_obra: codigoObra, n_alteracao: nAlt, insumo_planejamento: novo, updated_at: new Date().toISOString() });
     });
     // Escrita no localStorage UMA vez após o loop
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
     // Supabase bulk (1 requisição em vez de N)
-    supaBulkUpsertClassifications(bulkPayloads);
+    void runAsyncSafely(supaBulkUpsertClassifications(bulkPayloads), 'Classificações/destino em massa', 'As alterações em massa foram salvas apenas neste navegador.');
     buildLinks();
   });
 }
@@ -5937,8 +5964,7 @@ function massAplicarOrigem() {
   massPrompt('🔄 Aplicar Origem em massa', `Substitui o campo INSUMO DE REMANEJAMENTO em <strong>${MASS_SELECTED.size}</strong> aditivo(s) selecionado(s).`, opt, () => {
     const novo = valueFromDisplay(document.getElementById('massOrigInput').value);
     if (novo === null || novo === undefined) throw new Error('Valor inválido');
-    let map = {};
-    try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    const map = readClassificationMap();
     const bulkPayloads = [];
     MASS_SELECTED.forEach(nAlt => {
       const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
@@ -5952,8 +5978,8 @@ function massAplicarOrigem() {
       map[key].insumo_remanejamento = novo;
       bulkPayloads.push({ codigo_obra: codigoObra, n_alteracao: nAlt, insumo_remanejamento: novo, updated_at: new Date().toISOString() });
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-    supaBulkUpsertClassifications(bulkPayloads);
+    SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
+    void runAsyncSafely(supaBulkUpsertClassifications(bulkPayloads), 'Classificações/origem em massa', 'As alterações em massa foram salvas apenas neste navegador.');
     buildLinks();
   });
 }
@@ -5972,8 +5998,7 @@ function massAplicarRefletido() {
   `;
   massPrompt('✅ Marcar status de reflexo em massa', `Aplica o status em <strong>${MASS_SELECTED.size}</strong> aditivo(s) selecionado(s).`, opt, () => {
     const status = document.getElementById('massReflInput').value;
-    let map = {};
-    try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    const map = readClassificationMap();
     const bulkPayloads = [];
     MASS_SELECTED.forEach(nAlt => {
       const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
@@ -5987,8 +6012,8 @@ function massAplicarRefletido() {
       map[key].refletido = (status === 'sim');
       bulkPayloads.push({ codigo_obra: codigoObra, n_alteracao: nAlt, refletido_status: status, updated_at: new Date().toISOString() });
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-    supaBulkUpsertClassifications(bulkPayloads);
+    SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
+    void runAsyncSafely(supaBulkUpsertClassifications(bulkPayloads), 'Classificações/reflexo em massa', 'As alterações em massa foram salvas apenas neste navegador.');
   });
 }
 
@@ -6009,13 +6034,16 @@ function onValorChange(input) {
   // usar chave composta (codigo_obra:n_alteracao) + sync com Supabase
   const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
   const key = codigoObra + ':' + nAlt;
-  let map = {};
-  try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+  const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
   map[key].custo_flowmaster = novo;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   // Sync com Supabase (persiste entre uploads/dispositivos)
-  try { supaUpsertClassification(nAlt, { custo_flowmaster: novo }, codigoObra); } catch(e){}
+  void runAsyncSafely(
+    supaUpsertClassification(nAlt, { custo_flowmaster: novo }, codigoObra),
+    'Classificações/salvar valor no Supabase',
+    'O valor foi salvo apenas neste navegador.'
+  );
   // Atualizar display canônico
   input.value = novo != null ? fmt(novo) : '';
   input.classList.add('edited');
@@ -6051,16 +6079,23 @@ function loadManuals() {
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
     return arr;
-  } catch(e) { return []; }
+  } catch(e) {
+    reportNonFatalError('Manuais/estado local inválido', e, 'Os aditivos manuais locais não puderam ser lidos.');
+    return [];
+  }
 }
 
 function saveManuals(arr) {
   if (!isEditorDaObraAtiva()) return false;
-  localStorage.setItem(MANUAL_KEY, JSON.stringify(arr));
+  SafeStorage.set(MANUAL_KEY, JSON.stringify(arr));
   // Sync com Supabase: identifica quais mudaram desde a última chamada é caro,
   // então faz upsert de todos (idempotente). Para excluídos, chamamos supaDeleteManual quando o botão é clicado.
   if (SUPA) {
-    Promise.all(arr.map(m => supaUpsertManual(m))).catch(e => console.warn('[SUPA] sync manuals err:', e));
+    void runAsyncSafely(
+      Promise.all(arr.map(m => supaUpsertManual(m))),
+      'Manuais/sincronizar no Supabase',
+      'Os aditivos manuais foram salvos apenas neste navegador.'
+    );
   }
 }
 
@@ -6195,7 +6230,7 @@ async function deleteManual(id) {
   if (!confirmed) return;
   const manuals = loadManuals().filter(m => m.n_alteracao !== id);
   saveManuals(manuals);
-  try { supaDeleteManual(id); } catch(e){}
+  void runAsyncSafely(supaDeleteManual(id), 'Manuais/excluir no Supabase', 'O aditivo foi removido apenas neste navegador.');
   applyManuals();
   // Sincronizar todas as telas com debounce (evita múltiplas renderizações)
   debouncedRender();
@@ -6433,13 +6468,16 @@ function onRefletidoChange(sel) {
   // chave composta + sync Supabase
   const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
   const key = codigoObra + ':' + nAlt;
-  let map = {};
-  try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+  const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
   map[key].refletido_status = status;
   map[key].refletido = (status === 'sim'); // compat
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-  try { supaUpsertClassification(nAlt, { refletido_status: status }, codigoObra); } catch(e){}
+  SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
+  void runAsyncSafely(
+    supaUpsertClassification(nAlt, { refletido_status: status }, codigoObra),
+    'Classificações/salvar reflexo no Supabase',
+    'O status foi salvo apenas neste navegador.'
+  );
   // Atualizar visual: cor da linha e classe do select
   const tr = sel.closest('tr');
   if (tr) tr.style.background = status === 'sim' ? '#ecfdf5' : (status === 'nao' ? '#fef2f2' : '');
@@ -6543,7 +6581,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         // rebuildar datalist de insumos após upload novo
-        try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
+        try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e) { reportNonFatalError('Upload/reconstruir lista de insumos', e); }
         linhas = DATA_T.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
@@ -6859,7 +6897,7 @@ async function _processExcelSheets(workbook, mapping, file) {
         if (!parsed.length) throw new Error('TENDÊNCIA: nenhuma linha válida encontrada.');
         DATA_T = parsed;
         // rebuildar datalist de insumos após upload novo
-        try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
+        try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e) { reportNonFatalError('Excel/reconstruir lista de insumos', e); }
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
@@ -7360,7 +7398,7 @@ function _parsearECarregar(kind, csv) {
     }
     DATA_T = parseTendencia(csv);
     // rebuildar datalist de insumos após upload novo
-    try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
+    try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e) { reportNonFatalError('Histórico/reconstruir lista de insumos', e); }
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
   } else if (kind === 'flows') {
@@ -7571,7 +7609,7 @@ function parseTendencia(text) {
     if (headerCol9 && headerCol9.length > 3) {
       GESTAO_LABEL = headerCol9;
     }
-  } catch(e) {}
+  } catch(e) { reportNonFatalError('Tendência/ler cabeçalho de gestão', e); }
 
   // Capturar totais globais da linha 1 (subheader)
   // [12] = EVOL. TEÓRICA global (%) · [13] = EVOL. FINANCEIRA global (%)
@@ -9477,11 +9515,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) {
       // Função handler: re-renderiza projeção E visão geral (e controle projeção)
       const handler = () => {
-        try { renderProjecao(); } catch(e){}
+        try { renderProjecao(); } catch(e) { reportNonFatalError('Projeção/renderizar após filtro', e); }
         // Os 4 primeiros (parâmetros) afetam também a Visão Geral (Card 3) e a Tendência de Obra
         // Os 3 últimos (search/filtros) só afetam a tabela da própria aba
         if (['projDataFim','projDataCorte','projMetodo','projTolerancia'].includes(id)) {
-          try { renderVisao(); } catch(e){}
+          try { renderVisao(); } catch(e) { reportNonFatalError('Visão geral/renderizar após projeção', e); }
         }
       };
       el.addEventListener('input', handler);
@@ -9540,17 +9578,21 @@ function loadProjCtrl() {
 
 function saveProjCtrl() {
   if (!isEditorDaObraAtiva()) return false;
-  localStorage.setItem(PROJ_CTRL_KEY, JSON.stringify(PROJ_CTRL_STATE));
+  SafeStorage.set(PROJ_CTRL_KEY, JSON.stringify(PROJ_CTRL_STATE));
   // Sync config
-  try { supaSaveProjConfig({
+  void runAsyncSafely(supaSaveProjConfig({
     insumo: PROJ_CTRL_STATE.insumo,
     saldo_inicial: PROJ_CTRL_STATE.saldo_inicial,
     data_ref: PROJ_CTRL_STATE.data_ref,
     locks: PROJ_CTRL_STATE.locks || { saldo: false, data: false, insumo: false },
-  }); } catch(e){}
+  }), 'Projeção/sincronizar configuração', 'A configuração da projeção foi salva apenas neste navegador.');
   // Sync movimentações manuais (upsert todas — idempotente)
   if (SUPA && Array.isArray(PROJ_CTRL_STATE.movimentacoes)) {
-    Promise.all(PROJ_CTRL_STATE.movimentacoes.map(m => supaUpsertMov(m))).catch(e => console.warn('[SUPA] sync movs err:', e));
+    void runAsyncSafely(
+      Promise.all(PROJ_CTRL_STATE.movimentacoes.map(m => supaUpsertMov(m))),
+      'Projeção/sincronizar movimentações',
+      'As movimentações foram salvas apenas neste navegador.'
+    );
   }
 }
 
@@ -10159,7 +10201,7 @@ async function deleteMov(id) {
   if (!confirmed) return;
   PROJ_CTRL_STATE.movimentacoes = PROJ_CTRL_STATE.movimentacoes.filter(m => m.id !== id);
   saveProjCtrl();
-  try { supaDeleteMov(id); } catch(e){}
+  void runAsyncSafely(supaDeleteMov(id), 'Projeção/excluir movimentação no Supabase', 'A movimentação foi removida apenas neste navegador.');
   renderProjCtrl();
 }
 
@@ -10737,8 +10779,8 @@ function renderAll() {
   }
   initProjCtrl();
   // cabeçalhos de fontes + central de uploads
-  try { renderSourcesHeaders(); } catch(e) {}
-  try { renderUploadsCentral();  } catch(e) {}
+  try { renderSourcesHeaders(); } catch(e) { reportNonFatalError('Boot/renderizar fontes', e); }
+  try { renderUploadsCentral();  } catch(e) { reportNonFatalError('Boot/renderizar uploads', e); }
 }
 
 document.getElementById('now').textContent = new Date().toLocaleString('pt-BR');
@@ -10830,7 +10872,7 @@ function switchLoginTab(modo) {
 
 async function doSignInGoogle() {
   if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
-  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e){}
+  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e) { reportNonFatalError('Auth/marcar login Google', e); }
   closeLoginModal();
   const { error } = await SUPA.auth.signInWithOAuth({
     provider: 'google',
@@ -10840,7 +10882,7 @@ async function doSignInGoogle() {
     }
   });
   if (error) {
-    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e){}
+    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e) { reportNonFatalError('Auth/limpar login Google', e); }
     authToast('Erro no login Google: ' + error.message, 'err');
   }
 }
@@ -10855,10 +10897,10 @@ async function doSignInEmail() {
     return;
   }
   if (!SUPA) { erroEl.textContent = 'Supabase não conectado.'; return; }
-  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e){}
+  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e) { reportNonFatalError('Auth/marcar login por email', e); }
   const { error } = await SUPA.auth.signInWithPassword({ email, password: senha });
   if (error) {
-    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e){}
+    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e) { reportNonFatalError('Auth/limpar login por email', e); }
     // Mensagens mais amigáveis
     let msg = error.message || 'Erro desconhecido';
     if (msg.includes('Invalid login credentials')) msg = 'Email ou senha incorretos.';

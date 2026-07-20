@@ -133,7 +133,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Corrigir interpretação ambígua de datas brasileiras e americanas.
 - [x] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
 - [ ] Evitar concorrência no fluxo read-merge-write das classificações.
-- [ ] Exibir erros atualmente ocultados por blocos `catch` vazios.
+- [x] Exibir erros atualmente ocultados por blocos `catch` vazios.
 
 ### 7. Corrigir responsividade
 

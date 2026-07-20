@@ -3,7 +3,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
+const root = path.resolve(__dirname, '..');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const css = ['tokens.css', 'base.css', 'components.css', 'dashboard.css']
+  .map(file => fs.readFileSync(path.join(root, 'assets', 'css', file), 'utf8'))
+  .join('\n');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -62,9 +66,9 @@ for (const target of labelTargets) {
   assert(new RegExp(`\\bid="${target}"`).test(html), `Label aponta para #${target}, mas o controle não existe`);
 }
 
-assert(/:where\([^}]+\):focus-visible\s*{/.test(html), 'Estilo global de foco visível ausente');
-assert(html.includes('--text-lighter:   #6B7280'), 'Contraste de texto secundário no tema claro não foi corrigido');
-assert(html.includes('--text-lighter:   #94A3B8'), 'Contraste de texto secundário no tema escuro não foi corrigido');
+assert(/:where\([^}]+\):focus-visible\s*{/.test(css), 'Estilo global de foco visível ausente');
+assert(css.includes('--text-lighter:   #6B7280'), 'Contraste de texto secundário no tema claro não foi corrigido');
+assert(css.includes('--text-lighter:   #94A3B8'), 'Contraste de texto secundário no tema escuro não foi corrigido');
 assert(/id="loadingOverlay"[^>]*role="status"[^>]*aria-live="polite"/.test(html), 'Loading não é anunciado');
 assert(/function authToast[\s\S]*?setAttribute\('aria-live'/.test(html), 'Toasts não configuram aria-live');
 assert(/id="loginErro"[^>]*role="alert"/.test(html) && /id="signupErro"[^>]*role="alert"/.test(html), 'Erros de autenticação não são anunciados');

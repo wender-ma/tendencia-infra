@@ -1,0 +1,82 @@
+  /* v0.64 — Rebranding FGR Incorporações */
+  :root {
+    /* Marca FGR */
+    --fgr-red:        #B01818;   /* vermelho institucional (header, botões primários) */
+    --fgr-red-dark:   #7A0F0F;   /* hover, borda de destaque */
+    --fgr-red-deep:   #4A0A0A;   /* destaque escuro (substitui azul-marinho antigo) */
+    --fgr-red-light:  #FEE2E2;   /* fundo suave para cards de alerta */
+    --fgr-red-vivid:  #D82A2A;   /* vermelho mais claro, gradient e detalhes */
+
+    /* Semáforo (vinho para não competir com marca) */
+    --sem-erro:       #5A0808;   /* vinho quase preto — estouro/erro */
+    --sem-erro-bg:    #FEE2E2;   /* fundo suave de erro */
+    --sem-alerta:     #B45309;   /* âmbar */
+    --sem-alerta-bg:  #FEF3C7;   /* fundo âmbar suave */
+    --sem-ok:         #065F46;   /* verde institucional */
+    --sem-ok-bg:      #D1FAE5;   /* fundo verde suave */
+
+    /* Status refletido (aditivos) */
+    --ref-sim-bg:     #D1FAE5;
+    --ref-sim-border: #6EE7B7;
+    --ref-nao-border: #FCA5A5;
+    --ref-pend-border: #FCD34D;
+
+    /* Histórico heatmap */
+    --hist-up:        rgba(239, 68, 68, 0.15);
+    --hist-up-strong: rgba(239, 68, 68, 0.35);
+    --hist-down:      rgba(16, 185, 129, 0.15);
+    --hist-down-strong: rgba(16, 185, 129, 0.35);
+
+    /* Badge manual */
+    --badge-manual-bg:  #FBBF24;
+    --badge-manual-fg:  #78350F;
+
+    /* Neutros */
+    --text-strong:    #1F2937;   /* títulos e valores fortes */
+    --text-medium:    #374151;   /* corpo principal */
+    --text-soft:      #6B7280;   /* labels e secundário */
+    --text-lighter:   #6B7280;   /* placeholder e hint com contraste AA */
+    --border:         #E5E7EB;   /* bordas padrão */
+    --border-strong:  #D1D5DB;   /* bordas com destaque */
+    --bg-page:        #F9FAFB;   /* fundo geral da página */
+    --bg-card:        #FFFFFF;   /* fundo dos cards */
+    --bg-soft:        #F3F4F6;   /* fundo suave (grupos, hover) */
+  }
+
+  /* Modo Noturno — variáveis invertidas */
+  body.dark {
+    --fgr-red-light:  #3B0F0F;
+    --fgr-red-vivid:  #EF4444;
+    --sem-erro:       #FCA5A5;
+    --sem-erro-bg:    #3B0F0F;
+    --sem-alerta:     #FCD34D;
+    --sem-alerta-bg:  #451A03;
+    --sem-ok:         #6EE7B7;
+    --sem-ok-bg:      #052E16;
+    --text-strong:    #F1F5F9;
+    --text-medium:    #CBD5E1;
+    --text-soft:      #94A3B8;
+    --text-lighter:   #94A3B8;
+    --border:         #334155;
+    --border-strong:  #475569;
+    --bg-page:        #0F172A;
+    --bg-card:        #1E293B;
+    --bg-soft:        #1E293B;
+
+    /* Status refletido (dark) */
+    --ref-sim-bg:     #052E16;
+    --ref-sim-border: #065F46;
+    --ref-nao-border: #5A0808;
+    --ref-pend-border: #92400E;
+
+    /* Histórico heatmap (dark) */
+    --hist-up:        rgba(239, 68, 68, 0.25);
+    --hist-up-strong: rgba(239, 68, 68, 0.4);
+    --hist-down:      rgba(16, 185, 129, 0.25);
+    --hist-down-strong: rgba(16, 185, 129, 0.4);
+
+    /* Badge manual (dark) */
+    --badge-manual-bg:  #92400E;
+    --badge-manual-fg:  #FCD34D;
+  }
+

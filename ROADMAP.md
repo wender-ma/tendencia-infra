@@ -171,10 +171,10 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 ### 9. Separar o arquivo monolítico
 
 - [ ] Manter no `index.html` apenas metadados, landmarks, containers e templates pequenos.
-- [ ] Criar `assets/css/tokens.css`.
-- [ ] Criar `assets/css/base.css`.
-- [ ] Criar `assets/css/components.css`.
-- [ ] Criar `assets/css/dashboard.css`.
+- [x] Criar `assets/css/tokens.css`.
+- [x] Criar `assets/css/base.css`.
+- [x] Criar `assets/css/components.css`.
+- [x] Criar `assets/css/dashboard.css`.
 - [ ] Criar módulo de configuração e inicialização.
 - [ ] Criar módulo de autenticação e autorização.
 - [ ] Criar serviço de acesso ao Supabase.
@@ -278,5 +278,6 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade | `1cb9096` |
 | 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |
 | 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados | `supabase/migrations/20260720172000_rls_hardening.sql` |
+| 20/07/2026 | CSS monolítico separado em tokens, base, componentes e dashboard, com contrato automatizado de assets | `assets/css/` |
 | 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |
 | 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports | `scripts/test_accessibility_contract.js` |

@@ -7,6 +7,7 @@ Dashboard de tendência orçamentária
 .
 ├── index.html              # Aplicação principal
 ├── assets/
+│   ├── css/                # Tokens, base, componentes e estilos do dashboard
 │   └── images/             # Imagens e capturas de tela
 ├── backups/                # Cópias antigas do index.html
 │   └── snapshots/           # Backups automáticos compactados
@@ -21,6 +22,7 @@ Dashboard de tendência orçamentária
 ## Arquivos importantes
 
 - `index.html`: arquivo principal do dashboard.
+- `assets/css/`: folhas de estilo externas carregadas na ordem `tokens`, `base`, `components` e `dashboard`.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
@@ -66,6 +68,7 @@ Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestõ
 ./scripts/test_modal_contract.js
 ./scripts/test_error_contract.js
 ./scripts/test_classification_contract.js
+./scripts/test_asset_contract.js
 ./scripts/test_accessibility_contract.js
 ./scripts/test_responsive_contract.js
 ./scripts/test_upload_transaction_contract.js

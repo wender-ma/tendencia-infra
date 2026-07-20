@@ -1,0 +1,57 @@
+  /* Modo Noturno — overrides para elementos que ainda precisam de ajuste */
+  body.dark .upload-excel-card { background: linear-gradient(135deg, #064E3B 0%, #052E16 100%); }
+  body.dark .flow-mini-card { background: var(--bg-soft); }
+  body.dark th { background: var(--bg-soft); }
+  body.dark .form-grid input, body.dark .form-grid select, body.dark .form-grid textarea { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .modal .modal-close { color: var(--text-soft); }
+  body.dark .modal .modal-close:hover { color: var(--text-strong); }
+  body.dark #obraSelector option { background: var(--bg-card); color: var(--text-strong); }
+  body.dark .upload-card-meta.empty { background: #451A03; }
+  body.dark .upload-card-meta.filled { background: #052E16; }
+  body.dark .ms-opt:hover { background: var(--bg-soft); }
+  body.dark .ms-footer button { background: var(--fgr-red-dark); }
+
+  /* Modo Noturno — overrides para inline styles (modais, formulários) */
+  body.dark [style*="background:white"] { background: var(--bg-card) !important; }
+  body.dark [style*="background: white"] { background: var(--bg-card) !important; }
+  body.dark input, body.dark select, body.dark textarea { background: var(--bg-card); color: var(--text-strong); border-color: var(--border-strong); }
+  body.dark input:focus, body.dark select:focus, body.dark textarea:focus { border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
+  body.dark tr.folha:hover { background: var(--bg-soft); }
+  body.dark .row-selected { background: var(--fgr-red-light) !important; }
+
+  /* Modo Noturno — botão de toggle */
+  .theme-toggle {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .theme-toggle:hover { background: rgba(255,255,255,0.25); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-page); color: var(--text-strong); padding: 0; font-size: 14px; }
+  :where(a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])):focus-visible {
+    outline: 3px solid var(--fgr-red-vivid);
+    outline-offset: 2px;
+  }
+  .skip-link {
+    position: fixed; top: 8px; left: 8px; z-index: 10000;
+    transform: translateY(-150%); padding: 8px 12px;
+    background: var(--bg-card); color: var(--text-strong);
+    border: 2px solid var(--fgr-red-vivid); border-radius: 4px;
+  }
+  .skip-link:focus { transform: translateY(0); }
+  /* Container sticky que segura header + tabs sempre visíveis */
+  .page-header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg-page);
+    padding: 20px 20px 0 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .page-body { padding: 0 20px 20px 20px; }
+

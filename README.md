@@ -56,6 +56,16 @@ SUPABASE_ANON_KEY="sua-chave-anon-public" \
 
 Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no projeto de desenvolvimento.
 
+## Validação de importações
+
+Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestões:
+
+```bash
+./scripts/test_import_headers.js
+```
+
+O teste cobre normalização de acentos e espaços, BOM de arquivos CSV, colunas ausentes e colunas fora da posição esperada.
+
 ## Backup frequente
 
 O projeto possui um script de backup em `scripts/backup.sh`.

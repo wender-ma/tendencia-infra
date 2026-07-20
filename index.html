@@ -1722,7 +1722,7 @@ body:not(.is-admin-geral) [data-admin-control],
         💡 <strong>Linha 2 é o subheader com totais globais</strong> (área vendável, valores totais e <strong>% globais de evolução</strong>). A linha 1 é o cabeçalho de nomes, dados começam na linha 3.
       </p>
       <p><strong>Linhas:</strong> linha 1 = cabeçalho. A partir da linha 2 são os dados.</p>
-      <p><strong>Cabeçalho esperado contém (v0.55+):</strong> <code>ORÇ. LICITAÇÃO</code> + <code>IPCA</code> + <code>INCC</code> + <code>EVOLUÇÃO</code></p>
+      <p><strong>Cabeçalho obrigatório:</strong> as colunas descritas acima devem permanecer nas posições originais; espaços, acentos e maiúsculas são normalizados durante a validação.</p>
       <p style="margin-top:8px; padding:8px 12px; background:var(--fgr-red-light); border-radius:4px; color:var(--fgr-red);">✨ <strong>Novidade v0.55:</strong> o arquivo agora tem 22 colunas (era 17). Foram adicionadas <code>EVOLUÇÃO TEÓRICA</code> e <code>EVOLUÇÃO FINANCEIRA</code> (integração com o Prevision) para calcular a <strong>Aderência Físico-Financeira</strong> da obra. Custos indiretos não entram nessa conta.</p>
       <p style="margin-top:8px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:4px; color:var(--sem-alerta);">⚠️ Formato anterior (17 colunas, sem EVOLUÇÃO) <strong>não é mais aceito</strong> a partir da v0.55.</p>
     </div>
@@ -1730,25 +1730,20 @@ body:not(.is-admin-geral) [data-admin-control],
     <h3 style="font-size:14px; margin:18px 0 8px; color:var(--text-medium);">🔗 Aba FlowsValor</h3>
     <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--text-medium);">
       <p><strong>Como exportar:</strong> Vá na aba <code>FlowsValor</code> da planilha, Salvar Como → CSV UTF-8.</p>
-      <p style="margin-top:8px;"><strong>Estrutura esperada (21 colunas):</strong></p>
+      <p style="margin-top:8px;"><strong>Estrutura esperada (Fabric v0.63, 15 colunas):</strong></p>
       <ul style="margin:6px 0 8px 24px;">
-        <li><code>A</code> — Nº da alteração (numérico)</li>
-        <li><code>B</code> — Nº ADT</li>
-        <li><code>C</code> — Departamento (Finalizado / Projeto / Cancelado / Planejamento / Orçamento / Obra)</li>
-        <li><code>D</code> — Descrição da alteração</li>
-        <li><code>E</code> — Data de criação (dd/mm/aaaa ou número serial)</li>
-        <li><code>F–I</code> — Aprovador (depto/nome), Solicitante (depto/nome)</li>
-        <li><code>J</code> — Custo Total Flowmaster (R$)</li>
-        <li><code>K</code> — Custo Total Planejamento (R$)</li>
-        <li><code>L</code> — Motivo</li>
-        <li><code>M</code> — Justificativa</li>
-        <li><code>N–Q</code> — Inclusões em Orçamento / Planej. / Tendência / Revisão</li>
-        <li><code>R</code> — <strong>INSUMO PLANEJAMENTO</strong> (destino do aditivo) ← <em>essencial</em></li>
-        <li><code>S</code> — <strong>INSUMO DE REMANEJAMENTO</strong> (origem do aditivo, se aplicável) ← <em>essencial</em></li>
-        <li><code>T</code> — Observações</li>
+        <li><code>A</code> — Cod_aditivo</li>
+        <li><code>B–D</code> — Descr_status, Descr_areaatual e Descr_setorcriacao</li>
+        <li><code>E</code> — Data_criacao</li>
+        <li><code>F–H</code> — Descr_motivo, Descr_observacao_motivo e Descr_descricaoaditivo</li>
+        <li><code>I</code> — Cod_obra</li>
+        <li><code>J–K</code> — Valor Aprovado ou Solicitado e Vlr_planejamento</li>
+        <li><code>L</code> — Departamento</li>
+        <li><code>M–N</code> — Ins. Planej. e Ins. Remanej.</li>
+        <li><code>O</code> — Refletido</li>
       </ul>
-      <p><strong>Linhas:</strong> as 2 primeiras são cabeçalho (linha 1 = título, linha 2 = headers). Dados a partir da linha 3.</p>
-      <p><strong>Cabeçalho esperado contém:</strong> <code>INSUMO PLANEJAMENTO</code> ou <code>CONTROLE DE ALTERAÇÕES</code></p>
+      <p><strong>Linhas:</strong> linha 1 = cabeçalho; dados a partir da linha 2.</p>
+      <p><strong>Cabeçalho obrigatório:</strong> as 15 colunas devem permanecer nessa ordem.</p>
       <p style="margin-top:8px;"><strong>Importante:</strong> as edições e os aditivos manuais que você cria neste dashboard <strong>NÃO são apagados</strong> quando você sobe um novo CSV. Eles ficam preservados.</p>
     </div>
 
@@ -1766,7 +1761,7 @@ body:not(.is-admin-geral) [data-admin-control],
         <li><code>Z</code> — Insumo (ex: <code>I001148</code>, <code>ADM5189</code>)</li>
       </ul>
       <p><strong>Lógica:</strong> o dashboard soma <code>Val_totalliquido</code> por <code>Key_planejamento</code> e <code>Gestão</code>, filtrando apenas <code>Jardins Zurique</code> e <code>Obra</code> e chave contendo <code>-21O-</code>.</p>
-      <p><strong>Cabeçalho esperado contém:</strong> <code>Descr_gestao</code> ou <code>Key_planejamento</code></p>
+      <p><strong>Cabeçalhos obrigatórios:</strong> <code>Descr_gestao</code>, <code>Descr_classificacaofinanceira</code>, <code>Key_planejamento</code>, <code>Val_totalliquido</code> e <code>Mes_pagamento</code>. A ordem pode variar.</p>
     </div>
 
     <h3 style="font-size:14px; margin:18px 0 8px; color:#6b21a8;">💡 Dicas gerais</h3>
@@ -6338,9 +6333,9 @@ const debouncedFlowTable = debounce(renderFlowTable, 300);
 
 // ============ UPLOAD POR ABA ============
 const MANUAL_TEXT = {
-  tendencia: '📈 ABA TENDÊNCIA (formato novo)\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba TENDÊNCIA\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui usando o botão "📤 Carregar CSV"\n\nColunas: A(chave) B(código) C(serviço) D(insumo) E(item) F(LICITAÇÃO) G(CORRIGIDO INCC) H(CORRIGIDO IPCA) I(GESTÃO) J(DIFERENÇA) ...\nCabeçalho deve conter: CORRIGIDO + INCC\n\n⚠️ Formato antigo (sem CORRIGIDO INCC/IPCA) NÃO é mais aceito desde a v0.28.\nVeja a aba "ℹ️ Manual" para detalhes completos.',
-  flows: '🔗 ABA FlowsValor\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba FlowsValor (planilha interna de controle, não o export do sistema)\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nColunas essenciais: R (INSUMO PLANEJAMENTO = destino) e S (INSUMO DE REMANEJAMENTO = origem)\nCabeçalho deve conter: "INSUMO PLANEJAMENTO" ou "CONTROLE DE ALTERAÇÕES"\n\n⚠️ As edições e aditivos manuais NÃO são apagados ao recarregar.\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
-  gestoes: '📅 ABA Gestões\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba Gestões\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nO dashboard agrega valores por Key_planejamento e Gestão, filtrando Jardins Zurique + Obra + chave contendo "-21O-"\nCabeçalho deve conter: "Descr_gestao" ou "Key_planejamento"\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
+  tendencia: '📈 ABA TENDÊNCIA (formato v0.55+)\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba TENDÊNCIA\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui usando o botão "📤 Carregar CSV"\n\nO arquivo deve manter as colunas de Código, Serviço, Insumo, Item, Licitação, IPCA, INCC, Gestão, Diferença e Evoluções nas posições documentadas.\n\n⚠️ O formato antigo de 17 colunas não é mais aceito.\nVeja a aba "ℹ️ Manual" para detalhes completos.',
+  flows: '🔗 ABA FlowsValor\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba FlowsValor (layout Fabric v0.63)\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nO arquivo deve manter as 15 colunas na ordem oficial, de Cod_aditivo até Refletido.\n\n⚠️ As edições e aditivos manuais NÃO são apagados ao recarregar.\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
+  gestoes: '📅 ABA Gestões\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba Gestões\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nCabeçalhos obrigatórios: Descr_gestao, Descr_classificacaofinanceira, Key_planejamento, Val_totalliquido e Mes_pagamento.\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
 };
 
 // ============================================================
@@ -6383,19 +6378,13 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
   reader.onload = async e => {
     try {
       const txt = e.target.result;
-      const firstLines = txt.split(/\r?\n/).slice(0,3).join(' ');
       let result = '';
       let linhas = 0;
 
       if (kind === 'tendencia') {
-        // formato novo tem "LICITAÇÃO" + "IPCA" + "INCC" + "EVOLUÇÃO"
-        const fu = firstLines.toUpperCase();
-        if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
-          authToast('❌ CSV inválido para TENDÊNCIA (esperado cabeçalho v0.55 com LICITAÇÃO + IPCA + INCC + EVOLUÇÃO)', 'err', 5000);
-          if (cardMeta) renderUploadsCentral();
-          ev.target.value = ''; return;
-        }
-        DATA_T = parseTendencia(txt);
+        const parsed = parseTendencia(txt);
+        if (!parsed.length) throw new Error('TENDÊNCIA: nenhuma linha válida encontrada. Os dados atuais foram mantidos.');
+        DATA_T = parsed;
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         // rebuildar datalist de insumos após upload novo
@@ -6403,12 +6392,9 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         linhas = DATA_T.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
-        if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
-          authToast('❌ CSV inválido para FLOWS (esperado cabeçalho começando com Cod_aditivo — formato v0.63 do Fabric)', 'err', 6000);
-          if (cardMeta) renderUploadsCentral();
-          ev.target.value = ''; return;
-        }
-        DATA_F = parseFlowsValor(txt);
+        const parsed = parseFlowsValor(txt);
+        if (!parsed.length) throw new Error('FLOWS: nenhum aditivo válido encontrado. Os dados atuais foram mantidos.');
+        DATA_F = parsed;
         applyManuals();
         loadClassifications();
         linhas = DATA_F.length;
@@ -6513,6 +6499,21 @@ function _sheetToCSV(workbook, sheetName) {
   return XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\n', blankrows: false, strip: false });
 }
 
+function _preflightExcelHeaders(workbook, mapping) {
+  const errors = [];
+  for (const kind of ['tendencia', 'flows', 'gestoes']) {
+    const sheetName = mapping[kind];
+    if (!sheetName) continue;
+    try {
+      const csv = _sheetToCSV(workbook, sheetName);
+      validateImportHeaders(kind, parseCSVRows(csv));
+    } catch (error) {
+      errors.push({ kind, sheetName, message: error.message });
+    }
+  }
+  return errors;
+}
+
 // ============================================================
 // Handler principal do upload Excel
 // ============================================================
@@ -6576,6 +6577,15 @@ async function handleExcelUpload(ev) {
     mapping = userMapping;
   } else {
     _renderExcelProgress(`✅ Auto-detectadas: 📈 ${mapping.tendencia} · 🔗 ${mapping.flows} · 📅 ${mapping.gestoes}`);
+  }
+
+  const headerErrors = _preflightExcelHeaders(workbook, mapping);
+  if (headerErrors.length) {
+    _renderExcelProgress(null);
+    headerErrors.forEach(error => {
+      authToast(`❌ Aba "${error.sheetName}": ${error.message}`, 'err', 8000);
+    });
+    return;
   }
 
   // Processar as 3 abas
@@ -6682,34 +6692,26 @@ async function _processExcelSheets(workbook, mapping, file) {
       continue;
     }
 
-    // Reusar exatamente a mesma lógica de validação e parsing do handleUpload CSV
-    const firstLines = csv.split(/\r?\n/).slice(0,3).join(' ');
+    // Os parsers repetem a validação do preflight como defesa contra chamadas diretas.
     let linhas = 0;
     try {
       if (step.parser === 'tendencia') {
-        // formato novo
-        const fu = firstLines.toUpperCase();
-        if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
-          throw new Error('Cabeçalho da aba Tendência precisa conter LICITAÇÃO + IPCA + INCC + EVOLUÇÃO (formato v0.55)');
-        }
-        DATA_T = parseTendencia(csv);
+        const parsed = parseTendencia(csv);
+        if (!parsed.length) throw new Error('TENDÊNCIA: nenhuma linha válida encontrada.');
+        DATA_T = parsed;
         // rebuildar datalist de insumos após upload novo
         try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
       } else if (step.parser === 'flows') {
-        if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
-          throw new Error('Cabeçalho da aba Flows precisa começar com Cod_aditivo (formato v0.63 do Fabric).');
-        }
-        DATA_F = parseFlowsValor(csv);
+        const parsed = parseFlowsValor(csv);
+        if (!parsed.length) throw new Error('FLOWS: nenhum aditivo válido encontrado.');
+        DATA_F = parsed;
         applyManuals();
         loadClassifications();
         linhas = DATA_F.length;
       } else if (step.parser === 'gestoes') {
-        if (!firstLines.includes('Descr_gestao') && !firstLines.includes('Key_planejamento')) {
-          throw new Error('Cabeçalho da aba Gestões precisa conter Descr_gestao ou Key_planejamento');
-        }
         const parsed = parseGestoes(csv);
         // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
@@ -7271,6 +7273,108 @@ const GRUPOS_MAP = {
   '09.02': 'Serviços Iniciais Adicionais',
 };
 
+const IMPORT_HEADER_RULES = {
+  tendencia: {
+    label: 'TENDÊNCIA',
+    positional: [
+      { index: 1, label: 'Código', alternatives: [['codigo'], ['cod']] },
+      { index: 2, label: 'Serviço', alternatives: [['servico']] },
+      { index: 3, label: 'Insumo', alternatives: [['insumo']] },
+      { index: 4, label: 'Item', alternatives: [['item']] },
+      { index: 6, label: 'Orçamento Licitação', alternatives: [['licitacao']] },
+      { index: 7, label: 'IPCA', alternatives: [['ipca']] },
+      { index: 8, label: 'INCC', alternatives: [['incc']] },
+      { index: 9, label: 'Gestão', alternatives: [['gestao']] },
+      { index: 10, label: 'Diferença', alternatives: [['diferenca']] },
+      { index: 12, label: 'Evolução Teórica', alternatives: [['evolucao', 'teorica']] },
+      { index: 13, label: 'Evolução Financeira', alternatives: [['evolucao', 'financeira']] },
+    ],
+  },
+  flows: {
+    label: 'FLOWS',
+    positional: [
+      { index: 0, label: 'Cod_aditivo', alternatives: [['cod', 'aditivo']] },
+      { index: 1, label: 'Descr_status', alternatives: [['descr', 'status']] },
+      { index: 2, label: 'Descr_areaatual', alternatives: [['descr', 'areaatual']] },
+      { index: 3, label: 'Descr_setorcriacao', alternatives: [['descr', 'setorcriacao']] },
+      { index: 4, label: 'Data_criacao', alternatives: [['data', 'criacao']] },
+      { index: 5, label: 'Descr_motivo', alternatives: [['descr', 'motivo']] },
+      { index: 6, label: 'Descr_observacao_motivo', alternatives: [['descr', 'observacao', 'motivo']] },
+      { index: 7, label: 'Descr_descricaoaditivo', alternatives: [['descr', 'descricaoaditivo']] },
+      { index: 8, label: 'Cod_obra', alternatives: [['cod', 'obra']] },
+      { index: 9, label: 'Valor Aprovado ou Solicitado', alternatives: [['valor', 'aprovado'], ['valor', 'solicitado']] },
+      { index: 10, label: 'Vlr_planejamento', alternatives: [['vlr', 'planejamento'], ['valor', 'planejamento']] },
+      { index: 11, label: 'Departamento', alternatives: [['departamento']] },
+      { index: 12, label: 'Ins. Planej.', alternatives: [['ins', 'planej'], ['insumo', 'planejamento']] },
+      { index: 13, label: 'Ins. Remanej.', alternatives: [['ins', 'remanej'], ['insumo', 'remanejamento']] },
+      { index: 14, label: 'Refletido', alternatives: [['refletido']] },
+    ],
+  },
+  gestoes: {
+    label: 'GESTÕES',
+    named: [
+      { label: 'Descr_gestao', alternatives: [['descr', 'gestao']] },
+      { label: 'Descr_classificacaofinanceira', alternatives: [['descr', 'classificacaofinanceira']] },
+      { label: 'Key_planejamento', alternatives: [['key', 'planejamento']] },
+      { label: 'Val_totalliquido', alternatives: [['val', 'totalliquido'], ['valor', 'total', 'liquido']] },
+      { label: 'Mes_pagamento', alternatives: [['mes', 'pagamento']] },
+    ],
+  },
+};
+
+function normalizeImportHeader(value) {
+  return String(value || '')
+    .replace(/^\ufeff/, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function importHeaderMatches(value, alternatives) {
+  const normalized = normalizeImportHeader(value);
+  return alternatives.some(terms => terms.every(term => normalized.includes(term)));
+}
+
+function validateImportHeaders(kind, rows) {
+  const rules = IMPORT_HEADER_RULES[kind];
+  if (!rules) throw new Error(`Tipo de importação desconhecido: ${kind}`);
+  if (!Array.isArray(rows) || !rows.length || !rows[0].some(cell => String(cell || '').trim())) {
+    throw new Error(`${rules.label}: arquivo vazio ou sem linha de cabeçalho.`);
+  }
+
+  const headers = rows[0];
+  const missing = [];
+  const misplaced = [];
+
+  (rules.positional || []).forEach(rule => {
+    if (importHeaderMatches(headers[rule.index], rule.alternatives)) return;
+    const foundIndex = headers.findIndex(value => importHeaderMatches(value, rule.alternatives));
+    if (foundIndex >= 0) {
+      misplaced.push(`${rule.label} (esperado na coluna ${rule.index + 1}, encontrado na ${foundIndex + 1})`);
+    } else {
+      missing.push(rule.label);
+    }
+  });
+
+  (rules.named || []).forEach(rule => {
+    if (!headers.some(value => importHeaderMatches(value, rule.alternatives))) missing.push(rule.label);
+  });
+
+  if (missing.length || misplaced.length) {
+    const details = [];
+    if (missing.length) details.push(`ausentes: ${missing.join(', ')}`);
+    if (misplaced.length) details.push(`posição incorreta: ${misplaced.join('; ')}`);
+    throw new Error(
+      `${rules.label}: cabeçalho inválido (${details.join(' | ')}). ` +
+      'Nenhum dado foi importado. Confirme o layout e exporte o CSV UTF-8 separado por ponto e vírgula.'
+    );
+  }
+
+  return headers;
+}
+
 // parseNum agora é um alias para parseNumero (definido no início do script)
 
 // v0.55 — Formato novo da aba TENDÊNCIA (22 colunas)
@@ -7284,17 +7388,8 @@ const GRUPOS_MAP = {
 function parseTendencia(text) {
   // Usa parseCSVRows para lidar com aspas multilinha (headers têm \n dentro de "")
   const rows = parseCSVRows(text);
-  if (rows.length < 3) return [];
-
-  const header = rows[0].map(c => (c||'').toUpperCase());
-  const headerText = header.join(' | ');
-  // Validação formato v0.55: precisa ter ORÇ. LICITAÇÃO + IPCA + INCC + EVOLUÇÃO
-  const isFormatoV055 = headerText.includes('LICITAÇÃO') && headerText.includes('IPCA')
-                     && headerText.includes('INCC') && headerText.includes('EVOLUÇÃO');
-  if (!isFormatoV055) {
-    authToast('❌ CSV da aba TENDÊNCIA em formato não reconhecido. A partir da v0.55, o dashboard espera o formato novo com ORÇ. LICITAÇÃO + IPCA + INCC + EVOLUÇÃO. Exporte a aba TENDÊNCIA atualizada da planilha.', 'err', 8000);
-    return [];
-  }
+  validateImportHeaders('tendencia', rows);
+  if (rows.length < 3) throw new Error('TENDÊNCIA: arquivo sem linhas de dados.');
 
   // Capturar label da gestão (agora está no idx 9)
   try {
@@ -7481,19 +7576,26 @@ function toIsoDate(s) {
 // A filtragem por obra ativa acontece na renderização (renderHistorico / renderProjecao).
 function parseGestoes(text) {
   const rows = parseCSVRows(text);
-  if (rows.length < 2) { PROJ_RAW = []; return { gestoes: [], items: [], totals: {} }; }
+  validateImportHeaders('gestoes', rows);
+  if (rows.length < 2) throw new Error('GESTÕES: arquivo sem linhas de dados.');
   const header = rows[0].map(c => (c||'').trim());
-  const idx = (name) => header.findIndex(h => h.toLowerCase() === name.toLowerCase());
+  const requiredIdx = (label) => {
+    const rule = IMPORT_HEADER_RULES.gestoes.named.find(item => item.label === label);
+    return header.findIndex(value => importHeaderMatches(value, rule.alternatives));
+  };
+  const optionalIdx = (name) => {
+    const normalizedName = normalizeImportHeader(name);
+    return header.findIndex(value => normalizeImportHeader(value) === normalizedName);
+  };
 
-  const iEmp = idx('Descr_empreendimento');
-  const iGest = idx('Descr_gestao');
-  const iClasFin = idx('Descr_classificacaofinanceira');
-  const iKeyPlan = idx('Key_planejamento');
-  const iVal = idx('Val_totalliquido');
-  const iInsumo = idx('Insumo');
-  const iItem = idx('Item');
-  const iServ = idx('Serviço');
-  const iMesPag = idx('Mes_pagamento');
+  const iGest = requiredIdx('Descr_gestao');
+  const iClasFin = requiredIdx('Descr_classificacaofinanceira');
+  const iKeyPlan = requiredIdx('Key_planejamento');
+  const iVal = requiredIdx('Val_totalliquido');
+  const iMesPag = requiredIdx('Mes_pagamento');
+  const iInsumo = optionalIdx('Insumo');
+  const iItem = optionalIdx('Item');
+  const iServ = optionalIdx('Serviço');
 
   // Extrai codigo_obra do prefixo da Key_planejamento
   // "42-21O-1-31005-..." → "42-21O"
@@ -7673,20 +7775,8 @@ function parseFlowsValor(text) {
   //  14: Refletido                 — MANUAL (preenchido no dashboard)
 
   const rows = parseCSVRows(text);
-  if (!rows || rows.length < 2) {
-    throw new Error('CSV vazio ou sem dados.');
-  }
-
-  // Detectar formato pelo header (linha 1) — primeira col deve ser "Cod_aditivo"
-  const header = rows[0].map(x => String(x||'').trim());
-  const primeiraCol = (header[0] || '').toLowerCase().replace(/^\ufeff/, '');
-  if (primeiraCol !== 'cod_aditivo') {
-    throw new Error(
-      'Formato de Flows inválido. Esperado cabeçalho começando com "Cod_aditivo" na linha 1. ' +
-      'A partir da v0.63, use o layout novo do Fabric (15 colunas). ' +
-      'Formato antigo (21 cols, cabeçalho "PLANILHA CONTROLE...") não é mais suportado.'
-    );
-  }
+  validateImportHeaders('flows', rows);
+  if (rows.length < 2) throw new Error('FLOWS: arquivo sem linhas de dados.');
 
   // Mapa: sufixo da obra (Fabric) → codigo_obra completo do Supabase
   // Ex: "21O" → "42-21O", "JROMO" → "18-JROMO"

@@ -131,7 +131,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [ ] Unificar o fechamento e a resolução de todos os modais.
 - [x] Remover a implementação antiga de `handleAuthClick()`.
 - [ ] Corrigir interpretação ambígua de datas brasileiras e americanas.
-- [ ] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
+- [x] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
 - [ ] Evitar concorrência no fluxo read-merge-write das classificações.
 - [ ] Exibir erros atualmente ocultados por blocos `catch` vazios.
 

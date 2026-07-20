@@ -327,13 +327,25 @@
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th { background: var(--bg-page); color: var(--text-medium); text-align: left; padding: 8px 10px;
     border-bottom: 2px solid var(--border); position: sticky; top: 0;
-    cursor: pointer; user-select: none; font-weight: 600; }
-  th:hover { background: var(--bg-soft); }
+    cursor: default; user-select: none; font-weight: 600; }
+  th:is([data-sort], [data-sort-flow], [data-sort-proj]) { cursor: pointer; padding-right: 24px; }
+  th:is([data-sort], [data-sort-flow], [data-sort-proj]):hover { background: var(--bg-soft); }
+  th[aria-sort="ascending"]::after,
+  th[aria-sort="descending"]::after {
+    position: absolute; right: 8px; color: var(--fgr-red-vivid); font-size: 11px;
+  }
+  th[aria-sort="ascending"]::after { content: "▲"; }
+  th[aria-sort="descending"]::after { content: "▼"; }
   th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   tr.row-grupo td { background: var(--fgr-red-deep); color: white; font-weight: 700; padding: 6px 10px; }
   tr.row-sub td { background: var(--fgr-red-light); color: var(--fgr-red-deep); font-weight: 600; }
   td { padding: 7px 10px; border-bottom: 1px solid var(--bg-soft); }
   tr.folha:hover { background: var(--sem-alerta-bg); cursor: pointer; }
+  tr[data-idx]:focus-visible,
+  tr[data-proj-action]:focus-visible {
+    outline: 3px solid var(--fgr-red-vivid);
+    outline-offset: -3px;
+  }
   tr.has-aditivo td:first-child { border-left: 3px solid #8b5cf6; }
   .pos { color: var(--sem-ok); font-weight: 600; }
   .neg { color: var(--sem-erro); font-weight: 600; }
@@ -840,6 +852,15 @@ body:not(.is-admin-geral) [data-admin-control],
 .apexcharts-toolbar { padding: 4px !important; }
 .apexcharts-toolbar svg { fill: var(--text-soft) !important; }
 
+@media (max-width: 900px) {
+  .header { flex-wrap: wrap; }
+  .header-actions {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 700px) {
   .page-header {
     position: static;
@@ -903,6 +924,25 @@ body:not(.is-admin-geral) [data-admin-control],
     margin-left: 0 !important;
   }
   .classif-bar > .btn-sm { flex: 1 1 180px; }
+  .modal-bg,
+  #loginModalBackdrop,
+  #obraFormBackdrop,
+  #editorFormBackdrop { padding: 8px; }
+  .modal,
+  #loginModalBackdrop > [role="dialog"],
+  #obraFormBackdrop > [role="dialog"],
+  #editorFormBackdrop > [role="dialog"] {
+    width: 100% !important;
+    max-height: calc(100dvh - 16px) !important;
+    padding: 16px !important;
+    overflow-y: auto;
+  }
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .form-grid .full { grid-column: auto; }
+  .form-actions,
+  .dialog-actions { flex-wrap: wrap; }
+  .dialog-actions > button,
+  .dialog-actions > div { flex: 1 1 auto; }
 }
 
 </style>
@@ -1037,16 +1077,16 @@ body:not(.is-admin-geral) [data-admin-control],
       <table id="tbl">
         <thead>
           <tr>
-            <th data-sort="grupo">Grupo</th>
-            <th data-sort="item">Item</th>
-            <th data-sort="cod_insumo">Insumo</th>
-            <th class="num" data-sort="licitacao">Licitação</th>
-            <th class="num" data-sort="gestao" id="thGestao">Gestão</th>
-            <th class="num" data-sort="diferenca">Δ R$</th>
-            <th class="num" data-sort="pct">Δ %</th>
-            <th class="num" data-sort="aditivo_total">Aditivos R$</th>
-            <th class="num" data-sort="evolucao_teorica" title="Evolução Teórica (Prevision) — cronograma físico esperado">🎯 Teór.</th>
-            <th class="num" data-sort="evolucao_financeira" title="Evolução Financeira — valor efetivamente gasto">💰 Fin.</th>
+            <th data-sort="grupo" aria-sort="none">Grupo</th>
+            <th data-sort="item" aria-sort="none">Item</th>
+            <th data-sort="cod_insumo" aria-sort="none">Insumo</th>
+            <th class="num" data-sort="licitacao" aria-sort="none">Licitação</th>
+            <th class="num" data-sort="gestao" id="thGestao" aria-sort="none">Gestão</th>
+            <th class="num" data-sort="diferenca" aria-sort="none">Δ R$</th>
+            <th class="num" data-sort="pct" aria-sort="none">Δ %</th>
+            <th class="num" data-sort="aditivo_total" aria-sort="none">Aditivos R$</th>
+            <th class="num" data-sort="evolucao_teorica" aria-sort="none" title="Evolução Teórica (Prevision) — cronograma físico esperado">🎯 Teór.</th>
+            <th class="num" data-sort="evolucao_financeira" aria-sort="none" title="Evolução Financeira — valor efetivamente gasto">💰 Fin.</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -1129,14 +1169,14 @@ body:not(.is-admin-geral) [data-admin-control],
           <tr>
             <th style="width:30px;"><input type="checkbox" id="flowSelectAll" data-edit-control onchange="toggleSelectAllVisible(this)" title="Selecionar/desmarcar todos os visíveis" aria-label="Selecionar ou desmarcar todos os aditivos visíveis" style="cursor:pointer; transform:scale(1.15);"></th>
             <th style="width:110px;" title="Status de reflexo no planejamento da obra">Refletido?</th>
-            <th data-sort-flow="n_alteracao" style="width:55px;">Nº</th>
-            <th data-sort-flow="data" style="width:90px;">Data</th>
-            <th data-sort-flow="dep" style="width:110px;">Departamento</th>
-            <th data-sort-flow="tipo" style="width:120px;">Tipo</th>
-            <th data-sort-flow="insumo_planejamento" style="width:180px;">→ Destino</th>
-            <th data-sort-flow="insumo_remanejamento" style="width:180px;">← Origem</th>
-            <th class="num" data-sort-flow="custo_flowmaster" style="width:130px;">Fluxo Planejamento</th>
-            <th data-sort-flow="motivo">Motivo / Descrição</th>
+            <th data-sort-flow="n_alteracao" aria-sort="none" style="width:55px;">Nº</th>
+            <th data-sort-flow="data" aria-sort="none" style="width:90px;">Data</th>
+            <th data-sort-flow="dep" aria-sort="none" style="width:110px;">Departamento</th>
+            <th data-sort-flow="tipo" aria-sort="none" style="width:120px;">Tipo</th>
+            <th data-sort-flow="insumo_planejamento" aria-sort="none" style="width:180px;">→ Destino</th>
+            <th data-sort-flow="insumo_remanejamento" aria-sort="none" style="width:180px;">← Origem</th>
+            <th class="num" data-sort-flow="custo_flowmaster" aria-sort="none" style="width:130px;">Fluxo Planejamento</th>
+            <th data-sort-flow="motivo" aria-sort="none">Motivo / Descrição</th>
           </tr>
         </thead>
         <tbody id="flowTbody"></tbody>
@@ -1275,11 +1315,11 @@ body:not(.is-admin-geral) [data-admin-control],
         <thead>
           <tr>
             <th style="width:24px;"></th>
-            <th data-sort-proj="label" style="min-width:240px;">Grupo / Serviço / Insumo</th>
-            <th class="num" data-sort-proj="valor_gestao" style="width:130px;" title="Total da última gestão fechada (do HISTORICO)">Valor Gestão</th>
-            <th class="num" data-sort-proj="realizado" style="width:120px;">Realizado</th>
-            <th class="num" data-sort-proj="extrapolacao" style="width:120px;">Extrapolação</th>
-            <th class="num" data-sort-proj="tendencia" style="width:130px;">Tendência</th>
+            <th data-sort-proj="label" aria-sort="none" style="min-width:240px;">Grupo / Serviço / Insumo</th>
+            <th class="num" data-sort-proj="valor_gestao" aria-sort="none" style="width:130px;" title="Total da última gestão fechada (do HISTORICO)">Valor Gestão</th>
+            <th class="num" data-sort-proj="realizado" aria-sort="none" style="width:120px;">Realizado</th>
+            <th class="num" data-sort-proj="extrapolacao" aria-sort="none" style="width:120px;">Extrapolação</th>
+            <th class="num" data-sort-proj="tendencia" aria-sort="none" style="width:130px;">Tendência</th>
             <th style="width:170px;">Status / Ação</th>
           </tr>
         </thead>
@@ -1527,16 +1567,17 @@ body:not(.is-admin-geral) [data-admin-control],
   <!-- === FORM MODAL: NOVA/EDITAR OBRA === -->
   <div id="obraFormBackdrop" aria-hidden="true" onclick="if(event.target===this)closeObraForm()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div role="dialog" aria-modal="true" aria-labelledby="obraFormTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <form id="obraForm" onsubmit="event.preventDefault(); salvarObraForm()">
       <h2 id="obraFormTitle" style="margin:0 0 16px; color:var(--fgr-red-deep); font-size:18px;">Nova obra</h2>
       <div style="display:grid; gap:12px;">
         <div>
           <label for="obraFormCodigo" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Código da obra <span style="color:var(--sem-erro);">*</span></label>
-          <input type="text" id="obraFormCodigo" placeholder="ex: 42-21O" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px; font-family:monospace;">
+          <input type="text" id="obraFormCodigo" required placeholder="ex: 42-21O" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px; font-family:monospace;">
           <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Formato Key_planejamento (ex: <code>42-21O</code>, sem zero à esquerda). Imutável após criar.</div>
         </div>
         <div>
           <label for="obraFormNome" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Nome da obra <span style="color:var(--sem-erro);">*</span></label>
-          <input type="text" id="obraFormNome" placeholder="ex: Jardins Zurique" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
+          <input type="text" id="obraFormNome" required placeholder="ex: Jardins Zurique" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
         </div>
         <div>
           <label for="obraFormKey" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Key EmpObraTD (opcional)</label>
@@ -1548,16 +1589,18 @@ body:not(.is-admin-geral) [data-admin-control],
           <textarea id="obraFormObs" placeholder="notas internas" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px; min-height:60px; resize:vertical;"></textarea>
         </div>
       </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
-        <button class="btn-sm" onclick="closeObraForm()">Cancelar</button>
-        <button class="btn-sm primary" onclick="salvarObraForm()">💾 Salvar</button>
+      <div class="dialog-actions" style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+        <button type="button" class="btn-sm" onclick="closeObraForm()">Cancelar</button>
+        <button type="submit" class="btn-sm primary">💾 Salvar</button>
       </div>
+      </form>
     </div>
   </div>
 
   <!-- === MODAL UNIFICADO EDITOR (v0.62.2) === -->
   <div id="editorFormBackdrop" aria-hidden="true" onclick="if(event.target===this)closeEditorForm()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div role="dialog" aria-modal="true" aria-labelledby="editorFormTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:560px; width:90%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <form id="editorForm" onsubmit="event.preventDefault(); salvarEditorForm()">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <h2 id="editorFormTitle" style="margin:0; color:var(--fgr-red-deep); font-size:18px;">✏️ Editar usuário</h2>
         <button type="button" onclick="closeEditorForm()" aria-label="Fechar formulário de usuário" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-soft);" title="Fechar (Esc)">×</button>
@@ -1566,7 +1609,7 @@ body:not(.is-admin-geral) [data-admin-control],
       <div style="display:grid; gap:12px;">
         <div>
           <label for="editorFormEmail" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Email <span style="color:var(--sem-erro);">*</span></label>
-          <input type="email" id="editorFormEmail" placeholder="fulano@empresa.com" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
+          <input type="email" id="editorFormEmail" required placeholder="fulano@empresa.com" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
           <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Precisa ser o email do Google/cadastro que a pessoa usa pra logar.</div>
         </div>
         <div>
@@ -1609,13 +1652,14 @@ body:not(.is-admin-geral) [data-admin-control],
         </div>
       </div>
 
-      <div style="display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
-        <button id="editorFormDeleteBtn" class="btn-sm" onclick="excluirUsuarioDoModal()" style="font-size:12px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
+      <div class="dialog-actions" style="display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+        <button type="button" id="editorFormDeleteBtn" class="btn-sm" onclick="excluirUsuarioDoModal()" style="font-size:12px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
         <div style="display:flex; gap:8px;">
-          <button class="btn-sm" onclick="closeEditorForm()">Cancelar</button>
-          <button class="btn-sm primary" onclick="salvarEditorForm()">💾 Salvar</button>
+          <button type="button" class="btn-sm" onclick="closeEditorForm()">Cancelar</button>
+          <button type="submit" class="btn-sm primary">💾 Salvar</button>
         </div>
       </div>
+      </form>
     </div>
   </div>
 </section>
@@ -1797,12 +1841,13 @@ body:not(.is-admin-geral) [data-admin-control],
 
 <!-- Template: formulário de aditivo manual -->
 <template id="tpl-manual-form">
+  <form data-modal-form="manual">
   <h2>➕ Novo aditivo manual</h2>
   <div class="meta">Item ainda não criado no sistema Flow. Será marcado com ID <strong class="id-placeholder"></strong>.</div>
   <div class="form-grid">
     <div>
       <label for="m_dep">Departamento</label>
-      <select id="m_dep"><option value="">-</option></select>
+      <select id="m_dep" required><option value="">-</option></select>
     </div>
     <div>
       <label for="m_data">Data (dd/mm/aaaa)</label>
@@ -1810,7 +1855,7 @@ body:not(.is-admin-geral) [data-admin-control],
     </div>
     <div class="full">
       <label for="m_desc">Descrição</label>
-      <textarea id="m_desc" placeholder="Ex: Aumento previsto - revisão paisagismo Q2"></textarea>
+      <textarea id="m_desc" required placeholder="Ex: Aumento previsto - revisão paisagismo Q2"></textarea>
     </div>
     <div>
       <label for="m_motivo">Motivo</label>
@@ -1836,9 +1881,10 @@ body:not(.is-admin-geral) [data-admin-control],
     </div>
   </div>
   <div class="form-actions">
-    <button class="btn-sm" onclick="closeModal()">Cancelar</button>
-    <button class="btn-sm primary" data-action="save-manual" data-n="">💾 Salvar aditivo manual</button>
+    <button type="button" class="btn-sm" onclick="closeModal()">Cancelar</button>
+    <button type="submit" class="btn-sm primary" data-action="save-manual" data-n="">💾 Salvar aditivo manual</button>
   </div>
+  </form>
 </template>
 
 <div class="modal-bg" id="modalBg" aria-hidden="true" onclick="if(event.target===this)closeModal()">
@@ -5131,6 +5177,40 @@ function renderDonut(tipoSum) {
 }
 
 // ============ DETALHAMENTO ============
+function updateSortHeaderState(selector, dataAttribute, activeKey, direction) {
+  document.querySelectorAll(selector).forEach(header => {
+    const key = header.getAttribute(dataAttribute);
+    const state = key === activeKey ? (direction > 0 ? 'ascending' : 'descending') : 'none';
+    const label = header.textContent.trim();
+    header.setAttribute('aria-sort', state);
+    header.setAttribute(
+      'aria-label',
+      state === 'none'
+        ? `${label}. Ativar ordenação`
+        : `${label}. Ordenação ${state === 'ascending' ? 'crescente' : 'decrescente'}`
+    );
+  });
+}
+
+function bindSortableHeaders(selector, dataAttribute, getState, activateSort) {
+  document.querySelectorAll(selector).forEach(header => {
+    header.tabIndex = 0;
+    const activate = () => activateSort(header.getAttribute(dataAttribute));
+    header.addEventListener('click', activate);
+    header.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      activate();
+    });
+  });
+  const state = getState();
+  updateSortHeaderState(selector, dataAttribute, state.key, state.direction);
+}
+
+function isTableRowActivation(event) {
+  return event.type === 'click' || event.key === 'Enter' || event.key === ' ';
+}
+
 function populateFilters() {
   const grupos = [...new Set(DATA_T.map(d => d.grupo))].sort();
   const sel = document.getElementById('filterGrupo');
@@ -5190,6 +5270,9 @@ function renderTable() {
     if (sortKey === 'pct') {
       va = a.licitacao ? (a.gestao - a.licitacao) / a.licitacao : -Infinity;
       vb = b.licitacao ? (b.gestao - b.licitacao) / b.licitacao : -Infinity;
+    } else if (sortKey === 'diferenca') {
+      va = (a.licitacao != null && a.gestao != null) ? a.gestao - a.licitacao : -Infinity;
+      vb = (b.licitacao != null && b.gestao != null) ? b.gestao - b.licitacao : -Infinity;
     } else if (sortKey === 'aditivo_total') {
       va = Math.abs(a.aditivo_total || 0); vb = Math.abs(b.aditivo_total || 0);
     } else { va = a[sortKey]; vb = b[sortKey]; }
@@ -5215,7 +5298,7 @@ function renderTable() {
     const adt = d.aditivo_total || 0;
     const adtTxt = hasAdt ? `<span class="${adt<0?'pos':'neg'}">${adt>=0?'+':''}${fmt(adt)}</span> <span style="color:var(--text-lighter);font-size:10px;">(${(d.flows_destino?.length||0)+(d.flows_origem?.length||0)})</span>` : '<span style="color:var(--text-lighter);">-</span>';
     const origIdx = idxMap.get(d);
-    return `<tr class="folha ${hasAdt?'has-aditivo':''}" data-idx="${origIdx}">
+    return `<tr class="folha ${hasAdt?'has-aditivo':''}" data-idx="${origIdx}" tabindex="0" aria-label="Abrir detalhes de ${escAttr(d.item || d.cod_insumo || 'item')}">
       <td>${escHtml(d.grupo)}</td>
       <td>${escHtml(d.item)}</td>
       <td style="color:var(--text-soft);font-size:11px;">${escHtml(d.cod_insumo||'')}</td>
@@ -5230,24 +5313,33 @@ function renderTable() {
     </tr>`;
   }).join('');
   document.getElementById('count').textContent = `${rows.filter(r=>r.is_folha).length} itens`;
+  updateSortHeaderState('th[data-sort]', 'data-sort', sortKey, sortDir);
 }
 
-document.querySelectorAll('th[data-sort]').forEach(th => {
-  th.onclick = () => {
-    const k = th.dataset.sort;
+bindSortableHeaders(
+  'th[data-sort]',
+  'data-sort',
+  () => ({ key: sortKey, direction: sortDir }),
+  k => {
     if (sortKey === k) sortDir = -sortDir;
     else { sortKey = k; sortDir = (['item','grupo','cod_insumo'].includes(k)) ? 1 : -1; }
+    updateSortHeaderState('th[data-sort]', 'data-sort', sortKey, sortDir);
     renderTable();
-  };
-});
+  }
+);
 
-// Event delegation para linhas da tabela de detalhamento (substitui onclick inline)
-document.getElementById('tbody')?.addEventListener('click', (e) => {
-  const tr = e.target.closest('tr[data-idx]');
+function activateDetailRow(event) {
+  if (!isTableRowActivation(event)) return;
+  const tr = event.target.closest('tr[data-idx]');
   if (!tr) return;
+  if (event.type === 'keydown') event.preventDefault();
   const idx = parseInt(tr.dataset.idx, 10);
   if (!isNaN(idx)) openItem(idx);
-});
+}
+
+// Event delegation para abrir detalhes por clique, Enter ou Espaço.
+document.getElementById('tbody')?.addEventListener('click', activateDetailRow);
+document.getElementById('tbody')?.addEventListener('keydown', activateDetailRow);
 
 // Salvar filtros no localStorage
 function salvarFiltros() {
@@ -5467,13 +5559,16 @@ document.addEventListener('keydown', event => {
   }
 });
 
-// Event delegation para ações dentro de modais (saveManualForm, editMov, deleteMov, saveMovForm)
-document.getElementById('modalContent')?.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  if (action === 'save-manual') saveManualForm(btn.dataset.n);
-  else if (action === 'save-mov') saveMovForm(btn.dataset.id || '');
+// Formulários dinâmicos usam submit para funcionar igualmente por clique e Enter.
+document.getElementById('modalContent')?.addEventListener('submit', event => {
+  const form = event.target.closest('form[data-modal-form]');
+  if (!form) return;
+  event.preventDefault();
+  const submitter = event.submitter || form.querySelector('[type="submit"]');
+  const action = submitter?.dataset.action;
+  if (action === 'save-manual') saveManualForm(submitter.dataset.n);
+  else if (action === 'save-mov') saveMovForm(submitter.dataset.id || '');
+  else if (action === 'mass-confirm') massConfirmCallback();
 });
 
 // Modal de confirmação customizado (substitui a confirmação nativa do navegador)
@@ -5497,31 +5592,35 @@ function confirmModal(titulo, mensagem, opts) {
       : '';
 
     document.getElementById('confirmModalContent').innerHTML = ''
+      + '<form id="confirmModalForm">'
       + '<h2>' + escHtml(titulo) + '</h2>'
       + '<div style="white-space:pre-wrap; font-size:13px; line-height:1.6; color:var(--text-medium); margin:16px 0;">' + escHtml(mensagem) + '</div>'
       + requireHtml
       + '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">'
-      + '  <button class="btn-sm" id="confirmModalCancel">' + escHtml(btnCancelText) + '</button>'
-      + '  <button class="btn-sm" id="confirmModalOk" style="' + confirmBtnStyle + (requireText ? '; opacity:0.5; cursor:not-allowed;' : '') + '">' + escHtml(btnConfirmText) + '</button>'
-      + '</div>';
+      + '  <button type="button" class="btn-sm" id="confirmModalCancel">' + escHtml(btnCancelText) + '</button>'
+      + '  <button type="submit" class="btn-sm" id="confirmModalOk"' + (requireText ? ' disabled' : '') + ' style="' + confirmBtnStyle + (requireText ? '; opacity:0.5; cursor:not-allowed;' : '') + '">' + escHtml(btnConfirmText) + '</button>'
+      + '</div>'
+      + '</form>';
 
+    const form = document.getElementById('confirmModalForm');
     const okBtn = document.getElementById('confirmModalOk');
     const cancelBtn = document.getElementById('confirmModalCancel');
+    let reqInput = null;
 
     if (requireText) {
-      const reqInput = document.getElementById('confirmModalRequire');
+      reqInput = document.getElementById('confirmModalRequire');
       reqInput.addEventListener('input', () => {
         const match = reqInput.value.trim() === requireText;
+        okBtn.disabled = !match;
         okBtn.style.opacity = match ? '1' : '0.5';
         okBtn.style.cursor = match ? 'pointer' : 'not-allowed';
       });
-      okBtn.onclick = () => {
-        if (reqInput.value.trim() !== requireText) return;
-        closeConfirmModal(true);
-      };
-    } else {
-      okBtn.onclick = function() { closeConfirmModal(true); };
     }
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      if (reqInput && reqInput.value.trim() !== requireText) return;
+      closeConfirmModal(true);
+    });
     cancelBtn.onclick = function() { closeConfirmModal(false); };
     openModalLayer(document.getElementById('confirmModalBg'), {
       onClose: resolve,
@@ -6266,15 +6365,17 @@ function updateMassBar() {
 // Modal genérico de aplicação em massa
 function massPrompt(titulo, descricao, opcoesHtml, callback) {
   const html = `
+    <form data-modal-form="mass">
     <h2>${titulo}</h2>
     <div class="meta" style="margin-bottom: 14px;">${descricao}</div>
     <div class="form-grid">
       ${opcoesHtml}
     </div>
     <div class="form-actions">
-      <button class="btn-sm" onclick="closeModal()">Cancelar</button>
-      <button class="btn-sm primary" onclick="massConfirmCallback()">✓ Aplicar a ${MASS_SELECTED.size} aditivo(s)</button>
+      <button type="button" class="btn-sm" onclick="closeModal()">Cancelar</button>
+      <button type="submit" class="btn-sm primary" data-action="mass-confirm">✓ Aplicar a ${MASS_SELECTED.size} aditivo(s)</button>
     </div>
+    </form>
   `;
   window._massCallback = callback;
   window.massConfirmCallback = () => {
@@ -6288,7 +6389,7 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
     } catch (e) { authToast('❌ Erro: ' + e.message, 'err', 5000); }
   };
   document.getElementById('modalContent').innerHTML = html;
-  openModal();
+  openModal({ initialFocus: 'input, select, textarea' });
 }
 
 // Limita a concorrência para não saturar a API durante edições em massa.
@@ -6562,7 +6663,7 @@ function openManualForm(editing) {
   const content = document.getElementById('modalContent');
   content.innerHTML = '';
   content.appendChild(tpl);
-  openModal();
+  openModal({ initialFocus: '#m_desc' });
 }
 
 function saveManualForm(editingId) {
@@ -6833,6 +6934,7 @@ function renderFlowTable() {
   const refletidos = rows.filter(r => (r.refletido_status||'') === 'sim').length;
   const naorefl = rows.filter(r => (r.refletido_status||'') === 'nao').length;
   document.getElementById('flowCount').textContent = `${rows.length} aditivos · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s,f)=>s+(f.custo_flowmaster||0),0))}`;
+  updateSortHeaderState('th[data-sort-flow]', 'data-sort-flow', sortKeyF, sortDirF);
   // Sincronizar checkbox header e barra de massa
   syncSelectAllHeader();
   updateMassBar();
@@ -6886,14 +6988,17 @@ function onRefletidoChange(sel) {
   syncAllViewsFromFlows();
 }
 
-document.querySelectorAll('th[data-sort-flow]').forEach(th => {
-  th.onclick = () => {
-    const k = th.dataset.sortFlow;
+bindSortableHeaders(
+  'th[data-sort-flow]',
+  'data-sort-flow',
+  () => ({ key: sortKeyF, direction: sortDirF }),
+  k => {
     if (sortKeyF === k) sortDirF = -sortDirF;
     else { sortKeyF = k; sortDirF = -1; }
+    updateSortHeaderState('th[data-sort-flow]', 'data-sort-flow', sortKeyF, sortDirF);
     renderFlowTable();
-  };
-});
+  }
+);
 
 // Event delegation para botão delete-manual na tabela de flows
 document.getElementById('flowTbody')?.addEventListener('click', (e) => {
@@ -8972,8 +9077,8 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
   renderApexChart('projChart', options);
 }
 
-let projSortKey = 'diff';
-let projSortDir = -1;
+let projSortKey = null;
+let projSortDir = 1;
 let projExpanded = new Set(); // chaves de grupos/serviços expandidos
 
 // Conta flows que apontam para um insumo (destino ou origem), ignorando cancelados
@@ -9268,6 +9373,28 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     return n.tipo + ':' + n.ordem;
   }
 
+  function sortedNodeIndexes(indexes) {
+    if (!projSortKey) return indexes;
+    return [...indexes].sort((leftIndex, rightIndex) => {
+      const left = nodes[leftIndex];
+      const right = nodes[rightIndex];
+      let leftValue;
+      let rightValue;
+      if (projSortKey === 'label') {
+        leftValue = left.item || left.cod || '';
+        rightValue = right.item || right.cod || '';
+      } else if (projSortKey === 'tendencia') {
+        leftValue = (left.proj?.valor_gestao || 0) + (left.proj?.extrapolacao || 0);
+        rightValue = (right.proj?.valor_gestao || 0) + (right.proj?.extrapolacao || 0);
+      } else {
+        leftValue = left.proj?.[projSortKey] ?? 0;
+        rightValue = right.proj?.[projSortKey] ?? 0;
+      }
+      if (typeof leftValue === 'string') return projSortDir * leftValue.localeCompare(rightValue, 'pt-BR');
+      return projSortDir * (leftValue - rightValue);
+    });
+  }
+
   function renderNode(idx, level) {
     const n = nodes[idx];
     if (!visible.has(idx)) return;
@@ -9344,12 +9471,12 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     // A ação fica em data attributes para não misturar dados importados com JavaScript inline.
     let actionAttrs;
     if (hasChildren) {
-      actionAttrs = `data-proj-action="expand" data-proj-key="${escAttr(key)}"`;
+      actionAttrs = `data-proj-action="expand" data-proj-key="${escAttr(key)}" tabindex="0" aria-expanded="${expanded}" aria-label="${expanded ? 'Recolher' : 'Expandir'} ${escAttr(n.item || n.cod)}"`;
     } else if (n.tipo === 'insumo') {
       const servicoCod = getServicoCod(idx);
-      actionAttrs = `data-proj-action="drill" data-servico-cod="${escAttr(servicoCod)}" data-insumo-cod="${escAttr(n.cod_insumo)}"`;
+      actionAttrs = `data-proj-action="drill" data-servico-cod="${escAttr(servicoCod)}" data-insumo-cod="${escAttr(n.cod_insumo)}" tabindex="0" aria-label="Abrir detalhes de ${escAttr(n.item || n.cod_insumo)}"`;
     } else if (n.cod_servico) {
-      actionAttrs = `data-proj-action="drill" data-servico-cod="${escAttr(n.cod_servico)}"`;
+      actionAttrs = `data-proj-action="drill" data-servico-cod="${escAttr(n.cod_servico)}" tabindex="0" aria-label="Abrir detalhes de ${escAttr(n.item || n.cod_servico)}"`;
     } else {
       actionAttrs = '';
     }
@@ -9371,7 +9498,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     count++;
 
     if (expanded) {
-      n.children.forEach(ci => {
+      sortedNodeIndexes(n.children).forEach(ci => {
         const nextLevel = level + 1;
         renderNode(ci, nextLevel);
       });
@@ -9379,15 +9506,20 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
   }
 
   // Render todos os roots
-  nodes.forEach((n, i) => { if (n.parent === null) renderNode(i, 0); });
+  sortedNodeIndexes(nodes.map((n, i) => n.parent === null ? i : null).filter(i => i != null))
+    .forEach(i => renderNode(i, 0));
 
   document.getElementById('projTbody').innerHTML = html;
   document.getElementById('projCount').textContent = `${count} linhas`;
+  updateSortHeaderState('th[data-sort-proj]', 'data-sort-proj', projSortKey, projSortDir);
 }
 
-document.getElementById('projTbody')?.addEventListener('click', event => {
+function activateProjectionRow(event) {
+  if (!isTableRowActivation(event)) return;
   const row = event.target.closest('tr[data-proj-action]');
   if (!row) return;
+  if (event.target !== row && event.target.closest('button, input, select, textarea, a')) return;
+  if (event.type === 'keydown') event.preventDefault();
   if (row.dataset.projAction === 'expand') {
     toggleProjExpand(row.dataset.projKey || '');
     return;
@@ -9395,7 +9527,10 @@ document.getElementById('projTbody')?.addEventListener('click', event => {
   if (row.dataset.projAction === 'drill') {
     openProjDrill(row.dataset.servicoCod || '', row.dataset.insumoCod || undefined);
   }
-});
+}
+
+document.getElementById('projTbody')?.addEventListener('click', activateProjectionRow);
+document.getElementById('projTbody')?.addEventListener('keydown', activateProjectionRow);
 
 function toggleProjExpand(key) {
   if (projExpanded.has(key)) projExpanded.delete(key);
@@ -10004,14 +10139,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 0);
 });
-document.querySelectorAll('th[data-sort-proj]').forEach(th => {
-  th.onclick = () => {
-    const k = th.dataset.sortProj;
+bindSortableHeaders(
+  'th[data-sort-proj]',
+  'data-sort-proj',
+  () => ({ key: projSortKey, direction: projSortDir }),
+  k => {
     if (projSortKey === k) projSortDir = -projSortDir;
-    else { projSortKey = k; projSortDir = (k === 'servico') ? 1 : -1; }
+    else { projSortKey = k; projSortDir = k === 'label' ? 1 : -1; }
+    updateSortHeaderState('th[data-sort-proj]', 'data-sort-proj', projSortKey, projSortDir);
     renderProjecao();
-  };
-});
+  }
+);
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
@@ -10566,6 +10704,7 @@ function openMovForm(editingId) {
   const tipoOpts = tipos.map(t => `<option value="${t.v}" ${m && m.tipo === t.v ? 'selected' : ''}>${t.l}</option>`).join('');
 
   document.getElementById('modalContent').innerHTML = `
+    <form data-modal-form="movement">
     <h2>${m ? '✏️ Editar movimentação' : '➕ Nova movimentação'}</h2>
     <div class="meta">Insumo controlado: <strong>${escHtml(insumo)}</strong></div>
     <div class="form-grid">
@@ -10587,7 +10726,7 @@ function openMovForm(editingId) {
       </div>
       <div class="full">
       <label for="mov_desc">Descrição</label>
-        <input type="text" id="mov_desc" value="${escAttr(m ? m.descricao : '')}" placeholder="ex: Remanejamento para drenagem rede 2">
+        <input type="text" id="mov_desc" required value="${escAttr(m ? m.descricao : '')}" placeholder="ex: Remanejamento para drenagem rede 2">
       </div>
       <div>
       <label for="mov_resp">Responsável</label>
@@ -10595,7 +10734,7 @@ function openMovForm(editingId) {
       </div>
       <div>
       <label for="mov_valor">Valor (R$)</label>
-        <input type="text" id="mov_valor" value="${m && m.valor != null ? fmt(m.valor) : ''}" placeholder="ex: 12.500,00">
+        <input type="text" id="mov_valor" required value="${m && m.valor != null ? fmt(m.valor) : ''}" placeholder="ex: 12.500,00">
       </div>
       <div class="full">
       <label for="mov_just">Justificativa (opcional)</label>
@@ -10603,14 +10742,15 @@ function openMovForm(editingId) {
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-sm" onclick="closeModal()">Cancelar</button>
-      <button class="btn-sm primary" data-action="save-mov" data-id="${escAttr(editingId||'')}">💾 Salvar</button>
+      <button type="button" class="btn-sm" onclick="closeModal()">Cancelar</button>
+      <button type="submit" class="btn-sm primary" data-action="save-mov" data-id="${escAttr(editingId||'')}">💾 Salvar</button>
     </div>
     <div style="margin-top:10px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:6px; font-size:11px; color:var(--sem-alerta);">
       💡 A direção (entrada/saída) é calculada automaticamente: se o insumo controlado (${escHtml(insumo)}) aparecer no campo <strong>Destino</strong>, é uma entrada. Se aparecer em <strong>Origem</strong>, é uma saída.
     </div>
+    </form>
   `;
-  openModal();
+  openModal({ initialFocus: '#mov_tipo' });
 }
 
 async function saveMovForm(editingId) {
@@ -11465,7 +11605,7 @@ async function handleAuthClick() {
 
     <!-- PAINEL LOGIN -->
     <div id="loginPanelLogin">
-      <button onclick="doSignInGoogle()" style="width:100%; padding:10px; border:1px solid var(--border-strong); border-radius:8px; background:white; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+      <button type="button" onclick="doSignInGoogle()" style="width:100%; padding:10px; border:1px solid var(--border-strong); border-radius:8px; background:white; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
         <span style="font-size:16px;">🔷</span> Entrar com Google
       </button>
       <div style="display:flex; align-items:center; gap:10px; margin:12px 0; color:var(--text-lighter); font-size:11px;">
@@ -11473,18 +11613,18 @@ async function handleAuthClick() {
         <span>ou com email</span>
         <div style="flex:1; height:1px; background:var(--border);"></div>
       </div>
-      <div style="display:grid; gap:10px;">
+      <form id="loginEmailForm" onsubmit="event.preventDefault(); doSignInEmail()" style="display:grid; gap:10px;">
         <div>
           <label for="loginEmail" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Email</label>
-          <input type="email" id="loginEmail" autocomplete="email" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
+          <input type="email" id="loginEmail" autocomplete="email" required style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
         </div>
         <div>
           <label for="loginSenha" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Senha</label>
-          <input type="password" id="loginSenha" autocomplete="current-password" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;" onkeydown="if(event.key==='Enter') doSignInEmail()">
+          <input type="password" id="loginSenha" autocomplete="current-password" required style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
         </div>
         <div id="loginErro" role="alert" aria-live="assertive" style="color:var(--sem-erro); font-size:12px; min-height:16px;"></div>
-        <button onclick="doSignInEmail()" style="width:100%; padding:10px; border:none; border-radius:8px; background:var(--fgr-red-deep); color:white; cursor:pointer; font-size:13px; font-weight:600;">Entrar</button>
-      </div>
+        <button type="submit" style="width:100%; padding:10px; border:none; border-radius:8px; background:var(--fgr-red-deep); color:white; cursor:pointer; font-size:13px; font-weight:600;">Entrar</button>
+      </form>
     </div>
 
     <!-- PAINEL SIGNUP -->
@@ -11492,27 +11632,27 @@ async function handleAuthClick() {
       <p style="font-size:12px; color:var(--text-soft); margin:0 0 12px;">
         Sua conta será criada como <strong>"aguardando aprovação"</strong>. Um administrador precisa liberar seu acesso pra editar dados.
       </p>
-      <div style="display:grid; gap:10px;">
+      <form id="signupEmailForm" onsubmit="event.preventDefault(); doSignUpEmail()" style="display:grid; gap:10px;">
         <div>
           <label for="signupNome" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Nome (opcional)</label>
           <input type="text" id="signupNome" autocomplete="name" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
         </div>
         <div>
           <label for="signupEmail" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Email <span style="color:var(--sem-erro);">*</span></label>
-          <input type="email" id="signupEmail" autocomplete="email" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
+          <input type="email" id="signupEmail" autocomplete="email" required style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
         </div>
         <div>
           <label for="signupSenha" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Senha <span style="color:var(--sem-erro);">*</span></label>
-          <input type="password" id="signupSenha" autocomplete="new-password" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
+          <input type="password" id="signupSenha" autocomplete="new-password" minlength="6" required style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
           <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Mínimo 6 caracteres.</div>
         </div>
         <div>
           <label for="signupSenha2" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Confirmar senha <span style="color:var(--sem-erro);">*</span></label>
-          <input type="password" id="signupSenha2" autocomplete="new-password" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;" onkeydown="if(event.key==='Enter') doSignUpEmail()">
+          <input type="password" id="signupSenha2" autocomplete="new-password" minlength="6" required style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px;">
         </div>
         <div id="signupErro" role="alert" aria-live="assertive" style="color:var(--sem-erro); font-size:12px; min-height:16px;"></div>
-        <button onclick="doSignUpEmail()" style="width:100%; padding:10px; border:none; border-radius:8px; background:var(--fgr-red-deep); color:white; cursor:pointer; font-size:13px; font-weight:600;">Criar conta</button>
-      </div>
+        <button type="submit" style="width:100%; padding:10px; border:none; border-radius:8px; background:var(--fgr-red-deep); color:white; cursor:pointer; font-size:13px; font-weight:600;">Criar conta</button>
+      </form>
     </div>
   </div>
 </div>

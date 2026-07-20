@@ -67,6 +67,7 @@ Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestõ
 ./scripts/test_error_contract.js
 ./scripts/test_classification_contract.js
 ./scripts/test_accessibility_contract.js
+./scripts/test_responsive_contract.js
 ./scripts/test_upload_transaction_contract.js
 ./scripts/test_admin_transaction_contract.js
 ```

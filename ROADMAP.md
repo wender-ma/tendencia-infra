@@ -144,7 +144,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Reorganizar toolbars e filtros em telas estreitas.
 - [x] Revisar larguras mínimas e fixas de inputs e colunas.
 - [x] Garantir que o header sticky não esconda conteúdo.
-- [ ] Testar em larguras de 320, 375, 768, 1024 e 1440 pixels.
+- [x] Testar em larguras de 320, 375, 768, 1024 e 1440 pixels (Playwright em 20/07/2026).
 
 ### 8. Implementar acessibilidade essencial
 
@@ -153,16 +153,16 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Converter abas em botões com `tablist`, `tab` e `tabpanel`.
 - [x] Implementar navegação de abas por setas e teclado.
 - [x] Associar labels e campos com `for` e `id`.
-- [ ] Usar formulários e eventos `submit`.
+- [x] Usar formulários e eventos `submit` nos fluxos principais.
 - [x] Adicionar `role="dialog"`, `aria-modal` e nomes acessíveis aos modais.
 - [x] Implementar foco inicial, focus trap e restauração de foco.
 - [x] Adicionar `aria-live` aos toasts, erros e estados de carregamento.
-- [ ] Tornar linhas clicáveis acessíveis por teclado ou usar botões/links.
-- [ ] Implementar ordenação acessível com `aria-sort`.
+- [x] Tornar linhas clicáveis acessíveis por teclado ou usar botões/links.
+- [x] Implementar ordenação acessível com `aria-sort`.
 - [x] Adicionar nomes acessíveis a botões que exibem apenas ícones.
 - [x] Criar estilo global `:focus-visible`.
 - [x] Corrigir contraste de `--text-lighter` nos temas claro e escuro.
-- [ ] Validar os fluxos principais com teclado e leitor de tela.
+- [ ] Validar os fluxos principais com teclado e leitor de tela (teclado validado; leitor de tela pendente).
 
 Critério de conclusão: os fluxos principais funcionam sem mouse e não apresentam erros graves no axe.
 
@@ -279,3 +279,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |
 | 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados | `supabase/migrations/20260720172000_rls_hardening.sql` |
 | 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |
+| 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports | `scripts/test_accessibility_contract.js` |

@@ -42,9 +42,9 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 
 - [ ] Exportar e revisar o schema realmente implantado no Supabase.
 - [ ] Comparar o schema implantado com `docs/supabase_schema.sql`.
-- [x] Validar o contrato público de tabelas e colunas esperado pelo frontend (implementado em `ece4c08`).
-- [x] Criar auditor somente leitura e inventário para o SQL Editor (implementado em `ece4c08`).
-- [x] Criar diretório `supabase/migrations/` e separar rascunhos não executáveis (implementado em `ece4c08`).
+- [x] Validar o contrato público de tabelas e colunas esperado pelo frontend (implementado em `1cb9096`).
+- [x] Criar auditor somente leitura e inventário para o SQL Editor (implementado em `1cb9096`).
+- [x] Criar diretório `supabase/migrations/` e separar rascunhos não executáveis (implementado em `1cb9096`).
 - [ ] Promover o rascunho de RLS para migration após comparar com o dump real.
 - [ ] Versionar as tabelas `obras`, `editores_permitidos` e `upload_history`.
 - [ ] Versionar todos os campos `codigo_obra` esperados pelo frontend.
@@ -61,18 +61,18 @@ Critério de conclusão: chamadas anônimas de escrita, operações administrati
 
 ### 2. Corrigir autorização no frontend
 
-- [x] Criar `requireEditorForActiveProject()` (implementado em `ece4c08`).
-- [x] Criar `requireAdmin()` (implementado em `ece4c08`).
-- [x] Fazer `requireEditor()` delegar ao guard da obra ativa (implementado em `ece4c08`).
-- [x] Proteger `onValorChange()` (implementado em `ece4c08`).
-- [x] Proteger `onRefletidoChange()` (implementado em `ece4c08`).
-- [x] Proteger configurações e cadeados do controle de projeção (implementado em `ece4c08`).
-- [x] Proteger criação, edição e exclusão de aditivos manuais (implementado em `ece4c08`).
-- [x] Proteger uploads por CSV e Excel; operações multiobra exigem administrador (implementado em `ece4c08`).
-- [x] Proteger todas as funções administrativas, além de esconder a interface (implementado em `ece4c08`).
-- [x] Impedir que uma aba Admin salva no `localStorage` seja restaurada sem permissão (implementado em `ece4c08`).
-- [x] Desabilitar controles editáveis para usuários somente leitura (implementado em `ece4c08`).
-- [x] Revalidar permissão após troca de obra e renovação de sessão (implementado em `ece4c08`).
+- [x] Criar `requireEditorForActiveProject()` (implementado em `1cb9096`).
+- [x] Criar `requireAdmin()` (implementado em `1cb9096`).
+- [x] Fazer `requireEditor()` delegar ao guard da obra ativa (implementado em `1cb9096`).
+- [x] Proteger `onValorChange()` (implementado em `1cb9096`).
+- [x] Proteger `onRefletidoChange()` (implementado em `1cb9096`).
+- [x] Proteger configurações e cadeados do controle de projeção (implementado em `1cb9096`).
+- [x] Proteger criação, edição e exclusão de aditivos manuais (implementado em `1cb9096`).
+- [x] Proteger uploads por CSV e Excel; operações multiobra exigem administrador (implementado em `1cb9096`).
+- [x] Proteger todas as funções administrativas, além de esconder a interface (implementado em `1cb9096`).
+- [x] Impedir que uma aba Admin salva no `localStorage` seja restaurada sem permissão (implementado em `1cb9096`).
+- [x] Desabilitar controles editáveis para usuários somente leitura (implementado em `1cb9096`).
+- [x] Revalidar permissão após troca de obra e renovação de sessão (implementado em `1cb9096`).
 
 Critério de conclusão: nenhum fluxo de escrita depende apenas de elementos escondidos por CSS, e todos os handlers validam o papel e a obra ativa.
 
@@ -81,13 +81,13 @@ Critério de conclusão: nenhum fluxo de escrita depende apenas de elementos esc
 - [ ] Inventariar todas as atribuições de `innerHTML`.
 - [ ] Classificar cada valor como constante, interno ou externo.
 - [ ] Substituir `innerHTML` por `textContent` quando não houver marcação necessária.
-- [x] Criar opções dinâmicas com `new Option()` nos filtros auditados (implementado em `ece4c08`).
-- [x] Escapar grupos e códigos usados nos pontos auditados da Tendência (implementado em `ece4c08`).
-- [x] Escapar datas, motivos e descrições usados nos pontos auditados de Flows (implementado em `ece4c08`).
-- [x] Escapar nomes de arquivos e abas de Excel usados em HTML (implementado em `ece4c08`).
-- [x] Escapar emails, nomes e mensagens retornadas pelo Supabase nos pontos auditados (implementado em `ece4c08`).
-- [x] Remover HTML dinâmico das mensagens de progresso do Excel (implementado em `ece4c08`).
-- [x] Remover dados importados de handlers JavaScript inline nos filtros e na árvore de projeção (implementado em `ece4c08`).
+- [x] Criar opções dinâmicas com `new Option()` nos filtros auditados (implementado em `1cb9096`).
+- [x] Escapar grupos e códigos usados nos pontos auditados da Tendência (implementado em `1cb9096`).
+- [x] Escapar datas, motivos e descrições usados nos pontos auditados de Flows (implementado em `1cb9096`).
+- [x] Escapar nomes de arquivos e abas de Excel usados em HTML (implementado em `1cb9096`).
+- [x] Escapar emails, nomes e mensagens retornadas pelo Supabase nos pontos auditados (implementado em `1cb9096`).
+- [x] Remover HTML dinâmico das mensagens de progresso do Excel (implementado em `1cb9096`).
+- [x] Remover dados importados de handlers JavaScript inline nos filtros e na árvore de projeção (implementado em `1cb9096`).
 - [ ] Avaliar Trusted Types depois da retirada dos handlers inline.
 - [ ] Criar testes com tags, atributos de evento e URLs maliciosas.
 
@@ -95,9 +95,9 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 ### 4. Corrigir comunicação de privacidade
 
-- [x] Remover a afirmação de funcionamento `100% offline` (implementado em `ece4c08`).
-- [x] Explicar quais dados ficam no `localStorage` (implementado em `ece4c08`).
-- [x] Explicar quais dados e arquivos são enviados ao Supabase (implementado em `ece4c08`).
+- [x] Remover a afirmação de funcionamento `100% offline` (implementado em `1cb9096`).
+- [x] Explicar quais dados ficam no `localStorage` (implementado em `1cb9096`).
+- [x] Explicar quais dados e arquivos são enviados ao Supabase (implementado em `1cb9096`).
 - [ ] Informar quem pode visualizar e editar cada obra.
 - [ ] Documentar retenção e exclusão dos backups de upload.
 - [ ] Validar os textos com o responsável pelos dados do projeto.
@@ -265,6 +265,6 @@ Use esta seção para registrar decisões que alterem o roadmap.
 
 | Data | Alteração | Referência |
 | --- | --- | --- |
-| 20/07/2026 | Roadmap inicial criado a partir da revisão técnica do `index.html` | `ece4c08` |
-| 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade | `ece4c08` |
-| 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `ece4c08` |
+| 20/07/2026 | Roadmap inicial criado a partir da revisão técnica do `index.html` | `1cb9096` |
+| 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade | `1cb9096` |
+| 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |

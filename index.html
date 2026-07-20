@@ -3052,26 +3052,58 @@ async function supaLoadClassifications() {
     return null;
   }
 }
-async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
+async function supaPatchClassification(nAlt, patch, codigoObraArg) {
   if (!SUPA || !isEditorDaObraAtiva()) return;
-  // aceita codigoObra explícito (chamado por saveClassification com aditivo achado)
   const codigoObra = codigoObraArg || OBRA_ATIVA;
-  if (!codigoObra) { console.warn('[SUPA] upsertClass: sem codigo_obra'); return; }
-  if (codigoObra !== OBRA_ATIVA) { console.warn('[SUPA] upsertClass: obra fora do escopo ativo'); return; }
-  // buscar cur e espalhar (se existir) — NÃO forçar null nos campos ausentes,
-  // senão qualquer edição num campo apaga os outros que já estavam salvos.
-  const { data: cur } = await SUPA.from('flow_classifications')
-    .select('*').eq('codigo_obra', codigoObra).eq('n_alteracao', nAlt).maybeSingle();
-  const merged = {
-    codigo_obra: codigoObra,
-    n_alteracao: nAlt,
-    ...(cur || {}),  // se já existe registro, mantém tudo que estava lá
-    ...patch,        // patch sobrescreve só os campos passados
+  if (!codigoObra) { console.warn('[SUPA] patchClass: sem codigo_obra'); return; }
+  if (codigoObra !== OBRA_ATIVA) { console.warn('[SUPA] patchClass: obra fora do escopo ativo'); return; }
+
+  const allowedFields = new Set([
+    'insumo_planejamento',
+    'insumo_remanejamento',
+    'custo_flowmaster',
+    'refletido_status',
+  ]);
+  const fields = Object.fromEntries(
+    Object.entries(patch || {}).filter(([field]) => allowedFields.has(field))
+  );
+  if (!Object.keys(fields).length) return;
+
+  const updatePatch = {
+    ...fields,
     updated_at: new Date().toISOString(),
   };
-  const { error } = await SUPA.from('flow_classifications').upsert(merged, { onConflict: 'codigo_obra,n_alteracao' });
-  if (error) { SUPA_STATUS.lastError = error.message; updateSupaBadge(); throw error; }
-  else SUPA_STATUS.lastSync = new Date();
+  if (AUTH.user?.email) updatePatch.updated_by = AUTH.user.email;
+
+  const updateExisting = () => SUPA.from('flow_classifications')
+    .update(updatePatch)
+    .eq('codigo_obra', codigoObra)
+    .eq('n_alteracao', nAlt)
+    .select('codigo_obra,n_alteracao')
+    .maybeSingle();
+
+  let { data, error } = await updateExisting();
+  if (!error && !data) {
+    const inserted = await SUPA.from('flow_classifications').insert({
+      codigo_obra: codigoObra,
+      n_alteracao: nAlt,
+      ...updatePatch,
+    });
+    error = inserted.error;
+
+    // Outra sessão pode criar a mesma chave entre o UPDATE e o INSERT.
+    if (error?.code === '23505') {
+      ({ error } = await updateExisting());
+    }
+  }
+
+  if (error) {
+    SUPA_STATUS.lastError = error.message;
+    updateSupaBadge();
+    throw error;
+  }
+  SUPA_STATUS.lastError = null;
+  SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
 
@@ -5244,7 +5276,7 @@ function saveClassification(nAlt, field, value) {
   SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   // Espelhar no Supabase
   void runAsyncSafely(
-    supaUpsertClassification(nAlt, { [field]: value }, codigoObra),
+    supaPatchClassification(nAlt, { [field]: value }, codigoObra),
     'Classificações/salvar no Supabase',
     'A classificação foi salva apenas neste navegador.'
   );
@@ -5913,14 +5945,17 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
   openModal();
 }
 
-// Bulk upsert helper — evita N requisições individuais ao Supabase
+// Limita a concorrência para não saturar a API durante edições em massa.
 async function supaBulkUpsertClassifications(payloads) {
   if (!isEditorDaObraAtiva() || !SUPA || !payloads.length) return;
   if (payloads.some(item => item.codigo_obra !== OBRA_ATIVA)) return;
-  const { error } = await SUPA.from('flow_classifications').upsert(payloads, { onConflict: 'codigo_obra,n_alteracao' });
-  if (error) throw error;
-  SUPA_STATUS.lastSync = new Date();
-  updateSupaBadge();
+  const batchSize = 12;
+  for (let i = 0; i < payloads.length; i += batchSize) {
+    const batch = payloads.slice(i, i + batchSize);
+    await Promise.all(batch.map(({ codigo_obra, n_alteracao, updated_at, ...patch }) =>
+      supaPatchClassification(n_alteracao, patch, codigo_obra)
+    ));
+  }
 }
 
 function massAplicarDestino() {
@@ -6045,7 +6080,7 @@ function onValorChange(input) {
   SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   // Sync com Supabase (persiste entre uploads/dispositivos)
   void runAsyncSafely(
-    supaUpsertClassification(nAlt, { custo_flowmaster: novo }, codigoObra),
+    supaPatchClassification(nAlt, { custo_flowmaster: novo }, codigoObra),
     'Classificações/salvar valor no Supabase',
     'O valor foi salvo apenas neste navegador.'
   );
@@ -6479,7 +6514,7 @@ function onRefletidoChange(sel) {
   map[key].refletido = (status === 'sim'); // compat
   SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   void runAsyncSafely(
-    supaUpsertClassification(nAlt, { refletido_status: status }, codigoObra),
+    supaPatchClassification(nAlt, { refletido_status: status }, codigoObra),
     'Classificações/salvar reflexo no Supabase',
     'O status foi salvo apenas neste navegador.'
   );

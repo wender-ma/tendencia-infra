@@ -23,6 +23,22 @@
     --sem-ok:         #065F46;   /* verde institucional */
     --sem-ok-bg:      #D1FAE5;   /* fundo verde suave */
 
+    /* Status refletido (aditivos) */
+    --ref-sim-bg:     #D1FAE5;
+    --ref-sim-border: #6EE7B7;
+    --ref-nao-border: #FCA5A5;
+    --ref-pend-border: #FCD34D;
+
+    /* Histórico heatmap */
+    --hist-up:        rgba(239, 68, 68, 0.15);
+    --hist-up-strong: rgba(239, 68, 68, 0.35);
+    --hist-down:      rgba(16, 185, 129, 0.15);
+    --hist-down-strong: rgba(16, 185, 129, 0.35);
+
+    /* Badge manual */
+    --badge-manual-bg:  #FBBF24;
+    --badge-manual-fg:  #78350F;
+
     /* Neutros */
     --text-strong:    #1F2937;   /* títulos e valores fortes */
     --text-medium:    #374151;   /* corpo principal */
@@ -54,27 +70,27 @@
     --bg-page:        #0F172A;
     --bg-card:        #1E293B;
     --bg-soft:        #1E293B;
+
+    /* Status refletido (dark) */
+    --ref-sim-bg:     #052E16;
+    --ref-sim-border: #065F46;
+    --ref-nao-border: #5A0808;
+    --ref-pend-border: #92400E;
+
+    /* Histórico heatmap (dark) */
+    --hist-up:        rgba(239, 68, 68, 0.25);
+    --hist-up-strong: rgba(239, 68, 68, 0.4);
+    --hist-down:      rgba(16, 185, 129, 0.25);
+    --hist-down-strong: rgba(16, 185, 129, 0.4);
+
+    /* Badge manual (dark) */
+    --badge-manual-bg:  #92400E;
+    --badge-manual-fg:  #FCD34D;
   }
 
-  /* Modo Noturno — overrides para elementos com cores hardcoded */
-  body.dark .tabs { background: var(--bg-card); }
-  body.dark .kpi { background: var(--bg-card); }
-  body.dark .card { background: var(--bg-card); }
-  body.dark .toolbar input, body.dark .toolbar select { background: var(--bg-card); color: var(--text-strong); }
-  body.dark .donut::after { background: var(--bg-card); }
-  body.dark .modal { background: var(--bg-card); }
-  body.dark .btn-sm { background: var(--bg-card); color: var(--text-medium); border-color: var(--border-strong); }
-  body.dark .btn-sm:hover { background: var(--bg-soft); }
-  body.dark .classif-select { background: var(--bg-card); color: var(--text-strong); }
-  body.dark .valor-input { background: var(--bg-card); color: var(--text-strong); }
-  body.dark .ms-btn { background: var(--bg-card); color: var(--text-strong); }
-  body.dark .ms-panel { background: var(--bg-card); }
-  body.dark .ms-actions button { background: var(--bg-card); color: var(--text-medium); }
-  body.dark .upload-card { background: var(--bg-card); }
+  /* Modo Noturno — overrides para elementos que ainda precisam de ajuste */
   body.dark .upload-excel-card { background: linear-gradient(135deg, #064E3B 0%, #052E16 100%); }
-  body.dark .upload-card-meta { background: var(--bg-soft); color: var(--text-medium); }
   body.dark .flow-mini-card { background: var(--bg-soft); }
-  body.dark .sources-header { background: var(--bg-soft); color: var(--text-soft); border-color: var(--border); }
   body.dark th { background: var(--bg-soft); }
   body.dark .form-grid input, body.dark .form-grid select, body.dark .form-grid textarea { background: var(--bg-card); color: var(--text-strong); }
   body.dark .modal .modal-close { color: var(--text-soft); }
@@ -90,16 +106,8 @@
   body.dark [style*="background: white"] { background: var(--bg-card) !important; }
   body.dark input, body.dark select, body.dark textarea { background: var(--bg-card); color: var(--text-strong); border-color: var(--border-strong); }
   body.dark input:focus, body.dark select:focus, body.dark textarea:focus { border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
-  body.dark .refletido-select.status-sim { background: #052E16; color: var(--sem-ok); border-color: #065F46; }
-  body.dark .refletido-select.status-nao { background: #3B0F0F; color: var(--sem-erro); border-color: #5A0808; }
-  body.dark .refletido-select.status-pendente { background: #451A03; color: var(--sem-alerta); border-color: #92400E; }
   body.dark tr.folha:hover { background: var(--bg-soft); }
   body.dark .row-selected { background: var(--fgr-red-light) !important; }
-  body.dark .hist-cell.up { background: rgba(239, 68, 68, 0.25); }
-  body.dark .hist-cell.down { background: rgba(16, 185, 129, 0.25); }
-  body.dark .hist-cell.up-strong { background: rgba(239, 68, 68, 0.4); }
-  body.dark .hist-cell.down-strong { background: rgba(16, 185, 129, 0.4); }
-  body.dark .badge-manual { background: #92400E; color: #FCD34D; }
 
   /* Modo Noturno — botão de toggle */
   .theme-toggle {
@@ -152,6 +160,87 @@
   .skeleton-title { height: 24px; width: 60%; margin-bottom: 12px; }
   .skeleton-value { height: 32px; width: 40%; margin-bottom: 8px; }
 
+  /* Tooltip customizado para gráficos */
+  #chartTooltip {
+    position: fixed; z-index: 9990; pointer-events: none;
+    background: var(--bg-card); color: var(--text-strong);
+    border: 1px solid var(--border-strong); border-radius: 8px;
+    padding: 10px 14px; font-size: 12px; line-height: 1.6;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    max-width: 340px; opacity: 0; transition: opacity 0.12s;
+    white-space: pre-wrap;
+  }
+  #chartTooltip.show { opacity: 1; }
+  #chartTooltip strong { color: var(--fgr-red-vivid); }
+  #chartTooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; }
+  #chartTooltip .tt-label { color: var(--text-soft); }
+  #chartTooltip .tt-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  #chartTooltip .tt-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+
+  /* Animações de entrada para gráficos */
+  @keyframes barGrow {
+    from { width: 0; }
+  }
+  @keyframes donutReveal {
+    from { opacity: 0; transform: scale(0.85); }
+  }
+  @keyframes dotPop {
+    0% { r: 0; opacity: 0; }
+    60% { r: 7; opacity: 1; }
+    100% { r: 4; opacity: 1; }
+  }
+  @keyframes dotPopLarge {
+    0% { r: 0; opacity: 0; }
+    60% { r: 8; opacity: 1; }
+    100% { r: 5; opacity: 1; }
+  }
+  .grupo-bar-fill { animation: barGrow 0.6s ease-out both; }
+  .top-bar-fill { animation: barGrow 0.6s ease-out both; }
+  .donut { animation: donutReveal 0.5s ease-out both; }
+  .chart-dot { animation: dotPop 0.35s ease-out both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grupo-bar-fill, .top-bar-fill, .donut, .chart-dot { animation: none !important; }
+  }
+
+  /* Hover nos elementos de gráfico */
+  .top-item { transition: background 0.15s; border-radius: 6px; padding: 6px 4px; }
+  .top-item:hover { background: var(--bg-soft); }
+  .top-item:hover .name { color: var(--text-strong); }
+  .top-item:hover .top-bar-fill { filter: brightness(1.15); transform: scaleY(1.8); transform-origin: bottom; }
+  .top-item:hover .top-bar { transform: scaleY(1.2); transform-origin: bottom; }
+  .grupo-row { transition: background 0.15s; border-radius: 6px; }
+  .grupo-row:hover { background: var(--bg-soft); }
+  .grupo-row:hover .grupo-bar-fill { filter: brightness(1.15); transform: scaleY(1.6); transform-origin: bottom; }
+  .donut { transition: transform 0.3s ease, filter 0.2s; }
+  .donut:hover { transform: scale(1.03); }
+  .donut-legend-item { transition: background 0.15s, transform 0.15s, opacity 0.2s; border-radius: 6px; padding: 7px 8px; cursor: pointer; }
+  .donut-legend-item:hover { background: var(--bg-soft); transform: translateX(4px); }
+  .donut-legend-item .sq { transition: transform 0.2s; }
+  .donut-legend-item:hover .sq { transform: scale(1.3); }
+  .donut-legend-item.dimmed { opacity: 0.35; text-decoration: line-through; }
+  .donut-legend-item.dimmed .sq { filter: grayscale(1); }
+
+  /* Heatmap hover */
+  .hist-cell { transition: background 0.15s, transform 0.1s; }
+  .hist-cell:hover { transform: scale(1.05); z-index: 1; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+  /* Crosshair SVG */
+  .crosshair-line { stroke: var(--text-lighter); stroke-width: 1; stroke-dasharray: 4 3; opacity: 0.6; pointer-events: none; }
+
+  /* Toggle buttons (INCC/IPCA, Bruto/Líquido) */
+  .toggle-group {
+    display: flex; gap: 0; border: 1px solid var(--fgr-red-light);
+    border-radius: 5px; overflow: hidden; width: fit-content;
+  }
+  .toggle-btn {
+    padding: 3px 12px; font-size: 11px; font-weight: 600;
+    border: none; cursor: pointer; transition: background 0.15s, color 0.15s;
+    background: var(--bg-card); color: var(--text-soft);
+  }
+  .toggle-btn.active { background: var(--fgr-red-dark); color: white; }
+  .toggle-btn:hover:not(.active) { background: var(--fgr-red-light); }
+
   /* Pontos interativos nos gráficos */
   .chart-dot {
     cursor: pointer;
@@ -171,7 +260,7 @@
   .btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
     color: white; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .btn:hover { background: rgba(255,255,255,0.3); }
-  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: white;
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg-card);
     padding: 6px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); flex-wrap: wrap; }
   .tab { padding: 9px 18px; cursor: pointer; border-radius: 7px;
     font-size: 13px; font-weight: 500; color: var(--text-soft); transition: all 0.15s; }
@@ -181,7 +270,7 @@
   .tab-content.active { display: block; }
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 12px; margin-bottom: 16px; }
-  .kpi { background: white; border-radius: 10px; padding: 14px 16px;
+  .kpi { background: var(--bg-card); border-radius: 10px; padding: 14px 16px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--fgr-red-vivid); }
   .kpi.green { border-left-color: var(--sem-ok); }
   .kpi.red { border-left-color: var(--fgr-red-vivid); }
@@ -193,7 +282,7 @@
   .kpi .sub { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
   @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
-  .card { background: white; border-radius: 10px; padding: 16px;
+  .card { background: var(--bg-card); border-radius: 10px; padding: 16px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
   .card h2 { font-size: 14px; margin-bottom: 12px; color: var(--text-strong);
     display: flex; justify-content: space-between; align-items: center; }
@@ -210,7 +299,7 @@
   .grupo-bar-fill { height: 100%; transition: width 0.4s; }
   .toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
   .toolbar input, .toolbar select { padding: 6px 10px; border: 1px solid var(--border-strong);
-    border-radius: 6px; font-size: 12.5px; background: white; }
+    border-radius: 6px; font-size: 12.5px; background: var(--bg-card); }
   .toolbar input[type=search] { min-width: 220px; }
   .table-wrap { max-height: 600px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
@@ -246,7 +335,7 @@
   .donut-wrap { display: flex; align-items: center; gap: 28px; min-height: 320px; padding-left: 30px; }
   .donut { width: 300px; height: 300px; border-radius: 50%; position: relative; flex-shrink: 0; }
   .donut::after { content: ''; position: absolute;
-    top: 40px; left: 40px; right: 40px; bottom: 40px; background: white; border-radius: 50%; }
+    top: 40px; left: 40px; right: 40px; bottom: 40px; background: var(--bg-card); border-radius: 50%; }
   .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column;
     justify-content: center; align-items: center; z-index: 1; text-align: center; }
   .donut-center .val { font-size: 32px; font-weight: 700; }
@@ -281,7 +370,7 @@
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 100; align-items: center; justify-content: center; padding: 20px; }
   .modal-bg.show { display: flex; }
-  .modal { background: white; border-radius: 12px; max-width: 900px; width: 100%;
+  .modal { background: var(--bg-card); border-radius: 12px; max-width: 900px; width: 100%;
     max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
   .modal h2 { font-size: 16px; margin-bottom: 6px; }
   .modal .meta { font-size: 12px; color: var(--text-soft); margin-bottom: 16px; }
@@ -310,7 +399,7 @@
   .classif-bar .info strong { color: var(--fgr-red-deep); }
   .btn-sm {
     padding: 6px 12px; border-radius: 6px; border: 1px solid var(--fgr-red-light);
-    background: white; color: var(--fgr-red-dark); cursor: pointer; font-size: 12px;
+    background: var(--bg-card); color: var(--fgr-red-dark); cursor: pointer; font-size: 12px;
     font-weight: 600; transition: all 0.15s;
   }
   .btn-sm:hover { background: var(--fgr-red-light); }
@@ -320,7 +409,7 @@
   .btn-sm.danger:hover { background: var(--fgr-red-light); }
   .classif-select {
     padding: 4px 6px; border: 1px solid var(--border-strong); border-radius: 4px;
-    font-size: 11.5px; background: white; max-width: 100%;
+    font-size: 11.5px; background: var(--bg-card); max-width: 100%;
     width: 100%; cursor: text; font-family: inherit;
   }
   .classif-select:focus {
@@ -330,7 +419,7 @@
   .classif-select.special { font-style: italic; color: #6b21a8; }
   .valor-input {
     padding: 4px 6px; border: 1px solid var(--border-strong); border-radius: 4px;
-    font-size: 12px; background: white; width: 100%; text-align: right;
+    font-size: 12px; background: var(--bg-card); width: 100%; text-align: right;
     font-variant-numeric: tabular-nums; font-family: inherit;
   }
   .valor-input:focus { outline: none; border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
@@ -339,7 +428,7 @@
   .valor-input.neg { color: var(--sem-erro); }
   .badge-manual {
     display: inline-block; padding: 1px 6px; border-radius: 3px;
-    font-size: 10px; font-weight: 700; background: #fbbf24; color: #78350f;
+    font-size: 10px; font-weight: 700; background: var(--badge-manual-bg); color: var(--badge-manual-fg);
     margin-left: 4px;
   }
   .btn-del-manual {
@@ -366,10 +455,10 @@
   /* Histórico */
   .hist-cell { padding: 4px 6px !important; text-align: right; font-variant-numeric: tabular-nums;
     font-size: 11.5px; cursor: help; }
-  .hist-cell.up { background: rgba(239, 68, 68, 0.15); color: var(--sem-erro); font-weight: 600; }
-  .hist-cell.down { background: rgba(16, 185, 129, 0.15); color: var(--sem-ok); font-weight: 600; }
-  .hist-cell.up-strong { background: rgba(239, 68, 68, 0.35); }
-  .hist-cell.down-strong { background: rgba(16, 185, 129, 0.35); }
+  .hist-cell.up { background: var(--hist-up); color: var(--sem-erro); font-weight: 600; }
+  .hist-cell.down { background: var(--hist-down); color: var(--sem-ok); font-weight: 600; }
+  .hist-cell.up-strong { background: var(--hist-up-strong); }
+  .hist-cell.down-strong { background: var(--hist-down-strong); }
   .hist-cell.flat { color: var(--text-lighter); }
   .hist-cell.zero { color: var(--border-strong); font-style: italic; }
   th.hist-th { background: var(--fgr-red-deep); color: white; text-align: right; padding: 8px 6px; font-size: 11px; }
@@ -378,9 +467,9 @@
 
   /* Upload contextual por aba */
   .refletido-select:focus { outline: none; border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
-  .refletido-select.status-sim { background: #d1fae5; color: var(--sem-ok); border-color: #6ee7b7; }
-  .refletido-select.status-nao { background: var(--fgr-red-light); color: var(--sem-erro); border-color: #fca5a5; }
-  .refletido-select.status-pendente { background: var(--sem-alerta-bg); color: var(--sem-alerta); border-color: #fcd34d; }
+  .refletido-select.status-sim { background: var(--ref-sim-bg); color: var(--sem-ok); border-color: var(--ref-sim-border); }
+  .refletido-select.status-nao { background: var(--fgr-red-light); color: var(--sem-erro); border-color: var(--ref-nao-border); }
+  .refletido-select.status-pendente { background: var(--sem-alerta-bg); color: var(--sem-alerta); border-color: var(--ref-pend-border); }
   /* Alinhar todas as células da tabela de flows verticalmente */
   #flowTbody td { vertical-align: middle; }
 
@@ -406,7 +495,7 @@
   .ms-wrap { position: relative; display: inline-block; }
   .ms-btn {
     padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: 6px;
-    background: white; font-size: 12.5px; cursor: pointer; min-width: 160px;
+    background: var(--bg-card); font-size: 12.5px; cursor: pointer; min-width: 160px;
     text-align: left; font-family: inherit; display: flex;
     align-items: center; justify-content: space-between; gap: 8px;
   }
@@ -415,7 +504,7 @@
   .ms-btn::after { content: "▾"; color: var(--text-soft); font-size: 10px; }
   .ms-panel {
     display: none; position: absolute; top: calc(100% + 4px); left: 0;
-    background: white; border: 1px solid var(--border-strong); border-radius: 8px;
+    background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 50;
     min-width: 240px; max-width: 320px;
     padding: 8px;
@@ -431,7 +520,7 @@
   }
   .ms-actions button {
     flex: 1; padding: 4px 6px; font-size: 11px;
-    border: 1px solid var(--border-strong); background: white; border-radius: 4px;
+    border: 1px solid var(--border-strong); background: var(--bg-card); border-radius: 4px;
     cursor: pointer; color: var(--text-medium);
   }
   .ms-actions button:hover { background: var(--bg-soft); }
@@ -463,6 +552,9 @@
   .kpi-wide { padding: 18px 20px; }
   .kpi-wide .value { font-size: 24px; }
   .kpi-wide hr { margin-top: 12px; }
+  .kpi-value-md { font-size: 24px; font-weight: 700; }
+  .kpi-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .kpi-2col { grid-template-columns: 1fr; } }
 
 /* ==== v0.48: Auth / Editor mode ==== */
 .auth-btn {
@@ -583,7 +675,7 @@ body:not(.is-admin-geral) [data-admin-only] {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--bg-card);
   transition: box-shadow .15s, border-color .15s;
 }
 .upload-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); border-color: var(--border-strong); }
@@ -598,7 +690,7 @@ body:not(.is-admin-geral) [data-admin-only] {
 .upload-card-title {
   font-size: 14px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-strong);
   margin: 0 0 2px;
 }
 .upload-card-sub {
@@ -612,8 +704,8 @@ body:not(.is-admin-geral) [data-admin-only] {
   background: var(--bg-page);
   border-radius: 6px;
   font-size: 12px;
-  color: #334155;
-  border-left: 3px solid #94a3b8;
+  color: var(--text-medium);
+  border-left: 3px solid var(--text-soft);
 }
 .upload-card-meta.filled { border-left-color: var(--sem-ok); background: #f0fdf4; }
 .upload-card-meta.empty  { border-left-color: var(--sem-alerta); background: #fffbeb; }
@@ -638,14 +730,14 @@ body:not(.is-admin-geral) [data-admin-only] {
   gap: 6px;
   flex-wrap: wrap;
   padding: 6px 10px;
-  background: #f1f5f9;
+  background: var(--bg-soft);
   border-radius: 6px;
   font-size: 11px;
-  color: #475569;
+  color: var(--text-soft);
   margin-bottom: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border);
 }
-.sources-header strong { color: #1e293b; font-weight: 600; }
+.sources-header strong { color: var(--text-strong); font-weight: 600; }
 .sources-header .src-item { display: inline-flex; align-items: center; gap: 4px; }
 .sources-header .src-empty { color: var(--sem-alerta); font-style: italic; }
 .sources-header .src-sep { color: var(--border-strong); }
@@ -704,14 +796,28 @@ body:not(.is-admin-geral) [data-admin-only] {
 }
 .upload-progress .prog-step { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
 
+/* ApexCharts — tema customizado */
+.apexcharts-canvas { border-radius: 8px; }
+.apexcharts-tooltip { font-family: inherit !important; }
+.apexcharts-tooltip-title { background: var(--bg-soft) !important; color: var(--text-strong) !important; font-weight: 600 !important; }
+.apexcharts-tooltip-series-group { padding: 4px 8px !important; }
+.apexcharts-tooltip-text { font-size: 12px !important; color: var(--text-medium) !important; }
+.apexcharts-menu { background: var(--bg-card) !important; border: 1px solid var(--border) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; }
+.apexcharts-menu-item:hover { background: var(--bg-soft) !important; }
+.apexcharts-toolbar { padding: 4px !important; }
+.apexcharts-toolbar svg { fill: var(--text-soft) !important; }
+
 </style>
 
-<!-- Supabase JS SDK (v2) -->
+<!-- Supabase JS SDK (v2) — sem defer: precisa estar disponível antes do script principal -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- v0.54: SheetJS pra ler arquivos Excel (.xlsx/.xlsm) -->
+<!-- SheetJS pra ler arquivos Excel (.xlsx/.xlsm) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- ApexCharts — gráficos interativos (zoom, pan, tooltips, export PNG/CSV) -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@4.7.0/dist/apexcharts.min.js"></script>
 </head>
 <body>
+<div id="chartTooltip"></div>
 
 <div class="page-header">
 <div class="header">
@@ -784,12 +890,7 @@ body:not(.is-admin-geral) [data-admin-only] {
     </div>
     <div class="card">
       <h2>🍩 Composição do Desvio <span class="hint">classificação dos aditivos</span></h2>
-      <div class="donut-wrap">
-        <div class="donut" id="donutDesvio">
-          <div class="donut-center" id="donutCenter"></div>
-        </div>
-        <div class="donut-legend" id="donutLegend"></div>
-      </div>
+      <div id="donutChart" style="min-height: 320px;"></div>
     </div>
   </div>
 
@@ -1600,6 +1701,52 @@ body:not(.is-admin-geral) [data-admin-only] {
 <!-- Modal de detalhes do item -->
 </div><!-- /page-body -->
 
+<!-- Template: formulário de aditivo manual -->
+<template id="tpl-manual-form">
+  <h2>➕ Novo aditivo manual</h2>
+  <div class="meta">Item ainda não criado no sistema Flow. Será marcado com ID <strong class="id-placeholder"></strong>.</div>
+  <div class="form-grid">
+    <div>
+      <label>Departamento</label>
+      <select id="m_dep"><option value="">-</option></select>
+    </div>
+    <div>
+      <label>Data (dd/mm/aaaa)</label>
+      <input type="text" id="m_data" placeholder="">
+    </div>
+    <div class="full">
+      <label>Descrição</label>
+      <textarea id="m_desc" placeholder="Ex: Aumento previsto - revisão paisagismo Q2"></textarea>
+    </div>
+    <div>
+      <label>Motivo</label>
+      <select id="m_motivo">
+        <option value="">— Selecione o motivo —</option>
+      </select>
+    </div>
+    <div>
+      <label>Fluxo Planejamento (R$)</label>
+      <input type="text" id="m_valor" placeholder="ex: 12.500,00 ou -5000">
+    </div>
+    <div>
+      <label>→ Destino (Insumo Planejamento)</label>
+      <input type="text" id="m_dest" list="insumosDatalist" placeholder="digite p/ buscar...">
+    </div>
+    <div>
+      <label>← Origem (Insumo Remanejamento)</label>
+      <input type="text" id="m_orig" list="insumosDatalist" placeholder="digite p/ buscar...">
+    </div>
+    <div class="full">
+      <label>Justificativa (opcional)</label>
+      <textarea id="m_just" placeholder="Detalhe técnico, links de projeto, etc."></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-sm" onclick="closeModal()">Cancelar</button>
+    <button class="btn-sm primary" data-action="save-manual" data-n="">💾 Salvar aditivo manual</button>
+  </div>
+</template>
+
 <div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modal">
     <button class="modal-close" onclick="closeModal()">×</button>
@@ -1617,7 +1764,13 @@ body:not(.is-admin-geral) [data-admin-only] {
 // CONFIG — Constantes centralizadas do dashboard
 // ============================================================================
 
-// -- Supabase (chave anon; expira 2035) --
+// -- Supabase (chave anon; RLS é a camada de segurança real) --
+// ATENÇÃO: esta chave é pública por design (anon key). A segurança NÃO depende
+// da ofuscação desta chave, mas sim das políticas Row Level Security (RLS) no
+// Supabase. Todas as tabelas DEVEM ter RLS habilitado com políticas que validam
+// auth.uid() contra editores_permitidos. Operações destrutivas (DELETE, UPDATE)
+// exigem JWT de autenticação. Sem RLS, qualquer pessoa com esta chave pode
+// ler/escrever dados.
 const SUPA_URL = 'https://jmfgegnfctlyuevqadba.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
 
@@ -1641,7 +1794,7 @@ const CONFIG = {
   max_justificativa_flow: 400,      // máximo de caracteres na justificativa de flows
   
   // Timeouts
-  debounce_render: 50,              // ms de debounce para renderizações
+  debounce_render: 200,             // ms de debounce para renderizações (evita reflows em digitação rápida)
   toast_duration_info: 3500,        // duração padrão do toast informativo
   toast_duration_ok: 2500,          // duração do toast de sucesso
   toast_duration_warn: 5000,        // duração do toast de aviso
@@ -1667,6 +1820,61 @@ const CONFIG = {
 // ============================================================================
 // FUNÇÕES UTILITÁRIAS UNIFICADAS
 // ============================================================================
+
+// Debounce genérico — evita execuções múltiplas em sequência rápida
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+// SafeStorage — wrapper seguro para localStorage com tratamento de erros
+const SafeStorage = {
+  set(key, value) {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch(e) {
+      console.warn(`[Storage] Falha ao salvar ${key}:`, e.message);
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        if (typeof authToast === 'function') {
+          authToast('⚠️ Armazenamento local cheio. Algumas configurações não serão salvas.', 'warn', 5000);
+        }
+      }
+      return false;
+    }
+  },
+  get(key, fallback) {
+    try {
+      const val = localStorage.getItem(key);
+      return val !== null ? val : fallback;
+    } catch(e) {
+      console.warn(`[Storage] Falha ao ler ${key}:`, e.message);
+      return fallback;
+    }
+  },
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch(e) {
+      console.warn(`[Storage] Falha ao remover ${key}:`, e.message);
+      return false;
+    }
+  }
+};
+
+// uiCriarKpi — fábrica de componentes KPI reutilizável
+function uiCriarKpi({ titulo, valor, subtitulo, cor, icon }) {
+  const cls = cor ? `kpi ${cor}` : 'kpi';
+  const iconPrefix = icon ? `${icon} ` : '';
+  let html = `<div class="${cls}"><div class="label">${iconPrefix}${escHtml(titulo)}</div><div class="value">${valor}</div>`;
+  if (subtitulo) html += `<div class="sub">${escHtml(subtitulo)}</div>`;
+  html += '</div>';
+  return html;
+}
 
 // Função unificada de parsing de números (substitui parseNum, parseNumBR, parsePct)
 // Aceita: formato BR ("1.614.494,59"), US ("1,614,494.59"), porcentagens ("31,5%")
@@ -1699,8 +1907,10 @@ function parseNumero(s, opts = {}) {
     normalized = s.replace(',', '.');
   }
   
+  // Rejeita notação científica ("1e10") e valores não-finitos ("Infinity")
+  if (/[eE]/.test(normalized)) return null;
   const n = parseFloat(normalized);
-  if (isNaN(n)) return null;
+  if (isNaN(n) || !isFinite(n)) return null;
   
   // Se for porcentagem e o valor for uma fração 0-1, multiplica por 100
   if (opts.isPct && n > 0 && n <= 1.5 && !s.includes('%')) {
@@ -1710,10 +1920,38 @@ function parseNumero(s, opts = {}) {
   return n;
 }
 
-// Aliases para compatibilidade (mantêm os nomes antigos)
-function parseNum(s) { return parseNumero(s); }
-function parseNumBR(s) { return parseNumero(s, { allowPlus: true }); }
-function parsePct(s) { return parseNumero(s, { isPct: true }); }
+// parseNum/parseNumBR/parsePct removidos — use parseNumero() diretamente
+
+// Resolve CSS variables para cores reais (ApexCharts não entende var(--x))
+function resolveColor(cssVar) {
+  if (!cssVar || !cssVar.startsWith('var(')) return cssVar;
+  const varName = cssVar.replace('var(', '').replace(')', '').trim();
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || cssVar;
+}
+
+// Instâncias ApexCharts ativas (para destruir antes de re-renderizar)
+const _apexCharts = {};
+
+// Helper para criar/atualizar gráfico ApexCharts de forma segura
+function renderApexChart(containerId, options) {
+  // Destruir instância anterior se existir
+  if (_apexCharts[containerId]) {
+    try { _apexCharts[containerId].destroy(); } catch(e) {}
+    delete _apexCharts[containerId];
+  }
+  const el = document.querySelector('#' + containerId);
+  if (!el) return null;
+  el.innerHTML = '';
+  try {
+    const chart = new ApexCharts(el, options);
+    chart.render();
+    _apexCharts[containerId] = chart;
+    return chart;
+  } catch(e) {
+    console.warn('[ApexCharts] erro ao renderizar', containerId, e);
+    return null;
+  }
+}
 
 // Função unificada de filtragem por obra ativa (substitui getHistoricoObraAtiva, getProjRawObraAtiva, getFlowsObraAtiva)
 function filtrarPorObraAtiva(arr, campo = 'codigo_obra') {
@@ -1758,13 +1996,12 @@ const SUPA_STATUS = { online: !!SUPA, lastSync: null, lastError: null };
 // Tenta executar a função até maxTentativas vezes com delay exponencial
 async function supaRetry(fn, maxTentativas) {
   maxTentativas = maxTentativas || 3;
-  for (var i = 0; i < maxTentativas; i++) {
+  for (let i = 0; i < maxTentativas; i++) {
     try {
       return await fn();
     } catch(e) {
       if (i === maxTentativas - 1) throw e;
-      // Delay exponencial: 1s, 2s, 4s...
-      await new Promise(function(r) { setTimeout(r, 1000 * Math.pow(2, i)); });
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
       console.warn('[SUPA] retry ' + (i + 1) + '/' + maxTentativas + ' após erro:', e.message || e);
     }
   }
@@ -1779,8 +2016,7 @@ async function supaRetry(fn, maxTentativas) {
 // Fallback padrão: '42-21O' (Jardins Zurique) — a obra original antes da migração.
 // ============================================================
 const OBRA_DEFAULT = '42-21O';
-let OBRAS = [];              // catálogo: [{codigo_obra, nome, key_empobratd, ativa}]
-let OBRA_ATIVA = null;       // preenchido no boot
+// OBRAS e OBRA_ATIVA declarados na seção ESTADO GLOBAL acima
 
 // Prefixa chave do dashboard_config com codigo_obra (dados por obra).
 // Chaves globais (ex: header_title, indice_correcao) NÃO usam prefixo.
@@ -1813,6 +2049,9 @@ function resolverObraInicial() {
   } catch(e) {}
   const primeiraAtiva = OBRAS.find(o => o.ativa);
   if (primeiraAtiva) return primeiraAtiva.codigo_obra;
+  if (OBRAS.length === 0) {
+    console.warn('[OBRAS] catálogo vazio — modo offline, usando fallback');
+  }
   return OBRA_DEFAULT;
 }
 
@@ -1860,9 +2099,9 @@ async function trocarObra(novoCodigo) {
   console.log('[OBRAS] trocando de', OBRA_ATIVA, '→', novoCodigo);
   showLoading();
   OBRA_ATIVA = novoCodigo;
-  // v0.62.3: reavalia UI de auth pra esta obra (editor pode não ter permissão aqui)
+  // reavalia UI de auth pra esta obra (editor pode não ter permissão aqui)
   if (typeof updateAuthUI === 'function') updateAuthUI();
-  try { localStorage.setItem('jzurique_obra_ativa', novoCodigo); } catch(e) {}
+  SafeStorage.set('jzurique_obra_ativa', novoCodigo);
   // Atualiza URL sem recarregar (bookmark limpo)
   try {
     const url = new URL(window.location);
@@ -1896,7 +2135,7 @@ async function trocarObra(novoCodigo) {
   }
 }
 
-// v0.59.2: identifica a última gestão cronológica em uma lista de gestões.
+// Identifica a última gestão cronológica em uma lista de gestões.
 // Ignora 'Atual' (sem data). Retorna string 'GESTÃO MM-AAAA' ou null se não achar.
 function acharUltimaGestaoCronologica(listaGestoes) {
   if (!Array.isArray(listaGestoes) || !listaGestoes.length) return null;
@@ -1914,7 +2153,7 @@ function acharUltimaGestaoCronologica(listaGestoes) {
   return comData[0].label;
 }
 
-// v0.59.2: atualiza GESTAO_LABEL pra última gestão cronológica se HISTORICO tiver dados
+// Atualiza GESTAO_LABEL pra última gestão cronológica se HISTORICO tiver dados
 function atualizarGestaoLabelPelaHistoria() {
   if (!HISTORICO || !Array.isArray(HISTORICO.gestoes)) return;
   const ultima = acharUltimaGestaoCronologica(HISTORICO.gestoes);
@@ -1924,7 +2163,7 @@ function atualizarGestaoLabelPelaHistoria() {
   }
 }
 
-// v0.60.2: fallback inteligente pra coluna Gestão vazia na Tendência.
+// Fallback: se coluna Gestão da Tendência estiver vazia, usa HISTORICO
 // Cenário: na virada de mês, o Excel Tendência é reexportado com cabeçalho 07-2026
 // mas os valores ainda não foram preenchidos (todas as folhas com d.gestao == null).
 // Nesse caso, puxamos os valores da última gestão preenchida no HISTORICO por insumo.
@@ -2009,9 +2248,9 @@ async function renderObrasAdmin() {
         : 'background:#dcfce7; border:1px solid #16a34a; color:#166534;';
       const podeDeletar = origem === 'manual';
       const btnDeletar = podeDeletar
-        ? `<button class="btn-sm" onclick="deletarObra('${escAttr(o.codigo_obra)}', '${escAttr(o.nome)}')" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Deletar permanentemente (obra manual)">🗑️</button>`
+        ? `<button class="btn-sm" data-action="deletar-obra" data-codigo="${escAttr(o.codigo_obra)}" data-nome="${escAttr(o.nome)}" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Deletar permanentemente (obra manual)">🗑️</button>`
         : `<button class="btn-sm" disabled style="padding:3px 8px; font-size:11px; opacity:0.4; cursor:not-allowed;" title="Obras de upload não podem ser deletadas — só desative">🗑️</button>`;
-      return `<tr>
+      return `<tr data-codigo="${escAttr(o.codigo_obra)}" data-ativa="${ativa}">
         <td style="font-family:monospace; font-size:12px;">${escHtml(o.codigo_obra)}</td>
         <td><strong>${escHtml(o.nome)}</strong></td>
         <td style="font-family:monospace; font-size:11px; color:var(--text-soft);">${escHtml(o.key_empobratd||'—')}</td>
@@ -2019,8 +2258,8 @@ async function renderObrasAdmin() {
         <td>${badge}</td>
         <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
         <td>
-          <button class="btn-sm" onclick="editarObraAdmin('${escAttr(o.codigo_obra)}')" title="Editar nome/key" style="padding:3px 8px; font-size:11px;">✏️</button>
-          <button class="btn-sm" onclick="toggleObraAtiva('${escAttr(o.codigo_obra)}', ${ativa ? 'false' : 'true'})" style="padding:3px 8px; font-size:11px; ${toggleStyle}">${toggleLbl}</button>
+          <button class="btn-sm" data-action="editar-obra" data-codigo="${escAttr(o.codigo_obra)}" title="Editar nome/key" style="padding:3px 8px; font-size:11px;">✏️</button>
+          <button class="btn-sm" data-action="toggle-obra" data-codigo="${escAttr(o.codigo_obra)}" style="padding:3px 8px; font-size:11px; ${toggleStyle}">${toggleLbl}</button>
           ${btnDeletar}
         </td>
       </tr>`;
@@ -2031,82 +2270,102 @@ async function renderObrasAdmin() {
   }
 }
 
-let _obraFormEditingCodigo = null;
-
-function openObraForm() {
-  _obraFormEditingCodigo = null;
-  document.getElementById('obraFormTitle').textContent = 'Nova obra';
-  document.getElementById('obraFormCodigo').value = '';
-  document.getElementById('obraFormCodigo').readOnly = false;
-  document.getElementById('obraFormCodigo').style.background = '';
-  document.getElementById('obraFormNome').value = '';
-  document.getElementById('obraFormKey').value = '';
-  document.getElementById('obraFormObs').value = '';
-  document.getElementById('obraFormBackdrop').style.display = 'flex';
-}
-
-function closeObraForm() {
-  document.getElementById('obraFormBackdrop').style.display = 'none';
-  _obraFormEditingCodigo = null;
-}
-
-async function editarObraAdmin(codigo) {
-  if (!SUPA) return;
-  try {
-    const { data, error } = await SUPA.from('obras').select('*').eq('codigo_obra', codigo).maybeSingle();
-    if (error) throw error;
-    if (!data) { authToast('❌ Obra não encontrada.', 'err', 3000); return; }
-    _obraFormEditingCodigo = codigo;
-    document.getElementById('obraFormTitle').textContent = 'Editar obra: ' + codigo;
-    document.getElementById('obraFormCodigo').value = data.codigo_obra;
-    document.getElementById('obraFormCodigo').readOnly = true;
-    document.getElementById('obraFormCodigo').style.background = 'var(--bg-soft)';
-    document.getElementById('obraFormNome').value = data.nome || '';
-    document.getElementById('obraFormKey').value = data.key_empobratd || '';
-    document.getElementById('obraFormObs').value = data.observacao || '';
-    document.getElementById('obraFormBackdrop').style.display = 'flex';
-  } catch(e) {
-    console.warn('[ADMIN] editarObraAdmin erro:', e);
-    authToast('❌ Erro ao carregar obra: ' + (e.message||e), 'err', 5000);
-  }
-}
-
-async function salvarObraForm() {
-  const codigo = document.getElementById('obraFormCodigo').value.trim();
-  const nome   = document.getElementById('obraFormNome').value.trim();
-  const key    = document.getElementById('obraFormKey').value.trim();
-  const obs    = document.getElementById('obraFormObs').value.trim();
-  if (!codigo || !nome) { authToast('⚠️ Código e Nome são obrigatórios.', 'warn', 3000); return; }
-  if (!SUPA) { authToast('❌ Sem conexão com Supabase.', 'err', 3000); return; }
-  try {
-    if (_obraFormEditingCodigo) {
-      const { error } = await SUPA.from('obras').update({
-        nome, key_empobratd: key || null, observacao: obs || null,
-      }).eq('codigo_obra', _obraFormEditingCodigo);
-      if (error) throw error;
-      authToast('✅ Obra atualizada', 'ok', 2500);
-    } else {
-      // v0.62: novas obras criadas pela UI ganham origem='manual' (default)
-      const { error } = await SUPA.from('obras').insert({
-        codigo_obra: codigo,
-        nome,
-        key_empobratd: key || null,
-        observacao: obs || null,
-        ativa: true,
-        origem: 'manual',
-      });
-      if (error) throw error;
-      authToast('✅ Obra criada', 'ok', 2500);
+// Event delegation para botões da tabela de obras (evita onclick inline)
+(function() {
+  const tbody = document.getElementById('obrasAdminTbody');
+  if (!tbody) return;
+  tbody.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const codigo = btn.dataset.codigo;
+    if (action === 'editar-obra') editarObraAdmin(codigo);
+    else if (action === 'toggle-obra') {
+      const tr = btn.closest('tr');
+      const ativaAtual = tr?.dataset?.ativa === 'true';
+      toggleObraAtiva(codigo, !ativaAtual);
     }
-    closeObraForm();
-    await renderObrasAdmin();
-    await carregarObras();
-    renderObrasDropdown();
-  } catch(e) {
-    console.warn('[ADMIN] salvarObraForm erro:', e);
-    authToast('❌ Erro ao salvar: ' + (e.message||e), 'err', 5000);
+    else if (action === 'deletar-obra') deletarObra(codigo, btn.dataset.nome);
+  });
+})();
+
+// Obra form state encapsulado em closure (não exposto ao escopo global)
+const ObraForm = (function() {
+  let editingCodigo = null;
+
+  function open() {
+    editingCodigo = null;
+    document.getElementById('obraFormTitle').textContent = 'Nova obra';
+    document.getElementById('obraFormCodigo').value = '';
+    document.getElementById('obraFormCodigo').readOnly = false;
+    document.getElementById('obraFormCodigo').style.background = '';
+    document.getElementById('obraFormNome').value = '';
+    document.getElementById('obraFormKey').value = '';
+    document.getElementById('obraFormObs').value = '';
+    document.getElementById('obraFormBackdrop').style.display = 'flex';
   }
-}
+
+  function close() {
+    document.getElementById('obraFormBackdrop').style.display = 'none';
+    editingCodigo = null;
+  }
+
+  async function editar(codigo) {
+    if (!SUPA) return;
+    try {
+      const { data, error } = await SUPA.from('obras').select('*').eq('codigo_obra', codigo).maybeSingle();
+      if (error) throw error;
+      if (!data) { authToast('❌ Obra não encontrada.', 'err', 3000); return; }
+      editingCodigo = codigo;
+      document.getElementById('obraFormTitle').textContent = 'Editar obra: ' + codigo;
+      document.getElementById('obraFormCodigo').value = data.codigo_obra;
+      document.getElementById('obraFormCodigo').readOnly = true;
+      document.getElementById('obraFormCodigo').style.background = 'var(--bg-soft)';
+      document.getElementById('obraFormNome').value = data.nome || '';
+      document.getElementById('obraFormKey').value = data.key_empobratd || '';
+      document.getElementById('obraFormObs').value = data.observacao || '';
+      document.getElementById('obraFormBackdrop').style.display = 'flex';
+    } catch(e) {
+      console.warn('[ADMIN] editarObraAdmin erro:', e);
+      authToast('❌ Erro ao carregar obra: ' + (e.message||e), 'err', 5000);
+    }
+  }
+
+  async function salvar() {
+    const codigo = document.getElementById('obraFormCodigo').value.trim();
+    const nome   = document.getElementById('obraFormNome').value.trim();
+    const key    = document.getElementById('obraFormKey').value.trim();
+    const obs    = document.getElementById('obraFormObs').value.trim();
+    if (!codigo || !nome) { authToast('⚠️ Código e Nome são obrigatórios.', 'warn', 3000); return; }
+    if (!SUPA) { authToast('❌ Sem conexão com Supabase.', 'err', 3000); return; }
+    try {
+      if (editingCodigo) {
+        const { error } = await SUPA.from('obras').update({ nome, key_empobratd: key || null, observacao: obs || null }).eq('codigo_obra', editingCodigo);
+        if (error) throw error;
+        authToast('✅ Obra atualizada', 'ok', 2500);
+      } else {
+        const { error } = await SUPA.from('obras').insert({ codigo_obra: codigo, nome, key_empobratd: key || null, observacao: obs || null, ativa: true, origem: 'manual' });
+        if (error) throw error;
+        authToast('✅ Obra criada', 'ok', 2500);
+      }
+      close();
+      await renderObrasAdmin();
+      await carregarObras();
+      renderObrasDropdown();
+    } catch(e) {
+      console.warn('[ADMIN] salvarObraForm erro:', e);
+      authToast('❌ Erro ao salvar: ' + (e.message||e), 'err', 5000);
+    }
+  }
+
+  return { open, close, editar, salvar };
+})();
+
+// Aliases para compatibilidade com onclick/data-action
+function openObraForm() { ObraForm.open(); }
+function closeObraForm() { ObraForm.close(); }
+function editarObraAdmin(codigo) { ObraForm.editar(codigo); }
+function salvarObraForm() { ObraForm.salvar(); }
 
 async function toggleObraAtiva(codigo, novoValor) {
   if (!SUPA) return;
@@ -2128,23 +2387,15 @@ async function toggleObraAtiva(codigo, novoValor) {
   }
 }
 
-// v0.62: hard delete de obra manual — pede pra digitar o código
+// hard delete de obra manual — pede pra digitar o código
 async function deletarObra(codigo, nome) {
   if (!SUPA) return;
-  const confirmacao = prompt(
-    `⚠️ DELETAR OBRA PERMANENTEMENTE\n\n` +
-    `Obra: ${codigo} (${nome})\n\n` +
-    `Isso vai apagar:\n` +
-    `- A obra do catálogo\n` +
-    `- Todos os aditivos, classificações, movimentações vinculadas\n` +
-    `- Todo o histórico de uploads dessa obra\n\n` +
-    `Digite o código exato da obra pra confirmar: ${codigo}`
+  const confirmado = await confirmModal(
+    'Deletar obra permanentemente?',
+    `Obra: ${codigo} (${nome})\n\nIsso vai apagar:\n- A obra do catálogo\n- Todos os aditivos, classificações, movimentações vinculadas\n- Todo o histórico de uploads dessa obra`,
+    { confirmText: 'Deletar', destructive: true, requireText: codigo }
   );
-  if (confirmacao == null) return; // cancelou
-  if (confirmacao.trim() !== codigo) {
-    authToast('❌ Código não confere. Ação cancelada.', 'err', 3000);
-    return;
-  }
+  if (!confirmado) return;
   try {
     // Deletar dados vinculados primeiro (a obra não deleta em cascata por padrão)
     await SUPA.from('projecao_movimentacoes').delete().eq('codigo_obra', codigo);
@@ -2247,7 +2498,7 @@ async function renderEditoresAdmin() {
         <td style="font-size:11px; color:var(--text-soft);">${escHtml(g.observacao||'')}</td>
         <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
         <td>
-          <button class="btn-sm" onclick="openEditorForm('${escAttr(g.email)}')" style="padding:4px 10px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--fgr-red-deep); color:var(--fgr-red-deep);" title="Editar papel, obras, ou excluir">✏️ Editar</button>
+          <button class="btn-sm" data-action="editar-editor" data-email="${escAttr(g.email)}" style="padding:4px 10px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--fgr-red-deep); color:var(--fgr-red-deep);" title="Editar papel, obras, ou excluir">✏️ Editar</button>
         </td>
       </tr>`;
     }).join('');
@@ -2256,6 +2507,16 @@ async function renderEditoresAdmin() {
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Erro ao carregar: ${escHtml(err.message||String(err))}</td></tr>`;
   }
 }
+
+// Event delegation para botões da tabela de editores
+(function() {
+  const tbody = document.getElementById('editoresAdminTbody');
+  if (!tbody) return;
+  tbody.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="editar-editor"]');
+    if (btn) openEditorForm(btn.dataset.email);
+  });
+})();
 
 // ---------- MODAL UNIFICADO ----------
 
@@ -2466,8 +2727,8 @@ async function renderPendentesAdmin() {
         <td style="font-size:11px; color:var(--text-soft);">${escHtml(e.observacao||'')}</td>
         <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
         <td>
-          <button class="btn-sm" onclick="aprovarPendente('${escAttr(e.email)}')" style="padding:3px 8px; font-size:11px; background:#dcfce7; border:1px solid #16a34a; color:#166534;" title="Definir papel e aprovar">✅ Aprovar</button>
-          <button class="btn-sm" onclick="rejeitarPendente('${escAttr(e.email)}')" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Negar acesso">❌ Rejeitar</button>
+          <button class="btn-sm" data-action="aprovar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:#dcfce7; border:1px solid #16a34a; color:#166534;" title="Definir papel e aprovar">✅ Aprovar</button>
+          <button class="btn-sm" data-action="rejeitar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Negar acesso">❌ Rejeitar</button>
         </td>
       </tr>`;
     }).join('');
@@ -2477,8 +2738,22 @@ async function renderPendentesAdmin() {
   }
 }
 
+// Event delegation para botões da tabela de pendentes
+(function() {
+  const tbody = document.getElementById('pendentesAdminTbody');
+  if (!tbody) return;
+  tbody.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const email = btn.dataset.email;
+    if (action === 'aprovar-pendente') aprovarPendente(email);
+    else if (action === 'rejeitar-pendente') rejeitarPendente(email);
+  });
+})();
+
 async function aprovarPendente(email) {
-  // v0.62.1: aprova como editor SEM obra (admin define depois via botão 🏗️)
+  // aprova como editor SEM obra (admin define depois via botão 🏗️)
   if (!SUPA) return;
   if (!confirm(`Aprovar ${email} como editor?\n\nEle entra sem acesso a nenhuma obra. Depois, use o botão 🏗️ na tabela de editores pra escolher quais obras ele pode editar.`)) return;
   try {
@@ -2520,106 +2795,70 @@ async function rejeitarPendente(email) {
 // Chamado ao trocar de obra e no boot inicial.
 async function recarregarDadosDaObra() {
   if (!SUPA || !OBRA_ATIVA) return;
-  // v0.59: zerar dados por obra ANTES de restaurar (evita "resto" da obra anterior)
-  // Dados globais (HISTORICO, PROJ_RAW) NÃO zeramos aqui — vêm compartilhados
+  resetDadosObra();
+  const [cls, manuals, projCfg, movs, cfg, ups] = await Promise.all([
+    supaLoadClassifications(), supaLoadManuals(), supaLoadProjConfig(),
+    supaLoadMovs(), supaLoadDashboardConfig(), supaLoadUploadsLatest(),
+  ]);
+  aplicarCacheLocal(cls, manuals, projCfg, movs);
+  aplicarDadosPersistidos(cfg);
+  Object.assign(LAST_UPLOADS, ups);
+  posCarregarDados();
+  console.log('[OBRAS] dados recarregados para', OBRA_ATIVA, '— insumo controlado:', PROJ_CTRL_STATE?.insumo);
+}
+
+function resetDadosObra() {
   DATA_T = [];
   DATA_F = [];
   EVOL_GLOBAL = { teorica: null, financeira: null };
   GESTAO_LABEL = 'Gestão Atual';
-  // Carrega tudo em paralelo
-  const [cls, manuals, projCfg, movs, cfg, ups] = await Promise.all([
-    supaLoadClassifications(),
-    supaLoadManuals(),
-    supaLoadProjConfig(),
-    supaLoadMovs(),
-    supaLoadDashboardConfig(),
-    supaLoadUploadsLatest(),
-  ]);
-  // Aplicar classifications no localStorage (formato do dashboard)
-  if (cls) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cls)); } catch(e) {}
-  } else {
-    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-  }
-  // Aplicar manuais
-  if (manuals) {
-    try { localStorage.setItem(MANUAL_KEY, JSON.stringify(manuals)); } catch(e) {}
-  } else {
-    try { localStorage.removeItem(MANUAL_KEY); } catch(e) {}
-  }
-  // Aplicar projecao_config + movs
+}
+
+function aplicarCacheLocal(cls, manuals, projCfg, movs) {
+  if (cls) { SafeStorage.set(STORAGE_KEY, JSON.stringify(cls)); }
+  else { SafeStorage.remove(STORAGE_KEY); }
+  if (manuals) { SafeStorage.set(MANUAL_KEY, JSON.stringify(manuals)); }
+  else { SafeStorage.remove(MANUAL_KEY); }
   const projState = {
     insumo: projCfg?.insumo_controlado || 'I011890',
     saldo_inicial: projCfg?.saldo_inicial ?? null,
     data_ref: projCfg?.data_ref || null,
     movimentacoes: movs || [],
-    locks: {
-      saldo: !!(projCfg?.locked_saldo),
-      data: !!(projCfg?.locked_data),
-      insumo: !!(projCfg?.locked_insumo),
-    },
+    locks: { saldo: !!(projCfg?.locked_saldo), data: !!(projCfg?.locked_data), insumo: !!(projCfg?.locked_insumo) },
   };
-  try { localStorage.setItem(PROJ_CTRL_KEY, JSON.stringify(projState)); } catch(e) {}
-  // Aplicar dados persistidos (com prefixo da obra)
-  if (cfg) {
-    // Chaves globais (sem prefixo): header_title, indice_correcao, card3_modo
-    if (cfg.header_title) {
-      try { localStorage.setItem(HEADER_KEY, cfg.header_title); } catch(e) {}
-    }
-    if (cfg.indice_correcao) {
-      CORRECAO_INDICE = cfg.indice_correcao;
-      try { localStorage.setItem('jzurique_indice_correcao', cfg.indice_correcao); } catch(e) {}
-    }
-    if (cfg.card3_modo) {
-      CARD3_MODO = cfg.card3_modo;
-      try { localStorage.setItem('jzurique_card3_modo', cfg.card3_modo); } catch(e) {}
-    }
-    // Chaves por obra (com prefixo): dados_*, evol_global, gestao_label
-    const pref = OBRA_ATIVA + ':';
-    if (cfg[pref + 'evol_global']) {
-      try {
-        const p = JSON.parse(cfg[pref + 'evol_global']);
-        if (p) EVOL_GLOBAL = p;
-      } catch(e) {}
-    }
-    if (cfg[pref + 'gestao_label']) GESTAO_LABEL = cfg[pref + 'gestao_label'];
-    if (cfg[pref + 'dados_tendencia']) {
-      try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {}
-    } else { DATA_T = []; }
-    // v0.63: DATA_F agora é GLOBAL (sem prefixo por obra). Compat: se ainda existe a chave com prefixo, migra
-    if (cfg['dados_flows']) {
-      try { const d = JSON.parse(cfg['dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {}
-    } else if (cfg[pref + 'dados_flows']) {
-      // fallback: chave antiga por obra (transição)
-      try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {}
-    } else { DATA_F = []; }
-    // v0.58b: HISTORICO e PROJ_RAW são globais (sem prefixo), compartilhados entre obras
-    if (cfg['dados_historico']) {
-      try { const d = JSON.parse(cfg['dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {}
-    } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
-    // v0.59.2: sobrescreve GESTAO_LABEL com a última gestão do histórico (se houver)
-    atualizarGestaoLabelPelaHistoria();
-    // v0.60.2: se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
-    aplicarFallbackGestaoDoHistorico();
-    if (cfg['dados_projraw']) {
-      try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {}
-    } else { PROJ_RAW = []; }
-  }
-  // Aplicar uploads latest (agora já filtrado por obra)
-  Object.assign(LAST_UPLOADS, ups);
-  // v0.64.5: aplicar aditivos manuais + classificações salvas por cima do DATA_F recém-carregado
-  // (antes só era chamado no boot; ao trocar de obra ficavam perdidas até dar F5)
+  SafeStorage.set(PROJ_CTRL_KEY, JSON.stringify(projState));
+}
+
+function aplicarDadosPersistidos(cfg) {
+  if (!cfg) return;
+  // Chaves globais (sem prefixo)
+  if (cfg.header_title) { SafeStorage.set(HEADER_KEY, cfg.header_title); }
+  if (cfg.indice_correcao) { CORRECAO_INDICE = cfg.indice_correcao; SafeStorage.set('jzurique_indice_correcao', cfg.indice_correcao); }
+  if (cfg.card3_modo) { CARD3_MODO = cfg.card3_modo; SafeStorage.set('jzurique_card3_modo', cfg.card3_modo); }
+  // Chaves por obra (com prefixo)
+  const pref = OBRA_ATIVA + ':';
+  if (cfg[pref + 'evol_global']) { try { const p = JSON.parse(cfg[pref + 'evol_global']); if (p) EVOL_GLOBAL = p; } catch(e) {} }
+  if (cfg[pref + 'gestao_label']) GESTAO_LABEL = cfg[pref + 'gestao_label'];
+  if (cfg[pref + 'dados_tendencia']) { try { const d = JSON.parse(cfg[pref + 'dados_tendencia']); if (Array.isArray(d)) DATA_T = d; } catch(e) {} } else { DATA_T = []; }
+  // DATA_F é GLOBAL (sem prefixo por obra). Compat: chave antiga com prefixo
+  if (cfg['dados_flows']) { try { const d = JSON.parse(cfg['dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {} }
+  else if (cfg[pref + 'dados_flows']) { try { const d = JSON.parse(cfg[pref + 'dados_flows']); if (Array.isArray(d)) DATA_F = d; } catch(e) {} }
+  else { DATA_F = []; }
+  // HISTORICO e PROJ_RAW são globais (compartilhados entre obras)
+  if (cfg['dados_historico']) { try { const d = JSON.parse(cfg['dados_historico']); if (d && d.items) HISTORICO = d; } catch(e) {} } else { HISTORICO = { gestoes: [], items: [], totals: {} }; }
+  atualizarGestaoLabelPelaHistoria();
+  aplicarFallbackGestaoDoHistorico();
+  if (cfg['dados_projraw']) { try { const d = JSON.parse(cfg['dados_projraw']); if (Array.isArray(d)) PROJ_RAW = d; } catch(e) {} } else { PROJ_RAW = []; }
+}
+
+function posCarregarDados() {
   try { if (typeof applyManuals === 'function') applyManuals(); } catch(e) { console.warn('[OBRAS] applyManuals err:', e); }
   try { if (typeof loadClassifications === 'function') loadClassifications(); } catch(e) { console.warn('[OBRAS] loadClassifications err:', e); }
-  // v0.64.6: rebuildar datalist de insumos com o DATA_T da obra recém-carregada
-  // (antes só rodava no boot, quando DATA_T ainda estava vazio — datalist ficava sempre em branco)
   try {
     if (typeof buildInsumosList === 'function') INSUMOS_OPTIONS = buildInsumosList();
     if (typeof buildDatalist === 'function') buildDatalist();
   } catch(e) { console.warn('[OBRAS] rebuild datalist err:', e); }
-  // v0.59.1: repopular PROJ_CTRL_STATE a partir do localStorage recém-atualizado
   if (typeof loadProjCtrl === 'function') loadProjCtrl();
-  // v0.60.5: se os elementos da aba já existem (usuário estava na aba), atualizar valores + locks
   try {
     const elSaldo = document.getElementById('projCtrlSaldoInicial');
     const elDataRef = document.getElementById('projCtrlDataRef');
@@ -2629,7 +2868,6 @@ async function recarregarDadosDaObra() {
     if (elIns) elIns.value = PROJ_CTRL_STATE.insumo || 'I011890';
     if (typeof applyLocksToUI === 'function') applyLocksToUI();
   } catch(e) {}
-  console.log('[OBRAS] dados recarregados para', OBRA_ATIVA, '— insumo controlado:', PROJ_CTRL_STATE?.insumo);
 }
 
 // ---------- FLOW CLASSIFICATIONS ----------
@@ -2637,7 +2875,7 @@ async function recarregarDadosDaObra() {
 // no Supabase: 1 linha por n_alteracao com colunas
 async function supaLoadClassifications() {
   if (!SUPA) return null;
-  // v0.63.1: DATA_F é global (multi-obra), então carregar classificações de TODAS as obras
+  // DATA_F é global (multi-obra), então carregar classificações de TODAS as obras
   // Chave do map agora é "codigo_obra:n_alteracao" pra evitar colisão de n_alteracao entre obras
   try {
     const { data, error } = await supaRetry(function() {
@@ -2666,10 +2904,10 @@ async function supaLoadClassifications() {
 }
 async function supaUpsertClassification(nAlt, patch, codigoObraArg) {
   if (!SUPA) return;
-  // v0.63.1: aceita codigoObra explícito (chamado por saveClassification com aditivo achado)
+  // aceita codigoObra explícito (chamado por saveClassification com aditivo achado)
   const codigoObra = codigoObraArg || OBRA_ATIVA;
   if (!codigoObra) { console.warn('[SUPA] upsertClass: sem codigo_obra'); return; }
-  // v0.64.8: buscar cur e espalhar (se existir) — NÃO forçar null nos campos ausentes,
+  // buscar cur e espalhar (se existir) — NÃO forçar null nos campos ausentes,
   // senão qualquer edição num campo apaga os outros que já estavam salvos.
   const { data: cur } = await SUPA.from('flow_classifications')
     .select('*').eq('codigo_obra', codigoObra).eq('n_alteracao', nAlt).maybeSingle();
@@ -2874,13 +3112,13 @@ async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' *
   if (!OBRA_ATIVA) { console.warn('[SUPA] supaSaveAllData: sem OBRA_ATIVA'); return; }
   const jobs = [];
   const K = (chave) => keyPorObra(chave); // prefixa com codigo_obra
-  // v0.57.1: guard de conteúdo — só persistir se realmente veio dado
+  // guard de conteúdo — só persistir se realmente veio dado
   if ((!kinds || kinds.includes('tendencia')) && Array.isArray(DATA_T) && DATA_T.length > 0) {
     jobs.push(supaSaveDados(K(DATA_KEYS.DATA_T), DATA_T));
     jobs.push(supaSaveDashboardKey(K(DATA_KEYS.GESTAO_LABEL), GESTAO_LABEL || ''));
   }
   if ((!kinds || kinds.includes('flows')) && Array.isArray(DATA_F) && DATA_F.length > 0) {
-    // v0.63: DATA_F é GLOBAL (multi-obra num só upload) — chave sem prefixo, igual HISTORICO
+    // DATA_F é GLOBAL (multi-obra num só upload) — chave sem prefixo, igual HISTORICO
     jobs.push(supaSaveDados(DATA_KEYS.DATA_F, DATA_F));
   }
   // v0.58b: Gestões (HISTORICO + PROJ_RAW) é GLOBAL — 1 arquivo compartilhado entre todas as obras
@@ -2929,7 +3167,7 @@ async function resetCacheDados() {
   }
 }
 
-// v0.57: apagar todo o histórico de uploads (metadados + arquivos no Storage)
+// apagar todo o histórico de uploads (metadados + arquivos no Storage)
 async function apagarHistoricoUploads() {
   if (!requireEditor('apagar histórico de uploads')) return;
   if (!confirm('⚠️ IRREVERSÍVEL!\n\nIsto vai APAGAR:\n- Todo o histórico de uploads (metadados)\n- Todos os arquivos armazenados no Storage\n\nOs dados parseados NÃO serão afetados (dashboard continua funcionando com o que já tem).\n\nConfirma?')) return;
@@ -2940,13 +3178,15 @@ async function apagarHistoricoUploads() {
     const { data: recs, error: readErr } = await SUPA.from('upload_history')
       .select('id, storage_path').eq('codigo_obra', OBRA_ATIVA);
     if (readErr) throw readErr;
-    // Apagar arquivos do Storage
+    // Apagar arquivos do Storage PRIMEIRO — se falhar, mantém registros no banco
     const paths = (recs || []).map(r => r.storage_path).filter(Boolean);
     if (paths.length) {
       const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
-      if (sErr) console.warn('[SUPA] storage remove err:', sErr);
+      if (sErr) {
+        throw new Error('Falha ao remover arquivos do Storage. Registros no banco mantidos por segurança. Erro: ' + sErr.message);
+      }
     }
-    // Apagar linhas da obra ativa
+    // Só apaga registros do banco se Storage foi bem-sucedido
     const { error: dErr } = await SUPA.from('upload_history').delete()
       .eq('codigo_obra', OBRA_ATIVA);
     if (dErr) throw dErr;
@@ -2971,7 +3211,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
   if (!SUPA) return null;
   if (!OBRA_ATIVA) { console.warn('[SUPA] logUpload: sem OBRA_ATIVA'); return null; }
   const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
-  // v0.60: desativa TODOS os anteriores do mesmo (obra, tipo) antes de inserir novo como ativo
+  // desativa TODOS os anteriores do mesmo (obra, tipo) antes de inserir novo como ativo
   try {
     const { error: updErr } = await SUPA.from('upload_history')
       .update({ is_active: false })
@@ -2986,7 +3226,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
     enviado_por: enviadoPor,
     storage_path: storagePath || null,
     upload_group_id: uploadGroupId || null,
-    is_active: true, // v0.60: novo upload sempre vira ativo
+    is_active: true, // novo upload sempre vira ativo
   }).select().maybeSingle();
   if (error) { console.warn('[SUPA] logUpload err:', error); SUPA_STATUS.lastError = error.message; }
   else SUPA_STATUS.lastSync = new Date();
@@ -2994,7 +3234,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
   return data;
 }
 
-// v0.53: sobe arquivo original pro Storage. Retorna storage_path ou null se falhar.
+// sobe arquivo original pro Storage. Retorna storage_path ou null se falhar.
 async function supaUploadFile(tipo, file) {
   if (!SUPA || !SUPA.storage) return null;
   if (!OBRA_ATIVA) { console.warn('[SUPA] uploadFile: sem OBRA_ATIVA'); return null; }
@@ -3020,7 +3260,7 @@ async function supaUploadFile(tipo, file) {
   return path;
 }
 
-// v0.53: lista TODOS os uploads de um tipo (ordenado do mais recente)
+// lista TODOS os uploads de um tipo (ordenado do mais recente)
 async function supaListUploadsByType(tipo, limit = 50) {
   if (!SUPA) return [];
   if (!OBRA_ATIVA) return [];
@@ -3031,7 +3271,7 @@ async function supaListUploadsByType(tipo, limit = 50) {
   return data || [];
 }
 
-// v0.53: gera signed URL de download (válida por 60s)
+// gera signed URL de download (válida por 60s)
 async function supaGetDownloadURL(storagePath) {
   if (!SUPA || !storagePath) return null;
   const { data, error } = await SUPA.storage.from(UPLOADS_BUCKET)
@@ -3040,13 +3280,13 @@ async function supaGetDownloadURL(storagePath) {
   return data?.signedUrl || null;
 }
 
-// v0.53: rolling backup — remove uploads mais antigos que passaram do limite
+// rolling backup — remove uploads mais antigos que passaram do limite
 async function supaEnforceRollingBackup(tipo) {
   if (!SUPA) return;
   try {
     const all = await supaListUploadsByType(tipo, 100);
     if (all.length <= UPLOADS_MAX_PER_TYPE) return;
-    // v0.60: NUNCA descarta arquivo ativo, mesmo que seja o mais antigo.
+    // NUNCA descarta arquivo ativo, mesmo que seja o mais antigo.
     // Ordem: pega os que passaram do limite MAS filtra pra não incluir ativos.
     const excedentes = all.slice(UPLOADS_MAX_PER_TYPE);
     const toDelete = excedentes.filter(r => !r.is_active);
@@ -3102,12 +3342,10 @@ async function _supaLoadUploadsLatestFallback() {
   return map;
 }
 
-// Cache local dos últimos uploads (populado no boot e após cada upload)
-const LAST_UPLOADS = { tendencia: null, flows: null, gestoes: null };
-
+// LAST_UPLOADS declarado na seção ESTADO GLOBAL acima
 // ---------- Badge visual de sincronização ----------
 function updateSupaBadge() {
-  // v0.64.2: badges translúcidos brancos no header escuro (só ícone muda o "tom" de mensagem)
+  // badges translúcidos brancos no header escuro (só ícone muda o "tom" de mensagem)
   const el = document.getElementById('supaBadge');
   if (!el) return;
   const baseBg = 'rgba(255,255,255,0.15)';
@@ -3145,10 +3383,10 @@ const AUTH = {
   user: null,          // objeto do Supabase (email, id, name, picture)
   session: null,       // sessão do Supabase (com JWT)
   isEditor: false,     // true se logado E aprovado (editor ou admin)
-  isAdminGeral: false, // v0.61: true se role='admin'
-  editaObras: [],      // v0.61: lista de códigos de obra que pode editar (se não for admin)
-  isPending: false,    // v0.62: true se cadastrado mas aguardando aprovação
-  role: null,          // v0.62: 'admin' | 'editor' | 'pending' | null (anon)
+  isAdminGeral: false, // true se role='admin'
+  editaObras: [],      // lista de códigos de obra que pode editar (se não for admin)
+  isPending: false,    // true se cadastrado mas aguardando aprovação
+  role: null,          // 'admin' | 'editor' | 'pending' | null (anon)
   whitelistChecked: false,
   ready: false,        // primeira verificação de sessão concluída
 };
@@ -3168,7 +3406,7 @@ function authToast(msg, kind='info', ms=3500) {
 }
 
 async function checkEditorPermission(email) {
-  // v0.62: retorna { isEditor, isAdminGeral, editaObras[], isPending, role }
+  // retorna { isEditor, isAdminGeral, editaObras[], isPending, role }
   // Lê role/status novos (SQL 10). Rejeita rows com status='rejected' ou role='pending'
   const nada = { isEditor: false, isAdminGeral: false, editaObras: [], isPending: false, role: null };
   if (!SUPA || !email) return nada;
@@ -3208,7 +3446,7 @@ async function checkEditorPermission(email) {
   } catch (e) { console.warn('[AUTH] excecao whitelist:', e); return nada; }
 }
 
-// v0.62.3: retorna true se o usuário pode editar a OBRA_ATIVA atual
+// retorna true se o usuário pode editar a OBRA_ATIVA atual
 // (admin edita tudo, editor precisa ter a obra no editaObras)
 function isEditorDaObraAtiva() {
   if (!AUTH || !AUTH.isEditor) return false;
@@ -3222,7 +3460,7 @@ function updateAuthUI() {
   const btn = document.getElementById('authBtn');
   if (!badge || !btn) return;
 
-  // v0.62.3: só marca is-editor se o usuário pode editar a OBRA_ATIVA
+  // só marca is-editor se o usuário pode editar a OBRA_ATIVA
   // (antes marcava se era editor de QUALQUER obra — mostrava botões que a RLS rejeitava depois)
   document.body.classList.toggle('is-editor', isEditorDaObraAtiva());
   document.body.classList.toggle('is-admin-geral', !!AUTH.isAdminGeral);
@@ -3250,7 +3488,7 @@ function updateAuthUI() {
         badge.innerHTML = `<span class="auth-email">✏️ ${shortEmail}</span><span class="auth-role">Editor</span>`;
         badge.title = `Logado como ${email}\nModo: Editor (pode alterar esta obra)\nObras que edita: ${AUTH.editaObras.join(', ')||'—'}`;
       } else {
-        // v0.62.3: é editor mas não desta obra — mostra como somente leitura aqui
+        // é editor mas não desta obra — mostra como somente leitura aqui
         badge.className = 'auth-badge viewer two-line';
         badge.innerHTML = `<span class="auth-email">👁️ ${shortEmail}</span><span class="auth-role">Só leitura aqui</span>`;
         const listaObras = AUTH.editaObras.length ? AUTH.editaObras.join(', ') : 'nenhuma';
@@ -3399,16 +3637,80 @@ function requireEditor(actionDesc) {
   return false;
 }
 
-const TENDENCIA = []; // v0.59: hardcoded removido — dados vêm do Supabase
-const FLOWS = []; // v0.59: hardcoded removido — dados vêm do Supabase
-let DATA_T = TENDENCIA;
-let DATA_F = FLOWS;
-let sortKey = 'aditivo_total';
-let sortDir = -1;
-let sortKeyF = 'data';
-let sortDirF = -1;
+// ============================================================================
+// APP STATE — Estado global centralizado (namespace único)
+// ============================================================================
+// Acesso direto: AppState.obra.ativa, AppState.config.card3Modo, etc.
+// Aliases mantidos para compatibilidade (OBRA_ATIVA, CARD3_MODO, etc.)
+// ============================================================================
 
-// v0.60.4: formato Excel #.##0,00;-#.##0,00;"-" — zero e null viram "-"; sem prefixo R$
+const AppState = {
+  // Dados parseados (preenchidos pelo boot e uploads)
+  dados: {
+    tendencia: [],      // itens da Tendência
+    flows: [],          // aditivos/Flows
+    historico: { gestoes: [], items: [], totals: {} },
+    projRaw: [],        // dados brutos de projeção
+  },
+  // Ordenação das tabelas
+  sort: {
+    key: 'aditivo_total', dir: -1,
+    keyF: 'data', dirF: -1,
+  },
+  // Configurações de UI
+  config: {
+    gestaoLabel: 'Gestão Atual',
+    evolGlobal: (function() {
+      try { const raw = localStorage.getItem('jzurique_evol_global'); if (raw) { const p = JSON.parse(raw); if (p && (p.teorica != null || p.financeira != null)) return p; } } catch(e) {}
+      return { teorica: null, financeira: null };
+    })(),
+    card3Modo: (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_card3_modo')) || 'bruto',
+    correcaoIndice: (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_indice_correcao')) || 'incc',
+    headerEditable: false,
+  },
+  // Multi-obra
+  obra: {
+    obras: [],          // catálogo
+    ativa: null,        // código da obra ativa
+  },
+  // Ligações Flow ↔ Tendência (reconstruídas por buildLinks)
+  links: {
+    destino: {},        // insumo → [flows] (entrada)
+    origem: {},         // insumo → [flows] (saída)
+  },
+  // Uploads
+  uploads: { tendencia: null, flows: null, gestoes: null },
+  // Donut filtro
+  donut: { hidden: new Set(), lastTipoSum: null },
+};
+
+// -- Aliases para compatibilidade (209 referências existentes) --
+// Usar getters/setters para manter sincronia quando reatribuídos (ex: DATA_T = [])
+Object.defineProperties(window, {
+  DATA_T: { get: () => AppState.dados.tendencia, set: v => AppState.dados.tendencia = v },
+  DATA_F: { get: () => AppState.dados.flows, set: v => AppState.dados.flows = v },
+  HISTORICO: { get: () => AppState.dados.historico, set: v => AppState.dados.historico = v },
+  PROJ_RAW: { get: () => AppState.dados.projRaw, set: v => AppState.dados.projRaw = v },
+  sortKey: { get: () => AppState.sort.key, set: v => AppState.sort.key = v },
+  sortDir: { get: () => AppState.sort.dir, set: v => AppState.sort.dir = v },
+  sortKeyF: { get: () => AppState.sort.keyF, set: v => AppState.sort.keyF = v },
+  sortDirF: { get: () => AppState.sort.dirF, set: v => AppState.sort.dirF = v },
+  GESTAO_LABEL: { get: () => AppState.config.gestaoLabel, set: v => AppState.config.gestaoLabel = v },
+  EVOL_GLOBAL: { get: () => AppState.config.evolGlobal, set: v => AppState.config.evolGlobal = v },
+  CARD3_MODO: { get: () => AppState.config.card3Modo, set: v => AppState.config.card3Modo = v },
+  CORRECAO_INDICE: { get: () => AppState.config.correcaoIndice, set: v => AppState.config.correcaoIndice = v },
+  _headerEditable: { get: () => AppState.config.headerEditable, set: v => AppState.config.headerEditable = v },
+  OBRAS: { get: () => AppState.obra.obras, set: v => AppState.obra.obras = v },
+  OBRA_ATIVA: { get: () => AppState.obra.ativa, set: v => AppState.obra.ativa = v },
+  MAP_DESTINO: { get: () => AppState.links.destino, set: v => AppState.links.destino = v },
+  MAP_ORIGEM: { get: () => AppState.links.origem, set: v => AppState.links.origem = v },
+  donutHidden: { get: () => AppState.donut.hidden, set: v => AppState.donut.hidden = v },
+  _lastTipoSum: { get: () => AppState.donut.lastTipoSum, set: v => AppState.donut.lastTipoSum = v },
+});
+const LAST_UPLOADS = AppState.uploads;
+const LIC_LABEL = 'Orç. Licitação';
+
+// formato Excel #.##0,00;-#.##0,00;"-" — zero e null viram "-"; sem prefixo R$
 const fmt = (v, dec=2) => {
   if (v == null) return '-';
   const abs = Math.abs(v);
@@ -3437,9 +3739,7 @@ function statusOf(licit, gestao) {
 }
 
 // ============ LIGAÇÃO FLOW ↔ TENDÊNCIA ============
-// Mapa: insumo (Ixxxxxx) → array de flows que apontam para ele (planejamento)
-let MAP_DESTINO = {};   // insumo → [flows] (entrada)
-let MAP_ORIGEM = {};    // insumo → [flows] (saída)
+// MAP_DESTINO e MAP_ORIGEM declarados na seção ESTADO GLOBAL acima
 
 function buildLinks() {
   MAP_DESTINO = {};
@@ -3500,7 +3800,7 @@ function toggleTheme() {
   const isDark = document.body.classList.toggle('dark');
   const btn = document.getElementById('themeToggle');
   if (btn) btn.textContent = isDark ? '☀️' : '🌙';
-  try { localStorage.setItem('jzurique_theme', isDark ? 'dark' : 'light'); } catch(e) {}
+  SafeStorage.set('jzurique_theme', isDark ? 'dark' : 'light');
 }
 
 // Restaurar tema no boot
@@ -3515,7 +3815,7 @@ function toggleTheme() {
   } catch(e) {}
 })();
 
-let _headerEditable = false;
+// _headerEditable declarado na seção ESTADO GLOBAL acima
 function toggleHeaderEdit() {
   const el = document.getElementById('headerTitle');
   const btn = document.getElementById('headerLockBtn');
@@ -3545,7 +3845,7 @@ function toggleHeaderEdit() {
     el.style.padding = '';
     el.style.borderRadius = '';
     el.style.outline = 'none';
-    const _t = el.textContent.trim(); try { localStorage.setItem(HEADER_KEY, _t); } catch(e) {}; try { supaSaveDashboardKey('header_title', _t); } catch(e){}
+    const _t = el.textContent.trim(); SafeStorage.set(HEADER_KEY, _t); try { supaSaveDashboardKey('header_title', _t); } catch(e){}
     btn.innerHTML = '🔒 Editar';
     btn.title = 'Editar título';
   }
@@ -3599,7 +3899,7 @@ function verificarDadosDesatualizados() {
 // ============ TABS ============
 // Salvar aba ativa no localStorage
 function salvarAbaAtiva(tabName) {
-  try { localStorage.setItem('jzurique_active_tab', tabName); } catch(e) {}
+  SafeStorage.set('jzurique_active_tab', tabName);
 }
 
 // Restaurar aba ativa do localStorage
@@ -3635,41 +3935,21 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 // ============ VISÃO GERAL ============
-// Label do Orçamento de Licitação (usado como ponto zero no histórico)
-const LIC_LABEL = 'Orç. Licitação';
-// Label da última gestão (extraído do header da coluna I do CSV de Tendência)
-let GESTAO_LABEL = 'Gestão Atual';
-// v0.55: percentuais globais de aderência físico-financeira (obra civil, sem indiretos)
-let EVOL_GLOBAL = (function() {
-  try {
-    const raw = localStorage.getItem('jzurique_evol_global');
-    if (raw) {
-      const p = JSON.parse(raw);
-      if (p && (p.teorica != null || p.financeira != null)) return p;
-    }
-  } catch(e) {}
-  return { teorica: null, financeira: null };
-})();
+// LIC_LABEL, GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
+// declarados na seção ESTADO GLOBAL acima
 
-// ============ MODO DO CARD 3 (Bruto vs Líquido - descontando reserva) ============
-let CARD3_MODO = (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_card3_modo')) || 'bruto';
 function setCard3Modo(v) {
-  const prev = CARD3_MODO;
   CARD3_MODO = v;
-  try { localStorage.setItem('jzurique_card3_modo', v); } catch(e){}
-  // Só espelha no Supabase se puder editar (senão fica só local, sem erro)
+  SafeStorage.set('jzurique_card3_modo', v);
   if (AUTH && AUTH.isEditor) {
     try { supaSaveDashboardKey('card3_modo', v); } catch(e){}
   }
   if (typeof renderVisao === 'function') renderVisao();
 }
 
-// ============ ÍNDICE DE CORREÇÃO (INCC ou IPCA) ============
-// Padrão: INCC (mais comum em construção civil)
-let CORRECAO_INDICE = (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_indice_correcao')) || 'incc';
 function setCorrecaoIndice(v) {
   CORRECAO_INDICE = v;
-  try { localStorage.setItem('jzurique_indice_correcao', v); } catch(e){}
+  SafeStorage.set('jzurique_indice_correcao', v);
   if (AUTH && AUTH.isEditor) {
     try { supaSaveDashboardKey('indice_correcao', v); } catch(e){}
   }
@@ -3689,7 +3969,7 @@ function renderCardAderencia() {
   const teor = evol.teorica;
   const fin  = evol.financeira;
   if (teor == null && fin == null) {
-    // v0.55.2: placeholder amigável em vez de esconder o card
+    // placeholder amigável em vez de esconder o card
     return `
     <div class="kpi kpi-wide" style="opacity:0.85;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -3766,13 +4046,13 @@ function renderAderenciaProj() {
   el.innerHTML = renderCardAderencia();
 }
 
-// v0.59.1: navegar entre abas via JS (usado em botões de CTA)
+// navegar entre abas via JS (usado em botões de CTA)
 function irParaAba(nomeAba) {
   const tab = document.querySelector(`.tab[data-tab="${nomeAba}"]`);
   if (tab) tab.click();
 }
 
-// v0.59: helpers de placeholder "sem dados"
+// helpers de placeholder "sem dados"
 // Retorna HTML de CTA amigável quando obra não tem Tendência carregada
 function renderPlaceholderSemDados(icone, titulo, subtitulo) {
   const obraInfo = (typeof getObraInfo === 'function') ? getObraInfo() : null;
@@ -3795,7 +4075,7 @@ function obraTemTendencia() {
 }
 
 function renderVisao() {
-  // v0.59: guard sem dados de Tendência
+  // guard sem dados de Tendência
   if (!obraTemTendencia()) {
     const kpisEl = document.getElementById('kpis');
     const gruposEl = document.getElementById('grupos');
@@ -3911,9 +4191,9 @@ function renderVisao() {
 
   // Toggle INCC/IPCA
   const toggleHtml = `
-    <div style="display:flex; gap:0; border:1px solid var(--fgr-red-light); border-radius:5px; overflow:hidden; margin-top:8px; width:fit-content;">
-      <button type="button" onclick="setCorrecaoIndice('incc')" style="padding:3px 12px; font-size:11px; font-weight:600; border:none; cursor:pointer; ${CORRECAO_INDICE==='incc'?'background:var(--fgr-red-dark); color:white;':'background:white; color:var(--text-soft);'}">INCC</button>
-      <button type="button" onclick="setCorrecaoIndice('ipca')" style="padding:3px 12px; font-size:11px; font-weight:600; border:none; cursor:pointer; ${CORRECAO_INDICE==='ipca'?'background:var(--fgr-red-dark); color:white;':'background:white; color:var(--text-soft);'}">IPCA</button>
+    <div class="toggle-group" style="margin-top:8px;">
+      <button type="button" onclick="setCorrecaoIndice('incc')" class="toggle-btn ${CORRECAO_INDICE==='incc'?'active':''}">INCC</button>
+      <button type="button" onclick="setCorrecaoIndice('ipca')" class="toggle-btn ${CORRECAO_INDICE==='ipca'?'active':''}">IPCA</button>
     </div>
   `;
 
@@ -3971,9 +4251,9 @@ function renderVisao() {
           <div style="font-size:24px; font-weight:700; color:var(--text-strong);">${fmtR$(CARD3_MODO==='liquido' ? tendFinalLiq : tendFinal)}</div>
           <div style="font-size:12px; color:var(--text-soft);">${CARD3_MODO==='liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
         </div>
-        <div style="display:flex; gap:0; border:1px solid var(--fgr-red-light); border-radius:5px; overflow:hidden; width:fit-content;">
-          <button type="button" onclick="setCard3Modo('bruto')" style="padding:3px 10px; font-size:10.5px; font-weight:600; border:none; cursor:pointer; ${CARD3_MODO==='bruto'?'background:var(--fgr-red-dark); color:white;':'background:white; color:var(--text-soft);'}">Bruto</button>
-          <button type="button" onclick="setCard3Modo('liquido')" style="padding:3px 10px; font-size:10.5px; font-weight:600; border:none; cursor:pointer; ${CARD3_MODO==='liquido'?'background:var(--fgr-red-dark); color:white;':'background:white; color:var(--text-soft);'}">Líquido</button>
+        <div class="toggle-group">
+          <button type="button" onclick="setCard3Modo('bruto')" class="toggle-btn ${CARD3_MODO==='bruto'?'active':''}">Bruto</button>
+          <button type="button" onclick="setCard3Modo('liquido')" class="toggle-btn ${CARD3_MODO==='liquido'?'active':''}">Líquido</button>
         </div>
       </div>
       ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto>=0?'+':'') + fmtR$(desvioBruto), desvioBruto>0?'var(--sem-erro)':desvioBruto<0?'var(--sem-ok)':'var(--text-soft)', 'gestão atual vs licitação')}
@@ -4063,23 +4343,66 @@ function renderVisao() {
       document.getElementById(containerId).innerHTML = '<div style="color:var(--text-lighter); text-align:center; padding:20px; font-size:12px;">Nenhum item nessa categoria.</div>';
       return;
     }
-    const maxAbs = Math.max(...arr.map(d => Math.abs(d.delta)));
-    document.getElementById(containerId).innerHTML = arr.map(d => {
-      const adt = d.aditivo_total || 0;
-      const cobertura = (d.delta > 0 && adt > 0) ? `<span class="badge purple">📎 ${fmtR$k(adt)} aditivo</span> ` : '';
-      return `
-      <div class="top-item">
-        <div class="name" title="${d.item}">${cobertura}${d.item.length>50?d.item.slice(0,47)+'...':d.item}</div>
-        <div class="val ${d.delta<0?'pos':'neg'}">${d.delta>=0?'+':''}${fmtR$(d.delta)}</div>
-        <div class="top-bar"><div class="top-bar-fill ${d.delta<0?'green':''}" style="width:${Math.abs(d.delta)/maxAbs*100}%;"></div></div>
-      </div>`;
-    }).join('');
+
+    const barColor = isUp ? resolveColor('var(--fgr-red-vivid)') : resolveColor('var(--sem-ok)');
+    const categories = arr.map(d => d.item.length > 35 ? d.item.slice(0, 32) + '...' : d.item);
+    const seriesData = arr.map(d => Math.abs(d.delta));
+
+    const options = {
+      series: [{ name: isUp ? 'Aumento' : 'Redução', data: seriesData }],
+      chart: {
+        type: 'bar',
+        height: Math.max(250, arr.length * 40),
+        animations: { enabled: true, easing: 'easeinout', speed: 600 },
+        toolbar: { show: true, tools: { download: true, zoom: false, pan: false, reset: false } },
+      },
+      colors: [barColor],
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          borderRadius: 4,
+          barHeight: '60%',
+          dataLabels: { position: 'right' },
+        }
+      },
+      xaxis: {
+        categories: categories,
+        labels: { formatter: val => fmtR$k(val), style: { fontSize: '10px' } },
+      },
+      yaxis: {
+        labels: { style: { fontSize: '11px', colors: resolveColor('var(--text-medium)') } },
+      },
+      tooltip: {
+        enabled: true,
+        theme: document.body.classList.contains('dark') ? 'dark' : 'light',
+        y: { formatter: val => fmtR$(val) },
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: val => fmtR$k(val),
+        style: { fontSize: '10px', colors: [resolveColor('var(--text-medium)')] },
+        offsetX: 30,
+      },
+      grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+      legend: { show: false },
+    };
+
+    renderApexChart(containerId, options);
   };
   renderTopList(ups, true, 'top10Up');
   renderTopList(downs, false, 'top10Down');
 }
 
+// Filtro interativo do donut (toggle por tipo) — donutHidden e _lastTipoSum em AppState.donut
+
+function toggleDonutSlice(key) {
+  if (donutHidden.has(key)) donutHidden.delete(key);
+  else donutHidden.add(key);
+  if (_lastTipoSum) renderDonut(_lastTipoSum);
+}
+
 function renderDonut(tipoSum) {
+  _lastTipoSum = tipoSum;
   const aum = Math.max(0, tipoSum.aumento_real);
   const rem = Math.max(0, tipoSum.remanejamento);
   const eco = Math.max(0, tipoSum.economia);
@@ -4087,52 +4410,94 @@ function renderDonut(tipoSum) {
   const sem = Math.max(0, tipoSum.sem_classificacao);
   const total = aum + rem + eco + pen + sem;
 
-  const center = document.getElementById('donutCenter');
-  const legend = document.getElementById('donutLegend');
-  const donut = document.getElementById('donutDesvio');
-
   if (total <= 0) {
-    donut.style.background = 'var(--border)';
-    center.innerHTML = '<div class="val">-</div><div class="lbl">sem aditivos</div>';
-    legend.innerHTML = ''; return;
+    if (_apexCharts['donutChart']) { _apexCharts['donutChart'].destroy(); delete _apexCharts['donutChart']; }
+    document.getElementById('donutChart').innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:13px;">Sem aditivos para exibir.</div>';
+    return;
   }
-  let acc = 0;
-  const segs = [
-    {v:aum, cor:'var(--fgr-red-vivid)', lbl:'Aumento real', icon:'🔴'},
-    {v:rem, cor:'var(--text-medium)', lbl:'Remanejamento', icon:'🔵'},
-    {v:eco, cor:'var(--sem-ok)', lbl:'Economia', icon:'🟢'},
-    {v:pen, cor:'var(--sem-alerta)', lbl:'Pendente', icon:'🟡'},
-    {v:sem, cor:'var(--text-lighter)', lbl:'Sem class.', icon:'⚪'},
+
+  const allSegs = [
+    {key:'aum', v:aum, lbl:'Aumento real', icon:'🔴'},
+    {key:'rem', v:rem, lbl:'ReManejamento', icon:'🔵'},
+    {key:'eco', v:eco, lbl:'Economia', icon:'🟢'},
+    {key:'pen', v:pen, lbl:'Pendente', icon:'🟡'},
+    {key:'sem', v:sem, lbl:'Sem class.', icon:'⚪'},
   ];
-  const grad = segs.map(s => {
-    const start = (acc/total)*100;
-    acc += s.v;
-    const end = (acc/total)*100;
-    return `${s.cor} ${start}% ${end}%`;
-  }).join(', ');
-  donut.style.background = `conic-gradient(${grad})`;
-  donut.style.transition = 'transform 0.3s ease';
-  center.innerHTML = `
-    <div class="val" style="font-size:28px;">${fmtR$k(total)}</div>
-    <div class="lbl" style="font-size:11px; margin-top:2px;">total flows</div>
-    <div style="font-size:10px; color:var(--text-lighter); margin-top:4px;">${segs.filter(s => s.v > 0).length} tipos</div>
-  `;
-  legend.innerHTML = segs.filter(s => s.v > 0).map(s => {
-    const pct = ((s.v/total)*100).toFixed(1);
-    return `
-    <div class="donut-legend-item" style="transition: background 0.15s; padding: 8px 6px; border-radius: 6px; cursor: default;" 
-         onmouseover="this.style.background='var(--bg-soft)'" 
-         onmouseout="this.style.background=''">
-      <div class="sq" style="background:${s.cor}; width:16px; height:16px; border-radius:4px;"></div>
-      <div style="flex:1;">
-        <div style="display:flex; justify-content:space-between; align-items:baseline;">
-          <strong style="font-size:12px;">${s.icon} ${s.lbl}</strong>
-          <span style="font-size:11px; color:var(--text-soft);">${pct}%</span>
-        </div>
-        <div style="font-size:11px; color:var(--text-soft); margin-top:2px;">${fmtR$(s.v)}</div>
-      </div>
-    </div>`;
-  }).join('');
+
+  const visibleSegs = allSegs.filter(s => s.v > 0 && !donutHidden.has(s.key));
+  const series = visibleSegs.map(s => s.v);
+  const labels = visibleSegs.map(s => s.icon + ' ' + s.lbl);
+  const colorMap = {
+    aum: resolveColor('var(--fgr-red-vivid)'),
+    rem: resolveColor('var(--text-medium)'),
+    eco: resolveColor('var(--sem-ok)'),
+    pen: resolveColor('var(--sem-alerta)'),
+    sem: resolveColor('var(--text-lighter)'),
+  };
+  const colors = visibleSegs.map(s => colorMap[s.key]);
+
+  const options = {
+    series: series,
+    chart: {
+      type: 'donut',
+      height: 320,
+      animations: { enabled: true, easing: 'easeinout', speed: 600 },
+      toolbar: { show: true, tools: { download: true, selection: false, zoom: false, pan: false } },
+      events: {
+        dataPointSelection: function(event, chartContext, config) {
+          const segIndex = config.dataPointIndex;
+          if (segIndex >= 0 && segIndex < visibleSegs.length) {
+            toggleDonutSlice(visibleSegs[segIndex].key);
+          }
+        }
+      }
+    },
+    labels: labels,
+    colors: colors,
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '65%',
+          labels: {
+            show: true,
+            total: {
+              show: true,
+              label: donutHidden.size > 0 ? 'Total (filtro ativo)' : 'Total flows',
+              formatter: function(w) {
+                const sum = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                return fmtR$k(sum);
+              }
+            },
+            value: { formatter: function(val) { return fmtR$(parseFloat(val)); } }
+          }
+        }
+      }
+    },
+    tooltip: {
+      enabled: true,
+      theme: document.body.classList.contains('dark') ? 'dark' : 'light',
+      y: { formatter: function(val, opts) {
+        const seg = visibleSegs[opts.dataPointIndex];
+        const pct = ((val / total) * 100).toFixed(1);
+        return fmtR$(val) + ' (' + pct + '%)';
+      }}
+    },
+    legend: {
+      show: true, position: 'bottom', fontSize: '12px',
+      labels: { colors: resolveColor('var(--text-medium)') },
+      itemMargin: { horizontal: 8, vertical: 4 },
+    },
+    stroke: { width: 2, colors: [resolveColor('var(--bg-card)')] },
+    dataLabels: {
+      enabled: true,
+      formatter: function(val) { return val.toFixed(1) + '%'; },
+      style: { fontSize: '11px' },
+      dropShadow: { enabled: false },
+    },
+    responsive: [{ breakpoint: 480, options: { chart: { height: 260 }, legend: { position: 'bottom' } } }]
+  };
+
+  renderApexChart('donutChart', options);
 }
 
 // ============ DETALHAMENTO ============
@@ -4144,7 +4509,7 @@ function populateFilters() {
   sel.value = cur;
 }
 
-// v0.55: cor da célula de Evolução Financeira baseada no descolamento vs Teórica
+// cor da célula de Evolução Financeira baseada no descolamento vs Teórica
 function _evolClass(d) {
   if (d.evolucao_teorica == null || d.evolucao_financeira == null) return 'var(--sem-alerta)';
   if (d.evolucao_teorica === 0) return 'var(--sem-alerta)';
@@ -4156,14 +4521,14 @@ function _evolClass(d) {
 }
 
 function renderTable() {
-  // v0.59.1: atualizar header da coluna Gestão com o GESTAO_LABEL atual
+  // atualizar header da coluna Gestão com o GESTAO_LABEL atual
   const thG = document.getElementById('thGestao');
   if (thG && GESTAO_LABEL) {
     // Encurta 'GESTÃO 07-2026' pra 'Gestão 07/26' pra caber
     const m = GESTAO_LABEL.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
     thG.textContent = m ? `Gestão ${m[1]}/${m[2].slice(-2)}` : GESTAO_LABEL;
   }
-  // v0.59: guard sem dados
+  // guard sem dados
   if (!obraTemTendencia()) {
     const tbody = document.getElementById('tbody');
     const countEl = document.getElementById('count');
@@ -4200,6 +4565,10 @@ function renderTable() {
     return sortDir * (va - vb);
   });
 
+  // Marca cada item com seu índice original em DATA_T (evita indexOf O(n²) no render)
+  const idxMap = new Map();
+  DATA_T.forEach((d, i) => idxMap.set(d, i));
+
   document.getElementById('tbody').innerHTML = rows.map((d, idx) => {
     const st = statusOf(d.licitacao, d.gestao);
     const diff = (d.licitacao != null && d.gestao != null) ? (d.gestao - d.licitacao) : null;
@@ -4212,7 +4581,8 @@ function renderTable() {
     const hasAdt = (d.flows_destino && d.flows_destino.length > 0) || (d.flows_origem && d.flows_origem.length > 0);
     const adt = d.aditivo_total || 0;
     const adtTxt = hasAdt ? `<span class="${adt<0?'pos':'neg'}">${adt>=0?'+':''}${fmt(adt)}</span> <span style="color:var(--text-lighter);font-size:10px;">(${(d.flows_destino?.length||0)+(d.flows_origem?.length||0)})</span>` : '<span style="color:var(--text-lighter);">-</span>';
-    return `<tr class="folha ${hasAdt?'has-aditivo':''}" onclick="openItem(${DATA_T.indexOf(d)})">
+    const origIdx = idxMap.get(d);
+    return `<tr class="folha ${hasAdt?'has-aditivo':''}" data-idx="${origIdx}">
       <td>${escHtml(d.grupo)}</td>
       <td>${escHtml(d.item)}</td>
       <td style="color:var(--text-soft);font-size:11px;">${escHtml(d.cod_insumo||'')}</td>
@@ -4236,6 +4606,14 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
     else { sortKey = k; sortDir = (['item','grupo','cod_insumo'].includes(k)) ? 1 : -1; }
     renderTable();
   };
+});
+
+// Event delegation para linhas da tabela de detalhamento (substitui onclick inline)
+document.getElementById('tbody')?.addEventListener('click', (e) => {
+  const tr = e.target.closest('tr[data-idx]');
+  if (!tr) return;
+  const idx = parseInt(tr.dataset.idx, 10);
+  if (!isNaN(idx)) openItem(idx);
 });
 
 // Salvar filtros no localStorage
@@ -4267,11 +4645,13 @@ function restaurarFiltros() {
   } catch(e) {}
 }
 
+// Debounce para filtros — evita re-renderização a cada tecla digitada
+const debouncedFiltros = debounce(() => { renderTable(); salvarFiltros(); }, 300);
 ['search','filterGrupo','filterStatus','filterAditivo','onlyFolhas'].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
-    el.addEventListener('input', function() { renderTable(); salvarFiltros(); });
-    el.addEventListener('change', function() { renderTable(); salvarFiltros(); });
+    el.addEventListener('input', debouncedFiltros);
+    el.addEventListener('change', debouncedFiltros);
   }
 });
 
@@ -4336,28 +4716,62 @@ function renderFlowMini(f, isOrigem=false) {
 function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
+// Event delegation para ações dentro de modais (saveManualForm, editMov, deleteMov, saveMovForm)
+document.getElementById('modalContent')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  if (action === 'save-manual') saveManualForm(btn.dataset.n);
+  else if (action === 'save-mov') saveMovForm(btn.dataset.id || '');
+});
+
 // Modal de confirmação customizado (substitui confirm() nativo)
 function confirmModal(titulo, mensagem, opts) {
   opts = opts || {};
   const btnConfirmText = opts.confirmText || 'Confirmar';
   const btnCancelText = opts.cancelText || 'Cancelar';
-  const isDestructive = opts.destructive !== false; // padrão: true
-  
+  const isDestructive = opts.destructive !== false;
+  const requireText = opts.requireText || null; // texto que o usuário deve digitar para habilitar OK
+
   return new Promise(function(resolve) {
-    const confirmBtnStyle = isDestructive 
+    const confirmBtnStyle = isDestructive
       ? 'background:var(--sem-erro); color:white; border:1px solid var(--sem-erro);'
       : 'background:var(--fgr-red-dark); color:white; border:1px solid var(--fgr-red-dark);';
-    
+
+    const requireHtml = requireText
+      ? '<div style="margin-top:12px;">'
+        + '<label style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Digite <code>' + escHtml(requireText) + '</code> para confirmar:</label>'
+        + '<input type="text" id="confirmModalRequire" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; margin-top:4px; font-size:13px; font-family:monospace;" autocomplete="off">'
+        + '</div>'
+      : '';
+
     document.getElementById('modalContent').innerHTML = ''
       + '<h2>' + escHtml(titulo) + '</h2>'
       + '<div style="white-space:pre-wrap; font-size:13px; line-height:1.6; color:var(--text-medium); margin:16px 0;">' + escHtml(mensagem) + '</div>'
+      + requireHtml
       + '<div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">'
       + '  <button class="btn-sm" id="confirmModalCancel">' + escHtml(btnCancelText) + '</button>'
-      + '  <button class="btn-sm" id="confirmModalOk" style="' + confirmBtnStyle + '">' + escHtml(btnConfirmText) + '</button>'
+      + '  <button class="btn-sm" id="confirmModalOk" style="' + confirmBtnStyle + (requireText ? '; opacity:0.5; cursor:not-allowed;' : '') + '">' + escHtml(btnConfirmText) + '</button>'
       + '</div>';
-    
-    document.getElementById('confirmModalCancel').onclick = function() { closeModal(); resolve(false); };
-    document.getElementById('confirmModalOk').onclick = function() { closeModal(); resolve(true); };
+
+    const okBtn = document.getElementById('confirmModalOk');
+    const cancelBtn = document.getElementById('confirmModalCancel');
+
+    if (requireText) {
+      const reqInput = document.getElementById('confirmModalRequire');
+      reqInput.addEventListener('input', () => {
+        const match = reqInput.value.trim() === requireText;
+        okBtn.style.opacity = match ? '1' : '0.5';
+        okBtn.style.cursor = match ? 'pointer' : 'not-allowed';
+      });
+      okBtn.onclick = () => {
+        if (reqInput.value.trim() !== requireText) return;
+        closeModal(); resolve(true);
+      };
+    } else {
+      okBtn.onclick = function() { closeModal(); resolve(true); };
+    }
+    cancelBtn.onclick = function() { closeModal(); resolve(false); };
     document.getElementById('modalBg').classList.add('show');
   });
 }
@@ -4396,7 +4810,7 @@ function loadClassifications() {
     if (!raw) return 0;
     const map = JSON.parse(raw);
     let n = 0;
-    // v0.63.1: aplica em TODO DATA_F (não só obra ativa). Chave é "codigo_obra:n_alteracao"
+    // aplica em TODO DATA_F (não só obra ativa). Chave é "codigo_obra:n_alteracao"
     // Compat: aceita também chave só com n_alteracao (legado)
     const _DATA_F_ALL = Array.isArray(DATA_F) ? DATA_F : [];
     _DATA_F_ALL.forEach(f => {
@@ -4434,7 +4848,7 @@ function loadClassifications() {
 
 function saveClassification(nAlt, field, value) {
   if (!requireEditor('classificar aditivos')) return false;
-  // v0.63.1: acha o aditivo no DATA_F pra pegar codigo_obra e montar chave composta
+  // acha o aditivo no DATA_F pra pegar codigo_obra e montar chave composta
   const f = (Array.isArray(DATA_F) ? DATA_F : []).find(x => x.n_alteracao === nAlt);
   const codigoObra = f?.codigo_obra || OBRA_ATIVA || '';
   const key = codigoObra + ':' + nAlt;
@@ -4539,7 +4953,7 @@ function renderInsumoSelect(f, field) {
   // valor "amigável" para exibição: se for insumo da tendência, mostra "Ixxx — Nome"
   const displayValue = displayForValue(value);
   const cls = 'classif-select' + (edited ? ' edited' : '') + (isSpecial ? ' special' : '');
-  // v0.64.4: removido marker ✏️ — fundo amarelo já sinaliza edição
+  // removido marker ✏️ — fundo amarelo já sinaliza edição
   return `<input type="text" list="insumosDatalist" class="${cls}"
     value="${escAttr(displayValue)}"
     data-n="${escAttr(f.n_alteracao)}" data-field="${field}"
@@ -4597,7 +5011,7 @@ function buildDatalist() {
     `<option value="${escAttr(cod + ' — ' + nome)}">`
   ).join('');
   dl.innerHTML = specials + insumos;
-  // v0.64.6: log discreto
+  // log discreto
   if (INSUMOS_OPTIONS.length > 0) {
     console.log(`[DATALIST] ${INSUMOS_OPTIONS.length} insumos disponíveis no dropdown de classificação (${OBRA_ATIVA||'—'})`);
   }
@@ -4622,14 +5036,49 @@ function formatDate(s) {
       return `${dd}/${mm}/${yy}`;
     }
   }
-  // Formato ISO yyyy-mm-dd
+  // Formato ISO yyyy-mm-dd — valida mês (1-12) e dia (1-31)
   const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  if (iso) {
+    const mes = parseInt(iso[2], 10);
+    const dia = parseInt(iso[3], 10);
+    if (mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31) {
+      return `${iso[3]}/${iso[2]}/${iso[1]}`;
+    }
+  }
   return s;
 }
 
 function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function escAttr(s) { return escHtml(s); }
+
+// ============ TOOLTIP SYSTEM (gráficos) ============
+function showTooltip(evt, html) {
+  const tt = document.getElementById('chartTooltip');
+  if (!tt) return;
+  tt.innerHTML = html;
+  tt.classList.add('show');
+  positionTooltip(evt, tt);
+}
+function hideTooltip() {
+  const tt = document.getElementById('chartTooltip');
+  if (tt) tt.classList.remove('show');
+}
+function positionTooltip(evt, tt) {
+  if (!tt) tt = document.getElementById('chartTooltip');
+  const pad = 14;
+  let x = evt.clientX + pad, y = evt.clientY + pad;
+  // Forçar render para medir
+  tt.style.left = '-9999px'; tt.style.top = '-9999px';
+  const rect = tt.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth - pad) x = evt.clientX - rect.width - pad;
+  if (y + rect.height > window.innerHeight - pad) y = evt.clientY - rect.height - pad;
+  if (x < pad) x = pad;
+  if (y < pad) y = pad;
+  tt.style.left = x + 'px'; tt.style.top = y + 'px';
+}
+// Helper para linha de tooltip formatada
+function ttRow(label, val) { return `<div class="tt-row"><span class="tt-label">${label}</span><span class="tt-val">${val}</span></div>`; }
+function ttDiv() { return '<div class="tt-divider"></div>'; }
 
 // Helper: re-renderizar TODAS as visões que dependem de DATA_F (refletido, classificação, valor, manuais)
 // Chamado sempre que algo nos Flows muda, para garantir que Visão Geral, Tendência de Obra e Controle Projeção atualizem
@@ -4661,7 +5110,7 @@ function onClassifChange(sel) {
   // Atualiza apenas a linha desta tr (badge de tipo + estilo do select)
   const tr = sel.closest('tr');
   if (tr) {
-    // v0.64.7: Atualiza o badge de tipo (6ª <td> = índice 5)
+    // Atualiza o badge de tipo (6ª <td> = índice 5)
     // Ordem: 0=checkbox 1=refletido 2=Nº 3=Data 4=Departamento 5=Tipo 6=Destino ...
     const tipoLabel = {aumento_real:'<span class="badge red">🔴 Aum.real</span>', remanejamento:'<span class="badge cyan">🔵 Remanej.</span>',
       economia:'<span class="badge green">🟢 Economia</span>', pendente:'<span class="badge amber">🟡 Pendente</span>',
@@ -4669,7 +5118,7 @@ function onClassifChange(sel) {
       sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', misto:'<span class="badge gray">⚪ Misto</span>'};
     const tipoTd = tr.children[5];
     if (tipoTd) tipoTd.innerHTML = tipoLabel[f.tipo] || '';
-    // v0.64.4: marca só o input (fundo amarelo do CSS já sinaliza)
+    // marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
   }
 }
@@ -4694,7 +5143,7 @@ function renderFlowsAggregates() {
   getFlowsObraAtiva().forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
   const sumFm = arr => arr.reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
   // "Vivos" = não cancelados E não marcados como ❌ Não refletir
-  // v0.64.7: Cancelado agora é uma classificação própria (some pelo dep OU pelo tipo)
+  // Cancelado agora é uma classificação própria (some pelo dep OU pelo tipo)
   const isCancelado = f => f.dep === 'Cancelado' || f.tipo === 'cancelado';
   const isNaoRefletir = f => !isCancelado(f) && f.refletido_status === 'nao';
   // Vivos = os que impactam a obra (não cancelados, não marcados como não refletir)
@@ -4708,7 +5157,7 @@ function renderFlowsAggregates() {
   if (semClassVivos.length) {
     tipoSums['sem_classificacao'] = {n: semClassVivos.length, v: sumFm(semClassVivos)};
   }
-  // v0.64.7: Cancelado vira LINHA da lista (com contador e valor), não caixa separada
+  // Cancelado vira LINHA da lista (com contador e valor), não caixa separada
   const cancelados = getFlowsObraAtiva().filter(isCancelado);
   if (cancelados.length) {
     tipoSums['cancelado'] = {n: cancelados.length, v: sumFm(cancelados)};
@@ -4731,7 +5180,7 @@ function renderFlowsAggregates() {
       <div class="val">${fmtR$(v.v)}</div>
       <div class="top-bar"><div class="top-bar-fill" style="width:${Math.abs(v.v)/maxV*100}%;background:${colors[t]};"></div></div>
     </div>`).join('');
-  // v0.64.7: caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
+  // caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
   const elDesc = document.getElementById('flowsDescartados');
   if (elDesc) {
     if (descartados.length) {
@@ -5062,6 +5511,17 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
   document.getElementById('modalBg').classList.add('show');
 }
 
+// Bulk upsert helper — evita N requisições individuais ao Supabase
+async function supaBulkUpsertClassifications(payloads) {
+  if (!SUPA || !payloads.length) return;
+  try {
+    const { error } = await SUPA.from('flow_classifications').upsert(payloads, { onConflict: 'codigo_obra,n_alteracao' });
+    if (error) console.warn('[SUPA] bulk upsert err:', error);
+    else SUPA_STATUS.lastSync = new Date();
+    updateSupaBadge();
+  } catch(e) { console.warn('[SUPA] bulk upsert exception:', e); }
+}
+
 function massAplicarDestino() {
   const opt = `
     <div class="full">
@@ -5073,9 +5533,10 @@ function massAplicarDestino() {
   massPrompt('🎯 Aplicar Destino em massa', `Substitui o campo INSUMO PLANEJAMENTO em <strong>${MASS_SELECTED.size}</strong> aditivo(s) selecionado(s).`, opt, () => {
     const novo = valueFromDisplay(document.getElementById('massDestInput').value);
     if (novo === null || novo === undefined) throw new Error('Valor inválido');
-    // v0.64.8: chave composta + sync Supabase (antes salvava só no localStorage com chave errada)
+    // localStorage lido UMA vez antes do loop
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    const bulkPayloads = [];
     MASS_SELECTED.forEach(nAlt => {
       const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
       if (!f) return;
@@ -5086,10 +5547,12 @@ function massAplicarDestino() {
       const key = codigoObra + ':' + nAlt;
       if (!map[key]) map[key] = { codigo_obra: codigoObra };
       map[key].insumo_planejamento = novo;
-      // Sync Supabase (fire-and-forget)
-      try { supaUpsertClassification(nAlt, { insumo_planejamento: novo }, codigoObra); } catch(e){}
+      bulkPayloads.push({ codigo_obra: codigoObra, n_alteracao: nAlt, insumo_planejamento: novo, updated_at: new Date().toISOString() });
     });
+    // Escrita no localStorage UMA vez após o loop
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    // Supabase bulk (1 requisição em vez de N)
+    supaBulkUpsertClassifications(bulkPayloads);
     buildLinks();
   });
 }
@@ -5104,9 +5567,9 @@ function massAplicarOrigem() {
   massPrompt('🔄 Aplicar Origem em massa', `Substitui o campo INSUMO DE REMANEJAMENTO em <strong>${MASS_SELECTED.size}</strong> aditivo(s) selecionado(s).`, opt, () => {
     const novo = valueFromDisplay(document.getElementById('massOrigInput').value);
     if (novo === null || novo === undefined) throw new Error('Valor inválido');
-    // v0.64.8: chave composta + sync Supabase (antes salvava só no localStorage com chave errada)
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    const bulkPayloads = [];
     MASS_SELECTED.forEach(nAlt => {
       const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
       if (!f) return;
@@ -5117,9 +5580,10 @@ function massAplicarOrigem() {
       const key = codigoObra + ':' + nAlt;
       if (!map[key]) map[key] = { codigo_obra: codigoObra };
       map[key].insumo_remanejamento = novo;
-      try { supaUpsertClassification(nAlt, { insumo_remanejamento: novo }, codigoObra); } catch(e){}
+      bulkPayloads.push({ codigo_obra: codigoObra, n_alteracao: nAlt, insumo_remanejamento: novo, updated_at: new Date().toISOString() });
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    supaBulkUpsertClassifications(bulkPayloads);
     buildLinks();
   });
 }
@@ -5139,20 +5603,21 @@ function massAplicarRefletido() {
     const status = document.getElementById('massReflInput').value;
     let map = {};
     try { map = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){}
+    const bulkPayloads = [];
     MASS_SELECTED.forEach(nAlt => {
       const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
       if (!f) return;
       f.refletido_status = status;
       f.refletido = (status === 'sim');
-      // v0.64.8: chave composta + sync Supabase
       const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
       const key = codigoObra + ':' + nAlt;
       if (!map[key]) map[key] = { codigo_obra: codigoObra };
       map[key].refletido_status = status;
       map[key].refletido = (status === 'sim');
-      try { supaUpsertClassification(nAlt, { refletido_status: status }, codigoObra); } catch(e){}
+      bulkPayloads.push({ codigo_obra: codigoObra, n_alteracao: nAlt, refletido_status: status, updated_at: new Date().toISOString() });
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    supaBulkUpsertClassifications(bulkPayloads);
   });
 }
 
@@ -5161,12 +5626,12 @@ function massAplicarRefletido() {
 
 function onValorChange(input) {
   const nAlt = input.dataset.n;
-  const novo = parseNumBR(input.value);
+  const novo = parseNumero(input.value);
   const f = getFlowsObraAtiva().find(x => x.n_alteracao === nAlt);
   if (!f) return;
   f.custo_flowmaster = novo;
   f._edited_v = true;
-  // v0.64.4: usar chave composta (codigo_obra:n_alteracao) + sync com Supabase
+  // usar chave composta (codigo_obra:n_alteracao) + sync com Supabase
   const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
   const key = codigoObra + ':' + nAlt;
   let map = {};
@@ -5249,54 +5714,56 @@ function nextManualId() {
 function openManualForm(editing) {
   const f = editing || {};
   const today = new Date().toLocaleDateString('pt-BR');
-  const depOpts = ['Obra','Projeto','Orçamento','Planejamento','Suprimentos','Finalizado','Cancelado']
-    .map(d => `<option value="${d}" ${f.dep===d?'selected':''}>${d}</option>`).join('');
-  const motivosHtml = MOTIVOS_OFICIAIS.map(m => `<option value="${escAttr(m)}" ${f.motivo === m ? 'selected':''}>${escHtml(m)}</option>`).join('');
-  document.getElementById('modalContent').innerHTML = `
-    <h2>➕ Novo aditivo manual</h2>
-    <div class="meta">Item ainda não criado no sistema Flow. Será marcado com ID <strong>${escHtml(f.n_alteracao || nextManualId())}</strong>.</div>
-    <div class="form-grid">
-      <div>
-        <label>Departamento</label>
-        <select id="m_dep"><option value="">-</option>${depOpts}</select>
-      </div>
-      <div>
-        <label>Data (dd/mm/aaaa)</label>
-        <input type="text" id="m_data" value="${escAttr(f.data_br || today)}" placeholder="${today}">
-      </div>
-      <div class="full">
-        <label>Descrição</label>
-        <textarea id="m_desc" placeholder="Ex: Aumento previsto - revisão paisagismo Q2">${escHtml(f.descricao||'')}</textarea>
-      </div>
-      <div>
-        <label>Motivo</label>
-        <select id="m_motivo">
-          <option value="">— Selecione o motivo —</option>
-          ${motivosHtml}
-        </select>
-      </div>
-      <div>
-        <label>Fluxo Planejamento (R$)</label>
-        <input type="text" id="m_valor" value="${f.custo_flowmaster != null ? fmt(f.custo_flowmaster) : ''}" placeholder="ex: 12.500,00 ou -5000">
-      </div>
-      <div>
-        <label>→ Destino (Insumo Planejamento)</label>
-        <input type="text" id="m_dest" list="insumosDatalist" value="${escAttr(displayForValue(f.insumo_planejamento||''))}" placeholder="digite p/ buscar...">
-      </div>
-      <div>
-        <label>← Origem (Insumo Remanejamento)</label>
-        <input type="text" id="m_orig" list="insumosDatalist" value="${escAttr(displayForValue(f.insumo_remanejamento||''))}" placeholder="digite p/ buscar...">
-      </div>
-      <div class="full">
-        <label>Justificativa (opcional)</label>
-        <textarea id="m_just" placeholder="Detalhe técnico, links de projeto, etc.">${escHtml(f.justificativa||'')}</textarea>
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-sm" onclick="closeModal()">Cancelar</button>
-      <button class="btn-sm primary" onclick="saveManualForm('${escAttr(f.n_alteracao || '')}')">💾 Salvar aditivo manual</button>
-    </div>
-  `;
+  const tpl = document.getElementById('tpl-manual-form').content.cloneNode(true);
+
+  // Preencher ID
+  tpl.querySelector('.id-placeholder').textContent = f.n_alteracao || nextManualId();
+
+  // Preencher select de departamentos
+  const depSelect = tpl.querySelector('#m_dep');
+  ['Obra','Projeto','Orçamento','Planejamento','Suprimentos','Finalizado','Cancelado'].forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    if (f.dep === d) opt.selected = true;
+    depSelect.appendChild(opt);
+  });
+
+  // Preencher data
+  const dataInput = tpl.querySelector('#m_data');
+  dataInput.value = f.data_br || today;
+  dataInput.placeholder = today;
+
+  // Preencher descrição
+  tpl.querySelector('#m_desc').value = f.descricao || '';
+
+  // Preencher motivos
+  const motivoSelect = tpl.querySelector('#m_motivo');
+  MOTIVOS_OFICIAIS.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if (f.motivo === m) opt.selected = true;
+    motivoSelect.appendChild(opt);
+  });
+
+  // Preencher valor
+  tpl.querySelector('#m_valor').value = f.custo_flowmaster != null ? fmt(f.custo_flowmaster) : '';
+
+  // Preencher destino e origem
+  tpl.querySelector('#m_dest').value = displayForValue(f.insumo_planejamento || '');
+  tpl.querySelector('#m_orig').value = displayForValue(f.insumo_remanejamento || '');
+
+  // Preencher justificativa
+  tpl.querySelector('#m_just').value = f.justificativa || '';
+
+  // Preencher data-n no botão salvar
+  tpl.querySelector('[data-action="save-manual"]').dataset.n = f.n_alteracao || '';
+
+  // Renderizar
+  const content = document.getElementById('modalContent');
+  content.innerHTML = '';
+  content.appendChild(tpl);
   document.getElementById('modalBg').classList.add('show');
 }
 
@@ -5306,7 +5773,7 @@ function saveManualForm(editingId) {
   const data = get('m_data');
   const desc = get('m_desc');
   const motivo = get('m_motivo');
-  const valor = parseNumBR(get('m_valor'));
+  const valor = parseNumero(get('m_valor'));
   const dest = valueFromDisplay(get('m_dest'));
   const orig = valueFromDisplay(get('m_orig'));
   const just = get('m_just');
@@ -5358,7 +5825,7 @@ async function deleteManual(id) {
 
 // ============ FLOWS TAB ============
 function renderFlows() {
-  // v0.59: guard sem dados de Flows
+  // guard sem dados de Flows
   if (!Array.isArray(getFlowsObraAtiva()) || getFlowsObraAtiva().length === 0) {
     const flowSummary = document.getElementById('flowSummary');
     const flowsByTipo = document.getElementById('flowsByTipo');
@@ -5372,7 +5839,7 @@ function renderFlows() {
   const byDep = {};
   getFlowsObraAtiva().forEach(f => { byDep[f.dep] = (byDep[f.dep]||0) + 1; });
   const sumFm = arr => arr.reduce((s,f) => s + (f.custo_flowmaster || 0), 0);
-  // v0.64.7: Cancelado agora é uma classificação própria (some pelo dep OU pelo tipo)
+  // Cancelado agora é uma classificação própria (some pelo dep OU pelo tipo)
   const isCancelado = f => f.dep === 'Cancelado' || f.tipo === 'cancelado';
   const isNaoRefletir = f => !isCancelado(f) && f.refletido_status === 'nao';
   const active = getFlowsObraAtiva().filter(f => !isCancelado(f) && !isNaoRefletir(f));
@@ -5409,7 +5876,7 @@ function renderFlows() {
       <div class="val">${fmtR$(v.v)}</div>
       <div class="top-bar"><div class="top-bar-fill" style="width:${Math.abs(v.v)/maxV*100}%;background:${colors[t]};"></div></div>
     </div>`).join('');
-  // v0.64.7: caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
+  // caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
   const elDesc = document.getElementById('flowsDescartados');
   if (elDesc) {
     if (descartados.length) {
@@ -5534,7 +6001,7 @@ function renderFlowTable() {
     const valCls = (f.custo_flowmaster||0) < 0 ? 'neg' : (f.custo_flowmaster||0) > 0 ? 'pos' : '';
     const valStr = f.custo_flowmaster != null ? fmt(f.custo_flowmaster) : '';
     const manualBadge = f.is_manual ? '<span class="badge-manual">✋ Manual</span>' : '';
-    const delBtn = f.is_manual ? `<button class="btn-del-manual" data-editor-only title="Excluir este aditivo manual" onclick="deleteManual('${escAttr(f.n_alteracao)}')">🗑️</button>` : '';
+    const delBtn = f.is_manual ? `<button class="btn-del-manual" data-editor-only data-action="delete-manual" data-n="${escAttr(f.n_alteracao)}" title="Excluir este aditivo manual">🗑️</button>` : '';
     const status = f.refletido_status || 'pendente';
     const trStyle = status === 'sim' ? 'background:#ecfdf5;' : status === 'nao' ? 'background:#fef2f2;' : '';
     const isSelected = MASS_SELECTED.has(f.n_alteracao);
@@ -5580,7 +6047,7 @@ function onRefletidoChange(sel) {
   f.refletido_status = status;
   // manter campo legado 'refletido' = (status === 'sim') por compatibilidade
   f.refletido = (status === 'sim');
-  // v0.64.8: chave composta + sync Supabase
+  // chave composta + sync Supabase
   const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
   const key = codigoObra + ':' + nAlt;
   let map = {};
@@ -5605,7 +6072,7 @@ function onRefletidoChange(sel) {
       else if (sIn.value === 'nao') naoCount++;
     }
     const inp = r.querySelector('input.valor-input');
-    if (inp) totVal += parseNumBR(inp.value) || 0;
+    if (inp) totVal += parseNumero(inp.value) || 0;
   });
   document.getElementById('flowCount').textContent = `${visibleCount} aditivos · ✅ ${refletCount} · ❌ ${naoCount} · Σ ${fmtR$(totVal)}`;
   // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
@@ -5620,11 +6087,19 @@ document.querySelectorAll('th[data-sort-flow]').forEach(th => {
     renderFlowTable();
   };
 });
+
+// Event delegation para botão delete-manual na tabela de flows
+document.getElementById('flowTbody')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action="delete-manual"]');
+  if (btn) deleteManual(btn.dataset.n);
+});
+// Debounce para filtros de flows
+const debouncedFlowTable = debounce(renderFlowTable, 300);
 ['flowSearch','flowFilterDataIni','flowFilterDataFim','flowFilterValMin','flowFilterValMax'].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
-    el.addEventListener('input', renderFlowTable);
-    el.addEventListener('change', renderFlowTable);
+    el.addEventListener('input', debouncedFlowTable);
+    el.addEventListener('change', debouncedFlowTable);
   }
 });
 
@@ -5681,7 +6156,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
       let linhas = 0;
 
       if (kind === 'tendencia') {
-        // v0.55: formato novo tem "LICITAÇÃO" + "IPCA" + "INCC" + "EVOLUÇÃO"
+        // formato novo tem "LICITAÇÃO" + "IPCA" + "INCC" + "EVOLUÇÃO"
         const fu = firstLines.toUpperCase();
         if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
           authToast('❌ CSV inválido para TENDÊNCIA (esperado cabeçalho v0.55 com LICITAÇÃO + IPCA + INCC + EVOLUÇÃO)', 'err', 5000);
@@ -5689,9 +6164,9 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
           ev.target.value = ''; return;
         }
         DATA_T = parseTendencia(txt);
-        // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
+        // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
-        // v0.64.6: rebuildar datalist de insumos após upload novo
+        // rebuildar datalist de insumos após upload novo
         try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
         linhas = DATA_T.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
@@ -5716,9 +6191,9 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
           HISTORICO = parsed;
-          // v0.59.2: sobrescreve GESTAO_LABEL com última gestão cronológica
+          // sobrescreve GESTAO_LABEL com última gestão cronológica
           atualizarGestaoLabelPelaHistoria();
-          // v0.60.2: se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+          // se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
           aplicarFallbackGestaoDoHistorico();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
@@ -5728,7 +6203,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         result = `GESTÕES: ${linhas} itens · ${parsed.gestoes.length} gestões`;
       }
 
-      // v0.53: sobe o arquivo original pro Storage (Supabase bucket privado)
+      // sobe o arquivo original pro Storage (Supabase bucket privado)
       let storagePath = null;
       try {
         storagePath = await supaUploadFile(kind, file);
@@ -5741,10 +6216,10 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         if (rec) LAST_UPLOADS[kind] = rec;
       } catch(e) { console.warn('supaLogUpload:', e); }
 
-      // v0.53: rolling backup — mantém só últimos N arquivos por tipo
+      // rolling backup — mantém só últimos N arquivos por tipo
       try { await supaEnforceRollingBackup(kind); } catch(e) { console.warn('rolling:', e); }
 
-      // v0.56: persistir dados parseados no Supabase (sobrevive a refresh)
+      // persistir dados parseados no Supabase (sobrevive a refresh)
       try { await supaSaveAllData([kind]); } catch(e) { console.warn('supaSaveAllData:', e); }
 
       // Usar debounce para evitar múltiplas renderizações
@@ -5979,15 +6454,15 @@ async function _processExcelSheets(workbook, mapping, file) {
     let linhas = 0;
     try {
       if (step.parser === 'tendencia') {
-        // v0.55: formato novo
+        // formato novo
         const fu = firstLines.toUpperCase();
         if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
           throw new Error('Cabeçalho da aba Tendência precisa conter LICITAÇÃO + IPCA + INCC + EVOLUÇÃO (formato v0.55)');
         }
         DATA_T = parseTendencia(csv);
-        // v0.64.6: rebuildar datalist de insumos após upload novo
+        // rebuildar datalist de insumos após upload novo
         try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
-        // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
+        // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         linhas = DATA_T.length;
       } else if (step.parser === 'flows') {
@@ -6006,9 +6481,9 @@ async function _processExcelSheets(workbook, mapping, file) {
         // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
           HISTORICO = parsed;
-          // v0.59.2: sobrescreve GESTAO_LABEL com última gestão cronológica
+          // sobrescreve GESTAO_LABEL com última gestão cronológica
           atualizarGestaoLabelPelaHistoria();
-          // v0.60.2: se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+          // se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
           aplicarFallbackGestaoDoHistorico();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
@@ -6032,7 +6507,7 @@ async function _processExcelSheets(workbook, mapping, file) {
     try { await supaEnforceRollingBackup(step.kind); } catch(e) { console.warn('rolling:', e); }
   }
 
-  // v0.56: persistir todos os dados parseados no Supabase
+  // persistir todos os dados parseados no Supabase
   try {
     const processedKinds = Object.entries(results).filter(([k, v]) => v.ok).map(([k]) => k);
     if (processedKinds.length) await supaSaveAllData(processedKinds);
@@ -6142,7 +6617,7 @@ function renderUploadsCentral() {
   const kinds = ['tendencia', 'flows', 'gestoes'];
 
   // ============================================================
-  // v0.54: Bloco Excel destacado no topo
+  // Bloco Excel destacado no topo
   // ============================================================
   // "Última planilha Excel" = pegar o registro mais recente com upload_group_id
   // que existe em pelo menos um dos LAST_UPLOADS.
@@ -6266,7 +6741,7 @@ function renderUploadsCentral() {
   });
 }
 
-// v0.53: modal com histórico completo de uploads de um tipo
+// modal com histórico completo de uploads de um tipo
 async function openUploadsHistory(kind) {
   const meta = UPLOAD_META[kind];
   if (!meta) return;
@@ -6281,7 +6756,7 @@ async function openUploadsHistory(kind) {
   await _renderUploadsHistoryList(kind);
 }
 
-// v0.60: extraído em função separada pra poder re-renderizar após ações (ativar/excluir)
+// extraído em função separada pra poder re-renderizar após ações (ativar/excluir)
 async function _renderUploadsHistoryList(kind) {
   const meta = UPLOAD_META[kind];
   const list = await supaListUploadsByType(kind, UPLOADS_MAX_PER_TYPE + 5);
@@ -6312,17 +6787,17 @@ async function _renderUploadsHistoryList(kind) {
           const canReativar = isEditor && !isAtivo && !!r.storage_path;
           const canExcluir = isEditor && !isAtivo; // BLOQUEADO se ativo
           const btnDownload = canDownload
-            ? `<button class="btn-sm" onclick="downloadUploadFile('${escAttr(r.storage_path)}','${escAttr(r.nome_arquivo)}')" title="Baixar arquivo">📥</button>`
+            ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(r.storage_path)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo">📥</button>`
             : (r.storage_path
                 ? `<span style="color:var(--text-lighter); font-size:11px;" title="Faça login para baixar">🔒</span>`
                 : `<span style="color:var(--text-lighter); font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`);
           const btnAtivar = canReativar
-            ? `<button class="btn-sm primary" onclick="marcarUploadComoAtivo(${r.id}, '${kind}')" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
+            ? `<button class="btn-sm primary" data-action="ativar-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
             : (isAtivo
                 ? ''
                 : `<span style="color:var(--text-lighter); font-size:11px;" title="Arquivo sem storage_path — não pode ser reativado">—</span>`);
           const btnExcluir = canExcluir
-            ? `<button class="btn-sm danger" onclick="excluirUpload(${r.id}, '${kind}')" title="Excluir arquivo" style="background:var(--fgr-red-light); border:1px solid #fca5a5; color:var(--sem-erro);">🗑️</button>`
+            ? `<button class="btn-sm danger" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" style="background:var(--fgr-red-light); border:1px solid #fca5a5; color:var(--sem-erro);">🗑️</button>`
             : (isAtivo && isEditor
                 ? `<span style="color:var(--text-lighter); font-size:11px;" title="Ative outro arquivo antes de excluir este">🔒</span>`
                 : '');
@@ -6348,6 +6823,19 @@ async function _renderUploadsHistoryList(kind) {
       ${isGlobal ? '<br>🌐 <strong>Gestões é compartilhado:</strong> trocar o ativo afeta TODAS as obras.' : ''}
     </div>
   `;
+  // Event delegation para botões do histórico de uploads (renderizado dinamicamente)
+  const uploadsBox = document.getElementById('uploadsHistoryList');
+  if (uploadsBox && !uploadsBox._delegationSet) {
+    uploadsBox._delegationSet = true;
+    uploadsBox.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === 'download-upload') downloadUploadFile(btn.dataset.path, btn.dataset.filename);
+      else if (action === 'ativar-upload') marcarUploadComoAtivo(parseInt(btn.dataset.id, 10), btn.dataset.kind);
+      else if (action === 'excluir-upload') excluirUpload(parseInt(btn.dataset.id, 10), btn.dataset.kind);
+    });
+  }
 }
 
 async function downloadUploadFile(storagePath, filename) {
@@ -6449,9 +6937,9 @@ function _parsearECarregar(kind, csv) {
       throw new Error('CSV Tendência em formato inesperado');
     }
     DATA_T = parseTendencia(csv);
-    // v0.64.6: rebuildar datalist de insumos após upload novo
+    // rebuildar datalist de insumos após upload novo
     try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e){}
-        // v0.60.2: fallback pra coluna Gestão vazia (virada de mês)
+        // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
   } else if (kind === 'flows') {
     if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
@@ -6652,7 +7140,7 @@ function parseTendencia(text) {
       licitacao_corrigido: (CORRECAO_INDICE === 'ipca') ? ipca : incc,
       gestao,
       diferenca,
-      // v0.55: colunas novas
+      // colunas novas
       evolucao_teorica:    evol_teor,
       evolucao_financeira: evol_fin,
     });
@@ -6691,7 +7179,7 @@ function normInsumo(v) {
 function classifyFlow(ip, ir) {
   const ipNorm = normInsumo(ip);
   const irNorm = normInsumo(ir);
-  // v0.64.7: se destino OU origem estão marcados como Cancelado, o aditivo é cancelado
+  // se destino OU origem estão marcados como Cancelado, o aditivo é cancelado
   if (ipNorm === 'Cancelado' || irNorm === 'Cancelado') return 'cancelado';
   const isReal = v => v && !['', '-', 'Não encontrado!', 'VERIFICAR', 'Cancelado'].includes(v);
   if (ipNorm === 'Não encontrado!' || irNorm === 'VERIFICAR') return 'pendente';
@@ -7066,8 +7554,7 @@ function parseFlowsValor(text) {
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
-// PROJ_RAW = lista de {servico, mes (YYYY-MM), valor} agregados
-let PROJ_RAW = []; // v0.59: hardcoded removido — dados vêm do Supabase
+// PROJ_RAW declarado na seção ESTADO GLOBAL acima
 
 // Definir mês corrente (default)
 function defaultDataCorte() {
@@ -7317,18 +7804,18 @@ function renderProjecao() {
   const totDiretosTend = flowsPendDir;
   const totFlowsPend = flowsPendInd + flowsPendDir;
 
-  document.getElementById('projKpis').innerHTML = `
-    <div class="kpi"><div class="label">Realizado (até ${formatMonthLabel(dataCorte)})</div><div class="value">${fmtR$(totRealizado)}</div><div class="sub">${pctExecutado.toFixed(1)}% do planejado total</div></div>
-    <div class="kpi"><div class="label">Planejado Total (CSV)</div><div class="value">${fmtR$(totPlanejado)}</div><div class="sub">passado + futuro planejado</div></div>
-    <div class="kpi purple"><div class="label">🏗️ Tend. Indiretos</div><div class="value">${fmtR$(totIndiretosTend)}</div><div class="sub">obra estendida ${fmtR$k(totExtrap)} + flows pendentes ${fmtR$k(flowsPendInd)}</div></div>
-    <div class="kpi amber"><div class="label">🧱 Tend. Diretos</div><div class="value">${fmtR$(totDiretosTend)}</div><div class="sub">${fmtR$(totDiretosTend)} em flows pendentes (Diretos/Civis)</div></div>
-    <div class="kpi ${diffCls}"><div class="label">🔮 Tendência Total</div><div class="value">${fmtR$(totTendencia)}</div><div class="sub">${diffLabel} (${totDiff>=0?'+':''}${fmtR$(totDiff)})</div></div>
-  `;
+  document.getElementById('projKpis').innerHTML = [
+    uiCriarKpi({ titulo: `Realizado (até ${formatMonthLabel(dataCorte)})`, valor: fmtR$(totRealizado), subtitulo: `${pctExecutado.toFixed(1)}% do planejado total` }),
+    uiCriarKpi({ titulo: 'Planejado Total (CSV)', valor: fmtR$(totPlanejado), subtitulo: 'passado + futuro planejado' }),
+    uiCriarKpi({ titulo: 'Tend. Indiretos', valor: fmtR$(totIndiretosTend), subtitulo: `obra estendida ${fmtR$k(totExtrap)} + flows pendentes ${fmtR$k(flowsPendInd)}`, cor: 'purple', icon: '🏗️' }),
+    uiCriarKpi({ titulo: 'Tend. Diretos', valor: fmtR$(totDiretosTend), subtitulo: `${fmtR$(totDiretosTend)} em flows pendentes (Diretos/Civis)`, cor: 'amber', icon: '🧱' }),
+    uiCriarKpi({ titulo: 'Tendência Total', valor: fmtR$(totTendencia), subtitulo: `${diffLabel} (${totDiff>=0?'+':''}${fmtR$(totDiff)})`, cor: diffCls, icon: '🔮' }),
+  ].join('');
 
   // Gráfico curva S geral
   renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, janelaMeses);
 
-  // v0.55: Aderência Físico × Financeira (renderiza se o container existir na página)
+  // Aderência Físico × Financeira (renderiza se o container existir na página)
   try { if (typeof renderAderenciaProj === 'function') renderAderenciaProj(); } catch(e) { console.warn('aderencia:', e); }
 
   // Tabela hierárquica
@@ -7349,185 +7836,100 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
   const ultimoMes = todosMeses[todosMeses.length - 1];
   if (dataFim > ultimoMes) {
     let m = ultimoMes;
-    while (m < dataFim) {
-      m = addMonths(m, 1);
-      extended.push(m);
-      if (!(m in totalMeses)) totalMeses[m] = 0;
-    }
+    while (m < dataFim) { m = addMonths(m, 1); extended.push(m); if (!(m in totalMeses)) totalMeses[m] = 0; }
   }
   extended.sort();
 
   // Linha A: planejado acumulado
   let acumPlan = 0;
-  const planAcumulado = extended.map(m => {
-    acumPlan += (totalMeses[m] || 0);
-    return { mes: m, valor: acumPlan };
-  });
+  const planAcumulado = extended.map(m => { acumPlan += (totalMeses[m] || 0); return { mes: m, valor: acumPlan }; });
 
-  // Linha B: tendência acumulada = planejado + extrapolação distribuída a partir do último mês planejado de cada serviço
-  // Distribuir extrapolação por serviço mês a mês (somar ao mês após o último planejado de cada um)
+  // Linha B: tendência acumulada
   const extrapPorMes = {};
   projServicos.forEach(p => {
     if (p.extrapolacao > 0 && p.ultimo_mes_planejado && p.meses_gap > 0) {
       const perMonth = p.extrapolacao / p.meses_gap;
       let m = p.ultimo_mes_planejado;
-      for (let i = 0; i < p.meses_gap; i++) {
-        m = addMonths(m, 1);
-        extrapPorMes[m] = (extrapPorMes[m] || 0) + perMonth;
-      }
+      for (let i = 0; i < p.meses_gap; i++) { m = addMonths(m, 1); extrapPorMes[m] = (extrapPorMes[m] || 0) + perMonth; }
     }
   });
-
   let acumTend = 0;
-  const tendAcumulada = extended.map(m => {
-    acumTend += (totalMeses[m] || 0) + (extrapPorMes[m] || 0);
-    return { mes: m, valor: acumTend };
-  });
+  const tendAcumulada = extended.map(m => { acumTend += (totalMeses[m] || 0) + (extrapPorMes[m] || 0); return { mes: m, valor: acumTend }; });
 
-  // SVG — dimensões melhoradas
-  const w = 920, h = 400, pad = 70, padB = 60, padT = 40;
-  const xRange = extended.length - 1 || 1;
-  const yMax = Math.max(planAcumulado[planAcumulado.length-1].valor, tendAcumulada[tendAcumulada.length-1].valor) * 1.08;
-  const yMin = 0;
-  const xScale = i => pad + (i / xRange) * (w - 2*pad);
-  const yScale = v => h - padB - ((v - yMin) / (yMax - yMin || 1)) * (h - padT - padB);
+  const categories = extended.map(m => formatMonthLabel(m));
+  const planData = planAcumulado.map(p => p.valor);
+  const tendData = tendAcumulada.map(p => p.valor);
 
-  const planPath = planAcumulado.map((p, i) => (i ? 'L' : 'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
-  const tendPath = tendAcumulada.map((p, i) => (i ? 'L' : 'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
-
-  // Área preenchida entre as curvas (gradiente)
-  const areaPath = planPath + ' ' + planAcumulado.map((p, i) => {
-    const idx = planAcumulado.length - 1 - i;
-    return (i === 0 ? 'L' : 'L') + xScale(idx).toFixed(1) + ',' + yScale(tendAcumulada[idx].valor).toFixed(1);
-  }).join(' ') + ' Z';
-
-  // Posição do corte e do fim
-  const findIdx = m => {
-    let bestIdx = 0;
-    for (let i = 0; i < extended.length; i++) {
-      if (extended[i] <= m) bestIdx = i;
-      else break;
-    }
-    return bestIdx;
-  };
+  // Posição do corte e do fim para annotations
+  const findIdx = m => { let bestIdx = 0; for (let i = 0; i < extended.length; i++) { if (extended[i] <= m) bestIdx = i; else break; } return bestIdx; };
   const corteIdx = findIdx(dataCorte);
   const fimIdx = findIdx(dataFim);
-  const corteX = xScale(corteIdx);
-  const fimX = xScale(fimIdx);
 
-  // Grid lines horizontais melhoradas
-  const yTicks = 6;
-  const yLines = [];
-  for (let i = 0; i <= yTicks; i++) {
-    const v = yMin + (yMax - yMin) * (1 - i/yTicks);
-    const y = padT + (h - padT - padB) * i / yTicks;
-    const isZero = i === yTicks;
-    yLines.push(
-      `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="${isZero ? 'var(--border-strong)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}"/>` +
-      `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
-    );
-  }
+  const options = {
+    series: [
+      { name: 'Planejado acumulado', type: 'area', data: planData },
+      { name: 'Tendência projetada', type: 'line', data: tendData },
+    ],
+    chart: {
+      height: 400,
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+      toolbar: { show: true, tools: { download: true, selection: true, zoom: true, zoomin: true, zoomout: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+    },
+    colors: [resolveColor('var(--fgr-red-deep)'), resolveColor('var(--sem-alerta)')],
+    stroke: { curve: 'smooth', width: [2.5, 2.5] },
+    fill: {
+      type: ['gradient', 'solid'],
+      gradient: { shadeIntensity: 1, opacityFrom: 0.15, opacityTo: 0.02, stops: [0, 100] },
+    },
+    xaxis: {
+      categories: categories,
+      labels: { rotate: -45, rotateAlways: true, style: { fontSize: '10px' } },
+    },
+    yaxis: {
+      labels: { formatter: val => fmtR$k(val), style: { fontSize: '10px' } },
+    },
+    annotations: {
+      xaxis: [
+        {
+          x: categories[corteIdx],
+          borderColor: resolveColor('var(--fgr-red-vivid)'),
+          strokeDashArray: 4,
+          label: {
+            text: 'Corte: ' + formatMonthLabel(dataCorte),
+            style: { color: '#fff', background: resolveColor('var(--fgr-red-vivid)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } },
+          }
+        },
+        {
+          x: categories[fimIdx],
+          borderColor: resolveColor('var(--text-soft)'),
+          strokeDashArray: 2,
+          label: {
+            text: 'Fim: ' + formatMonthLabel(dataFim),
+            style: { color: '#fff', background: resolveColor('var(--text-soft)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } },
+          }
+        }
+      ]
+    },
+    tooltip: {
+      enabled: true,
+      shared: true,
+      theme: document.body.classList.contains('dark') ? 'dark' : 'light',
+      y: { formatter: val => fmtR$(val) },
+    },
+    legend: { show: true, position: 'top', fontSize: '12px', labels: { colors: resolveColor('var(--text-medium)') } },
+    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    dataLabels: { enabled: false },
+    markers: {
+      size: [4, 4],
+      strokeWidth: 2,
+      strokeColors: '#fff',
+      hover: { sizeOffset: 3 },
+    },
+    responsive: [{ breakpoint: 600, options: { chart: { height: 300 }, legend: { position: 'bottom' } } }],
+  };
 
-  // Labels do eixo X melhorados
-  const everyN = Math.max(1, Math.floor(extended.length / 14));
-  const xLabels = extended.map((m, i) => {
-    if (i % everyN !== 0 && i !== extended.length - 1) return '';
-    const lbl = formatMonthLabel(m);
-    const isCorte = m === dataCorte;
-    const isFim = m === dataFim;
-    const color = isCorte ? 'var(--fgr-red-vivid)' : isFim ? 'var(--text-soft)' : 'var(--text-medium)';
-    const weight = (isCorte || isFim) ? '700' : '400';
-    return `<text x="${xScale(i)}" y="${h-padB+18}" text-anchor="middle" font-size="9" fill="${color}" font-weight="${weight}" transform="rotate(-40 ${xScale(i)} ${h-padB+18})">${lbl}</text>`;
-  }).join('');
-
-  // Pontos com tooltips nativos SVG (confiável, sem conflito de template literals)
-  const planDots = planAcumulado.map((p, i) => {
-    if (i % Math.max(1, Math.floor(extended.length / 8)) !== 0 && i !== extended.length - 1) return '';
-    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2">'
-      + '<title>📋 Planejado\nMês: ' + formatMonthLabel(p.mes) + '\nValor acumulado: ' + fmtR$(p.valor) + '</title>'
-      + '</circle>';
-  }).join('');
-
-  const tendDots = tendAcumulada.map((p, i) => {
-    if (i % Math.max(1, Math.floor(extended.length / 8)) !== 0 && i !== extended.length - 1) return '';
-    var planVal = planAcumulado[i] ? planAcumulado[i].valor : 0;
-    var diff = p.valor - planVal;
-    var diffFmt = (diff >= 0 ? '+' : '') + fmtR$(diff);
-    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--sem-alerta)" stroke="white" stroke-width="2">'
-      + '<title>🔮 Tendência Projetada\nMês: ' + formatMonthLabel(p.mes) + '\nTendência: ' + fmtR$(p.valor) + '\nPlanejado: ' + fmtR$(planVal) + '\nΔ diferença: ' + diffFmt + '</title>'
-      + '</circle>';
-  }).join('');
-
-  // Valores nos pontos do último mês
-  const lastPlanVal = planAcumulado[planAcumulado.length - 1];
-  const lastTendVal = tendAcumulada[tendAcumulada.length - 1];
-  const lastLabel = `
-    <text x="${xScale(planAcumulado.length - 1) + 8}" y="${yScale(lastPlanVal.valor) + 4}" font-size="10" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$k(lastPlanVal.valor)}</text>
-    <text x="${xScale(tendAcumulada.length - 1) + 8}" y="${yScale(lastTendVal.valor) + 4}" font-size="10" fill="var(--sem-alerta)" font-weight="700">${fmtR$k(lastTendVal.valor)}</text>
-  `;
-
-  // Legenda inline melhorada
-  const legendY = padT - 12;
-  const legend = `
-    <rect x="${pad}" y="${legendY - 10}" width="16" height="3" fill="var(--fgr-red-deep)" rx="1"/>
-    <text x="${pad + 20}" y="${legendY}" font-size="10" fill="var(--text-medium)">Planejado acumulado</text>
-    <rect x="${pad + 160}" y="${legendY - 10}" width="16" height="3" fill="var(--sem-alerta)" rx="1" stroke-dasharray="4,2"/>
-    <text x="${pad + 180}" y="${legendY}" font-size="10" fill="var(--text-medium)">Tendência projetada</text>
-    <rect x="${pad + 330}" y="${legendY - 10}" width="10" height="10" fill="var(--fgr-red-light)" rx="2"/>
-    <text x="${pad + 345}" y="${legendY}" font-size="10" fill="var(--text-medium)">Realizado (passado)</text>
-  `;
-
-  document.getElementById('projChart').innerHTML = `
-    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;">
-      <defs>
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--fgr-red-deep)" stop-opacity="0.15"/>
-          <stop offset="100%" stop-color="var(--fgr-red-deep)" stop-opacity="0.02"/>
-        </linearGradient>
-        <linearGradient id="tendGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="var(--sem-alerta)"/>
-          <stop offset="100%" stop-color="var(--sem-alerta)" stop-opacity="0.7"/>
-        </linearGradient>
-      </defs>
-      
-      <!-- Área de realização (passado) -->
-      <rect x="${pad}" y="${padT}" width="${corteX - pad}" height="${h - padT - padB}" fill="var(--fgr-red-light)" opacity="0.4" rx="2"/>
-      
-      <!-- Grid lines -->
-      ${yLines.join('')}
-      
-      <!-- Área entre as curvas -->
-      <path d="${areaPath}" fill="url(#areaGrad)" opacity="0.5"/>
-      
-      <!-- Curvas principais -->
-      <path d="${planPath}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="${tendPath}" fill="none" stroke="url(#tendGrad)" stroke-width="2.5" stroke-dasharray="8,4" stroke-linecap="round" stroke-linejoin="round"/>
-      
-      <!-- Pontos interativos -->
-      ${planDots}
-      ${tendDots}
-      
-      <!-- Valores finais -->
-      ${lastLabel}
-      
-      <!-- Linhas de referência -->
-      <line x1="${corteX}" y1="${padT}" x2="${corteX}" y2="${h-padB}" stroke="var(--fgr-red-vivid)" stroke-width="2" stroke-dasharray="4,4"/>
-      <line x1="${fimX}" y1="${padT+10}" x2="${fimX}" y2="${h-padB}" stroke="var(--text-soft)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.6"/>
-      
-      <!-- Labels das linhas de referência -->
-      <rect x="${corteX - 35}" y="${padT - 18}" width="70" height="16" rx="4" fill="var(--fgr-red-vivid)" opacity="0.9"/>
-      <text x="${corteX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Corte: ${formatMonthLabel(dataCorte)}</text>
-      
-      <rect x="${fimX - 30}" y="${padT - 18}" width="60" height="16" rx="4" fill="var(--text-soft)" opacity="0.8"/>
-      <text x="${fimX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Fim: ${formatMonthLabel(dataFim)}</text>
-      
-      <!-- Eixo X -->
-      ${xLabels}
-      
-      <!-- Legenda -->
-      ${legend}
-    </svg>
-  `;
+  renderApexChart('projChart', options);
 }
 
 let projSortKey = 'diff';
@@ -7580,7 +7982,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
   const fs = document.getElementById('projFilterStatus').value;
   const fg = document.getElementById('projFilterGrupo').value;
 
-  // v0.60.3: mapa de Valor Gestão por (servico|insumo|item_cod) da última gestão fechada do HISTORICO
+  // mapa de Valor Gestão por (servico|insumo|item_cod) da última gestão fechada do HISTORICO
   // (filtrado pela obra ativa)
   const mapaValorGestao = {};
   let _ultGestaoLabel = null;
@@ -7700,7 +8102,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
         grupo: grupoDoServico(getServicoCod(idx)),
         empty: true,
       };
-      // v0.60.3: injetar Valor Gestão do HISTORICO por chave composta
+      // injetar Valor Gestão do HISTORICO por chave composta
       const _servCod = getServicoCod(idx);
       const _chaveVG = (_servCod||'') + '|' + (n.cod_insumo||'') + '|' + (n.cod||'');
       const _vg = mapaValorGestao[_chaveVG] || 0;
@@ -7912,7 +8314,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       clickHandler = '';
     }
 
-    // v0.60.3: Tendência exibida = Valor Gestão + Extrapolação (consistente com o que a tabela mostra)
+    // Tendência exibida = Valor Gestão + Extrapolação (consistente com o que a tabela mostra)
     const _vg = p.valor_gestao || 0;
     const _tendUI = _vg + (p.extrapolacao || 0);
     const vgEmpty = valuesEmpty && _vg === 0;
@@ -7966,7 +8368,7 @@ function projCollapseAll() {
   renderProjecao();
 }
 
-// v0.60.3: Exporta a Projeção Detalhada COMPLETA (hierarquia toda expandida, sem filtros) em Excel
+// Exporta a Projeção Detalhada COMPLETA (hierarquia toda expandida, sem filtros) em Excel
 function exportarProjecaoDetalhada() {
   try {
     const _proj = (typeof getProjRawObraAtiva === 'function') ? getProjRawObraAtiva() : PROJ_RAW;
@@ -8192,7 +8594,7 @@ function exportarProjecaoDetalhada() {
       {wch:6},{wch:10},{wch:14},{wch:12},{wch:12},{wch:28},{wch:60},
       {wch:16},{wch:16},{wch:18},{wch:18},{wch:16},{wch:18},{wch:16},{wch:18},{wch:20},{wch:18},{wch:10},{wch:16},
     ];
-    // v0.60.4: aplicar format code Excel nas colunas numéricas monetárias
+    // aplicar format code Excel nas colunas numéricas monetárias
     // Colunas H..P (índices 7..15) = Valor Gestão, Realizado, Planejado Total, Planejado Futuro,
     //   Extrapolação, Flows Pendentes, Tendência, Δ vs Planejado, Ritmo Histórico
     const FMT_NUM = '#,##0.00;-#,##0.00;"-"';  // SheetJS interpreta e converte pro locale do Excel do usuário
@@ -8242,141 +8644,98 @@ function openProjDrill(servico, insumo) {
   }
   const proj = projetarServico(servico, meses, dataCorte, dataFim, janelaMeses);
 
-  // Construir SVG da curva individual
+  // Construir dados para ApexCharts
   const todosMeses = Object.keys(meses).sort();
   let extended = [...todosMeses];
   if (dataFim > (todosMeses[todosMeses.length-1] || dataFim)) {
     let m = todosMeses[todosMeses.length-1];
-    while (m && m < dataFim) {
-      m = addMonths(m, 1);
-      extended.push(m);
-    }
+    while (m && m < dataFim) { m = addMonths(m, 1); extended.push(m); }
   }
 
-  // Acumulado planejado e tendência
   let acumP = 0, acumT = 0;
   const extrapPorMes = {};
   if (proj.extrapolacao > 0 && proj.ultimo_mes_planejado && proj.meses_gap > 0) {
     const perMonth = proj.extrapolacao / proj.meses_gap;
     let m = proj.ultimo_mes_planejado;
-    for (let i = 0; i < proj.meses_gap; i++) {
-      m = addMonths(m, 1);
-      extrapPorMes[m] = perMonth;
-    }
+    for (let i = 0; i < proj.meses_gap; i++) { m = addMonths(m, 1); extrapPorMes[m] = perMonth; }
   }
   const planAcum = extended.map(m => { acumP += (meses[m] || 0); return { mes: m, valor: acumP }; });
   const tendAcum = extended.map(m => { acumT += (meses[m] || 0) + (extrapPorMes[m] || 0); return { mes: m, valor: acumT }; });
 
-  const w = 820, h = 340, pad = 65, padB = 55, padT = 35;
-  const xRange = extended.length - 1 || 1;
-  const yMax = Math.max(planAcum[planAcum.length-1].valor, tendAcum[tendAcum.length-1].valor, 1) * 1.08;
-  const xScale = i => pad + (i / xRange) * (w - 2*pad);
-  const yScale = v => h - padB - (v / yMax) * (h - padT - padB);
+  const categories = extended.map(m => formatMonthLabel(m));
+  const planData = planAcum.map(p => p.valor);
+  const tendData = tendAcum.map(p => p.valor);
+
   const findIdx = m => { let i = 0; for (let j = 0; j < extended.length; j++) if (extended[j] <= m) i = j; return i; };
-  const corteX = xScale(findIdx(dataCorte));
-  const fimX = xScale(findIdx(dataFim));
-
-  const planPath = planAcum.map((p, i) => (i?'L':'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
-  const tendPath = tendAcum.map((p, i) => (i?'L':'M') + xScale(i).toFixed(1) + ',' + yScale(p.valor).toFixed(1)).join(' ');
-
-  // Grid lines melhoradas
-  const yTicks = 5;
-  const yLines = [];
-  for (let i = 0; i <= yTicks; i++) {
-    const v = yMax * (1 - i/yTicks);
-    const y = padT + (h - padT - padB) * i / yTicks;
-    yLines.push(
-      `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>` +
-      `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
-    );
-  }
-  
-  const everyN = Math.max(1, Math.floor(extended.length / 10));
-  const xLabels = extended.map((m, i) => {
-    if (i % everyN !== 0 && i !== extended.length - 1) return '';
-    return `<text x="${xScale(i)}" y="${h-padB+18}" text-anchor="middle" font-size="9" fill="var(--text-medium)" transform="rotate(-40 ${xScale(i)} ${h-padB+18})">${formatMonthLabel(m)}</text>`;
-  }).join('');
-
-  // Pontos com tooltips nativos SVG
-  const planDots = planAcum.map((p, i) => {
-    if (i % Math.max(1, Math.floor(extended.length / 6)) !== 0 && i !== extended.length - 1) return '';
-    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2">'
-      + '<title>📋 Planejado\nMês: ' + formatMonthLabel(p.mes) + '\nValor: ' + fmtR$(p.valor) + '</title>'
-      + '</circle>';
-  }).join('');
-
-  const tendDots = tendAcum.map((p, i) => {
-    if (i % Math.max(1, Math.floor(extended.length / 6)) !== 0 && i !== extended.length - 1) return '';
-    var planVal = planAcum[i] ? planAcum[i].valor : 0;
-    var diff = p.valor - planVal;
-    var diffFmt = (diff >= 0 ? '+' : '') + fmtR$(diff);
-    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.valor).toFixed(1) + '" r="4" fill="var(--sem-alerta)" stroke="white" stroke-width="2">'
-      + '<title>🔮 Tendência\nMês: ' + formatMonthLabel(p.mes) + '\nTendência: ' + fmtR$(p.valor) + '\nPlanejado: ' + fmtR$(planVal) + '\nΔ: ' + diffFmt + '</title>'
-      + '</circle>';
-  }).join('');
-
-  // Valores finais
-  const lastPlan = planAcum[planAcum.length - 1];
-  const lastTend = tendAcum[tendAcum.length - 1];
-  const lastLabels = `
-    <text x="${xScale(planAcum.length - 1) + 8}" y="${yScale(lastPlan.valor) + 4}" font-size="10" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$k(lastPlan.valor)}</text>
-    <text x="${xScale(tendAcum.length - 1) + 8}" y="${yScale(lastTend.valor) + 4}" font-size="10" fill="var(--sem-alerta)" font-weight="700">${fmtR$k(lastTend.valor)}</text>
-  `;
+  const corteIdx = findIdx(dataCorte);
+  const fimIdx = findIdx(dataFim);
 
   document.getElementById('modalContent').innerHTML = `
     <h2>🔮 Projeção · ${escHtml(titulo)}</h2>
     <div class="meta">${escHtml(subtitulo)} · Grupo: <strong>${escHtml(proj.grupo)}</strong> ${grupoExtrapola(proj.grupo)?'<span class="badge purple">extrapola</span>':'<span class="badge gray">não extrapola</span>'}</div>
-    <div class="kpis" style="margin-bottom:14px;">
-      <div class="kpi"><div class="label">Realizado</div><div class="value">${fmtR$(proj.realizado)}</div><div class="sub">até ${formatMonthLabel(dataCorte)}</div></div>
-      <div class="kpi"><div class="label">Planejado Total</div><div class="value">${fmtR$(proj.planejado_total)}</div><div class="sub">até ${proj.ultimo_mes_planejado ? formatMonthLabel(proj.ultimo_mes_planejado) : '-'}</div></div>
-      <div class="kpi purple"><div class="label">Extrapolação</div><div class="value">${proj.extrapolacao>0?'+'+fmtR$(proj.extrapolacao):'—'}</div><div class="sub">${proj.meses_gap>0?`${proj.meses_gap} meses × R$${fmt(proj.ritmo_historico,0)}/m`:'sem gap'}</div></div>
-      <div class="kpi ${proj.diff>0?'red':proj.diff<0?'green':''}"><div class="label">Tendência Final</div><div class="value">${fmtR$(proj.tendencia)}</div><div class="sub">Δ ${proj.diff>=0?'+':''}${fmtR$(proj.diff)}</div></div>
+    <div class="kpis kpi-2col" style="margin-bottom:14px;">
+      <div class="kpi kpi-wide">
+        <div class="label">📊 Planejado vs Realizado</div>
+        <div class="value">${fmtR$(proj.planejado_total)}</div>
+        <div class="sub">Planejado Total · até ${proj.ultimo_mes_planejado ? formatMonthLabel(proj.ultimo_mes_planejado) : '-'}</div>
+        <hr class="border-top-soft" style="margin:10px 0;">
+        <div>
+          <div class="section-label">Realizado (até ${formatMonthLabel(dataCorte)})</div>
+          <div class="kpi-value-md" style="margin-top:4px;">${fmtR$(proj.realizado)}</div>
+        </div>
+      </div>
+      <div class="kpi kpi-wide ${proj.diff>0?'red':proj.diff<0?'green':''}">
+        <div class="label">🔮 Extrapolação</div>
+        <div class="value">${proj.extrapolacao>0?'+'+fmtR$(proj.extrapolacao):'—'}</div>
+        <div class="sub">${proj.meses_gap>0?`${proj.meses_gap} meses × R$${fmt(proj.ritmo_historico,0)}/m`:'sem gap'}</div>
+        <hr class="border-top-soft" style="margin:10px 0;">
+        <div>
+          <div class="section-label">Tendência Final</div>
+          <div class="kpi-value-md" style="margin-top:4px;">${fmtR$(proj.tendencia)}</div>
+          <div class="sub">Δ ${proj.diff>=0?'+':''}${fmtR$(proj.diff)}</div>
+        </div>
+      </div>
     </div>
     <h3 style="font-size:13px; margin-bottom:8px;">📈 Curva S individual</h3>
-    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="width:100%; height:300px;">
-      <defs>
-        <linearGradient id="areaGradInd" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--fgr-red-deep)" stop-opacity="0.15"/>
-          <stop offset="100%" stop-color="var(--fgr-red-deep)" stop-opacity="0.02"/>
-        </linearGradient>
-      </defs>
-      
-      <!-- Área de realização -->
-      <rect x="${pad}" y="${padT}" width="${corteX - pad}" height="${h - padT - padB}" fill="var(--fgr-red-light)" opacity="0.4" rx="2"/>
-      
-      <!-- Grid lines -->
-      ${yLines.join('')}
-      
-      <!-- Curvas -->
-      <path d="${planPath}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="${tendPath}" fill="none" stroke="var(--sem-alerta)" stroke-width="2.5" stroke-dasharray="8,4" stroke-linecap="round" stroke-linejoin="round"/>
-      
-      <!-- Pontos -->
-      ${planDots}
-      ${tendDots}
-      
-      <!-- Valores finais -->
-      ${lastLabels}
-      
-      <!-- Linhas de referência -->
-      <line x1="${corteX}" y1="${padT}" x2="${corteX}" y2="${h-padB}" stroke="var(--fgr-red-vivid)" stroke-width="2" stroke-dasharray="4,4"/>
-      <line x1="${fimX}" y1="${padT+10}" x2="${fimX}" y2="${h-padB}" stroke="var(--text-soft)" stroke-width="1.5" stroke-dasharray="2,3" opacity="0.6"/>
-      
-      <!-- Labels -->
-      <rect x="${corteX - 25}" y="${padT - 18}" width="50" height="16" rx="4" fill="var(--fgr-red-vivid)" opacity="0.9"/>
-      <text x="${corteX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Corte</text>
-      <rect x="${fimX - 20}" y="${padT - 18}" width="40" height="16" rx="4" fill="var(--text-soft)" opacity="0.8"/>
-      <text x="${fimX}" y="${padT - 6}" text-anchor="middle" font-size="9" fill="white" font-weight="700">Fim</text>
-      
-      ${xLabels}
-    </svg>
-    <div style="margin-top:10px; font-size:11px; color:var(--text-soft);">
-      <span style="display:inline-block;width:14px;height:3px;background:var(--fgr-red-deep);vertical-align:middle;margin-right:4px;"></span> Planejado acumulado
-      &nbsp; <span style="display:inline-block;width:14px;height:3px;background:var(--sem-alerta);vertical-align:middle;margin-right:4px;"></span> Tendência projetada
-    </div>
+    <div id="modalProjChart" style="height:300px;"></div>
     ${renderFlowsRefletidosSection(servico, insumo)}
     ${renderMovimentacoesProjecaoSection(servico, insumo)}
   `;
+
+  // Renderizar ApexCharts no modal
+  const modalChartOptions = {
+    series: [
+      { name: 'Planejado acumulado', type: 'area', data: planData },
+      { name: 'Tendência projetada', type: 'line', data: tendData },
+    ],
+    chart: {
+      height: 300,
+      animations: { enabled: true, easing: 'easeinout', speed: 600 },
+      toolbar: { show: false },
+    },
+    colors: [resolveColor('var(--fgr-red-deep)'), resolveColor('var(--sem-alerta)')],
+    stroke: { curve: 'smooth', width: [2.5, 2.5] },
+    fill: { type: ['gradient', 'solid'], gradient: { shadeIntensity: 1, opacityFrom: 0.15, opacityTo: 0.02, stops: [0, 100] } },
+    xaxis: { categories: categories, labels: { rotate: -45, rotateAlways: true, style: { fontSize: '10px' } } },
+    yaxis: { labels: { formatter: val => fmtR$k(val), style: { fontSize: '10px' } } },
+    annotations: {
+      xaxis: [
+        { x: categories[corteIdx], borderColor: resolveColor('var(--fgr-red-vivid)'), strokeDashArray: 4,
+          label: { text: 'Corte', style: { color: '#fff', background: resolveColor('var(--fgr-red-vivid)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } } } },
+        { x: categories[fimIdx], borderColor: resolveColor('var(--text-soft)'), strokeDashArray: 2,
+          label: { text: 'Fim', orientation: 'vertical', position: 'bottom', offsetY: -10,
+            style: { color: '#fff', background: resolveColor('var(--text-soft)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } } } },
+      ]
+    },
+    tooltip: { enabled: true, shared: true, theme: document.body.classList.contains('dark') ? 'dark' : 'light', y: { formatter: val => fmtR$(val) } },
+    legend: { show: true, position: 'top', fontSize: '11px', labels: { colors: resolveColor('var(--text-medium)') } },
+    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    dataLabels: { enabled: false },
+    markers: { size: [4, 4], strokeWidth: 2, strokeColors: '#fff', hover: { sizeOffset: 3 } },
+  };
+
+  // Renderizar após o innerHTML estar no DOM
+  setTimeout(() => renderApexChart('modalProjChart', modalChartOptions), 50);
   document.getElementById('modalBg').classList.add('show');
 }
 
@@ -8613,7 +8972,7 @@ let PROJ_CTRL_STATE = {
 };
 
 function loadProjCtrl() {
-  // v0.59.1: SUBSTITUI todo o estado (não mescla) — evita resíduo de obra anterior
+  // SUBSTITUI todo o estado (não mescla) — evita resíduo de obra anterior
   try {
     const raw = localStorage.getItem(PROJ_CTRL_KEY);
     if (raw) {
@@ -8730,14 +9089,14 @@ function initProjCtrl() {
       if (elSaldo) {
         // Salvar enquanto digita (sem reformatar caractere a caractere, evita perder cursor)
         elSaldo.addEventListener('input', () => {
-          const parsed = parseNumBR(elSaldo.value);
+          const parsed = parseNumero(elSaldo.value);
           PROJ_CTRL_STATE.saldo_inicial = parsed;
           saveProjCtrl();
           renderProjCtrl();
         });
         // Formatar ao sair do campo
         elSaldo.addEventListener('blur', () => {
-          const parsed = parseNumBR(elSaldo.value);
+          const parsed = parseNumero(elSaldo.value);
           if (parsed != null) {
             elSaldo.value = fmt(parsed);
             PROJ_CTRL_STATE.saldo_inicial = parsed;
@@ -8765,12 +9124,13 @@ function initProjCtrl() {
           renderProjCtrl();
         });
       }
-      // Listeners dos filtros da tabela de movimentações
+      // Listeners dos filtros da tabela de movimentações (com debounce)
+      const debouncedProjCtrl = debounce(renderProjCtrl, 300);
       ['movSearch','movFilterTipo','movFilterDirecao'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-          el.addEventListener('input', renderProjCtrl);
-          el.addEventListener('change', renderProjCtrl);
+          el.addEventListener('input', debouncedProjCtrl);
+          el.addEventListener('change', debouncedProjCtrl);
         }
       });
       _projCtrlListenersAttached = true;
@@ -8951,6 +9311,7 @@ function renderProjCtrlChart(movs) {
     document.getElementById('projCtrlChart').innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:13px;">Nenhuma movimentação ainda.<br>Defina o saldo inicial ou clique em "➕ Nova movimentação" para começar.</div>';
     return;
   }
+
   // Saldo cumulativo ao longo do tempo
   let saldo = 0;
   const pontos = movs.map(m => {
@@ -8959,118 +9320,77 @@ function renderProjCtrlChart(movs) {
       const mm = (m.data_br||'').match(/(\d{2})\/(\d{2})\/(\d{4})/);
       return mm ? `${mm[3]}-${mm[2]}-${mm[1]}` : '';
     })();
-    return { data: isoData, saldo };
+    return { data: isoData, saldo, mov: m };
   });
 
-  const w = 920, h = 300, pad = 70, padB = 55, padT = 30;
-  const n = pontos.length;
-  // Range adaptativo
-  const saldos = pontos.map(p => p.saldo);
-  const dataMin = Math.min(...saldos);
-  const dataMax = Math.max(...saldos);
-  let dataRange = dataMax - dataMin;
-  if (dataRange < 1) dataRange = Math.max(Math.abs(dataMax) * 0.1, 100);
-  const padPct = 0.08;
-  const yMin = dataMin - dataRange * padPct;
-  const yMax = dataMax + dataRange * padPct;
-  const range = (yMax - yMin) || 1;
-  const xScale = i => pad + (i / Math.max(1, n - 1)) * (w - 2*pad);
-  const yScale = v => h - padB - ((v - yMin) / range) * (h - padT - padB);
+  const categories = pontos.map(p => p.data ? p.data.slice(0, 7) : '');
+  const seriesData = pontos.map(p => p.saldo);
+  const dotColors = pontos.map(p => p.mov.direcao === 'entrada' ? resolveColor('var(--sem-ok)') : resolveColor('var(--fgr-red-vivid)'));
 
-  // Linha do zero
-  const zeroVisible = (yMin <= 0 && yMax >= 0);
-  const yZero = zeroVisible ? yScale(0) : (h - padB);
-  const path = pontos.map((p, i) => (i?'L':'M') + xScale(i).toFixed(1) + ',' + yScale(p.saldo).toFixed(1)).join(' ');
-  const areaPath = path + ` L${xScale(n-1).toFixed(1)},${h - padB} L${xScale(0).toFixed(1)},${h - padB} Z`;
+  const options = {
+    series: [{ name: 'Saldo acumulado', data: seriesData }],
+    chart: {
+      type: 'area',
+      height: 300,
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+      toolbar: { show: true, tools: { download: true, selection: true, zoom: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+    },
+    colors: ['#7c3aed'],
+    stroke: { curve: 'smooth', width: 2.5 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02, stops: [0, 100] },
+    },
+    xaxis: {
+      categories: categories,
+      labels: { rotate: -45, rotateAlways: true, style: { fontSize: '10px' } },
+    },
+    yaxis: {
+      labels: { formatter: val => fmtR$k(val), style: { fontSize: '10px' } },
+    },
+    annotations: {
+      yaxis: [{
+        y: 0,
+        borderColor: resolveColor('var(--text-lighter)'),
+        strokeDashArray: 4,
+        label: { text: 'Zero', style: { color: resolveColor('var(--text-soft)'), fontSize: '10px' } },
+      }]
+    },
+    tooltip: {
+      enabled: true,
+      shared: false,
+      theme: document.body.classList.contains('dark') ? 'dark' : 'light',
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const p = pontos[dataPointIndex];
+        const m = p.mov;
+        const dirLabel = m.direcao === 'entrada' ? 'Entrada' : 'Saída';
+        const valorFmt = (m.direcao === 'entrada' ? '+' : '-') + fmtR$(m.valor);
+        const dataFmt = m.data_br || p.data;
+        let html = '<div style="padding:8px 12px; font-size:12px;">';
+        html += '<strong>' + escHtml(m.tipo || dirLabel) + '</strong><br>';
+        html += '<span style="color:var(--text-soft);">Data:</span> ' + escHtml(dataFmt) + '<br>';
+        html += '<span style="color:var(--text-soft);">Direção:</span> ' + escHtml(dirLabel) + '<br>';
+        html += '<span style="color:var(--text-soft);">Valor:</span> <strong>' + valorFmt + '</strong><br>';
+        html += '<span style="color:var(--text-soft);">Saldo:</span> <strong>' + fmtR$(p.saldo) + '</strong>';
+        if (m.descricao) html += '<br><span style="color:var(--text-soft); font-size:11px;">' + escHtml(m.descricao.slice(0, 80)) + '</span>';
+        html += '</div>';
+        return html;
+      }
+    },
+    legend: { show: true, position: 'top', fontSize: '12px', labels: { colors: resolveColor('var(--text-medium)') } },
+    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    dataLabels: { enabled: false },
+    markers: {
+      size: 5,
+      strokeWidth: 2,
+      strokeColors: '#fff',
+      colors: dotColors,
+      hover: { sizeOffset: 3 },
+    },
+  };
 
-  // Grid lines melhoradas
-  const yTicks = 5;
-  const yLines = [];
-  for (let i = 0; i <= yTicks; i++) {
-    const v = yMin + range * (1 - i/yTicks);
-    const y = padT + (h - padT - padB) * i / yTicks;
-    const isZero = zeroVisible && Math.abs(v) < range * 0.01;
-    yLines.push(
-      `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="${isZero ? 'var(--text-lighter)' : 'var(--border)'}" stroke-width="${isZero ? 1.5 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}"/>` +
-      `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
-    );
-  }
-
-  // Labels do eixo X
-  const everyN = Math.max(1, Math.floor(n / 10));
-  const xLabels = pontos.map((p, i) => {
-    if (i % everyN !== 0 && i !== n-1) return '';
-    const lbl = p.data ? p.data.slice(0,7) : '';
-    return `<text x="${xScale(i)}" y="${h-padB+18}" text-anchor="middle" font-size="9" fill="var(--text-medium)" transform="rotate(-40 ${xScale(i)} ${h-padB+18})">${lbl}</text>`;
-  }).join('');
-
-  // Pontos com tooltips nativos SVG
-  const dots = pontos.map((p, i) => {
-    const m = movs[i];
-    const cor = m.direcao === 'entrada' ? 'var(--sem-ok)' : 'var(--fgr-red-vivid)';
-    const icon = m.direcao === 'entrada' ? '⬆' : '⬇';
-    const dirLabel = m.direcao === 'entrada' ? 'Entrada' : 'Saída';
-    const valorFmt = (m.direcao === 'entrada' ? '+' : '-') + fmtR$(m.valor);
-    const saldoFmt = fmtR$(p.saldo);
-    const dataFmt = m.data_br || p.data;
-    var titleText = (m.tipo || dirLabel) + '\nData: ' + dataFmt + '\nDireção: ' + dirLabel + '\nValor: ' + valorFmt + '\nSaldo: ' + saldoFmt;
-    if (m.descricao) titleText += '\n' + m.descricao.slice(0, 80);
-    return '<circle class="chart-dot" cx="' + xScale(i).toFixed(1) + '" cy="' + yScale(p.saldo).toFixed(1) + '" r="4.5" fill="' + cor + '" stroke="white" stroke-width="2">'
-      + '<title>' + escAttr(titleText) + '</title>'
-      + '</circle>';
-  }).join('');
-
-  // Valor final
-  const lastPonto = pontos[pontos.length - 1];
-  const lastLabel = `
-    <text x="${xScale(n-1) + 10}" y="${yScale(lastPonto.saldo) + 4}" font-size="11" fill="#7c3aed" font-weight="700">${fmtR$(lastPonto.saldo)}</text>
-  `;
-
-  // Legenda inline
-  const legendY = padT - 10;
-  const legend = `
-    <circle cx="${pad + 5}" cy="${legendY}" r="4" fill="var(--sem-ok)"/>
-    <text x="${pad + 14}" y="${legendY + 4}" font-size="9" fill="var(--text-medium)">Entrada</text>
-    <circle cx="${pad + 80}" cy="${legendY}" r="4" fill="var(--fgr-red-vivid)"/>
-    <text x="${pad + 89}" y="${legendY + 4}" font-size="9" fill="var(--text-medium)">Saída</text>
-    <line x1="${pad + 145}" y1="${legendY}" x2="${pad + 165}" y2="${legendY}" stroke="#7c3aed" stroke-width="2.5"/>
-    <text x="${pad + 170}" y="${legendY + 4}" font-size="9" fill="var(--text-medium)">Saldo acumulado</text>
-  `;
-
-  document.getElementById('projCtrlChart').innerHTML = `
-    <svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;">
-      <defs>
-        <linearGradient id="saldoGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.25"/>
-          <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.02"/>
-        </linearGradient>
-      </defs>
-      
-      <!-- Grid lines -->
-      ${yLines.join('')}
-      
-      <!-- Linha do zero -->
-      ${zeroVisible ? `<line x1="${pad}" y1="${yZero}" x2="${w-pad}" y2="${yZero}" stroke="var(--text-lighter)" stroke-width="1.5" stroke-dasharray="4,4"/>` : ''}
-      
-      <!-- Área preenchida -->
-      <path d="${areaPath}" fill="url(#saldoGrad)"/>
-      
-      <!-- Curva principal -->
-      <path d="${path}" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      
-      <!-- Pontos com tooltips -->
-      ${dots}
-      
-      <!-- Valor final -->
-      ${lastLabel}
-      
-      <!-- Eixo X -->
-      ${xLabels}
-      
-      <!-- Legenda -->
-      ${legend}
-    </svg>
-  `;
+  renderApexChart('projCtrlChart', options);
 }
 
 function renderMovTable(movs, saldoFinal) {
@@ -9124,8 +9444,8 @@ function renderMovTable(movs, saldoFinal) {
       chips = `<span style="display:inline-block; padding:1px 6px; margin-left:6px; background:var(--sem-alerta-bg); color:var(--sem-alerta); border-radius:10px; font-size:10px; font-weight:600;">💰 Saldo inicial</span>`;
     } else if (m.origem_dado === 'manual') {
       chips = `<span style="display:inline-block; margin-left:6px;">
-        <button data-editor-only onclick="editMov('${escAttr(m.id)}'); event.stopPropagation();" style="padding:2px 6px; border:1px solid var(--fgr-red-light); background:var(--fgr-red-light); color:var(--fgr-red-dark); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer; margin-right:3px;" title="Editar">✏️ Editar</button>
-        <button data-editor-only onclick="deleteMov('${escAttr(m.id)}'); event.stopPropagation();" style="padding:2px 6px; border:1px solid #fecaca; background:var(--fgr-red-light); color:var(--sem-erro); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Excluir">🗑️ Excluir</button>
+        <button data-editor-only data-action="edit-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid var(--fgr-red-light); background:var(--fgr-red-light); color:var(--fgr-red-dark); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer; margin-right:3px;" title="Editar">✏️ Editar</button>
+        <button data-editor-only data-action="delete-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid #fecaca; background:var(--fgr-red-light); color:var(--sem-erro); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Excluir">🗑️ Excluir</button>
       </span>`;
     }
 
@@ -9151,6 +9471,17 @@ function renderMovTable(movs, saldoFinal) {
 
   document.getElementById('movCount').textContent = `${filtered.length} de ${movs.length} mov. · Saldo final: ${fmtR$(saldoFinal)}`;
 }
+
+// Event delegation para botões da tabela de movimentações
+document.getElementById('movTbody')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  e.stopPropagation();
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  if (action === 'edit-mov') editMov(id);
+  else if (action === 'delete-mov') deleteMov(id);
+});
 
 function clearMovFilters() {
   ['movSearch','movFilterTipo','movFilterDirecao'].forEach(id => {
@@ -9215,7 +9546,7 @@ function openMovForm(editingId) {
     </div>
     <div class="form-actions">
       <button class="btn-sm" onclick="closeModal()">Cancelar</button>
-      <button class="btn-sm primary" onclick="saveMovForm('${escAttr(editingId||'')}')">💾 Salvar</button>
+      <button class="btn-sm primary" data-action="save-mov" data-id="${escAttr(editingId||'')}">💾 Salvar</button>
     </div>
     <div style="margin-top:10px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:6px; font-size:11px; color:var(--sem-alerta);">
       💡 A direção (entrada/saída) é calculada automaticamente: se o insumo controlado (${escHtml(insumo)}) aparecer no campo <strong>Destino</strong>, é uma entrada. Se aparecer em <strong>Origem</strong>, é uma saída.
@@ -9232,7 +9563,7 @@ async function saveMovForm(editingId) {
   const destino = valueFromDisplay(get('mov_destino'));
   const desc = get('mov_desc');
   const resp = get('mov_resp');
-  const valor = parseNumBR(get('mov_valor'));
+  const valor = parseNumero(get('mov_valor'));
   const just = get('mov_just');
 
   if (!desc) { authToast('⚠️ Descrição é obrigatória.', 'warn', 3000); return; }
@@ -9535,7 +9866,7 @@ function exportMovs() { return exportarControleProjXLSX(); }
 const CENT_TOLERANCE = CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
 
-let HISTORICO = { gestoes: [], items: [], totals: {} }; // v0.59: hardcoded removido — dados vêm do Supabase
+// HISTORICO declarado na seção ESTADO GLOBAL acima
 
 // v0.58b: helpers de filtragem por obra ativa
 // HISTORICO e PROJ_RAW são globais (todas as obras), filtramos em memória ao renderizar.
@@ -9545,7 +9876,7 @@ let HISTORICO = { gestoes: [], items: [], totals: {} }; // v0.59: hardcoded remo
 function renderHistorico() {
   // v0.58b: filtra pela obra ativa
   const HIST_OBRA = getHistoricoObraAtiva();
-  // v0.59: guard com placeholder amigável
+  // guard com placeholder amigável
   if (!HIST_OBRA || !HIST_OBRA.items || !HIST_OBRA.items.length) {
     const kpisEl = document.getElementById('histKpis');
     const chartEl = document.getElementById('histChart');
@@ -9592,13 +9923,13 @@ function renderHistorico() {
   const diffKpiSub = isFlat(totDiff)
     ? `variação &lt; R$ ${CENT_TOLERANCE.toFixed(2)}`
     : (totPrim?((totDiff/totPrim*100).toFixed(2)+'%'):'');
-  document.getElementById('histKpis').innerHTML = `
-    <div class="kpi"><div class="label">${primeira === LIC_LABEL ? 'Orçamento Licitação (base)' : 'Primeira gestão (' + escHtml(primeira) + ')'}</div><div class="value">${fmtR$(totPrim)}</div><div class="sub">${items.length} itens</div></div>
-    <div class="kpi"><div class="label">Última gestão (${escHtml(ultima)})</div><div class="value">${fmtR$(totUlt)}</div><div class="sub">vigente</div></div>
-    <div class="kpi ${diffKpiCls}"><div class="label">Variação total</div><div class="value">${diffKpiVal}</div><div class="sub">${diffKpiSub}</div></div>
-    <div class="kpi amber"><div class="label">Itens que variaram</div><div class="value">${changed}</div><div class="sub">de ${items.length} itens totais</div></div>
-    <div class="kpi"><div class="label">Gestões disponíveis</div><div class="value">${gestoes.length}</div><div class="sub">${gestoes.join(' → ')}</div></div>
-  `;
+  document.getElementById('histKpis').innerHTML = [
+    uiCriarKpi({ titulo: primeira === LIC_LABEL ? 'Orçamento Licitação (base)' : `Primeira gestão (${primeira})`, valor: fmtR$(totPrim), subtitulo: `${items.length} itens` }),
+    uiCriarKpi({ titulo: `Última gestão (${ultima})`, valor: fmtR$(totUlt), subtitulo: 'vigente' }),
+    uiCriarKpi({ titulo: 'Variação total', valor: diffKpiVal, subtitulo: diffKpiSub, cor: diffKpiCls }),
+    uiCriarKpi({ titulo: 'Itens que variaram', valor: changed, subtitulo: `de ${items.length} itens totais`, cor: 'amber' }),
+    uiCriarKpi({ titulo: 'Gestões disponíveis', valor: gestoes.length, subtitulo: gestoes.join(' → ') }),
+  ].join('');
 
   renderHistChart(gestoes, totals);
   renderHistTopChanges(items, gestoes);
@@ -9607,116 +9938,68 @@ function renderHistorico() {
 
 function renderHistChart(gestoes, totals) {
   const vals = gestoes.map(g => totals[g]);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const realRange = max - min;
-  // Se a variação real for menor que a tolerância (R$1), tratar como reta horizontal
-  const isFlatChart = realRange < CENT_TOLERANCE;
-  const range = isFlatChart ? 1 : realRange;
-  const pad = 60, padT = 30, padB = 50;
-  const w = 850, h = 350;
-  const xstep = (w - 2*pad) / (gestoes.length - 1 || 1);
-  // Linha SVG — se flat, todos pontos ficam no meio
-  const midY = h - padB - (h - padT - padB) * 0.5;
-  const points = vals.map((v, i) => {
-    const x = pad + i * xstep;
-    const y = isFlatChart ? midY : (h - padB - ((v - min) / range) * (h - padT - padB - 20));
-    return [x, y, v];
-  });
-  const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-  const areaD = pathD + ` L${points[points.length-1][0].toFixed(1)},${h-padB} L${points[0][0].toFixed(1)},${h-padB} Z`;
-  
-  // Grid lines melhoradas
-  const yLines = [];
-  if (isFlatChart) {
-    yLines.push(`<line x1="${pad}" y1="${midY}" x2="${w-pad}" y2="${midY}" stroke="var(--border)" stroke-dasharray="4,4"/><text x="${pad-8}" y="${midY+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(vals[0])}</text>`);
-  } else {
-    const yTicks = 5;
-    for (let i = 0; i <= yTicks; i++) {
-      const y = padT + (h - padT - padB - 20) * i / yTicks;
-      const v = max - (range * i / yTicks);
-      const isZero = i === yTicks;
-      yLines.push(
-        `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="${isZero ? 'var(--border-strong)' : 'var(--border)'}" stroke-width="${isZero ? 1 : 0.5}" stroke-dasharray="${isZero ? '' : '3,3'}"/>` +
-        `<text x="${pad-8}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--text-soft)" font-family="monospace">${fmtR$k(v)}</text>`
-      );
-    }
-  }
-  
-  // Labels do eixo X
-  const xLabels = gestoes.map((g, i) => {
-    const x = pad + i * xstep;
-    const label = g.replace('GESTÃO ', '').replace('Atual', 'Atual');
-    return `<text x="${x}" y="${h-padB+20}" text-anchor="middle" font-size="10" fill="var(--text-medium)" font-weight="600">${escHtml(label)}</text>`;
-  }).join('');
-  
-  // Pontos com tooltips nativos SVG
-  const dots = points.map((p, i) => {
-    const gestaoLabel = gestoes[i];
-    const valor = p[2];
-    const prevVal = i > 0 ? vals[i-1] : null;
-    const variacao = prevVal != null ? valor - prevVal : 0;
-    const variacaoPct = prevVal && prevVal !== 0 ? ((variacao / prevVal) * 100).toFixed(2) : null;
-    const variacaoFmt = variacao >= 0 ? '+' + fmtR$(variacao) : fmtR$(variacao);
-    
-    var titleText = gestaoLabel + '\nTotal: ' + fmtR$(valor);
-    if (prevVal != null) {
-      titleText += '\nΔ vs anterior: ' + variacaoFmt;
-      if (variacaoPct !== null) titleText += ' (' + variacaoPct + '%)';
-    }
-    if (i === 0) titleText += '\n(Orçamento base)';
-    
-    return '<circle class="chart-dot" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="5" fill="var(--fgr-red-deep)" stroke="white" stroke-width="2">'
-      + '<title>' + escAttr(titleText) + '</title>'
-      + '</circle>'
-      + '<text x="' + p[0].toFixed(1) + '" y="' + (p[1].toFixed(1) - 14) + '" text-anchor="middle" font-size="10" fill="var(--fgr-red-deep)" font-weight="700">' + fmtR$k(valor) + '</text>';
-  }).join('');
-  
-  // Nota para gráfico flat
-  const flatNote = isFlatChart ?
-    `<text x="${w/2}" y="${midY-25}" text-anchor="middle" font-size="14" fill="var(--fgr-red-deep)" font-weight="700">${fmtR$(vals[0])}</text>
-     <text x="${w/2}" y="${midY+28}" text-anchor="middle" font-size="11" fill="var(--text-soft)">Valor total estável entre todas as gestões (variação &lt; R$ 1)</text>` : '';
-  
-  // Legenda inline
-  const legendY = padT - 10;
-  const legend = `
-    <circle cx="${pad + 5}" cy="${legendY}" r="4" fill="var(--fgr-red-deep)"/>
-    <text x="${pad + 14}" y="${legendY + 4}" font-size="10" fill="var(--text-medium)">Total da obra por gestão</text>
-  `;
-  
-  document.getElementById('histChart').innerHTML = `
-    <svg class="hist-line" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <linearGradient id="gradH" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--fgr-red-vivid)" stop-opacity="0.3"/>
-          <stop offset="100%" stop-color="var(--fgr-red-vivid)" stop-opacity="0.02"/>
-        </linearGradient>
-      </defs>
-      
-      <!-- Grid lines -->
-      ${yLines.join('')}
-      
-      <!-- Área preenchida -->
-      <path d="${areaD}" fill="url(#gradH)"/>
-      
-      <!-- Curva principal -->
-      <path d="${pathD}" fill="none" stroke="var(--fgr-red-deep)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      
-      <!-- Pontos com tooltips -->
-      ${dots}
-      
-      <!-- Nota flat -->
-      ${flatNote}
-      
-      <!-- Eixo X -->
-      ${xLabels}
-      
-      <!-- Legenda -->
-      ${legend}
-    </svg>
-  `;
-  
-  // Legenda com variação entre gestões consecutivas
+  const categories = gestoes.map(g => g.replace('GESTÃO ', '').replace('Atual', 'Atual'));
+  const seriesData = vals;
+
+  const options = {
+    series: [{ name: 'Total da obra', data: seriesData }],
+    chart: {
+      type: 'area',
+      height: 350,
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+      toolbar: { show: true, tools: { download: true, selection: true, zoom: true, pan: true, reset: true } },
+      zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+    },
+    colors: [resolveColor('var(--fgr-red-deep)')],
+    stroke: { curve: 'smooth', width: 2.5 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.02, stops: [0, 100] },
+    },
+    xaxis: {
+      categories: categories,
+      labels: { style: { fontSize: '11px', fontWeight: '600' } },
+    },
+    yaxis: {
+      labels: { formatter: val => fmtR$k(val), style: { fontSize: '10px' } },
+    },
+    tooltip: {
+      enabled: true,
+      shared: false,
+      theme: document.body.classList.contains('dark') ? 'dark' : 'light',
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const valor = series[seriesIndex][dataPointIndex];
+        const gestaoLabel = gestoes[dataPointIndex];
+        const prevVal = dataPointIndex > 0 ? vals[dataPointIndex - 1] : null;
+        const variacao = prevVal != null ? valor - prevVal : 0;
+        const variacaoPct = prevVal && prevVal !== 0 ? ((variacao / prevVal) * 100).toFixed(2) : null;
+        const variacaoFmt = variacao >= 0 ? '+' + fmtR$(variacao) : fmtR$(variacao);
+        let html = '<div style="padding:8px 12px; font-size:12px;">';
+        html += '<strong>' + escHtml(gestaoLabel) + '</strong><br>';
+        html += '<span style="color:var(--text-soft);">Total:</span> <strong>' + fmtR$(valor) + '</strong>';
+        if (prevVal != null) {
+          html += '<br><span style="color:var(--text-soft);">Δ vs anterior:</span> <strong>' + variacaoFmt + '</strong>';
+          if (variacaoPct !== null) html += ' (' + variacaoPct + '%)';
+        }
+        if (dataPointIndex === 0) html += '<br><span style="color:var(--text-soft); font-size:11px;">Orçamento base</span>';
+        html += '</div>';
+        return html;
+      }
+    },
+    legend: { show: true, position: 'top', fontSize: '12px', labels: { colors: resolveColor('var(--text-medium)') } },
+    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    dataLabels: { enabled: false },
+    markers: {
+      size: 5,
+      strokeWidth: 2,
+      strokeColors: '#fff',
+      hover: { sizeOffset: 3 },
+    },
+  };
+
+  renderApexChart('histChart', options);
+
+  // Legenda com variação entre gestões consecutivas (mantida em HTML separado)
   let leg = [];
   for (let i = 1; i < gestoes.length; i++) {
     const d = totals[gestoes[i]] - totals[gestoes[i-1]];
@@ -9842,11 +10125,13 @@ function renderHistHeatmap() {
   document.getElementById('histCount').textContent = `${filtered.length} de ${items.length} itens`;
 }
 
+// Debounce para filtros do heatmap histórico
+const debouncedHistHeatmap = debounce(renderHistHeatmap, 300);
 ['histSearch','histCompare','histOnlyChanged'].forEach(id => {
   const el = document.getElementById(id);
   if (el) {
-    el.addEventListener('input', renderHistHeatmap);
-    el.addEventListener('change', renderHistHeatmap);
+    el.addEventListener('input', debouncedHistHeatmap);
+    el.addEventListener('change', debouncedHistHeatmap);
   }
 });
 
@@ -9892,7 +10177,7 @@ function debouncedRender(tabName) {
     } else {
       renderAll();
     }
-  }, 50); // 50ms de debounce
+  }, CONFIG.debounce_render);
 }
 
 // Função principal de renderização (mantida para compatibilidade)
@@ -9911,7 +10196,7 @@ function renderAll() {
     initProjecao(); // mostra estado vazio se sem dados
   }
   initProjCtrl();
-  // v0.52: cabeçalhos de fontes + central de uploads
+  // cabeçalhos de fontes + central de uploads
   try { renderSourcesHeaders(); } catch(e) {}
   try { renderUploadsCentral();  } catch(e) {}
 }
@@ -9951,16 +10236,17 @@ updateSupaBadge();
   // Aplica manuais + classificações carregadas
   applyManuals();
   const _loaded = loadClassifications();
+  if (_loaded > 0) console.log(`Carregadas ${_loaded} classificações no boot.`);
+
+  // Auth PRIMEIRO, render DEPOIS — garante que botões de edição reflitam permissão real
+  await initAuth().catch(e => console.warn('[AUTH] initAuth err:', e));
+
   renderAll();
   updateEditCount();
-  if (_loaded > 0) console.log(`Carregadas ${_loaded} classificações no boot.`);
-  
+
   // Restaurar aba ativa e filtros salvos
   restaurarAbaAtiva();
   restaurarFiltros();
-  
-  // Inicializa auth (não bloqueia render — roda em paralelo)
-  initAuth().catch(e => console.warn('[AUTH] initAuth err:', e));
 })();
 
 // ============================================================================
@@ -10167,6 +10453,5 @@ if (typeof window !== 'undefined') {
     </div>
   </div>
 </div>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

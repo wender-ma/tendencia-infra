@@ -3216,7 +3216,7 @@ async function apagarHistoricoUploads() {
       .select('id, storage_path').eq('codigo_obra', OBRA_ATIVA);
     if (readErr) throw readErr;
     // Apagar arquivos do Storage PRIMEIRO — se falhar, mantém registros no banco
-    const paths = (recs || []).map(r => r.storage_path).filter(Boolean);
+    const paths = (recs || []).map(r => sanitizeStoragePath(r.storage_path)).filter(Boolean);
     if (paths.length) {
       const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
       if (sErr) {
@@ -3244,6 +3244,12 @@ async function apagarHistoricoUploads() {
 const UPLOADS_BUCKET = 'uploads-history';
 const UPLOADS_MAX_PER_TYPE = CONFIG.max_uploads_por_tipo; // rolling backup: mantém os N mais recentes por tipo
 
+function sanitizeStoragePath(path) {
+  const value = String(path || '').trim().replace(/^\/+/, '');
+  if (!value || value.includes('..') || /\/{2,}/.test(value)) return '';
+  return value;
+}
+
 async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
   if (!SUPA || !requireUploadPermission(tipo, 'registrar este upload')) return null;
   if (!OBRA_ATIVA) { console.warn('[SUPA] logUpload: sem OBRA_ATIVA'); return null; }
@@ -3261,7 +3267,7 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
     tamanho_bytes: tamanhoBytes || null,
     linhas: linhas || null,
     enviado_por: enviadoPor,
-    storage_path: storagePath || null,
+    storage_path: sanitizeStoragePath(storagePath) || null,
     upload_group_id: uploadGroupId || null,
     is_active: true, // novo upload sempre vira ativo
   }).select().maybeSingle();
@@ -3310,11 +3316,13 @@ async function supaListUploadsByType(tipo, limit = 50) {
 
 // gera signed URL de download (válida por 60s)
 async function supaGetDownloadURL(storagePath) {
-  if (!SUPA || !storagePath || !AUTH || !AUTH.user || !OBRA_ATIVA) return null;
+  if (!SUPA || !AUTH || !AUTH.user || !OBRA_ATIVA) return null;
+  const cleanPath = sanitizeStoragePath(storagePath);
+  if (!cleanPath) return null;
   const safeObra = OBRA_ATIVA.replace(/[^\w.\-]/g, '_');
-  if (!String(storagePath).startsWith(safeObra + '/')) return null;
+  if (!cleanPath.startsWith(safeObra + '/')) return null;
   const { data, error } = await SUPA.storage.from(UPLOADS_BUCKET)
-    .createSignedUrl(storagePath, 60);
+    .createSignedUrl(cleanPath, 60);
   if (error) { console.warn('[SUPA] signedUrl err:', error); return null; }
   return data?.signedUrl || null;
 }
@@ -3332,7 +3340,7 @@ async function supaEnforceRollingBackup(tipo) {
     if (!toDelete.length) return;
     console.log(`[SUPA] rolling backup ${tipo}: removendo ${toDelete.length} arquivo(s) antigo(s)`);
     // Apagar arquivos do Storage
-    const paths = toDelete.map(r => r.storage_path).filter(Boolean);
+    const paths = toDelete.map(r => sanitizeStoragePath(r.storage_path)).filter(Boolean);
     if (paths.length) {
       const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
       if (sErr) console.warn('[SUPA] rolling storage remove err:', sErr);
@@ -6921,16 +6929,19 @@ async function _renderUploadsHistoryList(kind) {
       <tbody>
         ${list.map(r => {
           const isAtivo = !!r.is_active;
-          const canDownload = !!r.storage_path && AUTH && AUTH.user
+          const cleanStoragePath = sanitizeStoragePath(r.storage_path);
+          const safeObra = OBRA_ATIVA ? OBRA_ATIVA.replace(/[^\w.\-]/g, '_') : '';
+          const hasValidStoragePath = !!cleanStoragePath && !!safeObra && cleanStoragePath.startsWith(safeObra + '/');
+          const canDownload = hasValidStoragePath && AUTH && AUTH.user
             && (isGlobal ? isAdminGeral() : isEditor);
           const canReativar = canManage && !isAtivo && !!r.storage_path;
           const canExcluir = canManage && !isAtivo; // BLOQUEADO se ativo
           const btnDownload = canDownload
-            ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(r.storage_path)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo">📥</button>`
-            : (r.storage_path
-                ? `<span style="color:var(--text-lighter); font-size:11px;" title="Faça login para baixar">🔒</span>`
+            ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(cleanStoragePath)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo">📥</button>`
+            : (cleanStoragePath
+                ? `<span style="color:var(--text-lighter); font-size:11px;" title="${hasValidStoragePath ? 'Faça login para baixar' : 'Arquivo indisponível para a obra ativa'}">🔒</span>`
                 : `<span style="color:var(--text-lighter); font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`);
-          const btnAtivar = canReativar
+          const btnAtivar = canReativar && hasValidStoragePath
             ? `<button class="btn-sm primary" data-action="ativar-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
             : (isAtivo
                 ? ''
@@ -6982,10 +6993,15 @@ async function downloadUploadFile(storagePath, filename) {
     authToast('🔑 Faça login para baixar arquivos', 'warn', 3500);
     return;
   }
+  const cleanPath = sanitizeStoragePath(storagePath);
+  if (!cleanPath) {
+    authToast('❌ Arquivo indisponível no histórico', 'err', 4000);
+    return;
+  }
   authToast('⏳ Gerando link de download...', 'info', 2000);
-  const url = await supaGetDownloadURL(storagePath);
+  const url = await supaGetDownloadURL(cleanPath);
   if (!url) {
-    authToast('❌ Erro ao gerar link de download', 'err', 4000);
+    authToast('❌ Arquivo indisponível ou fora da obra ativa', 'err', 4500);
     return;
   }
   // Trigger download
@@ -7119,8 +7135,9 @@ async function excluirUpload(uploadId, kind) {
     if (!confirm(`Excluir permanentemente o arquivo "${rec.nome_arquivo}"?\n\n⚠️ Esta ação é irreversível.\n(Os dados do dashboard NÃO são afetados — só este registro do histórico.)`)) return;
     authToast('🗑️ Excluindo...', 'info', 2000);
     // 1) Apagar do Storage
-    if (rec.storage_path) {
-      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove([rec.storage_path]);
+    const cleanStoragePath = sanitizeStoragePath(rec.storage_path);
+    if (cleanStoragePath) {
+      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove([cleanStoragePath]);
       if (sErr) console.warn('[v0.60] storage remove:', sErr);
     }
     // 2) Apagar do banco

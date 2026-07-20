@@ -381,6 +381,10 @@
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 100; align-items: center; justify-content: center; padding: 20px; }
   .modal-bg.show { display: flex; }
+  body.modal-open { overflow: hidden; }
+  #loginModalBackdrop.show,
+  #obraFormBackdrop.show,
+  #editorFormBackdrop.show { display: flex !important; }
   .modal { background: var(--bg-card); border-radius: 12px; max-width: 900px; width: 100%;
     max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
   .modal h2 { font-size: 16px; margin-bottom: 6px; }
@@ -1509,8 +1513,8 @@ body:not(.is-admin-geral) [data-admin-control],
   </div>
 
   <!-- === FORM MODAL: NOVA/EDITAR OBRA === -->
-  <div id="obraFormBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+  <div id="obraFormBackdrop" aria-hidden="true" onclick="if(event.target===this)closeObraForm()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div role="dialog" aria-modal="true" aria-labelledby="obraFormTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
       <h3 id="obraFormTitle" style="margin:0 0 16px; color:var(--fgr-red-deep);">Nova obra</h3>
       <div style="display:grid; gap:12px;">
         <div>
@@ -1540,11 +1544,11 @@ body:not(.is-admin-geral) [data-admin-control],
   </div>
 
   <!-- === MODAL UNIFICADO EDITOR (v0.62.2) === -->
-  <div id="editorFormBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:white; border-radius:12px; padding:24px; max-width:560px; width:90%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+  <div id="editorFormBackdrop" aria-hidden="true" onclick="if(event.target===this)closeEditorForm()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+    <div role="dialog" aria-modal="true" aria-labelledby="editorFormTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:560px; width:90%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <h3 id="editorFormTitle" style="margin:0; color:var(--fgr-red-deep);">✏️ Editar usuário</h3>
-        <button onclick="closeEditorForm()" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-soft);" title="Fechar (Esc)">×</button>
+        <button type="button" onclick="closeEditorForm()" aria-label="Fechar formulário de usuário" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-soft);" title="Fechar (Esc)">×</button>
       </div>
 
       <div style="display:grid; gap:12px;">
@@ -1825,10 +1829,17 @@ body:not(.is-admin-geral) [data-admin-control],
   </div>
 </template>
 
-<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modal">
-    <button class="modal-close" onclick="closeModal()">×</button>
+<div class="modal-bg" id="modalBg" aria-hidden="true" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Janela do dashboard" tabindex="-1">
+    <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fechar janela">×</button>
     <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="confirmModalBg" aria-hidden="true" onclick="if(event.target===this)closeConfirmModal(false)">
+  <div class="modal" id="confirmModalDialog" role="dialog" aria-modal="true" aria-label="Confirmação" tabindex="-1" style="max-width:520px;">
+    <button type="button" class="modal-close" onclick="closeConfirmModal(false)" aria-label="Fechar confirmação">×</button>
+    <div id="confirmModalContent"></div>
   </div>
 </div>
 
@@ -2389,11 +2400,11 @@ const ObraForm = (function() {
     document.getElementById('obraFormNome').value = '';
     document.getElementById('obraFormKey').value = '';
     document.getElementById('obraFormObs').value = '';
-    document.getElementById('obraFormBackdrop').style.display = 'flex';
+    openModalLayer(document.getElementById('obraFormBackdrop'), { initialFocus: '#obraFormCodigo' });
   }
 
   function close() {
-    document.getElementById('obraFormBackdrop').style.display = 'none';
+    closeModalLayer(document.getElementById('obraFormBackdrop'), false);
     editingCodigo = null;
   }
 
@@ -2412,7 +2423,7 @@ const ObraForm = (function() {
       document.getElementById('obraFormNome').value = data.nome || '';
       document.getElementById('obraFormKey').value = data.key_empobratd || '';
       document.getElementById('obraFormObs').value = data.observacao || '';
-      document.getElementById('obraFormBackdrop').style.display = 'flex';
+      openModalLayer(document.getElementById('obraFormBackdrop'), { initialFocus: '#obraFormNome' });
     } catch(e) {
       console.warn('[ADMIN] editarObraAdmin erro:', e);
       authToast('❌ Erro ao carregar obra: ' + (e.message||e), 'err', 5000);
@@ -2460,7 +2471,12 @@ async function toggleObraAtiva(codigo, novoValor) {
   if (!requireAdmin('alterar obras')) return;
   if (!SUPA) return;
   const acao = novoValor ? 'ativar' : 'desativar';
-  if (!confirm(`Deseja ${acao} a obra ${codigo}?\n\n${novoValor ? 'Ela voltará a aparecer no dropdown.' : 'Ela desaparece do dropdown mas os dados históricos ficam preservados no banco.'}`)) return;
+  const confirmed = await confirmModal(
+    `${novoValor ? 'Ativar' : 'Desativar'} obra`,
+    `Deseja ${acao} a obra ${codigo}?\n\n${novoValor ? 'Ela voltará a aparecer no dropdown.' : 'Ela desaparece do dropdown mas os dados históricos ficam preservados no banco.'}`,
+    { confirmText: novoValor ? 'Ativar' : 'Desativar', destructive: !novoValor }
+  );
+  if (!confirmed) return;
   try {
     const { error } = await SUPA.from('obras').update({ ativa: novoValor }).eq('codigo_obra', codigo);
     if (error) throw error;
@@ -2668,11 +2684,11 @@ async function openEditorForm(email) {
   }
 
   editorFormOnRoleChange(); // esconde/mostra bloco de obras conforme papel
-  document.getElementById('editorFormBackdrop').style.display = 'flex';
+  openModalLayer(document.getElementById('editorFormBackdrop'), { initialFocus: '#editorFormEmail' });
 }
 
 function closeEditorForm() {
-  document.getElementById('editorFormBackdrop').style.display = 'none';
+  closeModalLayer(document.getElementById('editorFormBackdrop'), false);
   _editorFormEditandoEmail = null;
   _editorFormOriginalRole = null;
 }
@@ -2781,7 +2797,12 @@ async function excluirUsuarioDoModal() {
   if (!requireAdmin('excluir usuários')) return;
   const email = _editorFormEditandoEmail;
   if (!email || !SUPA) return;
-  if (!confirm(`Excluir TODAS as permissões de ${email}?\n\nO usuário some da whitelist. A conta em auth.users continua existindo — se ele logar de novo, entra como "pending" automaticamente e você precisa aprovar/rejeitar.\n\nEsta ação é irreversível.`)) return;
+  const confirmed = await confirmModal(
+    'Excluir permissões do usuário',
+    `Excluir TODAS as permissões de ${email}?\n\nO usuário some da whitelist. A conta em auth.users continua existindo e poderá voltar como pendente.\n\nEsta ação é irreversível.`,
+    { confirmText: 'Excluir usuário', requireText: email }
+  );
+  if (!confirmed) return;
   try {
     const { error } = await SUPA.from('editores_permitidos').delete().eq('email', email);
     if (error) throw error;
@@ -2859,7 +2880,12 @@ async function aprovarPendente(email) {
   if (!requireAdmin('aprovar cadastros')) return;
   // aprova como editor SEM obra (admin define depois via botão 🏗️)
   if (!SUPA) return;
-  if (!confirm(`Aprovar ${email} como editor?\n\nEle entra sem acesso a nenhuma obra. Depois, use o botão 🏗️ na tabela de editores pra escolher quais obras ele pode editar.`)) return;
+  const confirmed = await confirmModal(
+    'Aprovar cadastro',
+    `Aprovar ${email} como editor?\n\nEle entra sem acesso a nenhuma obra. Depois, escolha quais obras ele pode editar.`,
+    { confirmText: 'Aprovar', destructive: false }
+  );
+  if (!confirmed) return;
   try {
     const { error } = await SUPA.from('editores_permitidos').update({
       role: 'editor',
@@ -2880,7 +2906,12 @@ async function aprovarPendente(email) {
 async function rejeitarPendente(email) {
   if (!requireAdmin('rejeitar cadastros')) return;
   if (!SUPA) return;
-  if (!confirm(`Rejeitar o cadastro de ${email}?\n\nO usuário continua com conta no sistema, mas nunca vai ganhar permissão de edição.\n\nVocê pode deletar totalmente depois pela aba Editores (não vai aparecer lá — precisará ativar filtro de rejeitados).`)) return;
+  const confirmed = await confirmModal(
+    'Rejeitar cadastro',
+    `Rejeitar o cadastro de ${email}?\n\nO usuário continua com conta no sistema, mas não receberá permissão de edição.`,
+    { confirmText: 'Rejeitar' }
+  );
+  if (!confirmed) return;
   try {
     const { error } = await SUPA.from('editores_permitidos').update({
       status: 'rejected',
@@ -3256,12 +3287,20 @@ async function resetCacheDados() {
   if (!OBRA_ATIVA) { authToast('❌ Nenhuma obra selecionada', 'err', 3000); return; }
   const info = getObraInfo();
   const nomeObra = info ? info.nome : OBRA_ATIVA;
-  const confirmObra = confirm(`⚠️ Isto vai APAGAR do Supabase os dados desta obra (${nomeObra}):\n\n- Tendência (individual)\n- Flows (individual)\n- Aderência Físico-Financeira\n\nAs outras obras NÃO são afetadas.\nOs arquivos originais no Storage também NÃO são apagados.\n\nConfirma?`);
+  const confirmObra = await confirmModal(
+    'Resetar cache da obra',
+    `Isto vai apagar do Supabase os dados desta obra (${nomeObra}):\n\n- Tendência individual\n- Flows individual\n- Aderência Físico-Financeira\n\nAs outras obras e os arquivos originais no Storage não serão afetados.`,
+    { confirmText: 'Resetar cache' }
+  );
   if (!confirmObra) return;
   // Chaves POR OBRA
   const chavesObra = ['dados_tendencia', 'dados_flows', 'gestao_label', 'evol_global'].map(c => keyPorObra(c));
   // Perguntar sobre as chaves GLOBAIS (Histórico Mensal + Curva S — compartilhadas entre todas as obras)
-  const apagarGlobal = isAdminGeral() && confirm(`\n\n📋 EXTRA: também apagar dados GLOBAIS (Histórico e Curva S)?\n\nEsses dados são compartilhados entre TODAS as obras — apagar aqui afeta o dashboard de todas.\n\nOK = apaga também os globais\nCancelar = mantém globais (só apaga os individuais desta obra)`);
+  const apagarGlobal = isAdminGeral() && await confirmModal(
+    'Apagar também os dados globais?',
+    'Histórico e Curva S são compartilhados entre TODAS as obras. Confirmar afeta o dashboard de todas; cancelar mantém os dados globais.',
+    { confirmText: 'Apagar globais' }
+  );
   const chavesGlobais = apagarGlobal ? ['dados_historico', 'dados_projraw'] : [];
   const chaves = [...chavesObra, ...chavesGlobais];
   authToast('🧹 Limpando cache...', 'info', 2000);
@@ -3282,7 +3321,12 @@ async function resetCacheDados() {
 // apagar todo o histórico de uploads (metadados + arquivos no Storage)
 async function apagarHistoricoUploads() {
   if (!requireAdmin('apagar o histórico global de uploads')) return;
-  if (!confirm('⚠️ IRREVERSÍVEL!\n\nIsto vai APAGAR:\n- Todo o histórico de uploads (metadados)\n- Todos os arquivos armazenados no Storage\n\nOs dados parseados NÃO serão afetados (dashboard continua funcionando com o que já tem).\n\nConfirma?')) return;
+  const confirmed = await confirmModal(
+    'Apagar histórico de uploads',
+    'Isto vai apagar todo o histórico de uploads e todos os arquivos armazenados no Storage. Os dados já processados do dashboard não serão afetados.',
+    { confirmText: 'Apagar tudo', requireText: 'APAGAR' }
+  );
+  if (!confirmed) return;
   authToast('🗑️ Apagando histórico...', 'info', 2000);
   try {
     if (!OBRA_ATIVA) throw new Error('Nenhuma obra selecionada');
@@ -4875,7 +4919,7 @@ function openItem(idx) {
       ⚠️ <strong>Atenção:</strong> o desvio deste item é de ${fmtR$(diff)} mas só ${fmtR$(totDest)} estão formalizados em aditivo. <strong>${fmtR$(diff - totDest)}</strong> ainda são tendência sem aditivo.
     </div>` : ''}
   `;
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
 }
 
 function renderFlowMini(f, isOrigem=false) {
@@ -4900,17 +4944,126 @@ function renderFlowMini(f, isOrigem=false) {
     </div>`;
 }
 
-let MODAL_CLOSE_RESOLVER = null;
+const MODAL_FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+const MODAL_STACK = [];
+let ACTIVE_MODAL = null;
+
+function getModalDialog(backdrop) {
+  return backdrop?.querySelector('[role="dialog"]') || null;
+}
+
+function getModalFocusableElements(dialog) {
+  if (!dialog) return [];
+  return Array.from(dialog.querySelectorAll(MODAL_FOCUSABLE_SELECTOR))
+    .filter(element => element.offsetParent !== null);
+}
+
+function openModalLayer(backdrop, options = {}) {
+  if (!backdrop) return false;
+  const existing = MODAL_STACK.find(entry => entry.backdrop === backdrop);
+  if (existing) closeModalLayer(backdrop, false);
+
+  const dialog = getModalDialog(backdrop);
+  const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  if (ACTIVE_MODAL) ACTIVE_MODAL.backdrop.setAttribute('aria-hidden', 'true');
+  const entry = {
+    backdrop,
+    dialog,
+    previousFocus,
+    onClose: typeof options.onClose === 'function' ? options.onClose : null,
+  };
+  MODAL_STACK.push(entry);
+  ACTIVE_MODAL = entry;
+
+  backdrop.classList.add('show');
+  backdrop.setAttribute('aria-hidden', 'false');
+  backdrop.style.zIndex = String(2000 + MODAL_STACK.length * 10);
+  document.body.classList.add('modal-open');
+
+  requestAnimationFrame(() => {
+    if (!ACTIVE_MODAL || ACTIVE_MODAL.backdrop !== backdrop) return;
+    const requested = typeof options.initialFocus === 'string'
+      ? backdrop.querySelector(options.initialFocus)
+      : options.initialFocus;
+    const target = requested || getModalFocusableElements(dialog)[0] || dialog;
+    target?.focus();
+  });
+  return true;
+}
+
+function closeModalLayer(backdrop, result = false) {
+  if (!backdrop) return;
+  const index = MODAL_STACK.findIndex(entry => entry.backdrop === backdrop);
+  if (index < 0) {
+    backdrop.classList.remove('show');
+    backdrop.setAttribute('aria-hidden', 'true');
+    return;
+  }
+
+  const wasActive = index === MODAL_STACK.length - 1;
+  const [{ previousFocus, onClose }] = MODAL_STACK.splice(index, 1);
+  backdrop.classList.remove('show');
+  backdrop.setAttribute('aria-hidden', 'true');
+  backdrop.style.removeProperty('z-index');
+  ACTIVE_MODAL = MODAL_STACK[MODAL_STACK.length - 1] || null;
+  if (ACTIVE_MODAL) ACTIVE_MODAL.backdrop.setAttribute('aria-hidden', 'false');
+  else document.body.classList.remove('modal-open');
+  if (onClose) onClose(result);
+  if (wasActive && previousFocus?.isConnected) previousFocus.focus();
+}
+
+function openModal(options = {}) {
+  const backdrop = document.getElementById('modalBg');
+  const dialog = document.getElementById('modal');
+  const title = document.querySelector('#modalContent h1, #modalContent h2, #modalContent h3');
+  if (dialog) dialog.setAttribute('aria-label', title?.textContent?.trim() || 'Janela do dashboard');
+  return openModalLayer(backdrop, options);
+}
 
 function closeModal(result = false) {
-  document.getElementById('modalBg').classList.remove('show');
-  if (MODAL_CLOSE_RESOLVER) {
-    const resolve = MODAL_CLOSE_RESOLVER;
-    MODAL_CLOSE_RESOLVER = null;
-    resolve(result);
-  }
+  closeModalLayer(document.getElementById('modalBg'), result);
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function closeConfirmModal(result = false) {
+  closeModalLayer(document.getElementById('confirmModalBg'), result);
+}
+
+document.addEventListener('keydown', event => {
+  if (!ACTIVE_MODAL) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeModalLayer(ACTIVE_MODAL.backdrop, false);
+    return;
+  }
+  if (event.key !== 'Tab') return;
+
+  const focusable = getModalFocusableElements(ACTIVE_MODAL.dialog);
+  if (!focusable.length) {
+    event.preventDefault();
+    ACTIVE_MODAL.dialog?.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!ACTIVE_MODAL.dialog?.contains(document.activeElement)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  } else if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+});
 
 // Event delegation para ações dentro de modais (saveManualForm, editMov, deleteMov, saveMovForm)
 document.getElementById('modalContent')?.addEventListener('click', (e) => {
@@ -4921,7 +5074,7 @@ document.getElementById('modalContent')?.addEventListener('click', (e) => {
   else if (action === 'save-mov') saveMovForm(btn.dataset.id || '');
 });
 
-// Modal de confirmação customizado (substitui confirm() nativo)
+// Modal de confirmação customizado (substitui a confirmação nativa do navegador)
 function confirmModal(titulo, mensagem, opts) {
   opts = opts || {};
   const btnConfirmText = opts.confirmText || 'Confirmar';
@@ -4930,7 +5083,6 @@ function confirmModal(titulo, mensagem, opts) {
   const requireText = opts.requireText || null; // texto que o usuário deve digitar para habilitar OK
 
   return new Promise(function(resolve) {
-    MODAL_CLOSE_RESOLVER = resolve;
     const confirmBtnStyle = isDestructive
       ? 'background:var(--sem-erro); color:white; border:1px solid var(--sem-erro);'
       : 'background:var(--fgr-red-dark); color:white; border:1px solid var(--fgr-red-dark);';
@@ -4942,7 +5094,7 @@ function confirmModal(titulo, mensagem, opts) {
         + '</div>'
       : '';
 
-    document.getElementById('modalContent').innerHTML = ''
+    document.getElementById('confirmModalContent').innerHTML = ''
       + '<h2>' + escHtml(titulo) + '</h2>'
       + '<div style="white-space:pre-wrap; font-size:13px; line-height:1.6; color:var(--text-medium); margin:16px 0;">' + escHtml(mensagem) + '</div>'
       + requireHtml
@@ -4963,13 +5115,16 @@ function confirmModal(titulo, mensagem, opts) {
       });
       okBtn.onclick = () => {
         if (reqInput.value.trim() !== requireText) return;
-        closeModal(true);
+        closeConfirmModal(true);
       };
     } else {
-      okBtn.onclick = function() { closeModal(true); };
+      okBtn.onclick = function() { closeConfirmModal(true); };
     }
-    cancelBtn.onclick = function() { closeModal(false); };
-    document.getElementById('modalBg').classList.add('show');
+    cancelBtn.onclick = function() { closeConfirmModal(false); };
+    openModalLayer(document.getElementById('confirmModalBg'), {
+      onClose: resolve,
+      initialFocus: requireText ? '#confirmModalRequire' : '#confirmModalCancel',
+    });
   });
 }
 
@@ -4983,7 +5138,7 @@ function showManualText(key) {
       <button class="btn-sm" onclick="closeModal()">Fechar</button>
     </div>
   `;
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
 }
 
 // ============ EDIÇÃO DE CLASSIFICAÇÃO ============
@@ -5720,7 +5875,7 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
     } catch (e) { authToast('❌ Erro: ' + e.message, 'err', 5000); }
   };
   document.getElementById('modalContent').innerHTML = html;
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
 }
 
 // Bulk upsert helper — evita N requisições individuais ao Supabase
@@ -5986,7 +6141,7 @@ function openManualForm(editing) {
   const content = document.getElementById('modalContent');
   content.innerHTML = '';
   content.appendChild(tpl);
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
 }
 
 function saveManualForm(editingId) {
@@ -6609,7 +6764,6 @@ function _promptSheetMapping(sheetNames, autoDetected) {
 
     const opt = (name, selected) =>
       `<option value="${escAttr(name)}" ${name === selected ? 'selected' : ''}>${escHtml(name)}</option>`;
-    const options = ['<option value="">— nenhuma —</option>', ...sheetNames.map(n => opt(n, null))].join('');
 
     modalContent.innerHTML = `
       <h2>🗂️ Mapeamento de abas</h2>
@@ -6636,12 +6790,7 @@ function _promptSheetMapping(sheetNames, autoDetected) {
         <button class="btn-sm primary" id="mapSheetsOk">✅ Processar</button>
       </div>
     `;
-    modalBg.classList.add('show');
-
-    const finish = (result) => {
-      modalBg.classList.remove('show');
-      resolve(result);
-    };
+    const finish = (result) => closeModal(result);
     document.getElementById('mapSheetsCancel').onclick = () => finish(null);
     document.getElementById('mapSheetsOk').onclick = () => {
       const r = {
@@ -6655,6 +6804,10 @@ function _promptSheetMapping(sheetNames, autoDetected) {
       }
       finish(r);
     };
+    openModal({
+      onClose: result => resolve(result || null),
+      initialFocus: '#mapSheet_tendencia',
+    });
   });
 }
 
@@ -7000,7 +7153,7 @@ async function openUploadsHistory(kind) {
     <div class="meta">Mantemos os últimos <strong>${UPLOADS_MAX_PER_TYPE}</strong> arquivos por tipo (mais antigos são descartados automaticamente).</div>
     <div id="uploadsHistoryList" style="margin-top:14px;">⏳ Carregando...</div>
   `;
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
   await _renderUploadsHistoryList(kind);
 }
 
@@ -7129,9 +7282,19 @@ async function marcarUploadComoAtivo(uploadId, kind) {
   const isGlobal = meta && meta.global === true;
   // Aviso especial pra Gestões (global)
   if (isGlobal) {
-    if (!confirm(`⚠️ Gestões é COMPARTILHADO entre todas as obras.\n\nTrocar o arquivo ativo vai atualizar o Histórico Mensal e a Curva S de TODAS as obras — não só da atual.\n\nContinuar?`)) return;
+    const confirmed = await confirmModal(
+      'Ativar arquivo global de Gestões',
+      'Trocar o arquivo ativo atualizará o Histórico Mensal e a Curva S de TODAS as obras.',
+      { confirmText: 'Ativar arquivo', destructive: false }
+    );
+    if (!confirmed) return;
   } else {
-    if (!confirm(`Trocar o arquivo ativo de ${meta ? meta.label : kind} para esta versão?\n\nO dashboard vai substituir os dados atuais pelos deste arquivo.`)) return;
+    const confirmed = await confirmModal(
+      'Trocar arquivo ativo',
+      `Trocar o arquivo ativo de ${meta ? meta.label : kind} para esta versão?\n\nO dashboard substituirá os dados atuais pelos deste arquivo.`,
+      { confirmText: 'Ativar arquivo', destructive: false }
+    );
+    if (!confirmed) return;
   }
   authToast('⏳ Ativando arquivo...', 'info', 2500);
   try {
@@ -7235,7 +7398,12 @@ async function excluirUpload(uploadId, kind) {
       authToast('🔒 Não é possível excluir o arquivo ativo. Ative outro primeiro.', 'warn', 4500);
       return;
     }
-    if (!confirm(`Excluir permanentemente o arquivo "${rec.nome_arquivo}"?\n\n⚠️ Esta ação é irreversível.\n(Os dados do dashboard NÃO são afetados — só este registro do histórico.)`)) return;
+    const confirmed = await confirmModal(
+      'Excluir arquivo do histórico',
+      `Excluir permanentemente o arquivo "${rec.nome_arquivo}"?\n\nOs dados do dashboard não serão afetados; somente este arquivo e seu registro serão removidos.`,
+      { confirmText: 'Excluir arquivo' }
+    );
+    if (!confirmed) return;
     authToast('🗑️ Excluindo...', 'info', 2000);
     // 1) Apagar do Storage
     const cleanStoragePath = sanitizeStoragePath(rec.storage_path);
@@ -9105,7 +9273,7 @@ function openProjDrill(servico, insumo) {
 
   // Renderizar após o innerHTML estar no DOM
   setTimeout(() => renderApexChart('modalProjChart', modalChartOptions), 50);
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
 }
 
 // Renderiza a seção "Movimentações de Projeção" no modal de drill-down da Tendência
@@ -9923,7 +10091,7 @@ function openMovForm(editingId) {
       💡 A direção (entrada/saída) é calculada automaticamente: se o insumo controlado (${escHtml(insumo)}) aparecer no campo <strong>Destino</strong>, é uma entrada. Se aparecer em <strong>Origem</strong>, é uma saída.
     </div>
   `;
-  document.getElementById('modalBg').classList.add('show');
+  openModal();
 }
 
 async function saveMovForm(editingId) {
@@ -10631,8 +10799,6 @@ updateSupaBadge();
 // -------- MODAL DE LOGIN --------
 
 function openLoginModal(modo = 'login') {
-  // modo: 'login' | 'signup'
-  document.getElementById('loginModalBackdrop').style.display = 'flex';
   switchLoginTab(modo);
   // Limpar campos
   document.getElementById('loginEmail').value = '';
@@ -10643,10 +10809,13 @@ function openLoginModal(modo = 'login') {
   document.getElementById('signupNome').value = '';
   document.getElementById('loginErro').textContent = '';
   document.getElementById('signupErro').textContent = '';
+  openModalLayer(document.getElementById('loginModalBackdrop'), {
+    initialFocus: modo === 'signup' ? '#signupNome' : '#loginEmail',
+  });
 }
 
 function closeLoginModal() {
-  document.getElementById('loginModalBackdrop').style.display = 'none';
+  closeModalLayer(document.getElementById('loginModalBackdrop'), false);
 }
 
 function switchLoginTab(modo) {
@@ -10754,11 +10923,11 @@ async function handleAuthClick() {
 </script>
 
 <!-- v0.62: Modal de login/cadastro -->
-<div id="loginModalBackdrop" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:2000; align-items:center; justify-content:center;">
-  <div style="background:white; border-radius:12px; padding:24px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+<div id="loginModalBackdrop" aria-hidden="true" onclick="if(event.target===this)closeLoginModal()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:2000; align-items:center; justify-content:center;">
+  <div role="dialog" aria-modal="true" aria-labelledby="loginModalTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-      <h3 style="margin:0; color:var(--fgr-red-deep); font-size:16px;">🔐 Acesso ao Dashboard</h3>
-      <button onclick="closeLoginModal()" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-soft);" title="Fechar">×</button>
+      <h3 id="loginModalTitle" style="margin:0; color:var(--fgr-red-deep); font-size:16px;">🔐 Acesso ao Dashboard</h3>
+      <button type="button" onclick="closeLoginModal()" aria-label="Fechar acesso ao dashboard" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-soft);" title="Fechar">×</button>
     </div>
 
     <!-- Tabs Login / Signup -->

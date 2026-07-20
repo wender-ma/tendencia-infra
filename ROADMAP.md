@@ -128,7 +128,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 - [x] Corrigir os limites de dados desatualizados de `90/60` para `3/2` meses.
 - [x] Resolver `confirmModal(false)` ao fechar com Escape, backdrop ou botão X.
-- [ ] Unificar o fechamento e a resolução de todos os modais.
+- [x] Unificar o fechamento e a resolução de todos os modais.
 - [x] Remover a implementação antiga de `handleAuthClick()`.
 - [x] Corrigir interpretação ambígua de datas brasileiras e americanas.
 - [x] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
@@ -154,8 +154,8 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Implementar navegação de abas por setas e teclado.
 - [ ] Associar labels e campos com `for` e `id`.
 - [ ] Usar formulários e eventos `submit`.
-- [ ] Adicionar `role="dialog"`, `aria-modal` e nomes acessíveis aos modais.
-- [ ] Implementar foco inicial, focus trap e restauração de foco.
+- [x] Adicionar `role="dialog"`, `aria-modal` e nomes acessíveis aos modais.
+- [x] Implementar foco inicial, focus trap e restauração de foco.
 - [ ] Adicionar `aria-live` aos toasts, erros e estados de carregamento.
 - [ ] Tornar linhas clicáveis acessíveis por teclado ou usar botões/links.
 - [ ] Implementar ordenação acessível com `aria-sort`.

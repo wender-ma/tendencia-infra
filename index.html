@@ -6495,8 +6495,14 @@ function _autoDetectSheets(sheetNames) {
 function _sheetToCSV(workbook, sheetName) {
   const ws = workbook.Sheets[sheetName];
   if (!ws) return '';
-  // Usa ';' como separador (padrão BR, que os parsers atuais esperam)
-  return XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\n', blankrows: false, strip: false });
+  // Datas do Excel saem em ISO para não depender da localidade do navegador/SheetJS.
+  return XLSX.utils.sheet_to_csv(ws, {
+    FS: ';',
+    RS: '\n',
+    blankrows: false,
+    strip: false,
+    dateNF: 'yyyy-mm-dd',
+  });
 }
 
 function _preflightExcelHeaders(workbook, mapping) {
@@ -7539,35 +7545,55 @@ function classifyFlow(ip, ir) {
   return 'misto';
 }
 
-function toIsoDate(s) {
-  // v0.57.5 FIX: aceita BR (dd/mm/aaaa) e US (m/d/aa do SheetJS).
-  // Bug anterior: Excel via SheetJS entregava datas em formato US e o parser assumia BR,
-  // gerando anos truncados como '25-06-02'. Mesma família do fix do Mes_pagamento (v0.57.4).
-  if (!s) return null;
-  s = String(s).trim().split(' ')[0];
-  if (!s.includes('/')) return s;
-  const p = s.split('/');
-  if (p.length !== 3) return s;
-  const p0 = parseInt(p[0], 10);
-  const p1 = parseInt(p[1], 10);
-  const p2raw = p[2];
-  let ano, mes, dia;
-  if (p2raw.length === 4) {
-    // BR: dd/mm/aaaa
-    ano = p2raw;
-    mes = String(p1);
-    dia = String(p0);
-  } else {
-    // US do SheetJS: m/d/aa
-    ano = '20' + p2raw.padStart(2, '0');
-    mes = String(p0);
-    dia = String(p1);
+function normalizeDateYear(rawYear) {
+  const year = Number(rawYear);
+  if (!Number.isInteger(year)) return null;
+  if (String(rawYear).length === 2) return year >= 70 ? 1900 + year : 2000 + year;
+  return year;
+}
+
+function isValidCalendarDate(year, month, day) {
+  if (![year, month, day].every(Number.isInteger)) return false;
+  if (year < 1900 || year > 2200 || month < 1 || month > 12 || day < 1) return false;
+  return day <= new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function toIsoDate(value, preferredOrder = 'br') {
+  if (value == null || value === '') return null;
+  const raw = String(value).trim().split(/[ T]/)[0];
+
+  const isoMatch = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const [, yearRaw, monthRaw, dayRaw] = isoMatch;
+    const year = Number(yearRaw);
+    const month = Number(monthRaw);
+    const day = Number(dayRaw);
+    if (!isValidCalendarDate(year, month, day)) return null;
+    return `${yearRaw}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
-  const mn = parseInt(mes, 10);
-  const dn = parseInt(dia, 10);
-  if (isNaN(mn) || mn < 1 || mn > 12) return s;
-  if (isNaN(dn) || dn < 1 || dn > 31) return s;
-  return `${ano}-${String(mn).padStart(2, '0')}-${String(dn).padStart(2, '0')}`;
+
+  const slashMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (!slashMatch) return null;
+  const first = Number(slashMatch[1]);
+  const second = Number(slashMatch[2]);
+  const year = normalizeDateYear(slashMatch[3]);
+
+  let order = preferredOrder;
+  if (first > 12 && second <= 12) order = 'br';
+  else if (second > 12 && first <= 12) order = 'us';
+  else if (first > 12 && second > 12) return null;
+
+  const day = order === 'us' ? second : first;
+  const month = order === 'us' ? first : second;
+  if (!isValidCalendarDate(year, month, day)) return null;
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function isoDateToBr(value) {
+  const iso = toIsoDate(value);
+  if (!iso) return '';
+  const [year, month, day] = iso.split('-');
+  return `${day}/${month}/${year}`;
 }
 
 // v0.58b: parseGestoes agora processa TODAS as obras (não filtra por empreendimento).
@@ -7699,23 +7725,9 @@ function parseGestoes(text) {
     const codigoObra = extrairObra(key);
     if (!codigoObra) continue;
     if ((r[iGest]||'').trim() !== 'Atual') continue;
-    const mes = (r[iMesPag]||'').trim();
-    const parts = mes.split('/');
-    if (parts.length !== 3) continue;
-    const p0 = parseInt(parts[0], 10);
-    const p1 = parseInt(parts[1], 10);
-    const p2raw = parts[2];
-    let ano, mesNum;
-    if (p2raw.length === 4) {
-      ano = p2raw;
-      mesNum = String(p1);
-    } else {
-      ano = '20' + p2raw.padStart(2, '0');
-      mesNum = String(p0);
-    }
-    const mn = parseInt(mesNum, 10);
-    if (isNaN(mn) || mn < 1 || mn > 12) continue;
-    const yyyy_mm = `${ano}-${String(mn).padStart(2, '0')}`;
+    const dataPagamento = toIsoDate((r[iMesPag]||'').trim(), 'br');
+    if (!dataPagamento) continue;
+    const yyyy_mm = dataPagamento.slice(0, 7);
     const valor = parseNum(r[iVal]) || 0;
     if (valor <= 0) continue;
     // v0.60.2 FIX: mesmo fallback pra Serviço/Insumo vazios
@@ -7817,6 +7829,7 @@ function parseFlowsValor(text) {
     const descrAreaAtual    = String(r[2]||'').trim();
     const solicitanteDep    = String(r[3]||'').trim();
     const dataStr           = String(r[4]||'').trim();
+    const dataIso           = toIsoDate(dataStr, 'br');
     const motivo            = String(r[5]||'').trim();
     const justificativa     = String(r[6]||'').trim().slice(0, 400);
     const descricao         = String(r[7]||'').trim().slice(0, 300);
@@ -7851,8 +7864,8 @@ function parseFlowsValor(text) {
       dep: dep,
 
       // Data
-      data: toIsoDate(dataStr),
-      data_br: dataStr.split(' ')[0],
+      data: dataIso,
+      data_br: isoDateToBr(dataIso),
 
       // Descrição / motivo / justificativa
       descricao: descricao,

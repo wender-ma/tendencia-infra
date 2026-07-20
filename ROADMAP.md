@@ -130,7 +130,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Resolver `confirmModal(false)` ao fechar com Escape, backdrop ou botão X.
 - [ ] Unificar o fechamento e a resolução de todos os modais.
 - [x] Remover a implementação antiga de `handleAuthClick()`.
-- [ ] Corrigir interpretação ambígua de datas brasileiras e americanas.
+- [x] Corrigir interpretação ambígua de datas brasileiras e americanas.
 - [x] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
 - [ ] Evitar concorrência no fluxo read-merge-write das classificações.
 - [ ] Exibir erros atualmente ocultados por blocos `catch` vazios.

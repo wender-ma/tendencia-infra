@@ -52,7 +52,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Versionar todos os campos `codigo_obra` esperados pelo frontend no baseline de metadados.
 - [x] Criar rollback emergencial que restaura o baseline auditado.
 - [x] Testar migration e rollback em PostgreSQL descartável com asserções por papel e obra.
-- [ ] Importar o schema/base no projeto Supabase de desenvolvimento antes da migration.
+- [x] Importar o schema/base no projeto Supabase de desenvolvimento antes da migration.
 - [ ] Aplicar a migration primeiro em um projeto Supabase de desenvolvimento.
 - [ ] Remover políticas `anon_all_*` permissivas.
 - [x] Criar na migration políticas RLS separadas para leitura, inserção, atualização e exclusão.

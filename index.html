@@ -3229,8 +3229,13 @@ async function supaSaveDashboardKey(chave, valor) {
   const { error } = await SUPA.from('dashboard_config').upsert({
     chave, valor: String(valor||''), updated_at: new Date().toISOString(),
   }, { onConflict: 'chave' });
-  if (error) { console.warn('[SUPA] saveCfg err:', error); }
-  else SUPA_STATUS.lastSync = new Date();
+  if (error) {
+    SUPA_STATUS.lastError = error.message || String(error);
+    updateSupaBadge();
+    throw error;
+  }
+  SUPA_STATUS.lastError = null;
+  SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
 }
 

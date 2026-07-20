@@ -13,6 +13,10 @@ assert(!/catch\s*\([^)]*\)\s*{\s*}/m.test(html), 'Existe catch vazio no index.ht
 assert(!/try\s*{\s*supa[A-Za-z]+\([^;]+;?\s*}\s*catch/m.test(html), 'Existe chamada assíncrona do Supabase protegida apenas por try/catch síncrono');
 assert(html.includes('function reportNonFatalError('), 'Reporter contextual de erros ausente');
 assert(html.includes('function runAsyncSafely('), 'Observador de operações assíncronas ausente');
+assert(
+  /async function supaSaveDashboardKey[\s\S]*?if \(error\) \{[\s\S]*?throw error;[\s\S]*?\n\}/.test(html),
+  'supaSaveDashboardKey precisa propagar erros de persistência'
+);
 
 const visibleFallbacks = [
   'A classificação foi salva apenas neste navegador.',

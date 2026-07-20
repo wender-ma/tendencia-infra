@@ -6,6 +6,8 @@ Dashboard de tendência orçamentária
 ```text
 .
 ├── index.html              # Aplicação principal
+├── package.json            # Comandos de desenvolvimento, testes e build
+├── package-lock.json       # Versões exatas das dependências instaladas
 ├── assets/
 │   ├── css/                # Tokens, base, componentes e estilos do dashboard
 │   └── images/             # Imagens e capturas de tela
@@ -22,6 +24,7 @@ Dashboard de tendência orçamentária
 ## Arquivos importantes
 
 - `index.html`: arquivo principal do dashboard.
+- `package.json`: scripts do Vite e suíte de contratos do projeto.
 - `assets/css/`: folhas de estilo externas carregadas na ordem `tokens`, `base`, `components` e `dashboard`.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
@@ -60,7 +63,13 @@ Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no pr
 
 ## Validação de importações
 
-Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestões:
+Para executar todos os contratos automatizados:
+
+```bash
+npm test
+```
+
+Os testes podem também ser executados individualmente:
 
 ```bash
 ./scripts/test_import_headers.js
@@ -77,9 +86,31 @@ Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestõ
 
 Os testes cobrem cabeçalhos, datas, contrato dos diálogos e ausência de blocos de erro silenciosos.
 
+## Desenvolvimento e build
+
+Requisito: Node.js `^20.19.0` ou `>=22.12.0`.
+
+Instale as dependências e inicie o servidor local:
+
+```bash
+npm install
+npm run dev
+```
+
+O Vite disponibiliza a aplicação em `http://localhost:5173/` por padrão.
+
+Para gerar e validar o pacote de produção:
+
+```bash
+npm run build
+npm run preview
+```
+
+O build é criado em `dist/`, que não deve ser versionado.
+
 ## Backup frequente
 
-O projeto possui um script de backup em `scripts/backup.sh`.
+O projeto possui um script de backup em `scripts/backup.sh` e uma rotina agendada para executá-lo a cada 30 minutos.
 
 Ele cria um arquivo compactado em `backups/snapshots/`, mantém os 12 backups mais recentes e remove automaticamente os mais antigos.
 

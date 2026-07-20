@@ -187,10 +187,10 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 ### 10. Modernizar dependências e build
 
-- [ ] Criar `package.json` e lockfile.
+- [x] Criar `package.json` e lockfile.
 - [ ] Fixar versões exatas de Supabase, SheetJS e ApexCharts.
-- [ ] Configurar Vite ou ferramenta equivalente.
-- [ ] Gerar assets minificados e com hash.
+- [x] Configurar Vite ou ferramenta equivalente.
+- [ ] Gerar assets minificados e com hash (CSS concluído; JavaScript ainda inline).
 - [ ] Remover scripts bloqueantes do `head`.
 - [ ] Externalizar favicon e logo em arquivos otimizados.
 - [ ] Configurar Content Security Policy sem `unsafe-inline`.
@@ -279,5 +279,6 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |
 | 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados | `supabase/migrations/20260720172000_rls_hardening.sql` |
 | 20/07/2026 | CSS monolítico separado em tokens, base, componentes e dashboard, com contrato automatizado de assets | `assets/css/` |
+| 20/07/2026 | Vite configurado com lockfile, suíte centralizada em `npm test` e build de produção validado | `package.json` |
 | 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |
 | 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports | `scripts/test_accessibility_contract.js` |

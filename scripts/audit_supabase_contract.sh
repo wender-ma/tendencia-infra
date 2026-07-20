@@ -10,13 +10,25 @@ if [[ "$PROFILE" != "baseline" && "$PROFILE" != "hardened" ]]; then
   exit 2
 fi
 
-SUPA_URL="$(sed -n "s/^const SUPA_URL = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
-SUPA_KEY="$(sed -n "s/^const SUPA_KEY = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
+PROJECT_URL="${SUPABASE_URL:-}"
+SUPA_KEY="${SUPABASE_ANON_KEY:-}"
 
-if [[ -z "$SUPA_URL" || -z "$SUPA_KEY" ]]; then
-  echo "Erro: SUPA_URL ou SUPA_KEY nao encontrados em index.html." >&2
+if [[ -z "$PROJECT_URL" ]]; then
+  PROJECT_URL="$(sed -n "s/^const SUPA_URL = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
+fi
+
+if [[ -z "$SUPA_KEY" ]]; then
+  SUPA_KEY="$(sed -n "s/^const SUPA_KEY = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
+fi
+
+if [[ -z "$PROJECT_URL" || -z "$SUPA_KEY" ]]; then
+  echo "Erro: SUPABASE_URL/SUPABASE_ANON_KEY ou SUPA_URL/SUPA_KEY em index.html nao encontrados." >&2
   exit 1
 fi
+
+PROJECT_URL="${PROJECT_URL%/}"
+PROJECT_URL="${PROJECT_URL%/rest/v1}"
+REST_URL="$PROJECT_URL/rest/v1"
 
 CONTRACTS=(
   "obras|codigo_obra,nome,key_empobratd,observacao,ativa,origem,criada_em"
@@ -36,7 +48,7 @@ trap 'rm -f "$TMP_BODY" "$TMP_HEADERS"' EXIT
 
 failures=0
 echo "Auditoria publica do contrato Supabase (GET com limit=0)"
-echo "Projeto: ${SUPA_URL#https://}"
+echo "Projeto: ${PROJECT_URL#https://}"
 echo "Perfil esperado: $PROFILE"
 echo
 
@@ -53,7 +65,7 @@ for contract in "${CONTRACTS[@]}"; do
     -D "$TMP_HEADERS" \
     -o "$TMP_BODY" \
     -w '%{http_code}' \
-    "$SUPA_URL/rest/v1/$table")"
+    "$REST_URL/$table")"
 
   sensitive=false
   case "$table" in

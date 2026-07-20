@@ -46,6 +46,16 @@ Com Docker disponível, execute:
 
 O teste sobe um PostgreSQL temporário, recria o baseline auditado, aplica a migration, valida policies e permissões, executa o rollback e confirma a restauração. Nenhum banco remoto é alterado.
 
+Para auditar um projeto Supabase remoto sem alterar o `index.html`, informe a URL do projeto e a chave `anon public` por variáveis de ambiente:
+
+```bash
+SUPABASE_URL="https://seu-projeto.supabase.co" \
+SUPABASE_ANON_KEY="sua-chave-anon-public" \
+./scripts/audit_supabase_contract.sh baseline
+```
+
+Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no projeto de desenvolvimento.
+
 ## Backup frequente
 
 O projeto possui um script de backup em `scripts/backup.sh`.

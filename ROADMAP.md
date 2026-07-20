@@ -132,7 +132,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Remover a implementação antiga de `handleAuthClick()`.
 - [x] Corrigir interpretação ambígua de datas brasileiras e americanas.
 - [x] Validar cabeçalhos obrigatórios antes de iniciar cada parser.
-- [ ] Evitar concorrência no fluxo read-merge-write das classificações.
+- [x] Evitar concorrência no fluxo read-merge-write das classificações.
 - [x] Exibir erros atualmente ocultados por blocos `catch` vazios.
 
 ### 7. Corrigir responsividade
@@ -148,20 +148,20 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 ### 8. Implementar acessibilidade essencial
 
-- [ ] Criar `h1` e hierarquia consistente de headings.
-- [ ] Adotar `header`, `nav`, `main`, `section` e `footer`.
+- [x] Criar `h1` e hierarquia consistente de headings.
+- [x] Adotar `header`, `nav`, `main`, `section` e `footer`.
 - [x] Converter abas em botões com `tablist`, `tab` e `tabpanel`.
 - [x] Implementar navegação de abas por setas e teclado.
-- [ ] Associar labels e campos com `for` e `id`.
+- [x] Associar labels e campos com `for` e `id`.
 - [ ] Usar formulários e eventos `submit`.
 - [x] Adicionar `role="dialog"`, `aria-modal` e nomes acessíveis aos modais.
 - [x] Implementar foco inicial, focus trap e restauração de foco.
-- [ ] Adicionar `aria-live` aos toasts, erros e estados de carregamento.
+- [x] Adicionar `aria-live` aos toasts, erros e estados de carregamento.
 - [ ] Tornar linhas clicáveis acessíveis por teclado ou usar botões/links.
 - [ ] Implementar ordenação acessível com `aria-sort`.
-- [ ] Adicionar nomes acessíveis a botões que exibem apenas ícones.
-- [ ] Criar estilo global `:focus-visible`.
-- [ ] Corrigir contraste de `--text-lighter` nos temas claro e escuro.
+- [x] Adicionar nomes acessíveis a botões que exibem apenas ícones.
+- [x] Criar estilo global `:focus-visible`.
+- [x] Corrigir contraste de `--text-lighter` nos temas claro e escuro.
 - [ ] Validar os fluxos principais com teclado e leitor de tela.
 
 Critério de conclusão: os fluxos principais funcionam sem mouse e não apresentam erros graves no axe.

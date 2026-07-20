@@ -66,6 +66,7 @@ Para conferir as regras de cabeçalho dos arquivos de Tendência, Flows e Gestõ
 ./scripts/test_modal_contract.js
 ./scripts/test_error_contract.js
 ./scripts/test_classification_contract.js
+./scripts/test_accessibility_contract.js
 ```
 
 Os testes cobrem cabeçalhos, datas, contrato dos diálogos e ausência de blocos de erro silenciosos.

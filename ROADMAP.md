@@ -53,8 +53,8 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Criar rollback emergencial que restaura o baseline auditado.
 - [x] Testar migration e rollback em PostgreSQL descartável com asserções por papel e obra.
 - [x] Importar o schema/base no projeto Supabase de desenvolvimento antes da migration.
-- [ ] Aplicar a migration primeiro em um projeto Supabase de desenvolvimento.
-- [ ] Remover políticas `anon_all_*` permissivas.
+- [x] Aplicar a migration primeiro em um projeto Supabase de desenvolvimento.
+- [x] Remover políticas `anon_all_*` permissivas.
 - [x] Criar na migration políticas RLS separadas para leitura, inserção, atualização e exclusão.
 - [x] Restringir na migration administradores pelo papel `admin` ativo.
 - [x] Restringir na migration editores às obras atribuídas em `editores_permitidos`.
@@ -62,7 +62,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [ ] Confirmar se visualização anônima de dados é permitida pelo negócio.
 - [ ] Auditar logs e dados para identificar alterações indevidas anteriores.
 - [ ] Testar a API diretamente como anônimo, usuário pendente, editor e administrador.
-- [ ] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
+- [x] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
 
 Critério de conclusão: chamadas anônimas de escrita, operações administrativas por não administradores e alterações em obras não atribuídas são rejeitadas pelo banco.
 

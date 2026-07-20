@@ -118,11 +118,11 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [ ] Evitar apagar permissões antes de validar e inserir as novas.
 - [ ] Criar RPC transacional para exclusão completa de obra.
 - [ ] Configurar chaves estrangeiras e cascatas controladas.
-- [ ] Interromper upload quando Storage, metadata ou persistência falhar.
-- [ ] Adicionar estados `processing`, `active` e `failed` aos uploads.
-- [ ] Ativar um novo dataset somente após persistência completa.
-- [ ] Exibir erro parcial em vez de mensagem geral de sucesso.
-- [ ] Implementar recuperação ou limpeza de uploads incompletos.
+- [x] Interromper upload quando Storage, metadata ou persistência falhar.
+- [x] Adicionar estados `processing`, `active` e `failed` aos uploads.
+- [x] Ativar um novo dataset somente após persistência completa.
+- [x] Exibir erro parcial em vez de mensagem geral de sucesso.
+- [x] Implementar recuperação ou limpeza de uploads incompletos.
 
 ### 6. Corrigir bugs conhecidos
 

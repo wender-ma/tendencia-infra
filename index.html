@@ -2215,6 +2215,12 @@ function renderObrasDropdown() {
 // Chamado quando usuário troca de obra no dropdown
 async function trocarObra(novoCodigo) {
   if (!novoCodigo || novoCodigo === OBRA_ATIVA) return;
+  if (typeof UPLOAD_RUNTIME_STATE !== 'undefined'
+      && Object.values(UPLOAD_RUNTIME_STATE).some(state => state.status === 'processing')) {
+    authToast('⏳ Aguarde o upload terminar antes de trocar de obra.', 'warn', 4000);
+    renderObrasDropdown();
+    return;
+  }
   console.log('[OBRAS] trocando de', OBRA_ATIVA, '→', novoCodigo);
   showLoading();
   OBRA_ATIVA = novoCodigo;
@@ -3298,48 +3304,76 @@ const DATA_KEYS = {
   GESTAO_LABEL: 'gestao_label',
 };
 
-async function supaSaveDados(chave, obj) {
-  if (!SUPA) return;
-  if (!isEditorDaObraAtiva()) return;
-  try {
-    const json = JSON.stringify(obj);
-    console.log(`[SUPA] persistindo ${chave}: ${(json.length/1024).toFixed(1)} KB`);
-    await supaSaveDashboardKey(chave, json);
-  } catch(e) {
-    console.warn(`[SUPA] persist ${chave} err:`, e);
+function buildUploadDashboardRows(kinds) {
+  const requested = Array.isArray(kinds) ? [...new Set(kinds)] : ['tendencia', 'flows', 'gestoes'];
+  const values = new Map();
+
+  if (requested.includes('tendencia')) {
+    if (!Array.isArray(DATA_T) || !DATA_T.length) throw new Error('Tendência sem dados válidos para persistir');
+    values.set(keyPorObra(DATA_KEYS.DATA_T), JSON.stringify(DATA_T));
+    values.set(keyPorObra(DATA_KEYS.GESTAO_LABEL), String(GESTAO_LABEL || ''));
+  }
+  if (requested.includes('flows')) {
+    if (!Array.isArray(DATA_F) || !DATA_F.length) throw new Error('Flows sem dados válidos para persistir');
+    values.set(DATA_KEYS.DATA_F, JSON.stringify(DATA_F));
+  }
+  if (requested.includes('gestoes')) {
+    if (!HISTORICO?.items?.length) throw new Error('Histórico sem dados válidos para persistir');
+    values.set(DATA_KEYS.HISTORICO, JSON.stringify(HISTORICO));
+    values.set(DATA_KEYS.PROJ_RAW, JSON.stringify(Array.isArray(PROJ_RAW) ? PROJ_RAW : []));
+  }
+
+  const updatedAt = new Date().toISOString();
+  return [...values].map(([chave, valor]) => ({ chave, valor, updated_at: updatedAt }));
+}
+
+async function supaCaptureDashboardRows(kinds) {
+  if (!SUPA) throw new Error('Supabase indisponível');
+  const keys = buildUploadDashboardRows(kinds).map(row => row.chave);
+  const { data, error } = await SUPA.from('dashboard_config')
+    .select('chave,valor')
+    .in('chave', keys);
+  if (error) throw error;
+  return { keys, rows: data || [] };
+}
+
+async function supaRestoreDashboardRows(snapshot) {
+  if (!snapshot?.keys?.length) return;
+  const updatedAt = new Date().toISOString();
+  const previousRows = (snapshot.rows || []).map(row => ({ ...row, updated_at: updatedAt }));
+  if (previousRows.length) {
+    const { error } = await SUPA.from('dashboard_config').upsert(previousRows, { onConflict: 'chave' });
+    if (error) throw error;
+  }
+  const previousKeys = new Set(previousRows.map(row => row.chave));
+  const keysToDelete = snapshot.keys.filter(key => !previousKeys.has(key));
+  if (keysToDelete.length) {
+    const { error } = await SUPA.from('dashboard_config').delete().in('chave', keysToDelete);
+    if (error) throw error;
   }
 }
 
-// Persistir tudo de uma vez após um upload (chamado em handleUpload/Excel)
-// v0.58a: chaves prefixadas com codigo_obra ("42-21O:dados_tendencia", etc.)
-async function supaSaveAllData(kinds /* array: 'tendencia', 'flows', 'gestoes' */) {
-  if (!SUPA || !isEditorDaObraAtiva()) return;
-  if ((!Array.isArray(kinds) || kinds.some(isGlobalUploadKind)) && !isAdminGeral()) return;
-  if (!OBRA_ATIVA) { console.warn('[SUPA] supaSaveAllData: sem OBRA_ATIVA'); return; }
-  const jobs = [];
-  const K = (chave) => keyPorObra(chave); // prefixa com codigo_obra
-  // guard de conteúdo — só persistir se realmente veio dado
-  if ((!kinds || kinds.includes('tendencia')) && Array.isArray(DATA_T) && DATA_T.length > 0) {
-    jobs.push(supaSaveDados(K(DATA_KEYS.DATA_T), DATA_T));
-    jobs.push(supaSaveDashboardKey(K(DATA_KEYS.GESTAO_LABEL), GESTAO_LABEL || ''));
+// Persiste todas as chaves do conjunto em uma única instrução do PostgREST.
+async function supaSaveAllData(kinds) {
+  if (!SUPA) throw new Error('Supabase indisponível');
+  if (!isEditorDaObraAtiva()) throw new Error('Sem permissão para persistir dados da obra ativa');
+  if ((!Array.isArray(kinds) || kinds.some(isGlobalUploadKind)) && !isAdminGeral()) {
+    throw new Error('Apenas administradores podem persistir dados globais');
   }
-  if ((!kinds || kinds.includes('flows')) && Array.isArray(DATA_F) && DATA_F.length > 0) {
-    // DATA_F é GLOBAL (multi-obra num só upload) — chave sem prefixo, igual HISTORICO
-    jobs.push(supaSaveDados(DATA_KEYS.DATA_F, DATA_F));
+  if (!OBRA_ATIVA) throw new Error('Nenhuma obra ativa para persistência');
+
+  const rows = buildUploadDashboardRows(kinds);
+  const { error } = await SUPA.from('dashboard_config').upsert(rows, { onConflict: 'chave' });
+  if (error) {
+    SUPA_STATUS.lastError = error.message;
+    updateSupaBadge();
+    throw error;
   }
-  // v0.58b: Gestões (HISTORICO + PROJ_RAW) é GLOBAL — 1 arquivo compartilhado entre todas as obras
-  if ((!kinds || kinds.includes('gestoes')) && HISTORICO && HISTORICO.items && HISTORICO.items.length > 0) {
-    jobs.push(supaSaveDados(DATA_KEYS.HISTORICO, HISTORICO));  // sem K() = global
-    if (Array.isArray(PROJ_RAW) && PROJ_RAW.length > 0) {
-      jobs.push(supaSaveDados(DATA_KEYS.PROJ_RAW, PROJ_RAW));  // sem K() = global
-    }
-  }
-  if (jobs.length === 0) {
-    console.warn('[SUPA] nada para persistir — todos os datasets estão vazios');
-    return;
-  }
-  await Promise.all(jobs);
-  console.log(`[SUPA] ${jobs.length} dataset(s) persistido(s) para obra ${OBRA_ATIVA}`);
+  SUPA_STATUS.lastError = null;
+  SUPA_STATUS.lastSync = new Date();
+  updateSupaBadge();
+  console.log(`[SUPA] ${rows.length} dataset(s) persistido(s) para obra ${OBRA_ATIVA}`);
+  return rows;
 }
 
 // v0.58b: reset dos dados da obra ativa
@@ -3398,7 +3432,7 @@ async function apagarHistoricoUploads() {
       .select('id, storage_path').eq('codigo_obra', OBRA_ATIVA);
     if (readErr) throw readErr;
     // Apagar arquivos do Storage PRIMEIRO — se falhar, mantém registros no banco
-    const paths = (recs || []).map(r => sanitizeStoragePath(r.storage_path)).filter(Boolean);
+    const paths = [...new Set((recs || []).map(r => sanitizeStoragePath(r.storage_path)).filter(Boolean))];
     if (paths.length) {
       const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
       if (sErr) {
@@ -3432,17 +3466,127 @@ function sanitizeStoragePath(path) {
   return value;
 }
 
-async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
-  if (!SUPA || !requireUploadPermission(tipo, 'registrar este upload')) return null;
-  if (!OBRA_ATIVA) { console.warn('[SUPA] logUpload: sem OBRA_ATIVA'); return null; }
-  const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
-  // desativa TODOS os anteriores do mesmo (obra, tipo) antes de inserir novo como ativo
+const UPLOAD_RUNTIME_STATE = Object.create(null);
+
+function setUploadRuntimeState(kinds, status, message = '') {
+  (Array.isArray(kinds) ? kinds : [kinds]).forEach(kind => {
+    UPLOAD_RUNTIME_STATE[kind] = { status, message, updatedAt: new Date() };
+  });
+  const obraSelector = document.getElementById('obraSelector');
+  if (obraSelector) {
+    obraSelector.disabled = Object.values(UPLOAD_RUNTIME_STATE)
+      .some(state => state.status === 'processing');
+  }
+}
+
+function captureInMemoryUploadState() {
+  return {
+    DATA_T,
+    DATA_F,
+    HISTORICO,
+    PROJ_RAW,
+    GESTAO_LABEL,
+    EVOL_GLOBAL: { ...EVOL_GLOBAL },
+    INSUMOS_OPTIONS,
+  };
+}
+
+function restoreInMemoryUploadState(snapshot) {
+  if (!snapshot) return;
+  DATA_T = snapshot.DATA_T;
+  DATA_F = snapshot.DATA_F;
+  HISTORICO = snapshot.HISTORICO;
+  PROJ_RAW = snapshot.PROJ_RAW;
+  GESTAO_LABEL = snapshot.GESTAO_LABEL;
+  EVOL_GLOBAL = snapshot.EVOL_GLOBAL;
+  INSUMOS_OPTIONS = snapshot.INSUMOS_OPTIONS;
+  try { buildDatalist(); } catch (error) { reportNonFatalError('Upload/restaurar lista de insumos', error); }
+}
+
+async function commitPreparedUpload({ file, storageType, items, groupId = null, memorySnapshot }) {
+  const kinds = items.map(item => item.kind);
+  const transaction = {
+    stage: 'preparação',
+    storagePath: null,
+    records: [],
+    activations: [],
+    dashboardSnapshot: null,
+    dashboardPersisted: false,
+  };
+
   try {
-    const { error: updErr } = await SUPA.from('upload_history')
-      .update({ is_active: false })
-      .eq('codigo_obra', OBRA_ATIVA).eq('tipo', tipo).eq('is_active', true);
-    if (updErr) console.warn('[SUPA] desativar anteriores err:', updErr);
-  } catch(e) { console.warn('[SUPA] desativar anteriores excecao:', e); }
+    transaction.stage = 'leitura do estado anterior';
+    transaction.dashboardSnapshot = await supaCaptureDashboardRows(kinds);
+
+    transaction.stage = 'armazenamento do arquivo';
+    transaction.storagePath = await supaUploadFile(storageType, file);
+
+    transaction.stage = 'registro do histórico';
+    for (const item of items) {
+      const record = await supaCreateUploadRecord(
+        item.kind,
+        file.name,
+        file.size,
+        item.linhas,
+        transaction.storagePath,
+        groupId
+      );
+      transaction.records.push(record);
+    }
+
+    transaction.stage = 'persistência dos dados';
+    await supaSaveAllData(kinds);
+    transaction.dashboardPersisted = true;
+
+    transaction.stage = 'ativação do novo dataset';
+    for (const record of transaction.records) {
+      transaction.activations.push(await supaActivateUploadRecord(record));
+    }
+
+    transaction.activations.forEach(({ active }) => {
+      LAST_UPLOADS[active.tipo] = active;
+    });
+    setUploadRuntimeState(kinds, 'active');
+    return {
+      storagePath: transaction.storagePath,
+      records: transaction.activations.map(item => item.active),
+    };
+  } catch (error) {
+    const cleanupErrors = [];
+    const attemptCleanup = async (label, operation) => {
+      try { await operation(); }
+      catch (cleanupError) {
+        cleanupErrors.push(`${label}: ${cleanupError.message || cleanupError}`);
+        console.error(`[UPLOAD] rollback ${label}:`, cleanupError);
+      }
+    };
+
+    for (const activation of [...transaction.activations].reverse()) {
+      await attemptCleanup('restaurar arquivo ativo', () => supaRollbackUploadActivation(activation));
+    }
+    if (transaction.dashboardPersisted) {
+      await attemptCleanup('restaurar dados anteriores', () => supaRestoreDashboardRows(transaction.dashboardSnapshot));
+    }
+    await attemptCleanup('marcar tentativa como falha', () => supaMarkUploadRecordsFailed(transaction.records));
+    if (transaction.storagePath) {
+      await attemptCleanup('remover arquivo incompleto', () => supaRemoveStoredUpload(transaction.storagePath));
+    }
+    await attemptCleanup('remover metadata incompleta', () => supaDeleteUploadRecords(transaction.records));
+    restoreInMemoryUploadState(memorySnapshot);
+    setUploadRuntimeState(kinds, 'failed', error.message || String(error));
+
+    const cleanupMessage = cleanupErrors.length
+      ? ` Rollback parcial: ${cleanupErrors.join('; ')}`
+      : ' Alterações parciais foram desfeitas.';
+    throw new Error(`Falha em ${transaction.stage}: ${error.message || error}.${cleanupMessage}`);
+  }
+}
+
+async function supaCreateUploadRecord(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {
+  if (!SUPA) throw new Error('Supabase indisponível para registrar o upload');
+  if (!requireUploadPermission(tipo, 'registrar este upload')) throw new Error('Sem permissão para registrar este upload');
+  if (!OBRA_ATIVA) throw new Error('Nenhuma obra ativa para registrar o upload');
+  const enviadoPor = (AUTH && AUTH.user) ? AUTH.user.email : null;
   const { data, error } = await SUPA.from('upload_history').insert({
     codigo_obra: OBRA_ATIVA,
     tipo, nome_arquivo: nomeArquivo,
@@ -3451,18 +3595,157 @@ async function supaLogUpload(tipo, nomeArquivo, tamanhoBytes, linhas, storagePat
     enviado_por: enviadoPor,
     storage_path: sanitizeStoragePath(storagePath) || null,
     upload_group_id: uploadGroupId || null,
-    is_active: true, // novo upload sempre vira ativo
+    observacao: 'upload_state:processing',
+    is_active: false,
   }).select().maybeSingle();
-  if (error) { console.warn('[SUPA] logUpload err:', error); SUPA_STATUS.lastError = error.message; }
-  else SUPA_STATUS.lastSync = new Date();
+  if (error) {
+    SUPA_STATUS.lastError = error.message;
+    updateSupaBadge();
+    throw error;
+  }
+  if (!data) throw new Error('Supabase não retornou o registro do upload');
+  SUPA_STATUS.lastSync = new Date();
   updateSupaBadge();
   return data;
 }
 
-// sobe arquivo original pro Storage. Retorna storage_path ou null se falhar.
+async function supaActivateUploadRecord(record) {
+  if (!record?.id) throw new Error('Registro de upload inválido para ativação');
+  const { data: previous, error: readError } = await SUPA.from('upload_history')
+    .select('id')
+    .eq('codigo_obra', record.codigo_obra)
+    .eq('tipo', record.tipo)
+    .eq('is_active', true)
+    .neq('id', record.id);
+  if (readError) throw readError;
+
+  const previousIds = (previous || []).map(item => item.id);
+  if (previousIds.length) {
+    const { error } = await SUPA.from('upload_history')
+      .update({ is_active: false })
+      .eq('codigo_obra', record.codigo_obra)
+      .eq('tipo', record.tipo)
+      .in('id', previousIds);
+    if (error) throw error;
+  }
+
+  const { data: active, error: activateError } = await SUPA.from('upload_history')
+    .update({ is_active: true, observacao: 'upload_state:active' })
+    .eq('codigo_obra', record.codigo_obra)
+    .eq('tipo', record.tipo)
+    .eq('id', record.id)
+    .select()
+    .maybeSingle();
+  if (activateError || !active) {
+    let restoreError = null;
+    if (previousIds.length) {
+      const restored = await SUPA.from('upload_history')
+        .update({ is_active: true })
+        .eq('codigo_obra', record.codigo_obra)
+        .eq('tipo', record.tipo)
+        .in('id', previousIds);
+      restoreError = restored.error;
+    }
+    const failure = activateError || new Error('O novo upload não pôde ser ativado');
+    if (restoreError) {
+      throw new Error(`${failure.message}. O arquivo ativo anterior também não pôde ser restaurado: ${restoreError.message}`);
+    }
+    throw failure;
+  }
+  return { active, previousIds };
+}
+
+async function supaRollbackUploadActivation(activation) {
+  if (!activation?.active?.id) return;
+  const record = activation.active;
+  const { error: deactivateError } = await SUPA.from('upload_history')
+    .update({ is_active: false })
+    .eq('codigo_obra', record.codigo_obra)
+    .eq('tipo', record.tipo)
+    .eq('id', record.id);
+  if (deactivateError) throw deactivateError;
+  if (activation.previousIds?.length) {
+    const { error } = await SUPA.from('upload_history')
+      .update({ is_active: true })
+      .eq('codigo_obra', record.codigo_obra)
+      .eq('tipo', record.tipo)
+      .in('id', activation.previousIds);
+    if (error) throw error;
+  }
+}
+
+async function supaDeleteUploadRecords(records) {
+  const ids = (records || []).map(record => record?.id).filter(Boolean);
+  if (!ids.length) return;
+  const { error } = await SUPA.from('upload_history')
+    .delete()
+    .eq('codigo_obra', OBRA_ATIVA)
+    .in('id', ids);
+  if (error) throw error;
+}
+
+async function supaMarkUploadRecordsFailed(records) {
+  const ids = (records || []).map(record => record?.id).filter(Boolean);
+  if (!ids.length) return;
+  const { error } = await SUPA.from('upload_history')
+    .update({ is_active: false, observacao: 'upload_state:failed' })
+    .eq('codigo_obra', OBRA_ATIVA)
+    .in('id', ids);
+  if (error) throw error;
+}
+
+async function supaRemoveStoredUpload(storagePath) {
+  const cleanPath = sanitizeStoragePath(storagePath);
+  if (!cleanPath) return;
+  const { error } = await SUPA.storage.from(UPLOADS_BUCKET).remove([cleanPath]);
+  if (error) throw error;
+}
+
+async function supaCleanupIncompleteUploads(maxProcessingAgeMs = 60 * 60 * 1000) {
+  if (!SUPA || !AUTH.user || !OBRA_ATIVA || !isEditorDaObraAtiva()) return 0;
+  const { data, error } = await SUPA.from('upload_history')
+    .select('id,tipo,storage_path,observacao,enviado_em')
+    .eq('codigo_obra', OBRA_ATIVA)
+    .in('observacao', ['upload_state:processing', 'upload_state:failed']);
+  if (error) throw error;
+
+  const cutoff = Date.now() - maxProcessingAgeMs;
+  const stale = (data || []).filter(record => {
+    const canManageKind = isGlobalUploadKind(record.tipo) ? isAdminGeral() : isEditorDaObraAtiva();
+    const isStale = record.observacao === 'upload_state:failed'
+      || new Date(record.enviado_em || 0).getTime() < cutoff;
+    return canManageKind && isStale;
+  });
+  if (!stale.length) return 0;
+
+  const staleIds = new Set(stale.map(record => record.id));
+  const removablePaths = [];
+  for (const storagePath of new Set(stale.map(record => sanitizeStoragePath(record.storage_path)).filter(Boolean))) {
+    const { data: references, error: referenceError } = await SUPA.from('upload_history')
+      .select('id')
+      .eq('codigo_obra', OBRA_ATIVA)
+      .eq('storage_path', storagePath);
+    if (referenceError) throw referenceError;
+    if ((references || []).every(reference => staleIds.has(reference.id))) removablePaths.push(storagePath);
+  }
+
+  if (removablePaths.length) {
+    const { error: storageError } = await SUPA.storage.from(UPLOADS_BUCKET).remove(removablePaths);
+    if (storageError) throw storageError;
+  }
+  const { error: deleteError } = await SUPA.from('upload_history')
+    .delete()
+    .eq('codigo_obra', OBRA_ATIVA)
+    .in('id', [...staleIds]);
+  if (deleteError) throw deleteError;
+  return stale.length;
+}
+
+// Sobe o arquivo original; falhas interrompem o commit do upload.
 async function supaUploadFile(tipo, file) {
-  if (!SUPA || !SUPA.storage || !requireUploadPermission(tipo, 'enviar este arquivo')) return null;
-  if (!OBRA_ATIVA) { console.warn('[SUPA] uploadFile: sem OBRA_ATIVA'); return null; }
+  if (!SUPA || !SUPA.storage) throw new Error('Storage do Supabase indisponível');
+  if (!requireUploadPermission(tipo, 'enviar este arquivo')) throw new Error('Sem permissão para enviar este arquivo');
+  if (!OBRA_ATIVA) throw new Error('Nenhuma obra ativa para armazenar o upload');
   // Nome único: YYYYMMDD_HHMMSS_original.csv (evita colisão + facilita ordenação)
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -3477,22 +3760,25 @@ async function supaUploadFile(tipo, file) {
     upsert: false,
   });
   if (error) {
-    console.warn('[SUPA] upload storage err:', error);
     SUPA_STATUS.lastError = 'Storage: ' + error.message;
     updateSupaBadge();
-    return null;
+    throw error;
   }
   return path;
 }
 
 // lista TODOS os uploads de um tipo (ordenado do mais recente)
-async function supaListUploadsByType(tipo, limit = 50) {
+async function supaListUploadsByType(tipo, limit = 50, strict = false) {
   if (!SUPA) return [];
   if (!OBRA_ATIVA) return [];
   const { data, error } = await SUPA.from('upload_history')
     .select('*').eq('codigo_obra', OBRA_ATIVA).eq('tipo', tipo)
     .order('enviado_em', { ascending: false }).limit(limit);
-  if (error) { console.warn('[SUPA] listUploads err:', error); return []; }
+  if (error) {
+    if (strict) throw error;
+    console.warn('[SUPA] listUploads err:', error);
+    return [];
+  }
   return data || [];
 }
 
@@ -3513,7 +3799,7 @@ async function supaGetDownloadURL(storagePath) {
 async function supaEnforceRollingBackup(tipo) {
   if (!SUPA || !requireUploadPermission(tipo, 'gerenciar os backups deste upload')) return;
   try {
-    const all = await supaListUploadsByType(tipo, 100);
+    const all = await supaListUploadsByType(tipo, 100, true);
     if (all.length <= UPLOADS_MAX_PER_TYPE) return;
     // NUNCA descarta arquivo ativo, mesmo que seja o mais antigo.
     // Ordem: pega os que passaram do limite MAS filtra pra não incluir ativos.
@@ -3521,20 +3807,32 @@ async function supaEnforceRollingBackup(tipo) {
     const toDelete = excedentes.filter(r => !r.is_active);
     if (!toDelete.length) return;
     console.log(`[SUPA] rolling backup ${tipo}: removendo ${toDelete.length} arquivo(s) antigo(s)`);
-    // Apagar arquivos do Storage
-    const paths = toDelete.map(r => sanitizeStoragePath(r.storage_path)).filter(Boolean);
-    if (paths.length) {
-      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(paths);
-      if (sErr) console.warn('[SUPA] rolling storage remove err:', sErr);
-    }
-    // Apagar linhas do upload_history
     const ids = toDelete.map(r => r.id);
-    // Filtra por obra também pra segurança extra (ids são unique globalmente, mas garantia dupla)
+    const idSet = new Set(ids);
+    const removablePaths = [];
+    const candidatePaths = new Set(toDelete.map(r => sanitizeStoragePath(r.storage_path)).filter(Boolean));
+    for (const storagePath of candidatePaths) {
+      const { data: references, error: referenceError } = await SUPA.from('upload_history')
+        .select('id')
+        .eq('codigo_obra', OBRA_ATIVA)
+        .eq('storage_path', storagePath);
+      if (referenceError) throw referenceError;
+      if ((references || []).every(reference => idSet.has(reference.id))) removablePaths.push(storagePath);
+    }
+
+    // Remove primeiro os metadados; falha posterior deixa no máximo um arquivo órfão,
+    // nunca uma entrada de histórico apontando para um arquivo inexistente.
     const { error: dbErr } = await SUPA.from('upload_history').delete()
       .eq('codigo_obra', OBRA_ATIVA).in('id', ids);
-    if (dbErr) console.warn('[SUPA] rolling history remove err:', dbErr);
+    if (dbErr) throw dbErr;
+
+    if (removablePaths.length) {
+      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove(removablePaths);
+      if (sErr) throw sErr;
+    }
   } catch (e) {
     console.warn('[SUPA] rolling backup err:', e);
+    throw e;
   }
 }
 
@@ -3564,7 +3862,7 @@ async function _supaLoadUploadsLatestFallback() {
   if (!OBRA_ATIVA) return map;
   for (const t of ['tendencia', 'flows', 'gestoes']) {
     const { data } = await SUPA.from('upload_history')
-      .select('*').eq('codigo_obra', OBRA_ATIVA).eq('tipo', t)
+      .select('*').eq('codigo_obra', OBRA_ATIVA).eq('tipo', t).eq('is_active', true)
       .order('enviado_em', { ascending: false }).limit(1);
     if (data && data[0]) map[t] = data[0];
   }
@@ -6634,9 +6932,11 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
   
   const cardMeta = document.querySelector(`.upload-card[data-kind="${kind}"] .upload-card-meta`);
   if (cardMeta) cardMeta.innerHTML = '⏳ <em>Lendo arquivo...</em>';
+  setUploadRuntimeState(kind, 'processing', 'Lendo e validando o arquivo');
 
   const reader = new FileReader();
   reader.onload = async e => {
+    const memorySnapshot = captureInMemoryUploadState();
     try {
       const txt = e.target.result;
       let result = '';
@@ -6661,11 +6961,6 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         linhas = DATA_F.length;
         result = `FLOWS: ${linhas} aditivos`;
       } else if (kind === 'gestoes') {
-        if (!firstLines.includes('Descr_gestao') && !firstLines.includes('Key_planejamento')) {
-          authToast('❌ CSV inválido para GESTÕES (esperado cabeçalho Descr_gestao ou Key_planejamento)', 'err', 5000);
-          if (cardMeta) renderUploadsCentral();
-          ev.target.value = ''; return;
-        }
         const parsed = parseGestoes(txt);
         // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
@@ -6682,39 +6977,42 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         result = `GESTÕES: ${linhas} itens · ${parsed.gestoes.length} gestões`;
       }
 
-      // sobe o arquivo original pro Storage (Supabase bucket privado)
-      let storagePath = null;
-      try {
-        storagePath = await supaUploadFile(kind, file);
-        if (storagePath) console.log('[SUPA] arquivo armazenado em', storagePath);
-      } catch(e) { console.warn('supaUploadFile:', e); }
+      setUploadRuntimeState(kind, 'processing', 'Sincronizando arquivo e dados');
+      await commitPreparedUpload({
+        file,
+        storageType: kind,
+        items: [{ kind, linhas }],
+        memorySnapshot,
+      });
 
-      // Persistir metadata no Supabase (só se editor — RLS bloqueia senão)
-      try {
-        const rec = await supaLogUpload(kind, file.name, file.size, linhas, storagePath);
-        if (rec) LAST_UPLOADS[kind] = rec;
-      } catch(e) { console.warn('supaLogUpload:', e); }
-
-      // rolling backup — mantém só últimos N arquivos por tipo
-      try { await supaEnforceRollingBackup(kind); } catch(e) { console.warn('rolling:', e); }
-
-      // persistir dados parseados no Supabase (sobrevive a refresh)
-      try { await supaSaveAllData([kind]); } catch(e) { console.warn('supaSaveAllData:', e); }
+      // Limpeza do backup ocorre depois do commit e não invalida o novo dataset.
+      await runAsyncSafely(
+        supaEnforceRollingBackup(kind),
+        'Upload/limpeza de backups',
+        'O upload foi concluído, mas os backups antigos não puderam ser limpos.'
+      );
 
       // Usar debounce para evitar múltiplas renderizações
       debouncedRender();
       renderUploadsCentral();
       renderSourcesHeaders();
       updateEditCount();
-      const storageInfo = storagePath ? ' · 📦 arquivado' : '';
-      authToast('✅ ' + result + storageInfo, 'ok', 3500);
+      authToast('✅ ' + result + ' · 📦 arquivado e sincronizado', 'ok', 3500);
 
     } catch (err) {
       console.error(err);
-      authToast('❌ Erro ao processar: ' + err.message, 'err', 5000);
+      restoreInMemoryUploadState(memorySnapshot);
+      setUploadRuntimeState(kind, 'failed', err.message || String(err));
+      authToast('❌ Upload não concluído: ' + err.message, 'err', 7000);
       if (cardMeta) renderUploadsCentral();
     }
     ev.target.value = ''; // permite recarregar mesmo arquivo
+  };
+  reader.onerror = () => {
+    setUploadRuntimeState(kind, 'failed', 'Falha ao ler o arquivo local');
+    authToast('❌ Não foi possível ler o arquivo selecionado.', 'err', 5000);
+    renderUploadsCentral();
+    ev.target.value = '';
   };
   reader.readAsText(file, 'UTF-8');
 }
@@ -6815,14 +7113,18 @@ async function handleExcelUpload(ev) {
     return;
   }
 
+  const excelKinds = ['tendencia', 'flows', 'gestoes'];
+  setUploadRuntimeState(excelKinds, 'processing', 'Lendo a planilha Excel');
   _renderExcelProgress('⏳ Lendo arquivo...');
   let workbook;
   try {
     const buf = await file.arrayBuffer();
     workbook = XLSX.read(buf, { type: 'array', cellDates: true });
   } catch (e) {
+    setUploadRuntimeState(excelKinds, 'failed', e.message || String(e));
     authToast('❌ Erro ao ler o arquivo: ' + e.message, 'err', 5000);
     _renderExcelProgress(null);
+    renderUploadsCentral();
     return;
   }
 
@@ -6838,6 +7140,7 @@ async function handleExcelUpload(ev) {
     _renderExcelProgress(null);
     const userMapping = await _promptSheetMapping(sheetNames, mapping);
     if (!userMapping) {
+      setUploadRuntimeState(excelKinds, 'idle');
       authToast('❌ Upload cancelado', 'warn', 2500);
       return;
     }
@@ -6848,7 +7151,9 @@ async function handleExcelUpload(ev) {
 
   const headerErrors = _preflightExcelHeaders(workbook, mapping);
   if (headerErrors.length) {
+    setUploadRuntimeState(excelKinds, 'failed', headerErrors.map(error => error.message).join(' · '));
     _renderExcelProgress(null);
+    renderUploadsCentral();
     headerErrors.forEach(error => {
       authToast(`❌ Aba "${error.sheetName}": ${error.message}`, 'err', 8000);
     });
@@ -6925,21 +7230,17 @@ async function _processExcelSheets(workbook, mapping, file) {
   // upload_group_id = todos os 3 registros do mesmo Excel compartilham este UUID
   const groupId = _uuid4();
   const results = {};
+  const memorySnapshot = captureInMemoryUploadState();
 
-  // 1) Storage: sobe o Excel completo UMA vez (todos os 3 registros apontam pro mesmo)
-  let storagePath = null;
-  try {
-    _renderExcelProgress('📤 Enviando arquivo pro Storage...');
-    storagePath = await supaUploadFile('excel', file);
-    if (storagePath) console.log('[SUPA] Excel armazenado em', storagePath);
-  } catch(e) { console.warn('supaUploadFile excel:', e); }
-
-  // 2) Processar cada aba mapeada
+  // 1) Processar todas as abas antes de iniciar qualquer escrita remota.
   const steps = [
     { kind: 'tendencia', label: 'Tendência', icon: '📈', parser: 'tendencia' },
     { kind: 'flows',     label: 'Flows',     icon: '🔗', parser: 'flows' },
     { kind: 'gestoes',   label: 'Gestões',   icon: '📅', parser: 'gestoes' },
   ];
+  const selectedKinds = steps.filter(step => mapping[step.kind]).map(step => step.kind);
+  setUploadRuntimeState(['tendencia', 'flows', 'gestoes'], 'idle');
+  setUploadRuntimeState(selectedKinds, 'processing', 'Validando todas as abas da planilha');
 
   for (const step of steps) {
     const sheetName = mapping[step.kind];
@@ -6997,45 +7298,72 @@ async function _processExcelSheets(workbook, mapping, file) {
       continue;
     }
 
-    // 3) Logar metadata no upload_history (usando o mesmo file.name e mesmo storagePath)
-    try {
-      const rec = await supaLogUpload(step.kind, file.name, file.size, linhas, storagePath, groupId);
-      if (rec) LAST_UPLOADS[step.kind] = rec;
-    } catch(e) { console.warn('supaLogUpload:', e); }
-
-    // 4) Rolling backup por tipo
-    try { await supaEnforceRollingBackup(step.kind); } catch(e) { console.warn('rolling:', e); }
   }
 
-  // persistir todos os dados parseados no Supabase
-  try {
-    const processedKinds = Object.entries(results).filter(([k, v]) => v.ok).map(([k]) => k);
-    if (processedKinds.length) await supaSaveAllData(processedKinds);
-  } catch(e) { console.warn('supaSaveAllData:', e); }
+  const parseErrors = Object.entries(results).filter(([, value]) => value.error);
+  if (parseErrors.length) {
+    restoreInMemoryUploadState(memorySnapshot);
+    const summary = parseErrors.map(([kind, value]) => `${kind}: ${value.error}`).join(' · ');
+    setUploadRuntimeState(selectedKinds, 'failed', summary);
+    _renderExcelProgress(null);
+    renderUploadsCentral();
+    authToast(`❌ Planilha rejeitada: ${parseErrors.length} aba(s) com erro. Nenhum dado foi alterado.`, 'err', 7000);
+    parseErrors.forEach(([kind, value]) => {
+      console.error(`[Excel] ${kind}:`, value.error);
+      authToast(`❌ ${kind}: ${value.error}`, 'err', 7000);
+    });
+    return;
+  }
 
-  // 5) Re-render tudo com debounce
+  const processedItems = Object.entries(results)
+    .filter(([, value]) => value.ok)
+    .map(([kind, value]) => ({ kind, linhas: value.linhas }));
+  if (!processedItems.length) {
+    restoreInMemoryUploadState(memorySnapshot);
+    setUploadRuntimeState(selectedKinds, 'failed', 'Nenhuma aba foi selecionada para processamento');
+    _renderExcelProgress(null);
+    authToast('❌ Nenhuma aba válida foi processada.', 'err', 5000);
+    return;
+  }
+
+  try {
+    _renderExcelProgress('📤 Sincronizando arquivo, dados e histórico...');
+    await commitPreparedUpload({
+      file,
+      storageType: 'excel',
+      items: processedItems,
+      groupId,
+      memorySnapshot,
+    });
+  } catch (error) {
+    restoreInMemoryUploadState(memorySnapshot);
+    setUploadRuntimeState(selectedKinds, 'failed', error.message || String(error));
+    _renderExcelProgress(null);
+    renderUploadsCentral();
+    authToast('❌ Upload da planilha não concluído: ' + error.message, 'err', 8000);
+    return;
+  }
+
+  await Promise.all(processedItems.map(item => runAsyncSafely(
+    supaEnforceRollingBackup(item.kind),
+    `Excel/limpeza de backups/${item.kind}`,
+    `A planilha foi concluída, mas os backups antigos de ${item.kind} não puderam ser limpos.`
+  )));
+
+  // 2) Re-render apenas depois do commit completo.
   debouncedRender();
   renderUploadsCentral();
   renderSourcesHeaders();
   updateEditCount();
   _renderExcelProgress(null);
 
-  // 6) Toast de resumo
+  // 3) Toast de resumo
   const ok = Object.entries(results).filter(([k, v]) => v.ok);
-  const errs = Object.entries(results).filter(([k, v]) => v.error);
   const skipped = Object.entries(results).filter(([k, v]) => v.skipped);
   const parts = [];
   if (ok.length) parts.push(`✅ ${ok.length} aba(s) processada(s)`);
   if (skipped.length) parts.push(`⏭️ ${skipped.length} pulada(s)`);
-  if (errs.length) parts.push(`❌ ${errs.length} com erro`);
-  const kind = errs.length ? 'err' : (skipped.length && !ok.length ? 'warn' : 'ok');
-  authToast('📊 ' + parts.join(' · '), kind, 5000);
-  if (errs.length) {
-    console.warn('[Excel] erros por aba:', errs);
-    setTimeout(() => {
-      errs.forEach(([k, v]) => authToast(`❌ ${k}: ${v.error}`, 'err', 6000));
-    }, 500);
-  }
+  authToast('📊 ' + parts.join(' · ') + ' · 📦 sincronizado', 'ok', 5000);
 }
 
 // Renderiza mensagem de progresso dentro do card Excel
@@ -7119,6 +7447,21 @@ function fmtBytes(b) {
   return (b/(1024*1024)).toFixed(1) + ' MB';
 }
 
+function renderUploadRuntimeBlock(kinds) {
+  const states = (Array.isArray(kinds) ? kinds : [kinds])
+    .map(kind => UPLOAD_RUNTIME_STATE[kind])
+    .filter(Boolean);
+  const processing = states.find(state => state.status === 'processing');
+  if (processing) {
+    return `<div role="status" class="upload-card-meta" style="background:var(--sem-alerta-bg); color:var(--sem-alerta);">⏳ ${escHtml(processing.message || 'Upload em processamento...')}</div>`;
+  }
+  const failed = states.find(state => state.status === 'failed');
+  if (failed) {
+    return `<div role="alert" class="upload-card-meta" style="background:var(--fgr-red-light); color:var(--sem-erro);">❌ Última tentativa não foi aplicada: ${escHtml(failed.message || 'falha desconhecida')}</div>`;
+  }
+  return '';
+}
+
 function renderUploadsCentral() {
   const root = document.getElementById('uploadsCentral');
   if (!root) return;
@@ -7130,6 +7473,8 @@ function renderUploadsCentral() {
   // "Última planilha Excel" = pegar o registro mais recente com upload_group_id
   // que existe em pelo menos um dos LAST_UPLOADS.
   const groupCandidates = kinds.map(k => LAST_UPLOADS[k]).filter(u => u && u.upload_group_id);
+  const excelRuntimeBlock = renderUploadRuntimeBlock(kinds);
+  const excelProcessing = kinds.some(kind => UPLOAD_RUNTIME_STATE[kind]?.status === 'processing');
   let lastExcel = null;
   if (groupCandidates.length) {
     // Ordenar por data e pegar o mais recente
@@ -7154,10 +7499,11 @@ function renderUploadsCentral() {
     <div class="upload-excel-card" id="excelUploadCard">
       <h3>📊 Upload Completo (Excel) <span style="font-size:11px; color:#059669; font-weight:600; margin-left:4px;">RECOMENDADO</span></h3>
       <p class="subtitle">Envie a planilha inteira (<code>.xlsx</code> ou <code>.xlsm</code>) e o dashboard extrai automaticamente as abas <strong>Tendência</strong>, <strong>FlowsValor</strong> e <strong>Gestões</strong>.</p>
+      ${excelRuntimeBlock}
       ${excelMeta}
       <div class="upload-progress" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" style="display:none;"></div>
       <div class="upload-card-actions">
-        <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() ? '' : 'disabled'} onclick="document.getElementById('fileInput_excel').click()">
+        <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() && !excelProcessing ? '' : 'disabled'} onclick="document.getElementById('fileInput_excel').click()">
           📊 ${lastExcel ? 'Substituir planilha' : 'Escolher planilha Excel'}
         </button>
         <button class="btn-sm" onclick="openUploadsHistory('tendencia')" title="Ver todos os uploads">📜 Histórico</button>
@@ -7171,6 +7517,8 @@ function renderUploadsCentral() {
   const csvCardsHtml = kinds.map(k => {
     const meta = UPLOAD_META[k];
     const last = LAST_UPLOADS[k];
+    const runtimeBlock = renderUploadRuntimeBlock(k);
+    const isProcessing = UPLOAD_RUNTIME_STATE[k]?.status === 'processing';
     const permissionAttr = meta.global
       ? `data-admin-control ${isAdminGeral() ? '' : 'disabled'}`
       : `data-edit-control ${isEditorDaObraAtiva() ? '' : 'disabled'}`;
@@ -7199,9 +7547,10 @@ function renderUploadsCentral() {
             <p class="upload-card-sub">${escHtml(meta.desc)}</p>
           </div>
         </div>
+        ${runtimeBlock}
         ${metaBlock}
         <div class="upload-card-actions">
-          <button class="btn-sm primary" data-editor-only ${permissionAttr} onclick="document.getElementById('fileInput_${k}').click()">
+          <button class="btn-sm primary" data-editor-only ${permissionAttr} ${isProcessing ? 'disabled' : ''} onclick="document.getElementById('fileInput_${k}').click()">
             📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
           </button>
           <button class="btn-sm" onclick="openUploadsHistory('${k}')" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
@@ -7407,10 +7756,17 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     if (!confirmed) return;
   }
   authToast('⏳ Ativando arquivo...', 'info', 2500);
+  const memorySnapshot = captureInMemoryUploadState();
+  let dashboardSnapshot = null;
+  let dashboardPersisted = false;
+  let activation = null;
+  let alvo = null;
+  setUploadRuntimeState(kind, 'processing', 'Validando e ativando arquivo do histórico');
   try {
     // 1) Buscar o registro alvo
-    const { data: alvo, error: readErr } = await SUPA.from('upload_history')
+    const { data: targetRecord, error: readErr } = await SUPA.from('upload_history')
       .select('*').eq('id', uploadId).maybeSingle();
+    alvo = targetRecord;
     if (readErr || !alvo) throw new Error('Arquivo não encontrado no banco');
     if (alvo.codigo_obra !== OBRA_ATIVA) throw new Error('Arquivo fora do escopo da obra ativa');
     if (!alvo.storage_path) throw new Error('Arquivo não tem cópia no Storage (upload muito antigo). Impossível reativar.');
@@ -7437,27 +7793,39 @@ async function marcarUploadComoAtivo(uploadId, kind) {
       const csv = await resp.text();
       _parsearECarregar(kind, csv);
     }
-    // 4) Marcar novo ativo no banco (desativa os outros)
-    const { error: updErr } = await SUPA.from('upload_history')
-      .update({ is_active: false })
-      .eq('codigo_obra', alvo.codigo_obra).eq('tipo', kind).eq('is_active', true);
-    if (updErr) console.warn('[v0.60] desativar anteriores:', updErr);
-    const { error: setErr } = await SUPA.from('upload_history')
-      .update({ is_active: true }).eq('codigo_obra', OBRA_ATIVA).eq('id', uploadId);
-    if (setErr) throw setErr;
-    // 5) Persistir dados novos no dashboard_config + re-renderizar com debounce
+    // 4) Persistir antes de ativar; ambos possuem compensação em caso de falha.
+    dashboardSnapshot = await supaCaptureDashboardRows([kind]);
     await supaSaveAllData([kind]);
-    LAST_UPLOADS[kind] = { ...alvo, is_active: true };
-    debouncedRender();
-    renderUploadsCentral();
-    renderSourcesHeaders();
-    // 6) Re-renderizar o modal pra refletir o novo ativo
-    await _renderUploadsHistoryList(kind);
-    authToast(`✅ Arquivo ativado: ${alvo.nome_arquivo}`, 'ok', 3500);
+    dashboardPersisted = true;
+    activation = await supaActivateUploadRecord(alvo);
   } catch (e) {
     console.error('[v0.60] marcarUploadComoAtivo:', e);
+    const cleanupErrors = [];
+    if (activation) {
+      try { await supaRollbackUploadActivation(activation); }
+      catch (cleanupError) { cleanupErrors.push('arquivo ativo: ' + cleanupError.message); }
+    }
+    if (dashboardPersisted) {
+      try { await supaRestoreDashboardRows(dashboardSnapshot); }
+      catch (cleanupError) { cleanupErrors.push('dados anteriores: ' + cleanupError.message); }
+    }
+    restoreInMemoryUploadState(memorySnapshot);
+    setUploadRuntimeState(kind, 'failed', e.message || String(e));
+    renderUploadsCentral();
     authToast('❌ Erro ao ativar: ' + e.message, 'err', 5000);
+    if (cleanupErrors.length) {
+      authToast('⚠️ A recuperação ficou parcial: ' + cleanupErrors.join('; '), 'warn', 8000);
+    }
+    return;
   }
+
+  LAST_UPLOADS[kind] = activation.active;
+  setUploadRuntimeState(kind, 'active');
+  debouncedRender();
+  renderUploadsCentral();
+  renderSourcesHeaders();
+  await _renderUploadsHistoryList(kind);
+  authToast(`✅ Arquivo ativado: ${alvo.nome_arquivo}`, 'ok', 3500);
 }
 
 // Helper interno: parseia CSV do tipo correspondente e atualiza estruturas em memória
@@ -7468,7 +7836,9 @@ function _parsearECarregar(kind, csv) {
     if (!fu.includes('LICITAÇÃO') || !fu.includes('IPCA') || !fu.includes('INCC') || !fu.includes('EVOLUÇÃO')) {
       throw new Error('CSV Tendência em formato inesperado');
     }
-    DATA_T = parseTendencia(csv);
+    const parsed = parseTendencia(csv);
+    if (!parsed.length) throw new Error('CSV Tendência não retornou linhas válidas');
+    DATA_T = parsed;
     // rebuildar datalist de insumos após upload novo
     try { INSUMOS_OPTIONS = buildInsumosList(); buildDatalist(); } catch(e) { reportNonFatalError('Histórico/reconstruir lista de insumos', e); }
         // fallback pra coluna Gestão vazia (virada de mês)
@@ -7477,7 +7847,9 @@ function _parsearECarregar(kind, csv) {
     if (!firstLines.includes('Cod_aditivo') && !firstLines.includes('INSUMO PLANEJAMENTO') && !firstLines.includes('CONTROLE DE ALTERAÇÕES')) {
       throw new Error('CSV Flows em formato inesperado');
     }
-    DATA_F = parseFlowsValor(csv);
+    const parsed = parseFlowsValor(csv);
+    if (!parsed.length) throw new Error('CSV Flows não retornou aditivos válidos');
+    DATA_F = parsed;
     applyManuals();
     loadClassifications();
   } else if (kind === 'gestoes') {
@@ -7515,17 +7887,30 @@ async function excluirUpload(uploadId, kind) {
     );
     if (!confirmed) return;
     authToast('🗑️ Excluindo...', 'info', 2000);
-    // 1) Apagar do Storage
+    // Verifica antes se o arquivo é compartilhado por outros registros do Excel.
     const cleanStoragePath = sanitizeStoragePath(rec.storage_path);
+    let removeStoredFile = false;
     if (cleanStoragePath) {
-      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove([cleanStoragePath]);
-      if (sErr) console.warn('[v0.60] storage remove:', sErr);
+      const { data: otherReferences, error: referenceError } = await SUPA.from('upload_history')
+        .select('id')
+        .eq('codigo_obra', OBRA_ATIVA)
+        .eq('storage_path', cleanStoragePath)
+        .neq('id', uploadId)
+        .limit(1);
+      if (referenceError) throw referenceError;
+      removeStoredFile = !otherReferences?.length;
     }
-    // 2) Apagar do banco
+    // Remove primeiro o metadata para nunca deixar o histórico apontando para arquivo ausente.
     const { error: dbErr } = await SUPA.from('upload_history').delete()
       .eq('codigo_obra', OBRA_ATIVA).eq('id', uploadId);
     if (dbErr) throw dbErr;
-    // 3) Re-render do modal
+    if (removeStoredFile) {
+      const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove([cleanStoragePath]);
+      if (sErr) {
+        reportNonFatalError('Uploads/remover arquivo sem referências', sErr, 'O registro foi excluído, mas o arquivo órfão não pôde ser removido do Storage.');
+      }
+    }
+    // Re-render do modal
     await _renderUploadsHistoryList(kind);
     authToast(`✅ Arquivo excluído`, 'ok', 3000);
   } catch (e) {
@@ -10894,6 +11279,14 @@ updateSupaBadge();
 
   // Auth PRIMEIRO, render DEPOIS — garante que botões de edição reflitam permissão real
   await initAuth().catch(e => console.warn('[AUTH] initAuth err:', e));
+  try {
+    const recoveredUploads = await supaCleanupIncompleteUploads();
+    if (recoveredUploads > 0) {
+      authToast(`🧹 ${recoveredUploads} upload(s) incompleto(s) foram limpos.`, 'info', 4500);
+    }
+  } catch (error) {
+    reportNonFatalError('Upload/recuperar tentativas incompletas', error, 'Não foi possível limpar uploads incompletos antigos.');
+  }
 
   renderAll();
   updateEditCount();

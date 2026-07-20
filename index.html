@@ -264,9 +264,11 @@
   .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg-card);
     padding: 6px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); flex-wrap: wrap; }
   .tab { padding: 9px 18px; cursor: pointer; border-radius: 7px;
+    border: 0; background: transparent; font: inherit;
     font-size: 13px; font-weight: 500; color: var(--text-soft); transition: all 0.15s; }
   .tab:hover { background: var(--bg-soft); color: var(--text-strong); }
   .tab.active { background: var(--fgr-red-deep); color: white; }
+  .tab:focus-visible { outline: 2px solid var(--fgr-red-vivid); outline-offset: 2px; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -938,17 +940,17 @@ body:not(.is-admin-geral) [data-admin-control],
 }
 </style>
 
-<div class="tabs">
-  <div class="tab active" data-tab="visao">📈 Visão Geral</div>
-  <div class="tab" data-tab="flows">🔗 Flows / Aditivos</div>
-  <div class="tab" data-tab="projecao">🔮 Tendência de Obra</div>
-  <div class="tab" data-tab="projecao_ctrl">📦 Controle Projeção</div>
-  <div class="tab" data-tab="detalhe">📋 Detalhamento</div>
-  <div class="tab" data-tab="historico">📅 Histórico Mensal</div>
-  <div class="tab" data-tab="uploads">📤 Uploads</div>
-  <div class="tab" data-tab="admin" data-admin-only>⚙️ Admin</div>
-  <div class="tab" data-tab="manual">ℹ️ Manual</div>
-</div>
+<nav class="tabs" role="tablist" aria-label="Seções do dashboard">
+  <button type="button" class="tab active" id="tab-btn-visao" data-tab="visao" role="tab" aria-controls="tab-visao" aria-selected="true" tabindex="0">📈 Visão Geral</button>
+  <button type="button" class="tab" id="tab-btn-flows" data-tab="flows" role="tab" aria-controls="tab-flows" aria-selected="false" tabindex="-1">🔗 Flows / Aditivos</button>
+  <button type="button" class="tab" id="tab-btn-projecao" data-tab="projecao" role="tab" aria-controls="tab-projecao" aria-selected="false" tabindex="-1">🔮 Tendência de Obra</button>
+  <button type="button" class="tab" id="tab-btn-projecao_ctrl" data-tab="projecao_ctrl" role="tab" aria-controls="tab-projecao_ctrl" aria-selected="false" tabindex="-1">📦 Controle Projeção</button>
+  <button type="button" class="tab" id="tab-btn-detalhe" data-tab="detalhe" role="tab" aria-controls="tab-detalhe" aria-selected="false" tabindex="-1">📋 Detalhamento</button>
+  <button type="button" class="tab" id="tab-btn-historico" data-tab="historico" role="tab" aria-controls="tab-historico" aria-selected="false" tabindex="-1">📅 Histórico Mensal</button>
+  <button type="button" class="tab" id="tab-btn-uploads" data-tab="uploads" role="tab" aria-controls="tab-uploads" aria-selected="false" tabindex="-1">📤 Uploads</button>
+  <button type="button" class="tab" id="tab-btn-admin" data-tab="admin" data-admin-only role="tab" aria-controls="tab-admin" aria-selected="false" tabindex="-1">⚙️ Admin</button>
+  <button type="button" class="tab" id="tab-btn-manual" data-tab="manual" role="tab" aria-controls="tab-manual" aria-selected="false" tabindex="-1">ℹ️ Manual</button>
+</nav>
 </div><!-- /page-header -->
 
 <!-- Loading overlay -->
@@ -959,7 +961,7 @@ body:not(.is-admin-geral) [data-admin-control],
 <div class="page-body">
 
 <!-- VISÃO GERAL -->
-<div class="tab-content active" id="tab-visao">
+<div class="tab-content active" id="tab-visao" role="tabpanel" aria-labelledby="tab-btn-visao" tabindex="0">
   <div class="sources-header" id="srcHeader_visao" data-sources="tendencia,flows"></div>
   <div id="alertBanner"></div>
   <div class="kpis" id="kpis"></div>
@@ -988,7 +990,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- DETALHAMENTO -->
-<div class="tab-content" id="tab-detalhe">
+<div class="tab-content" id="tab-detalhe" role="tabpanel" aria-labelledby="tab-btn-detalhe" tabindex="0">
   <div class="sources-header" id="srcHeader_detalhe" data-sources="tendencia"></div>
   <div class="card">
     <h2>📋 Detalhamento por Item
@@ -1042,7 +1044,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- FLOWS -->
-<div class="tab-content" id="tab-flows">
+<div class="tab-content" id="tab-flows" role="tabpanel" aria-labelledby="tab-btn-flows" tabindex="0">
   <div class="sources-header" id="srcHeader_flows" data-sources="flows"></div>
   <div class="flow-summary" id="flowSummary"></div>
 
@@ -1128,7 +1130,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- HISTÓRICO -->
-<div class="tab-content" id="tab-historico">
+<div class="tab-content" id="tab-historico" role="tabpanel" aria-labelledby="tab-btn-historico" tabindex="0">
   <div class="sources-header" id="srcHeader_historico" data-sources="gestoes"></div>
   <div class="kpis" id="histKpis"></div>
 
@@ -1175,7 +1177,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- PROJEÇÃO / TENDÊNCIA DE OBRA -->
-<div class="tab-content" id="tab-projecao">
+<div class="tab-content" id="tab-projecao" role="tabpanel" aria-labelledby="tab-btn-projecao" tabindex="0">
   <div class="sources-header" id="srcHeader_projecao" data-sources="gestoes,tendencia"></div>
 
   <div class="card">
@@ -1275,7 +1277,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- CONTROLE PROJEÇÃO -->
-<div class="tab-content" id="tab-projecao_ctrl">
+<div class="tab-content" id="tab-projecao_ctrl" role="tabpanel" aria-labelledby="tab-btn-projecao_ctrl" tabindex="0">
   <div class="sources-header" id="srcHeader_projecao_ctrl" data-sources="tendencia,flows"></div>
   <div class="card">
     <h2>📦 Controle da Verba de Projeção de Gastos <span class="hint">insumo I011890</span></h2>
@@ -1374,7 +1376,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- UPLOADS (v0.52) -->
-<div class="tab-content" id="tab-uploads">
+<div class="tab-content" id="tab-uploads" role="tabpanel" aria-labelledby="tab-btn-uploads" tabindex="0">
   <div class="card">
     <h2>📤 Central de Uploads</h2>
     <p style="font-size:13px; color:var(--text-medium); margin: 8px 0 14px;">
@@ -1402,7 +1404,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- ADMIN (só admin geral) -->
-<div class="tab-content" id="tab-admin">
+<div class="tab-content" id="tab-admin" role="tabpanel" aria-labelledby="tab-btn-admin" tabindex="0">
   <div class="card">
     <h2>⚙️ Administração <span class="hint">só visível para admin geral</span></h2>
     <p style="font-size:12.5px; color:var(--text-medium); margin: 8px 0 12px;">
@@ -1603,7 +1605,7 @@ body:not(.is-admin-geral) [data-admin-control],
 </div>
 
 <!-- MANUAL -->
-<div class="tab-content" id="tab-manual">
+<div class="tab-content" id="tab-manual" role="tabpanel" aria-labelledby="tab-btn-manual" tabindex="0">
   <div class="card">
     <h2>ℹ️ Manual</h2>
 
@@ -4069,26 +4071,56 @@ function restaurarAbaAtiva() {
   } catch(e) {}
 }
 
-document.querySelectorAll('.tab').forEach(t => {
-  t.onclick = () => {
-    if (t.dataset.tab === 'admin' && !requireAdmin('acessar a administração')) return;
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
-    // Salvar aba ativa
-    salvarAbaAtiva(t.dataset.tab);
-    // Re-inicializar componentes ao entrar em abas específicas (garante DOM pronto)
-    if (t.dataset.tab === 'projecao_ctrl' && typeof initProjCtrl === 'function') {
-      initProjCtrl();
+function activateTab(tab) {
+  if (tab.dataset.tab === 'admin' && !requireAdmin('acessar a administração')) return false;
+
+  document.querySelectorAll('.tab').forEach(item => {
+    const isActive = item === tab;
+    item.classList.toggle('active', isActive);
+    item.setAttribute('aria-selected', String(isActive));
+    item.tabIndex = isActive ? 0 : -1;
+  });
+  document.querySelectorAll('.tab-content').forEach(panel => {
+    panel.classList.toggle('active', panel.id === 'tab-' + tab.dataset.tab);
+  });
+
+  salvarAbaAtiva(tab.dataset.tab);
+  if (tab.dataset.tab === 'projecao_ctrl' && typeof initProjCtrl === 'function') {
+    initProjCtrl();
+  }
+  if (tab.dataset.tab === 'admin') {
+    if (typeof renderPendentesAdmin === 'function') renderPendentesAdmin();
+    if (typeof renderObrasAdmin === 'function') renderObrasAdmin();
+    if (typeof renderEditoresAdmin === 'function') renderEditoresAdmin();
+  }
+  return true;
+}
+
+function getVisibleTabs() {
+  return Array.from(document.querySelectorAll('.tab')).filter(tab => tab.offsetParent !== null);
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => activateTab(tab));
+  tab.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    const tabs = getVisibleTabs();
+    const currentIndex = tabs.indexOf(tab);
+    if (currentIndex < 0) return;
+
+    event.preventDefault();
+    let nextIndex = currentIndex;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = tabs.length - 1;
+    if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+
+    const nextTab = tabs[nextIndex];
+    if (activateTab(nextTab)) {
+      nextTab.focus();
+      nextTab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
-    // v0.61/0.62: ao entrar na aba Admin, carregar os dados do Supabase
-    if (t.dataset.tab === 'admin') {
-      if (typeof renderPendentesAdmin === 'function') renderPendentesAdmin();
-      if (typeof renderObrasAdmin === 'function') renderObrasAdmin();
-      if (typeof renderEditoresAdmin === 'function') renderEditoresAdmin();
-    }
-  };
+  });
 });
 
 // ============ VISÃO GERAL ============

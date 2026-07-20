@@ -150,8 +150,8 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 - [ ] Criar `h1` e hierarquia consistente de headings.
 - [ ] Adotar `header`, `nav`, `main`, `section` e `footer`.
-- [ ] Converter abas em botões com `tablist`, `tab` e `tabpanel`.
-- [ ] Implementar navegação de abas por setas e teclado.
+- [x] Converter abas em botões com `tablist`, `tab` e `tabpanel`.
+- [x] Implementar navegação de abas por setas e teclado.
 - [ ] Associar labels e campos com `for` e `id`.
 - [ ] Usar formulários e eventos `submit`.
 - [ ] Adicionar `role="dialog"`, `aria-modal` e nomes acessíveis aos modais.

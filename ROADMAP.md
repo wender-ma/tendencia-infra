@@ -61,7 +61,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Revisar e endurecer na migration as políticas do bucket privado `uploads-history`.
 - [ ] Confirmar se visualização anônima de dados é permitida pelo negócio.
 - [ ] Auditar logs e dados para identificar alterações indevidas anteriores.
-- [ ] Testar a API diretamente como anônimo, usuário pendente, editor e administrador.
+- [x] Testar a API diretamente como anônimo, usuário rejeitado, editor e administrador.
 - [x] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
 
 Critério de conclusão: chamadas anônimas de escrita, operações administrativas por não administradores e alterações em obras não atribuídas são rejeitadas pelo banco.

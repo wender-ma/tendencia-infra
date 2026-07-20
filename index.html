@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FGR · Dashboard de Tendência</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADvklEQVR42sWWQYiVVRTHf+fc+7556ejMgzEawnAVZbMZMMyQwFkkRLRwkZIxCxUaXRkuTAaGyClNiEAwwpQoZmObcGGb0qDSqBZTriQXESTYjCnzHJs337v3nhbvPZnM5zz1vTzwwQffd7/zv7/zP+e7jjaHAAoYMKTy6DGvX5aEyz8Yv9LpcAvuR5xsmMy0+nOm9kum1myNtjN5BPoEd8TL/j1OzlRBK5AqkJqt8+1ALvXka5TSuOoXq5RnrkDFQ9Etsv6+BCi1rRkw7OTp152cU/DXIPdQpPY86R1I6/0gT0A3yLtedo86+bEKOgfBQ1ZPnnvQBKFtBBouj8BqYenbTj9brbxwDSoCmQOfIBmk5ZBNw1QJHm6LgAbyCGxSefINL+cegt6r9XpTexYc6HLwJ5LtPBLto/UiT9xpQ3fl8i5gr5fhV1Q+mQWqNeQeIEBlKRSr8PehaOtORDvfCtGWk68Sut7xemyN8OpVyAW81mqcEuQlKF5MnB6NadN5o9wYSELzPpTFkFv9el7lsTEv35VgZfkW5AKUwJ+Ktu/NaIdmIDVE3zOBxgcU2O3kpe1OTs4DOeSu7vIIeREyAQ5HW3882tmFXmnVV02TPyL4o17eH3Fychbyam1nWaPePZBdSUyOBFtxPNpZXQT3XRF4VmXFfidn+oWBmX8jTwKhBNnXyd4bi7b3TyO2irwlAa852bDTyRkB5m5BnkHWBRyN9uLhaKcM8CJEwMzaI2AyU0v1FnP1FouQL4PsL/jtrWDPfZXsDwFUlZjSPY/z2w6iG3A1g94FycMyyCaNj0dDGvndyL2ASS15f39/15YtW/Z1d3c/HmOMqvofb42Pj29tWYBApqBWn+dLwZ9Otn9PsLFqHXkwA0usXbt21fDw8Dc9PT0rQwiINLXV1nsaxQapC/R74/MqkImQm+G9Z/PmzS9v3LjxRJ7nXL9+vaKqvi0luI0IuqAoIgSgt7fX7dq168OBgYEdMzMzuYh451wxxph3REBdhJkZBgwODj41ODi4Y3p6uuy9X954Z8mSJdkdStC+A4mIyPz8fFDV7KZAs3DhwoVPK5XKNVV1HRVQF+GBYGYhyzJ/6dKlbw8cOLC9YyVYLGKMc845ROS2AynG2FkBIqLNknSUgIj4EAJ9fX3rt23btjPP8/KCP/nNmJiYmOgYATOjUCh0Dw0NfdCsCzoqoCFidna28sBMWI/sgQooFAr6vwyiJmakXC5fDCHcEBFt9Wzg21D7UCgU/NTU1E8HDx5cl+f5XR0O/gG9K4BsGZqG8gAAAABJRU5ErkJggg==">
 <meta name="theme-color" content="#0a0a0a">
@@ -2082,15 +2083,19 @@ async function carregarObras() {
 function renderObrasDropdown() {
   const el = document.getElementById('obraSelector');
   if (!el) return;
+  el.replaceChildren();
   if (!OBRAS.length) {
-    el.innerHTML = '<option value="">Nenhuma obra cadastrada</option>';
+    el.append(new Option('Nenhuma obra cadastrada', ''));
     el.disabled = true;
     return;
   }
-  el.innerHTML = OBRAS
+  OBRAS
     .filter(o => o.ativa)
-    .map(o => `<option value="${escAttr(o.codigo_obra)}" ${o.codigo_obra === OBRA_ATIVA ? 'selected' : ''}>${escHtml(o.nome)}</option>`)
-    .join('');
+    .forEach(o => {
+      const option = new Option(o.nome, o.codigo_obra);
+      option.selected = o.codigo_obra === OBRA_ATIVA;
+      el.append(option);
+    });
   el.disabled = false;
   // Atualiza título grande do header
   const titulo = document.getElementById('obraNomeGrande');
@@ -3401,25 +3406,25 @@ function updateSupaBadge() {
   el.style.border = '1px solid ' + baseBorder;
   el.style.background = baseBg;
   if (!SUPA) {
-    el.innerHTML = '🔴 Offline';
+    el.textContent = '🔴 Offline';
     el.style.background = 'rgba(220,38,38,0.35)';
     el.style.borderColor = 'rgba(255,150,150,0.4)';
     el.title = 'Não conectado ao Supabase - dados só ficam salvos aqui';
     return;
   }
   if (SUPA_STATUS.lastError) {
-    el.innerHTML = '⚠️ Erro sync';
+    el.textContent = '⚠️ Erro sync';
     el.style.background = 'rgba(180,83,9,0.35)';
     el.style.borderColor = 'rgba(255,200,100,0.4)';
     el.title = 'Último erro: ' + SUPA_STATUS.lastError;
     return;
   }
   if (SUPA_STATUS.lastSync) {
-    el.innerHTML = '☁️ Sincronizado';
+    el.textContent = '☁️ Sincronizado';
     el.title = 'Última sincronização: ' + SUPA_STATUS.lastSync.toLocaleTimeString('pt-BR');
     return;
   }
-  el.innerHTML = '🔗 Conectado';
+  el.textContent = '🔗 Conectado';
   el.title = 'Conectado ao Supabase (ainda sem sincronização recente)';
 }
 

@@ -89,6 +89,7 @@ Critério de conclusão: nenhum fluxo de escrita depende apenas de elementos esc
 - [ ] Classificar cada valor como constante, interno ou externo.
 - [ ] Substituir `innerHTML` por `textContent` quando não houver marcação necessária.
 - [x] Criar opções dinâmicas com `new Option()` nos filtros auditados (implementado em `1cb9096`).
+- [x] Criar opções dinâmicas com `new Option()` no seletor de obra do header.
 - [x] Escapar grupos e códigos usados nos pontos auditados da Tendência (implementado em `1cb9096`).
 - [x] Escapar datas, motivos e descrições usados nos pontos auditados de Flows (implementado em `1cb9096`).
 - [x] Escapar nomes de arquivos e abas de Excel usados em HTML (implementado em `1cb9096`).
@@ -136,7 +137,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 
 ### 7. Corrigir responsividade
 
-- [ ] Adicionar meta `viewport`.
+- [x] Adicionar meta `viewport`.
 - [ ] Adicionar rolagem horizontal aos containers de tabela.
 - [ ] Adaptar header e ações para telas pequenas.
 - [ ] Adaptar abas para mobile sem perda de acesso.

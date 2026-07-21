@@ -70,8 +70,8 @@ export function parseGestoesFile(text) {
     }
 
     const entry = aggregated.get(aggregateKey);
-    entry.values[management] = (entry.values[management] || 0)
-      + (parseNumber(row[columns.netValue]) || 0);
+    entry.values[management] =
+      (entry.values[management] || 0) + (parseNumber(row[columns.netValue]) || 0);
     managementNames.add(management);
     report.accepted += 1;
 
@@ -109,9 +109,9 @@ export function parseGestoesFile(text) {
   for (const item of items) {
     totals[item.codigo_obra] ||= {};
     for (const management of managements) {
-      totals[item.codigo_obra][management] = Math.round(
-        ((totals[item.codigo_obra][management] || 0) + (item[management] || 0)) * 100,
-      ) / 100;
+      totals[item.codigo_obra][management] =
+        Math.round(((totals[item.codigo_obra][management] || 0) + (item[management] || 0)) * 100) /
+        100;
     }
   }
 

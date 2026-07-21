@@ -41,6 +41,7 @@ Dashboard de tendência orçamentária
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
 - `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
+- `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
 - `experiments/preview-modal.html`: protótipo isolado do modal.
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
@@ -78,6 +79,12 @@ Para executar todos os contratos automatizados:
 
 ```bash
 npm test
+```
+
+Para validar lint, formatação, contratos e build em sequência:
+
+```bash
+npm run check
 ```
 
 Os testes podem também ser executados individualmente:

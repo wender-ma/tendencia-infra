@@ -8,7 +8,12 @@ export function createPerformanceMonitor({
 
   function record(name, durationMs) {
     const duration = Number.isFinite(durationMs) ? durationMs : 0;
-    const current = operations[name] || { count: 0, totalMs: 0, lastMs: 0, maxMs: 0 };
+    const current = operations[name] || {
+      count: 0,
+      totalMs: 0,
+      lastMs: 0,
+      maxMs: 0,
+    };
     current.count += 1;
     current.totalMs += duration;
     current.lastMs = duration;
@@ -59,4 +64,3 @@ export function installPerformanceMonitor(service, target = window) {
     value: service,
   });
 }
-

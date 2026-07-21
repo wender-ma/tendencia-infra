@@ -15,16 +15,16 @@ export function resolvePermissions(rows) {
   const none = emptyPermissions();
   if (!Array.isArray(rows) || rows.length === 0) return none;
 
-  const activeRows = rows.filter(row => (row.status || 'active') === 'active');
+  const activeRows = rows.filter((row) => (row.status || 'active') === 'active');
   if (activeRows.length === 0) return none;
 
-  const isPending = activeRows.every(row => row.role === 'pending');
+  const isPending = activeRows.every((row) => row.role === 'pending');
   if (isPending) return { ...none, isPending: true, role: 'pending' };
 
-  const isAdminGeral = activeRows.some(row => row.role === 'admin');
+  const isAdminGeral = activeRows.some((row) => row.role === 'admin');
   const editaObras = activeRows
-    .filter(row => row.role === 'editor' && row.codigo_obra != null)
-    .map(row => row.codigo_obra);
+    .filter((row) => row.role === 'editor' && row.codigo_obra != null)
+    .map((row) => row.codigo_obra);
   const isEditor = isAdminGeral || editaObras.length > 0;
 
   if (!isEditor) return none;
@@ -131,7 +131,7 @@ export function createAuthService({
       sessionStorage.removeItem(FRESH_LOGIN_KEY);
       if (!raw) return false;
       const timestamp = Number.parseInt(raw, 10);
-      return Number.isFinite(timestamp) && (Date.now() - timestamp) < FRESH_LOGIN_WINDOW_MS;
+      return Number.isFinite(timestamp) && Date.now() - timestamp < FRESH_LOGIN_WINDOW_MS;
     } catch (error) {
       reportError('Auth/sessao de login recente', error);
       return false;
@@ -141,7 +141,11 @@ export function createAuthService({
   function cleanAuthUrl(event, session) {
     if (!session || (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION')) return;
     if (!window.history.replaceState) return;
-    if (!window.location.search.includes('code=') && !window.location.hash.includes('access_token=')) return;
+    if (
+      !window.location.search.includes('code=') &&
+      !window.location.hash.includes('access_token=')
+    )
+      return;
     window.history.replaceState({}, '', window.location.origin + window.location.pathname);
   }
 
@@ -163,7 +167,9 @@ export function createAuthService({
     }
 
     try {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
       await applySession(session);
     } catch (error) {
       console.warn('[AUTH] getSession err:', error);
@@ -209,7 +215,10 @@ export function createAuthService({
   async function signInWithPassword({ email, password }) {
     if (!isAvailable()) return { error: new Error('Supabase nao conectado') };
     markFreshLogin();
-    const result = await supabaseClient.auth.signInWithPassword({ email, password });
+    const result = await supabaseClient.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (result.error) clearFreshLogin();
     return result;
   }

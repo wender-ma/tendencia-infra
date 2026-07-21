@@ -101,7 +101,7 @@ function aliasDescriptor(state, [section, property]) {
   return {
     configurable: true,
     get: () => state[section][property],
-    set: value => {
+    set: (value) => {
       state[section][property] = value;
     },
   };

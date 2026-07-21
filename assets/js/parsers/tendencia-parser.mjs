@@ -24,10 +24,16 @@ export function parseTendenciaFile(text, options = {}) {
   const header = rows[0];
   const subheader = rows[1] || [];
   const report = createImportReport(rows.length - 2);
-  const managementLabel = String(header[columns.management] || '').trim().replace(/\s+/g, ' ');
+  const managementLabel = String(header[columns.management] || '')
+    .trim()
+    .replace(/\s+/g, ' ');
   const evolution = {
-    teorica: parseNumber(subheader[columns.theoreticalEvolution], { isPercentage: true }),
-    financeira: parseNumber(subheader[columns.financialEvolution], { isPercentage: true }),
+    teorica: parseNumber(subheader[columns.theoreticalEvolution], {
+      isPercentage: true,
+    }),
+    financeira: parseNumber(subheader[columns.financialEvolution], {
+      isPercentage: true,
+    }),
   };
   const correctionIndex = options.correctionIndex === 'ipca' ? 'ipca' : 'incc';
   const groups = options.groups || GROUP_NAMES;

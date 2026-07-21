@@ -26,7 +26,10 @@ export const IMPORT_HEADER_RULES = Object.freeze({
     fields: Object.freeze({
       amendment: { label: 'Cod_aditivo', alternatives: [['cod', 'aditivo']] },
       status: { label: 'Descr_status', alternatives: [['descr', 'status']] },
-      currentArea: { label: 'Descr_areaatual', alternatives: [['descr', 'areaatual']] },
+      currentArea: {
+        label: 'Descr_areaatual',
+        alternatives: [['descr', 'areaatual']],
+      },
       requesterDepartment: {
         label: 'Descr_setorcriacao',
         alternatives: [['descr', 'setorcriacao']],
@@ -44,20 +47,32 @@ export const IMPORT_HEADER_RULES = Object.freeze({
       project: { label: 'Cod_obra', alternatives: [['cod', 'obra']] },
       flowValue: {
         label: 'Valor Aprovado ou Solicitado',
-        alternatives: [['valor', 'aprovado'], ['valor', 'solicitado']],
+        alternatives: [
+          ['valor', 'aprovado'],
+          ['valor', 'solicitado'],
+        ],
       },
       planningValue: {
         label: 'Vlr_planejamento',
-        alternatives: [['vlr', 'planejamento'], ['valor', 'planejamento']],
+        alternatives: [
+          ['vlr', 'planejamento'],
+          ['valor', 'planejamento'],
+        ],
       },
       department: { label: 'Departamento', alternatives: [['departamento']] },
       planningInput: {
         label: 'Ins. Planej.',
-        alternatives: [['ins', 'planej'], ['insumo', 'planejamento']],
+        alternatives: [
+          ['ins', 'planej'],
+          ['insumo', 'planejamento'],
+        ],
       },
       reallocationInput: {
         label: 'Ins. Remanej.',
-        alternatives: [['ins', 'remanej'], ['insumo', 'remanejamento']],
+        alternatives: [
+          ['ins', 'remanej'],
+          ['insumo', 'remanejamento'],
+        ],
       },
       reflected: { label: 'Refletido', alternatives: [['refletido']] },
     }),
@@ -65,17 +80,29 @@ export const IMPORT_HEADER_RULES = Object.freeze({
   gestoes: Object.freeze({
     label: 'GESTÕES',
     fields: Object.freeze({
-      management: { label: 'Descr_gestao', alternatives: [['descr', 'gestao']] },
+      management: {
+        label: 'Descr_gestao',
+        alternatives: [['descr', 'gestao']],
+      },
       financialClassification: {
         label: 'Descr_classificacaofinanceira',
         alternatives: [['descr', 'classificacaofinanceira']],
       },
-      planningKey: { label: 'Key_planejamento', alternatives: [['key', 'planejamento']] },
+      planningKey: {
+        label: 'Key_planejamento',
+        alternatives: [['key', 'planejamento']],
+      },
       netValue: {
         label: 'Val_totalliquido',
-        alternatives: [['val', 'totalliquido'], ['valor', 'total', 'liquido']],
+        alternatives: [
+          ['val', 'totalliquido'],
+          ['valor', 'total', 'liquido'],
+        ],
       },
-      paymentMonth: { label: 'Mes_pagamento', alternatives: [['mes', 'pagamento']] },
+      paymentMonth: {
+        label: 'Mes_pagamento',
+        alternatives: [['mes', 'pagamento']],
+      },
     }),
     optionalFields: Object.freeze({
       input: { alternatives: [['insumo']] },
@@ -127,16 +154,16 @@ export function normalizeImportHeader(value) {
 
 function headerMatches(value, alternatives) {
   const normalized = normalizeImportHeader(value);
-  return alternatives.some(terms => terms.every(term => normalized.includes(term)));
+  return alternatives.some((terms) => terms.every((term) => normalized.includes(term)));
 }
 
 function findHeaderIndex(headers, alternatives) {
-  const exactIndex = headers.findIndex(value => {
+  const exactIndex = headers.findIndex((value) => {
     const normalized = normalizeImportHeader(value);
-    return alternatives.some(terms => normalized === terms.join(' '));
+    return alternatives.some((terms) => normalized === terms.join(' '));
   });
   if (exactIndex >= 0) return exactIndex;
-  return headers.findIndex(value => headerMatches(value, alternatives));
+  return headers.findIndex((value) => headerMatches(value, alternatives));
 }
 
 function countDelimiters(text, delimiter) {
@@ -158,10 +185,12 @@ function countDelimiters(text, delimiter) {
 
 export function detectDelimiter(text) {
   const candidates = [';', '\t', ','];
-  const scores = candidates.map(delimiter => [delimiter, countDelimiters(text, delimiter)]);
+  const scores = candidates.map((delimiter) => [delimiter, countDelimiters(text, delimiter)]);
   scores.sort((left, right) => right[1] - left[1]);
   if (!scores[0][1]) {
-    throw new Error('CSV: delimitador não identificado. Use ponto e vírgula, vírgula ou tabulação.');
+    throw new Error(
+      'CSV: delimitador não identificado. Use ponto e vírgula, vírgula ou tabulação.',
+    );
   }
   return scores[0][0];
 }
@@ -183,7 +212,7 @@ export function parseDelimitedRows(text, delimiter = null) {
 
   const pushRow = () => {
     row.push(field);
-    if (row.some(value => value.trim() !== '')) rows.push(row);
+    if (row.some((value) => value.trim() !== '')) rows.push(row);
     row = [];
     field = '';
     closedQuote = false;
@@ -207,7 +236,8 @@ export function parseDelimitedRows(text, delimiter = null) {
     }
 
     if (character === '"') {
-      if (field.trim()) throw new Error(`CSV: aspas malformadas próximas à linha ${rows.length + 1}.`);
+      if (field.trim())
+        throw new Error(`CSV: aspas malformadas próximas à linha ${rows.length + 1}.`);
       inQuotes = true;
       closedQuote = false;
     } else if (character === separator) {
@@ -233,7 +263,7 @@ export function parseDelimitedRows(text, delimiter = null) {
 export function resolveImportColumns(kind, rows) {
   const rules = IMPORT_HEADER_RULES[kind];
   if (!rules) throw new Error(`Tipo de importação desconhecido: ${kind}`);
-  if (!Array.isArray(rows) || !rows.length || !rows[0].some(cell => String(cell || '').trim())) {
+  if (!Array.isArray(rows) || !rows.length || !rows[0].some((cell) => String(cell || '').trim())) {
     throw new Error(`${rules.label}: arquivo vazio ou sem linha de cabeçalho.`);
   }
 
@@ -249,7 +279,7 @@ export function resolveImportColumns(kind, rows) {
   if (missing.length) {
     throw new Error(
       `${rules.label}: cabeçalho inválido (ausentes: ${missing.join(', ')}). ` +
-      'Nenhum dado foi importado. Confirme o layout e exporte o arquivo em CSV UTF-8.'
+        'Nenhum dado foi importado. Confirme o layout e exporte o arquivo em CSV UTF-8.',
     );
   }
 
@@ -323,7 +353,7 @@ export function classifyFlow(planningInput, reallocationInput) {
   const planning = normalizeInput(planningInput);
   const reallocation = normalizeInput(reallocationInput);
   const invalid = ['', '-', 'Não encontrado!', 'VERIFICAR', 'Cancelado'];
-  const isReal = value => value && !invalid.includes(value);
+  const isReal = (value) => value && !invalid.includes(value);
 
   if (planning === 'Cancelado' || reallocation === 'Cancelado') return 'cancelado';
   if (planning === 'Não encontrado!' || reallocation === 'VERIFICAR') return 'pendente';

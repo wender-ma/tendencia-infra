@@ -29,7 +29,7 @@ assert(config.includes('Object.freeze({'), 'Configuracoes precisam ser imutaveis
 assert(service.includes("from '@supabase/supabase-js'"), 'Servico nao importa o SDK local do Supabase');
 assert(service.includes('export function createSupabaseService'), 'Factory do servico Supabase ausente');
 assert(service.includes('export function installLegacySupabaseGlobals'), 'Adaptador temporario do legado ausente');
-assert(service.includes('BASE_RETRY_DELAY_MS * (2 ** attempt)'), 'Retry exponencial do Supabase ausente');
+assert(/BASE_RETRY_DELAY_MS \* \(?2 \*\* attempt\)?/.test(service), 'Retry exponencial do Supabase ausente');
 
 assert(bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('Promise.all('), 'Configuracao deve ser instalada antes das dependencias');
 assert(bootstrap.includes('createSupabaseService(SUPABASE_CONFIG)'), 'Bootstrap nao cria o servico Supabase');

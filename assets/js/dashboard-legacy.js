@@ -90,7 +90,7 @@ function renderApexChart(containerId, options) {
   }
   const el = document.querySelector('#' + containerId);
   if (!el) return null;
-  el.innerHTML = '';
+  el.replaceChildren();
   try {
     const chart = new ApexCharts(el, options);
     chart.render();
@@ -1947,7 +1947,7 @@ function syncEditingControls() {
     const massBar = document.getElementById('massBar');
     if (massBar) {
       massBar.style.display = 'none';
-      massBar.innerHTML = '';
+      massBar.replaceChildren();
     }
   }
   if (typeof applyLocksToUI === 'function') applyLocksToUI();
@@ -1966,7 +1966,7 @@ function updateAuthUI() {
 
   if (!AUTH.ready) {
     badge.className = 'auth-badge pending';
-    badge.innerHTML = '⏳ Verificando...';
+    badge.textContent = '⏳ Verificando...';
     badge.title = 'Verificando sessão de login';
     btn.style.display = 'none';
     return;
@@ -2008,7 +2008,7 @@ function updateAuthUI() {
   } else {
     // Deslogado
     badge.className = 'auth-badge viewer';
-    badge.innerHTML = '👁️ Visualização';
+    badge.textContent = '👁️ Visualização';
     badge.title = 'Você está vendo o dashboard sem estar logado.\nFaça login para editar (se tiver permissão).';
     btn.style.display = '';
     btn.textContent = '🔑 Entrar';
@@ -2195,7 +2195,7 @@ function toggleHeaderEdit() {
     const sel = window.getSelection();
     sel.removeAllRanges();
     sel.addRange(range);
-    btn.innerHTML = '💾 Salvar';
+    btn.textContent = '💾 Salvar';
     btn.title = 'Salvar e travar edição';
   } else {
     el.contentEditable = 'false';
@@ -2207,7 +2207,7 @@ function toggleHeaderEdit() {
     const _t = el.textContent.trim();
     SafeStorage.set(HEADER_KEY, _t);
     void runAsyncSafely(supaSaveDashboardKey('header_title', _t), 'Config/salvar título', 'O título foi salvo apenas neste navegador.');
-    btn.innerHTML = '🔒 Editar';
+    btn.textContent = '🔒 Editar';
     btn.title = 'Editar título';
   }
 }
@@ -2255,7 +2255,7 @@ function verificarDadosDesatualizados() {
       + '⚠️ <strong>Dados desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
       + 'Considere atualizar na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#92400E; font-weight:700;">📤 Uploads</a>.</div>';
   } else {
-    bannerEl.innerHTML = '';
+    bannerEl.replaceChildren();
   }
 }
 
@@ -2477,15 +2477,15 @@ function renderVisao() {
     const gruposEl = document.getElementById('grupos');
     const alertEl = document.getElementById('alertBanner');
     if (kpisEl) kpisEl.innerHTML = renderPlaceholderSemDados('📈', 'Visão Geral sem dados', null);
-    if (gruposEl) gruposEl.innerHTML = '';
-    if (alertEl) alertEl.innerHTML = '';
+    if (gruposEl) gruposEl.replaceChildren();
+    if (alertEl) alertEl.replaceChildren();
     // Limpar donut e top 10 também
     const donutEl = document.getElementById('donut');
     const topUpEl = document.getElementById('topUp');
     const topDownEl = document.getElementById('topDown');
     if (donutEl) donutEl.innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:40px;">—</div>';
-    if (topUpEl) topUpEl.innerHTML = '';
-    if (topDownEl) topDownEl.innerHTML = '';
+    if (topUpEl) topUpEl.replaceChildren();
+    if (topDownEl) topDownEl.replaceChildren();
     refreshHeaderSubtitle();
     verificarDadosDesatualizados();
     return;
@@ -2685,7 +2685,7 @@ function renderVisao() {
       <div class="alert-banner">
         ⚠️ <strong>Atenção:</strong> existem ${fmtR$(totPendente)} em aditivos ainda <strong>pendentes de classificação</strong> (Insumo Planejamento = "Não encontrado!"). Classificá-los permitirá entender se são aumento real, remanejamento ou economia. Hoje só ${fmtR$(totAumentoReal)} de aumento real estão formalizados, mas o desvio total é de ${fmtR$(totDiff)} — boa parte ainda é tendência não rastreada.
       </div>`;
-  } else { document.getElementById('alertBanner').innerHTML = ''; }
+  } else { document.getElementById('alertBanner').replaceChildren(); }
   
   // Verificar se dados estão desatualizados
   verificarDadosDesatualizados();
@@ -3521,7 +3521,7 @@ function onClassifChange(sel) {
       cancelado:'<span class="badge gray">🚫 Cancelado</span>',
       sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', misto:'<span class="badge gray">⚪ Misto</span>'};
     const tipoTd = tr.children[5];
-    if (tipoTd) tipoTd.innerHTML = tipoLabel[f.tipo] || '';
+    if (tipoTd) tipoTd.textContent = tipoLabel[f.tipo] || '';
     // marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
   }
@@ -3595,7 +3595,7 @@ function renderFlowsAggregates() {
         </div>
       `;
     } else {
-      elDesc.innerHTML = '';
+      elDesc.replaceChildren();
     }
   }
 }
@@ -3875,11 +3875,11 @@ function updateMassBar() {
   if (!isEditorDaObraAtiva()) {
     MASS_SELECTED.clear();
     bar.style.display = 'none';
-    bar.innerHTML = '';
+    bar.replaceChildren();
     return;
   }
   const n = MASS_SELECTED.size;
-  if (n === 0) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  if (n === 0) { bar.style.display = 'none'; bar.replaceChildren(); return; }
   // Soma dos valores selecionados
   const selFlows = [...MASS_SELECTED].map(nAlt => getFlowsObraAtiva().find(f => f.n_alteracao === nAlt)).filter(Boolean);
   const totVal = selFlows.reduce((s,f) => s + (f.custo_flowmaster||0), 0);
@@ -4195,7 +4195,7 @@ function openManualForm(editing) {
 
   // Renderizar
   const content = document.getElementById('modalContent');
-  content.innerHTML = '';
+  content.replaceChildren();
   content.appendChild(tpl);
   openModal({ initialFocus: '#m_desc' });
 }
@@ -4265,8 +4265,8 @@ function renderFlows() {
     const flowsByTipo = document.getElementById('flowsByTipo');
     const flowsTbody = document.getElementById('flowsTbody');
     if (flowSummary) flowSummary.innerHTML = renderPlaceholderSemDados('🔗', 'Sem aditivos carregados', 'Envie o Excel <strong>Flows</strong> na aba <strong>📤 Uploads</strong>.');
-    if (flowsByTipo) flowsByTipo.innerHTML = '';
-    if (flowsTbody) flowsTbody.innerHTML = '';
+    if (flowsByTipo) flowsByTipo.replaceChildren();
+    if (flowsTbody) flowsTbody.replaceChildren();
     return;
   }
   const total = getFlowsObraAtiva().length;
@@ -4322,7 +4322,7 @@ function renderFlows() {
         </div>
       `;
     } else {
-      elDesc.innerHTML = '';
+      elDesc.replaceChildren();
     }
   }
 
@@ -5625,8 +5625,8 @@ function initProjecao() {
   const _proj = getProjRawObraAtiva();
   if (!_proj.length) {
     document.getElementById('projChart').innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:14px;">⚠️ Recarregue o CSV da aba <strong>Gestões</strong> usando a barra acima.<br>Os dados mensais não foram pré-carregados.</div>';
-    document.getElementById('projKpis').innerHTML = '';
-    document.getElementById('projTbody').innerHTML = '';
+    document.getElementById('projKpis').replaceChildren();
+    document.getElementById('projTbody').replaceChildren();
     return;
   }
   const ultimo = defaultDataFim();
@@ -5873,7 +5873,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
     Object.entries(meses).forEach(([m, v]) => { totalMeses[m] = (totalMeses[m] || 0) + v; });
   });
   const todosMeses = Object.keys(totalMeses).sort();
-  if (!todosMeses.length) { document.getElementById('projChart').innerHTML = ''; return; }
+  if (!todosMeses.length) { document.getElementById('projChart').replaceChildren(); return; }
 
   // Estender meses até dataFim se necessário
   let extended = [...todosMeses];
@@ -7980,8 +7980,8 @@ function renderHistorico() {
     const chartEl = document.getElementById('histChart');
     const heatEl = document.getElementById('histHeatmap');
     if (kpisEl) kpisEl.innerHTML = renderPlaceholderSemDados('📅', 'Sem histórico para esta obra', 'Envie a aba <strong>Gestões</strong> na <strong>📤 Uploads</strong> (upload compartilhado — 1 arquivo cobre todas as obras).');
-    if (chartEl) chartEl.innerHTML = '';
-    if (heatEl) heatEl.innerHTML = '';
+    if (chartEl) chartEl.replaceChildren();
+    if (heatEl) heatEl.replaceChildren();
     return;
   }
   // Construir cópias que incluam o Orçamento Licitação como ponto zero

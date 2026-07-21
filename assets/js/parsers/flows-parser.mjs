@@ -22,7 +22,9 @@ function createProjectLookup(projects) {
 }
 
 function normalizeReflected(value) {
-  const normalized = String(value || '').trim().toLowerCase();
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
   if (['sim', 's', 'yes', 'refletido'].includes(normalized)) return 'sim';
   if (['não', 'nao', 'n', 'no'].includes(normalized)) return 'nao';
   return 'pendente';
@@ -66,8 +68,8 @@ export function parseFlowsFile(text, options = {}) {
     const status = String(row[columns.status] || '').trim();
     const currentArea = String(row[columns.currentArea] || '').trim();
     const departmentValue = String(row[columns.department] || '').trim();
-    const department = departmentValue
-      || (currentArea === 'Fora da Esteira de Aprovação' ? status : currentArea);
+    const department =
+      departmentValue || (currentArea === 'Fora da Esteira de Aprovação' ? status : currentArea);
     const planningInput = String(row[columns.planningInput] || '').trim();
     const reallocationInput = String(row[columns.reallocationInput] || '').trim();
     const reflected = String(row[columns.reflected] || '').trim();
@@ -79,9 +81,13 @@ export function parseFlowsFile(text, options = {}) {
       dep: department,
       data: date,
       data_br: isoDateToBr(date),
-      descricao: String(row[columns.description] || '').trim().slice(0, descriptionLimit),
+      descricao: String(row[columns.description] || '')
+        .trim()
+        .slice(0, descriptionLimit),
       motivo: String(row[columns.reason] || '').trim(),
-      justificativa: String(row[columns.justification] || '').trim().slice(0, justificationLimit),
+      justificativa: String(row[columns.justification] || '')
+        .trim()
+        .slice(0, justificationLimit),
       custo_flowmaster: parseNumber(row[columns.flowValue]),
       custo_planejamento: parseNumber(row[columns.planningValue]),
       insumo_planejamento: planningInput,

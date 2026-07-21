@@ -85,9 +85,9 @@ Critério de conclusão: nenhum fluxo de escrita depende apenas de elementos esc
 
 ### 3. Eliminar vetores de XSS
 
-- [ ] Inventariar todas as atribuições de `innerHTML`.
-- [ ] Classificar cada valor como constante, interno ou externo.
-- [ ] Substituir `innerHTML` por `textContent` quando não houver marcação necessária.
+- [x] Inventariar todas as atribuições de `innerHTML`.
+- [x] Classificar cada valor como constante, interno ou externo.
+- [x] Substituir `innerHTML` por `textContent`/`replaceChildren` quando não houver marcação necessária.
 - [x] Criar opções dinâmicas com `new Option()` nos filtros auditados (implementado em `1cb9096`).
 - [x] Criar opções dinâmicas com `new Option()` no seletor de obra do header.
 - [x] Escapar grupos e códigos usados nos pontos auditados da Tendência (implementado em `1cb9096`).
@@ -233,7 +233,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Criar testes E2E para login, troca de obra, edição e administração.
 - [ ] Criar testes visuais para mobile e desktop.
 - [ ] Executar Lighthouse e axe no CI.
-- [ ] Configurar lint e formatação automática.
+- [x] Configurar lint e formatação automática para os módulos extraídos.
 - [ ] Adicionar logs de erro com contexto e sem dados sensíveis.
 - [ ] Documentar execução local, build, deploy e rollback.
 
@@ -293,3 +293,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados | `public/_headers` |
 | 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão | `renderAll()` |
 | 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba | `assets/js/performance.mjs` |
+| 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS | `docs/innerhtml_inventory_2026-07-21.md` |

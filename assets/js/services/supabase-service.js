@@ -22,10 +22,13 @@ export function createSupabaseService({ url, anonKey }) {
         return await operation();
       } catch (error) {
         if (attempt === maxAttempts - 1) throw error;
-        await new Promise(resolve => {
-          setTimeout(resolve, BASE_RETRY_DELAY_MS * (2 ** attempt));
+        await new Promise((resolve) => {
+          setTimeout(resolve, BASE_RETRY_DELAY_MS * 2 ** attempt);
         });
-        console.warn(`[SUPA] retry ${attempt + 1}/${maxAttempts} apos erro:`, error.message || error);
+        console.warn(
+          `[SUPA] retry ${attempt + 1}/${maxAttempts} apos erro:`,
+          error.message || error,
+        );
       }
     }
 

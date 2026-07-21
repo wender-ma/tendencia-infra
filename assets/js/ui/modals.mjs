@@ -19,17 +19,17 @@ export function createModalService({ documentRef = document, windowRef = window 
   const stack = [];
   let activeModal = null;
 
-  const getDialog = backdrop => backdrop?.querySelector('[role="dialog"]') || null;
-  const getFocusableElements = dialog => (
+  const getDialog = (backdrop) => backdrop?.querySelector('[role="dialog"]') || null;
+  const getFocusableElements = (dialog) =>
     dialog
-      ? Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR))
-        .filter(element => element.offsetParent !== null)
-      : []
-  );
+      ? Array.from(dialog.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+          (element) => element.offsetParent !== null,
+        )
+      : [];
 
   function closeLayer(backdrop, result = false) {
     if (!backdrop) return;
-    const index = stack.findIndex(entry => entry.backdrop === backdrop);
+    const index = stack.findIndex((entry) => entry.backdrop === backdrop);
     if (index < 0) {
       backdrop.classList.remove('show');
       backdrop.setAttribute('aria-hidden', 'true');
@@ -50,12 +50,11 @@ export function createModalService({ documentRef = document, windowRef = window 
 
   function openLayer(backdrop, options = {}) {
     if (!backdrop) return false;
-    if (stack.some(entry => entry.backdrop === backdrop)) closeLayer(backdrop, false);
+    if (stack.some((entry) => entry.backdrop === backdrop)) closeLayer(backdrop, false);
 
     const dialog = getDialog(backdrop);
-    const previousFocus = documentRef.activeElement instanceof windowRef.HTMLElement
-      ? documentRef.activeElement
-      : null;
+    const previousFocus =
+      documentRef.activeElement instanceof windowRef.HTMLElement ? documentRef.activeElement : null;
     if (activeModal) activeModal.backdrop.setAttribute('aria-hidden', 'true');
     const entry = {
       backdrop,
@@ -72,9 +71,10 @@ export function createModalService({ documentRef = document, windowRef = window 
 
     windowRef.requestAnimationFrame(() => {
       if (activeModal?.backdrop !== backdrop) return;
-      const requested = typeof options.initialFocus === 'string'
-        ? backdrop.querySelector(options.initialFocus)
-        : options.initialFocus;
+      const requested =
+        typeof options.initialFocus === 'string'
+          ? backdrop.querySelector(options.initialFocus)
+          : options.initialFocus;
       (requested || getFocusableElements(dialog)[0] || dialog)?.focus();
     });
     return true;
@@ -88,8 +88,8 @@ export function createModalService({ documentRef = document, windowRef = window 
     return openLayer(backdrop, options);
   }
 
-  const close = result => closeLayer(documentRef.getElementById('modalBg'), result);
-  const closeConfirm = result => closeLayer(documentRef.getElementById('confirmModalBg'), result);
+  const close = (result) => closeLayer(documentRef.getElementById('modalBg'), result);
+  const closeConfirm = (result) => closeLayer(documentRef.getElementById('confirmModalBg'), result);
 
   function confirm(title, message, options = {}) {
     const confirmText = options.confirmText || 'Confirmar';
@@ -97,7 +97,7 @@ export function createModalService({ documentRef = document, windowRef = window 
     const destructive = options.destructive !== false;
     const requiredText = options.requireText || null;
 
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const content = documentRef.getElementById('confirmModalContent');
       content.replaceChildren();
       const form = documentRef.createElement('form');
@@ -126,10 +126,14 @@ export function createModalService({ documentRef = document, windowRef = window 
 
       const actions = documentRef.createElement('div');
       actions.className = 'confirm-modal-actions';
-      const cancelButton = appendTextElement(documentRef, actions, 'button', cancelText, { type: 'button' });
+      const cancelButton = appendTextElement(documentRef, actions, 'button', cancelText, {
+        type: 'button',
+      });
       cancelButton.className = 'btn-sm';
       cancelButton.id = 'confirmModalCancel';
-      const confirmButton = appendTextElement(documentRef, actions, 'button', confirmText, { type: 'submit' });
+      const confirmButton = appendTextElement(documentRef, actions, 'button', confirmText, {
+        type: 'submit',
+      });
       confirmButton.className = destructive ? 'btn-sm danger' : 'btn-sm primary';
       confirmButton.id = 'confirmModalOk';
       confirmButton.disabled = Boolean(requiredText);
@@ -139,7 +143,7 @@ export function createModalService({ documentRef = document, windowRef = window 
       requiredInput?.addEventListener('input', () => {
         confirmButton.disabled = requiredInput.value.trim() !== requiredText;
       });
-      form.addEventListener('submit', event => {
+      form.addEventListener('submit', (event) => {
         event.preventDefault();
         if (requiredInput && requiredInput.value.trim() !== requiredText) return;
         closeConfirm(true);
@@ -152,7 +156,7 @@ export function createModalService({ documentRef = document, windowRef = window 
     });
   }
 
-  documentRef.addEventListener('keydown', event => {
+  documentRef.addEventListener('keydown', (event) => {
     if (!activeModal) return;
     if (event.key === 'Escape') {
       event.preventDefault();
@@ -181,7 +185,7 @@ export function createModalService({ documentRef = document, windowRef = window 
     }
   });
 
-  documentRef.getElementById('modalContent')?.addEventListener('submit', event => {
+  documentRef.getElementById('modalContent')?.addEventListener('submit', (event) => {
     const form = event.target.closest('form[data-modal-form]');
     if (!form) return;
     event.preventDefault();
@@ -192,7 +196,14 @@ export function createModalService({ documentRef = document, windowRef = window 
     else if (action === 'mass-confirm') windowRef.massConfirmCallback?.();
   });
 
-  return Object.freeze({ openLayer, closeLayer, open, close, closeConfirm, confirm });
+  return Object.freeze({
+    openLayer,
+    closeLayer,
+    open,
+    close,
+    closeConfirm,
+    confirm,
+  });
 }
 
 export function installLegacyModalGlobals(service, target = window) {
@@ -205,4 +216,3 @@ export function installLegacyModalGlobals(service, target = window) {
     confirmModal: service.confirm,
   });
 }
-

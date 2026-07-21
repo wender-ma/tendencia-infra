@@ -1,5 +1,6 @@
 const DEFAULT_SUPABASE_URL = 'https://jmfgegnfctlyuevqadba.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
+const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
 
 function readEnvironment(name, fallback) {
   const value = import.meta.env[name];
@@ -20,7 +21,7 @@ export const STORAGE_KEYS = Object.freeze({
 
 export const DASHBOARD_CONFIG = Object.freeze({
   tolerancia_centavos: 1,
-  tolerancia_conferencia: 1.00,
+  tolerancia_conferencia: 1.0,
   tolerancia_projecao: 10000,
   max_uploads_por_tipo: 12,
   max_linhas_tabela: 1000,

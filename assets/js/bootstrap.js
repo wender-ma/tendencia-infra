@@ -9,10 +9,7 @@ import {
   createSupabaseService,
   installLegacySupabaseGlobals,
 } from './services/supabase-service.js';
-import {
-  createAuthService,
-  installLegacyAuthGlobals,
-} from './services/auth-service.js';
+import { createAuthService, installLegacyAuthGlobals } from './services/auth-service.js';
 
 function showBootstrapError(error) {
   console.error('[BOOT] Falha ao carregar o dashboard:', error);
@@ -51,7 +48,7 @@ Promise.all([import('xlsx'), import('apexcharts')])
     const authService = createAuthService({
       supabaseClient: supabaseService.client,
       getActiveProject: () => appState.obra.ativa,
-      onStateChange: details => window.handleAuthServiceStateChanged?.(details),
+      onStateChange: (details) => window.handleAuthServiceStateChanged?.(details),
       reportError: (context, error) => window.reportNonFatalError?.(context, error),
     });
     installLegacyAuthGlobals(authService);

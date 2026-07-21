@@ -11,18 +11,12 @@ export function createFeedbackService({ documentRef = document, windowRef = wind
     element.setAttribute('role', isAssertive ? 'alert' : 'status');
     element.setAttribute('aria-live', isAssertive ? 'assertive' : 'polite');
     element.setAttribute('aria-atomic', 'true');
-    element.className = kind === 'err'
-      ? 'err'
-      : kind === 'warn'
-        ? 'warn'
-        : kind === 'ok' ? 'ok' : '';
+    element.className =
+      kind === 'err' ? 'err' : kind === 'warn' ? 'warn' : kind === 'ok' ? 'ok' : '';
     element.textContent = String(message ?? '');
     windowRef.requestAnimationFrame(() => element.classList.add('show'));
     windowRef.clearTimeout(element._hideTimeout);
-    element._hideTimeout = windowRef.setTimeout(
-      () => element.classList.remove('show'),
-      duration,
-    );
+    element._hideTimeout = windowRef.setTimeout(() => element.classList.remove('show'), duration);
   }
 
   function setLoading(visible) {
@@ -46,4 +40,3 @@ export function installLegacyFeedbackGlobals(service, target = window) {
     hideLoading: service.hideLoading,
   });
 }
-

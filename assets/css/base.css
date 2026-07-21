@@ -1,13 +1,13 @@
   /* Modo Noturno — overrides para elementos que ainda precisam de ajuste */
-  body.dark .upload-excel-card { background: linear-gradient(135deg, #064E3B 0%, #052E16 100%); }
+  body.dark .upload-excel-card { background: linear-gradient(135deg, var(--sem-ok-soft) 0%, var(--sem-ok-bg) 100%); }
   body.dark .flow-mini-card { background: var(--bg-soft); }
   body.dark th { background: var(--bg-soft); }
   body.dark .form-grid input, body.dark .form-grid select, body.dark .form-grid textarea { background: var(--bg-card); color: var(--text-strong); }
   body.dark .modal .modal-close { color: var(--text-soft); }
   body.dark .modal .modal-close:hover { color: var(--text-strong); }
   body.dark #obraSelector option { background: var(--bg-card); color: var(--text-strong); }
-  body.dark .upload-card-meta.empty { background: #451A03; }
-  body.dark .upload-card-meta.filled { background: #052E16; }
+  body.dark .upload-card-meta.empty { background: var(--sem-alerta-subtle); }
+  body.dark .upload-card-meta.filled { background: var(--sem-ok-bg); }
   body.dark .ms-opt:hover { background: var(--bg-soft); }
   body.dark .ms-footer button { background: var(--fgr-red-dark); }
 
@@ -23,7 +23,7 @@
   .theme-toggle {
     background: rgba(255,255,255,0.15);
     border: 1px solid rgba(255,255,255,0.3);
-    color: white;
+    color: var(--text-on-dark);
     padding: 5px 10px;
     border-radius: 12px;
     cursor: pointer;

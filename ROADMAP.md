@@ -244,7 +244,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Padronizar botões, formulários, toolbars e modais (classes compartilhadas nos controles e diálogos principais).
 - [ ] Reduzir estilos inline e regras com `!important` (HTML estático reduzido de 298 para 180 estilos inline; remoção gradual continua nos templates legados).
-- [ ] Consolidar as cores em tokens oficiais.
+- [x] Consolidar as cores em tokens oficiais (paleta funcional e variantes claro/escuro; sem hex disperso no CSS ou runtime).
 - [x] Melhorar feedback de salvamento e sincronização (badge transacional acessível, concorrência e erro sanitizado).
 - [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.
 - [x] Revisar estados vazios, loading e erro de cada aba (componente seguro compartilhado e navegação offline coberta no navegador).

@@ -83,7 +83,8 @@ function uiCriarKpi({ titulo, valor, subtitulo, cor, icon }) {
 function resolveColor(cssVar) {
   if (!cssVar || !cssVar.startsWith('var(')) return cssVar;
   const varName = cssVar.replace('var(', '').replace(')', '').trim();
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || cssVar;
+  const themeRoot = document.body || document.documentElement;
+  return getComputedStyle(themeRoot).getPropertyValue(varName).trim() || cssVar;
 }
 
 // Instâncias ApexCharts ativas (para destruir antes de re-renderizar)
@@ -442,7 +443,7 @@ async function renderObrasAdmin() {
       const toggleLbl = ativa ? '⏸️ Desativar' : '▶️ Ativar';
       const toggleStyle = ativa
         ? 'background:var(--sem-alerta-bg); border:1px solid var(--sem-alerta); color:var(--sem-alerta);'
-        : 'background:#dcfce7; border:1px solid #16a34a; color:#166534;';
+        : 'background:var(--sem-ok-bg); border:1px solid var(--sem-ok-border); color:var(--sem-ok-text);';
       const podeDeletar = origem === 'manual';
       const btnDeletar = podeDeletar
         ? `<button class="btn-sm" data-action="deletar-obra" data-codigo="${escAttr(o.codigo_obra)}" data-nome="${escAttr(o.nome)}" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Deletar permanentemente (obra manual)" aria-label="Deletar obra ${escAttr(o.nome)} permanentemente">🗑️</button>`
@@ -971,7 +972,7 @@ async function renderPendentesAdmin() {
         <td style="font-size:11px; color:var(--text-soft);">${escHtml(e.observacao||'')}</td>
         <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
         <td>
-          <button class="btn-sm" data-action="aprovar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:#dcfce7; border:1px solid #16a34a; color:#166534;" title="Definir papel e aprovar">✅ Aprovar</button>
+          <button class="btn-sm" data-action="aprovar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:var(--sem-ok-bg); border:1px solid var(--sem-ok-border); color:var(--sem-ok-text);" title="Definir papel e aprovar">✅ Aprovar</button>
           <button class="btn-sm" data-action="rejeitar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Negar acesso">❌ Rejeitar</button>
         </td>
       </tr>`;
@@ -1937,7 +1938,7 @@ function updateSupaBadge() {
   if (!el) return;
   const baseBg = 'rgba(255,255,255,0.15)';
   const baseBorder = 'rgba(255,255,255,0.3)';
-  el.style.color = 'white';
+  el.style.color = 'var(--text-on-dark)';
   el.style.border = '1px solid ' + baseBorder;
   el.style.background = baseBg;
   el.setAttribute('aria-busy', SUPA_STATUS.pending > 0 ? 'true' : 'false');
@@ -2290,14 +2291,14 @@ function verificarDadosDesatualizados() {
   
   if (mesesAtras > 3) {
     // Mais de 3 meses: vermelho
-    bannerEl.innerHTML = '<div class="alert-banner" style="background:linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%); border-left-color:#DC2626;">'
+    bannerEl.innerHTML = '<div class="alert-banner" style="background:linear-gradient(90deg, var(--sem-erro-bg) 0%, var(--sem-erro-border) 100%); border-left-color:var(--sem-erro-vivid);">'
       + '🔴 <strong>Dados muito desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
-      + 'Atualize os dados na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:#DC2626; font-weight:700;">📤 Uploads</a>.</div>';
+      + 'Atualize os dados na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:var(--sem-erro-vivid); font-weight:700;">📤 Uploads</a>.</div>';
   } else if (mesesAtras > 2) {
     // Mais de 2 meses: amarelo
     bannerEl.innerHTML = '<div class="alert-banner">'
       + '⚠️ <strong>Dados desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
-      + 'Considere atualizar na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:#92400E; font-weight:700;">📤 Uploads</a>.</div>';
+      + 'Considere atualizar na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:var(--sem-alerta-text); font-weight:700;">📤 Uploads</a>.</div>';
   } else {
     bannerEl.replaceChildren();
   }
@@ -2470,7 +2471,7 @@ function renderCardAderencia() {
           <div style="font-size:10.5px; color:${sema};">${ico} ${semaLabel}</div>
         </div>
       </div>
-      ${interp ? `<div style="padding:8px 10px; background:var(--bg-page); border-radius:5px; font-size:11.5px; color:#334155; margin-top:6px;">💡 ${interp}</div>` : ''}
+      ${interp ? `<div style="padding:8px 10px; background:var(--bg-page); border-radius:5px; font-size:11.5px; color:var(--text-medium); margin-top:6px;">💡 ${interp}</div>` : ''}
       <div style="font-size:10.5px; color:var(--text-lighter); margin-top:6px; font-style:italic;">
         ℹ️ Custos indiretos <strong>não</strong> entram nesta comparação (base: obra civil)
       </div>
@@ -2645,7 +2646,7 @@ function renderVisao() {
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <div>
           <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Corrigido (${indiceLabel})</div>
-          <div style="font-size:18px; font-weight:700; color:#5b21b6; margin-top:2px;">${fmtR$(totCorrigido)}</div>
+          <div style="font-size:18px; font-weight:700; color:var(--accent-purple-dark); margin-top:2px;">${fmtR$(totCorrigido)}</div>
         </div>
         ${toggleHtml}
       </div>
@@ -2662,7 +2663,7 @@ function renderVisao() {
       <div class="sub">planejamento vigente</div>
       <hr style="border:none; border-top:1px solid var(--border); margin:10px 0;">
       <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600; margin-bottom:4px;">Decomposição do desvio</div>
-      ${bdLine('💱 Inflação ' + indiceLabel, (inflacaoAbs>=0?'+':'') + fmtR$(inflacaoAbs), '#5b21b6', 'externa, inevitável')}
+      ${bdLine('💱 Inflação ' + indiceLabel, (inflacaoAbs>=0?'+':'') + fmtR$(inflacaoAbs), 'var(--accent-purple-dark)', 'externa, inevitável')}
       ${bdLine('📎 Aditivos refletidos', (aditivoRastreado>=0?'+':'') + fmtR$(aditivoRastreado), 'var(--sem-alerta)', 'rastreado em Flows')}
       ${bdLine('❓ Não rastreado', (restoNaoRastreado>=0?'+':'') + fmtR$(restoNaoRastreado), restoNaoRastreado>0?'var(--sem-erro)':'var(--sem-ok)', 'atualização de orçamento')}
       <div style="border-top:2px solid var(--border-strong); margin-top:8px; padding-top:8px;">
@@ -2687,7 +2688,7 @@ function renderVisao() {
         </div>
       </div>
       ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto>=0?'+':'') + fmtR$(desvioBruto), desvioBruto>0?'var(--sem-erro)':desvioBruto<0?'var(--sem-ok)':'var(--text-soft)', 'gestão atual vs licitação')}
-      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos>=0?'+':'') + fmtR$(tendIndiretos), '#5b21b6', 'extrapolação + flows pendentes')}
+      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos>=0?'+':'') + fmtR$(tendIndiretos), 'var(--accent-purple-dark)', 'extrapolação + flows pendentes')}
       ${bdLine('🧱 Tend. Diretos', (tendDiretos>=0?'+':'') + fmtR$(tendDiretos), 'var(--sem-alerta)', 'flows pendentes em Diretos/Civis')}
       <div style="border-top:2px solid var(--border-strong); margin-top:8px; padding-top:8px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:13px;">
@@ -2750,7 +2751,7 @@ function renderVisao() {
     const st = pct == null ? 'gray' : pct > 10 ? 'red' : pct > 0 ? 'amber' : 'green';
     const barColor = st === 'red' ? 'var(--fgr-red-vivid)' : st === 'amber' ? 'var(--sem-alerta)' : st === 'green' ? 'var(--sem-ok)' : 'var(--text-lighter)';
     const barWidth = Math.min(100, Math.abs(pct || 0) * 5);
-    const aditInfo = Math.abs(v.aditivos) > 0.01 ? ` · <span style="color:#8b5cf6;">📎 ${fmtR$k(v.aditivos)} em aditivos</span>` : '';
+    const aditInfo = Math.abs(v.aditivos) > 0.01 ? ` · <span style="color:var(--accent-purple);">📎 ${fmtR$k(v.aditivos)} em aditivos</span>` : '';
     return `
       <div class="grupo-row">
         <div class="grupo-nome"><span class="dot ${st}"></span>${escHtml(g)}<span style="font-weight:400;color:var(--text-soft);font-size:11px;">(${v.n})${aditInfo}</span></div>
@@ -3168,7 +3169,7 @@ function openItem(idx) {
       <div class="kpi purple"><div class="label">Coberto por aditivo</div><div class="value">${fmtR$(totDest - totOrig)}</div><div class="sub">${dest.length} entrada / ${orig.length} saída</div></div>
     </div>
 
-    ${dest.length > 0 ? `<h3 style="font-size:13px; margin-bottom:8px; color:#7c3aed;">➡️ Aditivos que ENTRARAM neste item (${fmt(totDest)})</h3>` : ''}
+    ${dest.length > 0 ? `<h3 style="font-size:13px; margin-bottom:8px; color:var(--accent-purple-strong);">➡️ Aditivos que ENTRARAM neste item (${fmt(totDest)})</h3>` : ''}
     ${dest.map(f => renderFlowMini(f)).join('')}
 
     ${orig.length > 0 ? `<h3 style="font-size:13px; margin: 14px 0 8px; color:var(--text-medium);">⬅️ Aditivos que SAÍRAM deste item para outros (${fmt(totOrig)})</h3>` : ''}
@@ -4509,7 +4510,7 @@ function renderFlowTable() {
     const manualBadge = f.is_manual ? '<span class="badge-manual">✋ Manual</span>' : '';
     const delBtn = f.is_manual ? `<button class="btn-del-manual" data-editor-only data-action="delete-manual" data-n="${escAttr(f.n_alteracao)}" title="Excluir este aditivo manual" aria-label="Excluir aditivo manual ${escAttr(f.n_alteracao)}">🗑️</button>` : '';
     const status = f.refletido_status || 'pendente';
-    const trStyle = status === 'sim' ? 'background:#ecfdf5;' : status === 'nao' ? 'background:#fef2f2;' : '';
+    const trStyle = status === 'sim' ? 'background:var(--sem-ok-soft);' : status === 'nao' ? 'background:var(--sem-erro-soft);' : '';
     const isSelected = MASS_SELECTED.has(f.n_alteracao);
     return `
     <tr style="${trStyle}" class="${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
@@ -4574,7 +4575,7 @@ function onRefletidoChange(sel) {
   );
   // Atualizar visual: cor da linha e classe do select
   const tr = sel.closest('tr');
-  if (tr) tr.style.background = status === 'sim' ? '#ecfdf5' : (status === 'nao' ? '#fef2f2' : '');
+  if (tr) tr.style.background = status === 'sim' ? 'var(--sem-ok-soft)' : (status === 'nao' ? 'var(--sem-erro-soft)' : '');
   sel.className = 'refletido-select status-' + status;
   renderFlowTable();
   // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
@@ -5191,7 +5192,7 @@ function renderUploadsCentral() {
 
   const excelCard = `
     <div class="upload-excel-card" id="excelUploadCard">
-      <h3>📊 Upload Completo (Excel) <span style="font-size:11px; color:#059669; font-weight:600; margin-left:4px;">RECOMENDADO</span></h3>
+      <h3>📊 Upload Completo (Excel) <span style="font-size:11px; color:var(--sem-ok-vivid); font-weight:600; margin-left:4px;">RECOMENDADO</span></h3>
       <p class="subtitle">Envie a planilha inteira (<code>.xlsx</code> ou <code>.xlsm</code>) e o dashboard extrai automaticamente as abas <strong>Tendência</strong>, <strong>FlowsValor</strong> e <strong>Gestões</strong>.</p>
       ${excelRuntimeBlock}
       ${excelMeta}
@@ -5223,7 +5224,7 @@ function renderUploadsCentral() {
         last.linhas ? (last.linhas + ' linhas') : null,
       ].filter(Boolean).join(' · ');
       const sourceTag = last.upload_group_id
-        ? ' <span style="font-size:10px; color:#059669; background:#d1fae5; padding:1px 6px; border-radius:8px; margin-left:4px;">via Excel</span>'
+        ? ' <span style="font-size:10px; color:var(--sem-ok-vivid); background:var(--sem-ok-bg); padding:1px 6px; border-radius:8px; margin-left:4px;">via Excel</span>'
         : '';
       metaBlock = `
         <div class="upload-card-meta filled">
@@ -5356,17 +5357,17 @@ async function _renderUploadsHistoryList(kind) {
                 ? ''
                 : `<span style="color:var(--text-lighter); font-size:11px;" title="Arquivo sem storage_path — não pode ser reativado">—</span>`);
           const btnExcluir = canExcluir
-            ? `<button class="btn-sm danger" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" aria-label="Excluir ${escAttr(r.nome_arquivo)}" style="background:var(--fgr-red-light); border:1px solid #fca5a5; color:var(--sem-erro);">🗑️</button>`
+            ? `<button class="btn-sm danger" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" aria-label="Excluir ${escAttr(r.nome_arquivo)}" style="background:var(--fgr-red-light); border:1px solid var(--sem-erro-border); color:var(--sem-erro);">🗑️</button>`
             : (isAtivo && canManage
                 ? `<span style="color:var(--text-lighter); font-size:11px;" title="Ative outro arquivo antes de excluir este">🔒</span>`
                 : '');
           return `
-            <tr style="border-bottom:1px solid #f1f5f9; ${isAtivo?'background:#f0fdf4;':''}">
-              <td style="padding:8px;">${escHtml(fmtUploadDate(r.enviado_em))} ${isAtivo?'<span style="display:inline-block; margin-left:4px; padding:2px 8px; background:#059669; color:white; font-size:9px; font-weight:700; border-radius:10px; letter-spacing:0.3px;">📌 ATIVO</span>':''}</td>
+            <tr style="border-bottom:1px solid var(--bg-soft); ${isAtivo?'background:var(--sem-ok-subtle);':''}">
+              <td style="padding:8px;">${escHtml(fmtUploadDate(r.enviado_em))} ${isAtivo?'<span style="display:inline-block; margin-left:4px; padding:2px 8px; background:var(--sem-ok-vivid); color:var(--text-on-dark); font-size:9px; font-weight:700; border-radius:10px; letter-spacing:0.3px;">📌 ATIVO</span>':''}</td>
               <td style="padding:8px; font-family:monospace; font-size:11.5px;">${escHtml(r.nome_arquivo)}</td>
               <td style="padding:8px; color:var(--text-soft);">${fmtBytes(r.tamanho_bytes)}</td>
               <td style="padding:8px; color:var(--text-soft);">${r.linhas != null ? r.linhas.toLocaleString('pt-BR') : '-'}</td>
-              <td style="padding:8px; font-size:11.5px; color:#475569;">${r.enviado_por ? escHtml(r.enviado_por) : '<em>anônimo</em>'}</td>
+              <td style="padding:8px; font-size:11.5px; color:var(--text-soft);">${r.enviado_por ? escHtml(r.enviado_por) : '<em>anônimo</em>'}</td>
               <td style="padding:8px; text-align:right; white-space:nowrap;">
                 <span style="display:inline-flex; gap:4px; align-items:center;">${btnDownload} ${btnAtivar} ${btnExcluir}</span>
               </td>
@@ -5984,7 +5985,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
           strokeDashArray: 4,
           label: {
             text: 'Corte: ' + formatMonthLabel(dataCorte),
-            style: { color: '#fff', background: resolveColor('var(--fgr-red-vivid)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } },
+            style: { color: resolveColor('var(--text-on-dark)'), background: resolveColor('var(--fgr-red-vivid)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } },
           }
         },
         {
@@ -5993,7 +5994,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
           strokeDashArray: 2,
           label: {
             text: 'Fim: ' + formatMonthLabel(dataFim),
-            style: { color: '#fff', background: resolveColor('var(--text-soft)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } },
+            style: { color: resolveColor('var(--text-on-dark)'), background: resolveColor('var(--text-soft)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } },
           }
         }
       ]
@@ -6010,7 +6011,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, jane
     markers: {
       size: [4, 4],
       strokeWidth: 2,
-      strokeColors: '#fff',
+      strokeColors: resolveColor('var(--text-on-dark)'),
       hover: { sizeOffset: 3 },
     },
     responsive: [{ breakpoint: 600, options: { chart: { height: 300 }, legend: { position: 'bottom' } } }],
@@ -6061,7 +6062,7 @@ function flowChip(info) {
   if (!info) return '';
   const liquido = info.valEntrada - info.valSaida;
   const cor = liquido > 0 ? 'var(--sem-erro)' : liquido < 0 ? 'var(--sem-ok)' : 'var(--text-soft)';
-  return `<span style="display:inline-block; padding:1px 6px; margin-left:6px; background:#ede9fe; color:#5b21b6; border-radius:10px; font-size:10px; font-weight:600; cursor:help;" title="✅ ${info.total} flow(s) refletidos em planejamento · ${info.entrada} entrada(s) (+${fmt(info.valEntrada)}) · ${info.saida} saída(s) (-${fmt(info.valSaida)})">📎 ${info.total} flow${info.total>1?'s':''} <span style="color:${cor};">${liquido>=0?'+':''}${fmtR$k(liquido)}</span></span>`;
+  return `<span style="display:inline-block; padding:1px 6px; margin-left:6px; background:var(--accent-purple-bg); color:var(--accent-purple-dark); border-radius:10px; font-size:10px; font-weight:600; cursor:help;" title="✅ ${info.total} flow(s) refletidos em planejamento · ${info.entrada} entrada(s) (+${fmt(info.valEntrada)}) · ${info.saida} saída(s) (-${fmt(info.valSaida)})">📎 ${info.total} flow${info.total>1?'s':''} <span style="color:${cor};">${liquido>=0?'+':''}${fmtR$k(liquido)}</span></span>`;
 }
 
 function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
@@ -6354,11 +6355,11 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     // Estilos por tipo
     let trStyle = '', tdStyle = '', icon = '', labelHtml = '';
     if (n.tipo === 'raiz') {
-      trStyle = 'background:#0f172a; color:white; cursor:pointer; font-weight:700;';
+      trStyle = 'background:var(--surface-inverse); color:var(--text-on-dark); cursor:pointer; font-weight:700;';
       icon = expanded ? '▼' : '▶';
       labelHtml = `<strong>${escHtml(n.cod)} · ${escHtml(n.item)}</strong>`;
     } else if (n.tipo === 'grupo') {
-      trStyle = 'background:var(--fgr-red-deep); color:white; cursor:pointer; font-weight:700;';
+      trStyle = 'background:var(--fgr-red-deep); color:var(--text-on-dark); cursor:pointer; font-weight:700;';
       icon = expanded ? '▼' : '▶';
       labelHtml = `<strong>${escHtml(n.cod)} · ${escHtml(n.item)}</strong>`;
     } else if (n.tipo === 'subgrupo') {
@@ -6384,7 +6385,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
        dV < -tolerancia ? `<span style="font-size:10.5px; color:var(--sem-ok);">sobram ${fmtR$k(-dV)}</span>` : '');
 
     // Cores adaptadas ao fundo
-    const isDark = trStyle.includes('color:white');
+    const isDark = n.tipo === 'raiz' || n.tipo === 'grupo';
     const numColor = isDark ? '' : '';
     const flowsPendVal = p.flows_pendentes || 0;
     let extrapTitle = '';
@@ -6401,11 +6402,11 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const extrapTxt = (Math.abs(ex) > 0.01)
       ? (n.tipo === 'insumo' || n.tipo === 'servico' || n.tipo === 'outro'
           ? `<span style="font-size:10px; color:${ex<0?'var(--sem-ok)':'var(--sem-alerta)'};" title="${escAttr(extrapTitle)}">${ex>=0?'+':''}${fmt(ex)}${Math.abs(flowsPendVal)>0.01?' 📎':''}</span>`
-          : `<span style="color:${isDark?'#fbbf24':(ex<0?'var(--sem-ok)':'var(--sem-alerta)')};">${ex>=0?'+':''}${fmt(ex)}</span>`)
+          : `<span style="color:${isDark?'var(--badge-manual-bg)':(ex<0?'var(--sem-ok)':'var(--sem-alerta)')};">${ex>=0?'+':''}${fmt(ex)}</span>`)
       : `<span style="color:${isDark?'rgba(255,255,255,0.5)':'var(--text-lighter)'};">—</span>`;
 
     const diffTxt = p.empty ? '<span style="color:var(--border-strong);">—</span>' :
-      `<span style="color:${dV>tolerancia?(isDark?'#fca5a5':'var(--sem-erro)'):dV<-tolerancia?(isDark?'#86efac':'var(--sem-ok)'):''};">${dV>=0?'+':''}${fmt(dV)}</span>`;
+      `<span style="color:${dV>tolerancia?(isDark?'var(--sem-erro-border)':'var(--sem-erro)'):dV<-tolerancia?(isDark?'var(--sem-ok)':'var(--sem-ok)'):''};">${dV>=0?'+':''}${fmt(dV)}</span>`;
 
     const valuesEmpty = p.empty;
     const fmtVal = v => valuesEmpty ? '<span style="color:var(--border-strong);">—</span>' : fmtR$(v||0);
@@ -6851,17 +6852,17 @@ function openProjDrill(servico, insumo) {
     annotations: {
       xaxis: [
         { x: categories[corteIdx], borderColor: resolveColor('var(--fgr-red-vivid)'), strokeDashArray: 4,
-          label: { text: 'Corte', style: { color: '#fff', background: resolveColor('var(--fgr-red-vivid)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } } } },
+          label: { text: 'Corte', style: { color: resolveColor('var(--text-on-dark)'), background: resolveColor('var(--fgr-red-vivid)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } } } },
         { x: categories[fimIdx], borderColor: resolveColor('var(--text-soft)'), strokeDashArray: 2,
           label: { text: 'Fim', orientation: 'vertical', position: 'bottom', offsetY: -10,
-            style: { color: '#fff', background: resolveColor('var(--text-soft)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } } } },
+            style: { color: resolveColor('var(--text-on-dark)'), background: resolveColor('var(--text-soft)'), fontSize: '10px', padding: { left: 6, right: 6, top: 2, bottom: 2 } } } },
       ]
     },
     tooltip: { enabled: true, shared: true, theme: document.body.classList.contains('dark') ? 'dark' : 'light', y: { formatter: val => fmtR$(val) } },
     legend: { show: true, position: 'top', fontSize: '11px', labels: { colors: resolveColor('var(--text-medium)') } },
     grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
-    markers: { size: [4, 4], strokeWidth: 2, strokeColors: '#fff', hover: { sizeOffset: 3 } },
+    markers: { size: [4, 4], strokeWidth: 2, strokeColors: resolveColor('var(--text-on-dark)'), hover: { sizeOffset: 3 } },
   };
 
   // Renderizar após o innerHTML estar no DOM
@@ -7055,7 +7056,7 @@ function renderFlowsRefletidosSection(servico, insumo) {
   }
 
   return `
-    ${renderSecao('✅ Flows refletidos no planejamento', flowsRel, '#ede9fe', '#5b21b6')}
+    ${renderSecao('✅ Flows refletidos no planejamento', flowsRel, 'var(--accent-purple-bg)', 'var(--accent-purple-dark)')}
     ${renderSecao('⏳ Flows pendentes (ainda não refletidos) — entram como extrapolação', flowsPend, 'var(--sem-alerta-bg)', 'var(--sem-alerta)')}
   `;
 }
@@ -7188,7 +7189,7 @@ function applyLocksToUI() {
     if (btn) {
       btn.textContent = trancado ? '🔒' : '🔓';
       btn.title = trancado ? 'Trancado — clique para destravar' : 'Destravado — clique para trancar';
-      btn.style.background = trancado ? 'var(--sem-alerta-bg)' : 'white';
+      btn.style.background = trancado ? 'var(--sem-alerta-bg)' : 'var(--bg-card)';
       btn.style.borderColor = trancado ? 'var(--sem-alerta)' : 'var(--border-strong)';
     }
   });
@@ -7421,7 +7422,7 @@ function renderProjCtrl() {
         </div>`;
     } else if (confStatus === 'ok') {
       elBanner.innerHTML = `
-        <div style="padding:10px 14px; background:#d1fae5; border-left:4px solid var(--sem-ok); border-radius:6px; font-size:12.5px; color:var(--sem-ok);">
+        <div style="padding:10px 14px; background:var(--sem-ok-bg); border-left:4px solid var(--sem-ok); border-radius:6px; font-size:12.5px; color:var(--sem-ok);">
           ✅ <strong>Conferido!</strong> Saldo controlado (${fmtR$(saldoAtual)}) = Valor no sistema (${fmtR$(valorSistema)}). Diferença: ${fmtR$(confDiff)} (dentro da tolerância de R$ ${TOL_CONF.toFixed(2)}).
         </div>`;
     } else {
@@ -7429,12 +7430,12 @@ function renderProjCtrl() {
       elBanner.innerHTML = `
         <div style="padding:10px 14px; background:var(--fgr-red-light); border-left:4px solid var(--fgr-red-vivid); border-radius:6px; font-size:12.5px; color:var(--sem-erro);">
           ⚠️ <strong>Divergência identificada:</strong> existem ${fmtR$(Math.abs(confDiff))} ${sinal} no sistema do que o controlado.
-          <div style="margin-top:6px; font-size:11.5px; color:#7f1d1d; display:flex; gap:18px; flex-wrap:wrap;">
+          <div style="margin-top:6px; font-size:11.5px; color:var(--sem-erro-text); display:flex; gap:18px; flex-wrap:wrap;">
             <span>📊 Saldo controlado: <strong>${fmtR$(saldoAtual)}</strong></span>
             <span>🔍 Valor no sistema (Tendência): <strong>${fmtR$(valorSistema)}</strong></span>
             <span>❓ Não identificado: <strong>${confDiff>=0?'+':''}${fmtR$(confDiff)}</strong></span>
           </div>
-          <div style="margin-top:6px; font-size:11px; color:#7f1d1d;">
+          <div style="margin-top:6px; font-size:11px; color:var(--sem-erro-text);">
             💡 Isso significa que há movimentações no sistema (Tendência) que ainda não foram registradas neste controle. Adicione uma movimentação manual ou ajuste o saldo inicial.
           </div>
         </div>`;
@@ -7478,7 +7479,7 @@ function renderProjCtrlChart(movs) {
       toolbar: { show: true, tools: { download: true, selection: true, zoom: true, pan: true, reset: true } },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
     },
-    colors: ['#7c3aed'],
+    colors: [resolveColor('var(--accent-purple-strong)')],
     stroke: { curve: 'smooth', width: 2.5 },
     fill: {
       type: 'gradient',
@@ -7526,7 +7527,7 @@ function renderProjCtrlChart(movs) {
     markers: {
       size: 5,
       strokeWidth: 2,
-      strokeColors: '#fff',
+      strokeColors: resolveColor('var(--text-on-dark)'),
       colors: dotColors,
       hover: { sizeOffset: 3 },
     },
@@ -7594,11 +7595,11 @@ function renderMovTable(movs, saldoFinal) {
     } else if (m.origem_dado === 'manual') {
       chips = `<span style="display:inline-block; margin-left:6px;">
         <button data-editor-only data-action="edit-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid var(--fgr-red-light); background:var(--fgr-red-light); color:var(--fgr-red-dark); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer; margin-right:3px;" title="Editar">✏️ Editar</button>
-        <button data-editor-only data-action="delete-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid #fecaca; background:var(--fgr-red-light); color:var(--sem-erro); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Excluir">🗑️ Excluir</button>
+        <button data-editor-only data-action="delete-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid var(--sem-erro-border); background:var(--fgr-red-light); color:var(--sem-erro); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Excluir">🗑️ Excluir</button>
       </span>`;
     }
 
-    const trStyle = m.origem_dado === 'flow' ? 'background:#fafbff;' : m.origem_dado === 'inicial' ? 'background:#fef9c3;' : '';
+    const trStyle = m.origem_dado === 'flow' ? 'background:var(--row-flow-bg);' : m.origem_dado === 'inicial' ? 'background:var(--row-initial-bg);' : '';
     return `<tr style="${trStyle}">
       <td style="font-size:11.5px; color:var(--text-soft);">${escHtml(m.data_br || m.data || '')}</td>
       <td>${tipoBadge[m.tipo] || escHtml(m.tipo)}</td>
@@ -8159,7 +8160,7 @@ function renderHistChart(gestoes, totals) {
     markers: {
       size: 5,
       strokeWidth: 2,
-      strokeColors: '#fff',
+      strokeColors: resolveColor('var(--text-on-dark)'),
       hover: { sizeOffset: 3 },
     },
   };

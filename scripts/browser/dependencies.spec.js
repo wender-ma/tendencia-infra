@@ -263,9 +263,19 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   expect(pageErrors).toEqual([]);
   expect(failedLocalAssets).toEqual([]);
 
-  const initialDarkMode = await page.locator('body').evaluate(body => body.classList.contains('dark'));
+  const initialTheme = await page.locator('body').evaluate(body => ({
+    dark: body.classList.contains('dark'),
+    background: getComputedStyle(body).backgroundColor,
+    accent: getComputedStyle(body).getPropertyValue('--accent-purple').trim(),
+  }));
   await page.getByRole('button', { name: /modo claro|modo escuro/i }).click();
-  await expect(page.locator('body')).toHaveClass(initialDarkMode ? /^(?!.*dark)/ : /dark/);
+  await expect(page.locator('body')).toHaveClass(initialTheme.dark ? /^(?!.*dark)/ : /dark/);
+  const toggledTheme = await page.locator('body').evaluate(body => ({
+    background: getComputedStyle(body).backgroundColor,
+    accent: getComputedStyle(body).getPropertyValue('--accent-purple').trim(),
+  }));
+  expect(toggledTheme.background).not.toBe(initialTheme.background);
+  expect(toggledTheme.accent).not.toBe(initialTheme.accent);
   await page.getByRole('button', { name: /modo claro|modo escuro/i }).click();
 
   await page.locator('#authBtn').click();

@@ -17,6 +17,10 @@ const dashboardExport = fs.readFileSync(
   path.join(root, 'assets/js/services/dashboard-export.mjs'),
   'utf8',
 );
+const dashboardRepository = fs.readFileSync(
+  path.join(root, 'assets/js/services/dashboard-repository.mjs'),
+  'utf8',
+);
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
@@ -96,6 +100,14 @@ assert(
 assert(
   dashboardExport.includes('export function installLegacyDashboardExports'),
   'Adaptador temporário das exportações XLSX ausente',
+);
+assert(
+  dashboardRepository.includes('export function createDashboardRepository'),
+  'Repositório de dados do dashboard ausente',
+);
+assert(
+  dashboardRepository.includes('export function installLegacyDashboardRepository'),
+  'Adaptador temporário do repositório de dados ausente',
 );
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
@@ -265,6 +277,18 @@ for (const removedLegacyContract of [
   'async function exportarDetalhamentoXLSX(',
   'async function exportarFlowsXLSX(',
   'async function exportarControleProjXLSX(',
+  'async function supaLoadClassifications(',
+  'async function supaPatchClassification(',
+  'async function supaLoadManuals(',
+  'async function supaUpsertManual(',
+  'async function supaDeleteManual(',
+  'async function supaLoadProjConfig(',
+  'async function supaSaveProjConfig(',
+  'async function supaLoadMovs(',
+  'async function supaUpsertMov(',
+  'async function supaDeleteMov(',
+  'async function supaLoadDashboardConfig(',
+  'async function supaSaveDashboardKey(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

@@ -22,6 +22,7 @@ function loadProjectSources() {
   const javascript = [
     readProjectFile('assets/js/dashboard-legacy.js'),
     readProjectFile('assets/js/services/dashboard-export.mjs'),
+    readProjectFile('assets/js/services/dashboard-repository.mjs'),
     readProjectFile('assets/js/ui/flow-editor.mjs'),
     readProjectFile('assets/js/ui/uploads.mjs'),
     readProjectFile('assets/js/ui/views/admin.mjs'),

@@ -30,6 +30,10 @@ import {
   installLegacyDashboardExports,
 } from './services/dashboard-export.mjs';
 import {
+  createDashboardRepository,
+  installLegacyDashboardRepository,
+} from './services/dashboard-repository.mjs';
+import {
   ensureApexCharts,
   ensureXlsx,
   installLegacyDependencyGlobals,
@@ -130,6 +134,17 @@ const dashboardExportService = createDashboardExportService({
   reportError: (context, error) => logger.warn(context, error),
 });
 installLegacyDashboardExports(dashboardExportService);
+const dashboardRepository = createDashboardRepository({
+  getClient: () => window.SUPA,
+  getActiveProject: () => window.OBRA_ATIVA,
+  getCurrentUser: () => window.AUTH?.user,
+  canEditActiveProject: () => window.isEditorDaObraAtiva?.() === true,
+  isAdmin: () => window.isAdminGeral?.() === true,
+  retry: (operation) => window.supaRetry(operation),
+  onMutation: (error) => window.handleUploadRepositoryMutation?.(error, 'Dados'),
+  warn: (context, error) => logger.warn(context, error),
+});
+installLegacyDashboardRepository(dashboardRepository);
 
 Promise.resolve()
   .then(() => {
@@ -156,6 +171,7 @@ Promise.resolve()
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
       excel: excelService,
       exports: dashboardExportService,
+      dashboardRepository,
       logger,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
       uploadRepository,

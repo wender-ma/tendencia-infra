@@ -16,6 +16,7 @@ let getHistoricoObraAtiva;
 let paginateRows;
 let renderPaginationControls;
 let renderDashboardState;
+let APP_STATE;
 
 const CENT_TOLERANCE = DASHBOARD_CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
@@ -34,10 +35,10 @@ function bindHistoryFilters() {
   });
 }
 
-// HISTORICO declarado na seção ESTADO GLOBAL acima
+// APP_STATE.dados.historico declarado na seção ESTADO GLOBAL acima
 
 // v0.58b: helpers de filtragem por obra ativa
-// HISTORICO e PROJ_RAW são globais (todas as obras), filtramos em memória ao renderizar.
+// APP_STATE.dados.historico e APP_STATE.dados.projRaw são globais (todas as obras), filtramos em memória ao renderizar.
 // getHistoricoObraAtiva, getProjRawObraAtiva, getFlowsObraAtiva agora são aliases
 // para filtrarPorObraAtiva (definidos no início do script)
 
@@ -72,7 +73,7 @@ function renderHistorico() {
   const gestoes = [LIC_LABEL, ...HIST_OBRA.gestoes];
   // Mapa insumo → licitação (a partir da Tendência)
   const licMap = {};
-  DATA_T.forEach((t) => {
+  APP_STATE.dados.tendencia.forEach((t) => {
     if (t.is_folha && t.cod_insumo && t.licitacao != null) {
       licMap[t.cod_insumo] = (licMap[t.cod_insumo] || 0) + t.licitacao;
     }
@@ -278,7 +279,7 @@ function renderHistTopChanges(items, gestoes) {
     return arr
       .map((x) => {
         // Tentar achar o nome do item na tendência via insumo
-        const tendMatch = DATA_T.find((t) => t.cod_insumo === x.insumo);
+        const tendMatch = APP_STATE.dados.tendencia.find((t) => t.cod_insumo === x.insumo);
         const nome = tendMatch ? tendMatch.item : x.insumo + ' (' + x.item_cod + ')';
         return `
         <div class="top-item">
@@ -304,7 +305,7 @@ function renderHistHeatmap() {
 
   const filtered = items.filter((it) => {
     if (q) {
-      const tendMatch = DATA_T.find((t) => t.cod_insumo === it.insumo);
+      const tendMatch = APP_STATE.dados.tendencia.find((t) => t.cod_insumo === it.insumo);
       const nome = tendMatch ? tendMatch.item : '';
       const txt = (it.insumo + ' ' + it.item_cod + ' ' + nome).toLowerCase();
       if (!txt.includes(q)) return false;
@@ -332,7 +333,7 @@ function renderHistHeatmap() {
   const historyPage = paginateRows(
     'history',
     filtered,
-    JSON.stringify([q, compare, onlyChanged, OBRA_ATIVA, gestoes]),
+    JSON.stringify([q, compare, onlyChanged, APP_STATE.obra.ativa, gestoes]),
   );
 
   // Header
@@ -379,7 +380,7 @@ function renderHistHeatmap() {
         const dTotal = isFlat(dTotalRaw) ? 0 : dTotalRaw;
         const pctTot =
           isFlat(dTotalRaw) || !it[gestoes[0]] ? null : (dTotalRaw / it[gestoes[0]]) * 100;
-        const tendMatch = DATA_T.find((t) => t.cod_insumo === it.insumo);
+        const tendMatch = APP_STATE.dados.tendencia.find((t) => t.cod_insumo === it.insumo);
         const nome = tendMatch ? tendMatch.item : it.item_cod;
         return `<tr>
       <td style="font-size:11px;color:var(--text-soft);">${escHtml(it.insumo)}</td>
@@ -396,7 +397,10 @@ function renderHistHeatmap() {
   renderPaginationControls('historyPagination', 'history', historyPage, renderHistHeatmap);
 }
 
-export function installLegacyHistoryView({ runtime, pagination, viewStates }, target = window) {
+export function installLegacyHistoryView(
+  { runtime, pagination, viewStates, state },
+  target = window,
+) {
   uiCriarKpi = runtime.createKpi;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
@@ -404,5 +408,6 @@ export function installLegacyHistoryView({ runtime, pagination, viewStates }, ta
   paginateRows = pagination.paginate;
   renderPaginationControls = pagination.renderControls;
   renderDashboardState = viewStates.render;
+  APP_STATE = state;
   target.renderHistorico = renderHistorico;
 }

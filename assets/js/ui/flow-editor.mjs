@@ -1,6 +1,10 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from './dom.mjs';
 import { formatNumber as fmt, formatNumber as fmtR$ } from './dashboard-runtime.mjs';
+import { STORAGE_KEYS } from '../config.js';
+
+const STORAGE_KEY = STORAGE_KEYS.classifications;
+const MANUAL_KEY = STORAGE_KEYS.manuals;
 
 let reportNonFatalError;
 let runAsyncSafely;
@@ -19,6 +23,7 @@ let supaDeleteManual;
 let SUPA;
 let isEditorDaObraAtiva;
 let requireEditor;
+let APP_STATE;
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
@@ -50,16 +55,16 @@ const SPECIAL_OPTIONS = [
 ];
 const SPECIAL_VALUES_SET = new Set(SPECIAL_OPTIONS.map((o) => o.value));
 
-// Carrega edições salvas (se houver) e aplica em DATA_F
+// Carrega edições salvas (se houver) e aplica em APP_STATE.dados.flows
 function loadClassifications() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return 0;
     const map = JSON.parse(raw);
     let n = 0;
-    // aplica em TODO DATA_F (não só obra ativa). Chave é "codigo_obra:n_alteracao"
+    // aplica em TODO APP_STATE.dados.flows (não só obra ativa). Chave é "codigo_obra:n_alteracao"
     // Compat: aceita também chave só com n_alteracao (legado)
-    const _DATA_F_ALL = Array.isArray(DATA_F) ? DATA_F : [];
+    const _DATA_F_ALL = Array.isArray(APP_STATE.dados.flows) ? APP_STATE.dados.flows : [];
     _DATA_F_ALL.forEach((f) => {
       const keyComObra = (f.codigo_obra || '') + ':' + f.n_alteracao;
       const keyLegacy = f.n_alteracao;
@@ -112,9 +117,11 @@ function readClassificationMap() {
 
 function saveClassification(nAlt, field, value) {
   if (!requireEditor('classificar aditivos')) return false;
-  // acha o aditivo no DATA_F pra pegar codigo_obra e montar chave composta
-  const f = (Array.isArray(DATA_F) ? DATA_F : []).find((x) => x.n_alteracao === nAlt);
-  const codigoObra = f?.codigo_obra || OBRA_ATIVA || '';
+  // acha o aditivo no APP_STATE.dados.flows pra pegar codigo_obra e montar chave composta
+  const f = (Array.isArray(APP_STATE.dados.flows) ? APP_STATE.dados.flows : []).find(
+    (x) => x.n_alteracao === nAlt,
+  );
+  const codigoObra = f?.codigo_obra || APP_STATE.obra.ativa || '';
   const key = codigoObra + ':' + nAlt;
   const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
@@ -220,7 +227,7 @@ function exportClassifications() {
 // Lista ordenada de insumos da tendência (Ixxx — Nome)
 function buildInsumosList() {
   const map = new Map();
-  DATA_T.forEach((t) => {
+  APP_STATE.dados.tendencia.forEach((t) => {
     if (t.is_folha && t.cod_insumo && !SPECIAL_VALUES_SET.has(t.cod_insumo)) {
       if (!map.has(t.cod_insumo)) map.set(t.cod_insumo, t.item);
     }
@@ -299,7 +306,7 @@ function buildDatalist() {
   // log discreto
   if (INSUMOS_OPTIONS.length > 0) {
     console.log(
-      `[DATALIST] ${INSUMOS_OPTIONS.length} insumos disponíveis no dropdown de classificação (${OBRA_ATIVA || '—'})`,
+      `[DATALIST] ${INSUMOS_OPTIONS.length} insumos disponíveis no dropdown de classificação (${APP_STATE.obra.ativa || '—'})`,
     );
   }
 }
@@ -385,7 +392,7 @@ function ttDiv() {
   return '<div class="tt-divider"></div>';
 }
 
-// Helper: re-renderizar TODAS as visões que dependem de DATA_F (refletido, classificação, valor, manuais)
+// Helper: re-renderizar TODAS as visões que dependem de APP_STATE.dados.flows (refletido, classificação, valor, manuais)
 // Chamado sempre que algo nos Flows muda, para garantir que Visão Geral, Tendência de Obra e Controle Projeção atualizem
 // OTIMIZADO: usa debounce para evitar múltiplas renderizações em sequência
 function syncAllViewsFromFlows() {
@@ -409,7 +416,7 @@ function syncAllViewsFromFlows() {
 }
 
 function onClassifChange(sel) {
-  if (!requireEditorForActiveProject('classificar aditivos')) {
+  if (!requireEditor('classificar aditivos')) {
     renderFlowTable();
     return;
   }
@@ -925,7 +932,7 @@ function massConfirmCallback() {
 // Limita a concorrência para não saturar a API durante edições em massa.
 async function supaBulkUpsertClassifications(payloads) {
   if (!isEditorDaObraAtiva() || !SUPA || !payloads.length) return;
-  if (payloads.some((item) => item.codigo_obra !== OBRA_ATIVA)) return;
+  if (payloads.some((item) => item.codigo_obra !== APP_STATE.obra.ativa)) return;
   const batchSize = 12;
   for (let i = 0; i < payloads.length; i += batchSize) {
     const batch = payloads.slice(i, i + batchSize);
@@ -938,7 +945,7 @@ async function supaBulkUpsertClassifications(payloads) {
 }
 
 function massAplicarDestino() {
-  if (!requireEditorForActiveProject('classificar aditivos em massa')) return;
+  if (!requireEditor('classificar aditivos em massa')) return;
   const opt = `
     <div class="full">
       <label for="massDestInput">INSUMO PLANEJAMENTO (destino) a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
@@ -962,7 +969,7 @@ function massAplicarDestino() {
         f.insumo_planejamento = novo;
         f._edited_p = true;
         f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
-        const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+        const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
         const key = codigoObra + ':' + nAlt;
         if (!map[key]) map[key] = { codigo_obra: codigoObra };
         map[key].insumo_planejamento = novo;
@@ -987,7 +994,7 @@ function massAplicarDestino() {
 }
 
 function massAplicarOrigem() {
-  if (!requireEditorForActiveProject('classificar aditivos em massa')) return;
+  if (!requireEditor('classificar aditivos em massa')) return;
   const opt = `
     <div class="full">
       <label for="massOrigInput">INSUMO DE REMANEJAMENTO (origem) a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
@@ -1009,7 +1016,7 @@ function massAplicarOrigem() {
         f.insumo_remanejamento = novo;
         f._edited_r = true;
         f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
-        const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+        const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
         const key = codigoObra + ':' + nAlt;
         if (!map[key]) map[key] = { codigo_obra: codigoObra };
         map[key].insumo_remanejamento = novo;
@@ -1032,7 +1039,7 @@ function massAplicarOrigem() {
 }
 
 function massAplicarRefletido() {
-  if (!requireEditorForActiveProject('classificar aditivos em massa')) return;
+  if (!requireEditor('classificar aditivos em massa')) return;
   const opt = `
     <div class="full">
       <label for="massReflInput">Status de reflexo a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
@@ -1056,7 +1063,7 @@ function massAplicarRefletido() {
         if (!f) return;
         f.refletido_status = status;
         f.refletido = status === 'sim';
-        const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+        const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
         const key = codigoObra + ':' + nAlt;
         if (!map[key]) map[key] = { codigo_obra: codigoObra };
         map[key].refletido_status = status;
@@ -1082,7 +1089,7 @@ function massAplicarRefletido() {
 // parseNumBR agora é um alias para parseNumero (definido no início do script)
 
 function onValorChange(input) {
-  if (!requireEditorForActiveProject('alterar valores de aditivos')) {
+  if (!requireEditor('alterar valores de aditivos')) {
     renderFlowTable();
     return;
   }
@@ -1093,7 +1100,7 @@ function onValorChange(input) {
   f.custo_flowmaster = novo;
   f._edited_v = true;
   // usar chave composta (codigo_obra:n_alteracao) + sync com Supabase
-  const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+  const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
   const key = codigoObra + ':' + nAlt;
   const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
@@ -1183,10 +1190,10 @@ function saveManuals(arr) {
 
 function applyManuals() {
   // Remove anteriores e adiciona novamente (idempotente)
-  DATA_F = DATA_F.filter((f) => !f.is_manual);
+  APP_STATE.dados.flows = APP_STATE.dados.flows.filter((f) => !f.is_manual);
   const manuals = loadManuals();
   manuals.forEach((m) => {
-    DATA_F.push({
+    APP_STATE.dados.flows.push({
       ...m,
       is_manual: true,
       tipo: classifyFlow(m.insumo_planejamento, m.insumo_remanejamento),
@@ -1205,7 +1212,7 @@ function nextManualId() {
 }
 
 function openManualForm(editing) {
-  if (!requireEditorForActiveProject('adicionar ou editar aditivos manuais')) return;
+  if (!requireEditor('adicionar ou editar aditivos manuais')) return;
   const f = editing || {};
   const today = new Date().toLocaleDateString('pt-BR');
   const tpl = document.getElementById('tpl-manual-form').content.cloneNode(true);
@@ -1270,7 +1277,7 @@ function openManualForm(editing) {
 }
 
 function saveManualForm(editingId) {
-  if (!requireEditorForActiveProject('salvar aditivos manuais')) return;
+  if (!requireEditor('salvar aditivos manuais')) return;
   const get = (id) => document.getElementById(id).value.trim();
   const dep = get('m_dep');
   const data = get('m_data');
@@ -1353,7 +1360,17 @@ async function deleteManual(id) {
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
 export function installLegacyFlowEditor(
-  { runtime, storage, feedback, modals, dashboardRepository, authService, authUi, supabaseClient },
+  {
+    runtime,
+    storage,
+    feedback,
+    modals,
+    dashboardRepository,
+    authService,
+    authUi,
+    supabaseClient,
+    state,
+  },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -1372,6 +1389,7 @@ export function installLegacyFlowEditor(
   SUPA = supabaseClient;
   isEditorDaObraAtiva = authService.canEditActiveProject;
   requireEditor = authUi.requireEditor;
+  APP_STATE = state;
   Object.assign(target, {
     loadClassifications,
     readClassificationMap,

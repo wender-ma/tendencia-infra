@@ -16,13 +16,14 @@ let SafeStorage;
 let renderDashboardState;
 let supaSaveDashboardKey;
 let isAdminGeral;
+let APP_STATE;
 
 // ============ VISÃO GERAL ============
-// GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
+// APP_STATE.config.gestaoLabel, APP_STATE.config.evolGlobal, APP_STATE.config.card3Modo, APP_STATE.config.correcaoIndice
 // declarados na seção ESTADO GLOBAL acima
 
 function setCard3Modo(v) {
-  CARD3_MODO = v;
+  APP_STATE.config.card3Modo = v;
   SafeStorage.set('jzurique_card3_modo', v);
   if (isAdminGeral()) {
     void runAsyncSafely(
@@ -35,7 +36,7 @@ function setCard3Modo(v) {
 }
 
 function setCorrecaoIndice(v) {
-  CORRECAO_INDICE = v;
+  APP_STATE.config.correcaoIndice = v;
   SafeStorage.set('jzurique_indice_correcao', v);
   if (isAdminGeral()) {
     void runAsyncSafely(
@@ -44,8 +45,8 @@ function setCorrecaoIndice(v) {
       'O índice foi salvo apenas neste navegador.',
     );
   }
-  if (Array.isArray(DATA_T)) {
-    DATA_T.forEach((d) => {
+  if (Array.isArray(APP_STATE.dados.tendencia)) {
+    APP_STATE.dados.tendencia.forEach((d) => {
       d.licitacao_corrigido = v === 'ipca' ? d.corrigido_ipca : d.corrigido_incc;
     });
   }
@@ -57,7 +58,9 @@ function setCorrecaoIndice(v) {
 // Valores vêm do subheader (linha 1) do CSV Tendência — só obra civil, sem indiretos.
 function renderCardAderencia() {
   const evol =
-    typeof EVOL_GLOBAL !== 'undefined' ? EVOL_GLOBAL : { teorica: null, financeira: null };
+    typeof APP_STATE.config.evolGlobal !== 'undefined'
+      ? APP_STATE.config.evolGlobal
+      : { teorica: null, financeira: null };
   const teor = evol.teorica;
   const fin = evol.financeira;
   if (teor == null && fin == null) {
@@ -164,8 +167,8 @@ function irParaAba(nomeAba) {
 // Verifica se a obra ativa tem dados de Tendência carregados
 function obraTemTendencia() {
   return (
-    Array.isArray(DATA_T) &&
-    DATA_T.some((d) => d.is_folha && (d.licitacao != null || d.gestao != null))
+    Array.isArray(APP_STATE.dados.tendencia) &&
+    APP_STATE.dados.tendencia.some((d) => d.is_folha && (d.licitacao != null || d.gestao != null))
   );
 }
 
@@ -197,7 +200,7 @@ function renderVisao() {
     verificarDadosDesatualizados();
     return;
   }
-  const folhas = DATA_T.filter((d) => d.is_folha);
+  const folhas = APP_STATE.dados.tendencia.filter((d) => d.is_folha);
   // Atualiza subtítulo do header com a gestão atual
   refreshHeaderSubtitle();
   let totLicit = 0,
@@ -225,10 +228,10 @@ function renderVisao() {
     totIncc += d.corrigido_incc || 0;
     totIpca += d.corrigido_ipca || 0;
   });
-  const totCorrigido = CORRECAO_INDICE === 'ipca' ? totIpca : totIncc;
-  const indiceLabel = CORRECAO_INDICE.toUpperCase();
-  const totAltLabel = CORRECAO_INDICE === 'ipca' ? 'INCC' : 'IPCA';
-  const totAltVal = CORRECAO_INDICE === 'ipca' ? totIncc : totIpca;
+  const totCorrigido = APP_STATE.config.correcaoIndice === 'ipca' ? totIpca : totIncc;
+  const indiceLabel = APP_STATE.config.correcaoIndice.toUpperCase();
+  const totAltLabel = APP_STATE.config.correcaoIndice === 'ipca' ? 'INCC' : 'IPCA';
+  const totAltVal = APP_STATE.config.correcaoIndice === 'ipca' ? totIncc : totIpca;
   // Diferenças vs licitação
   const inflacaoAbs = totCorrigido - totLicit;
   const inflacaoPct = totLicit ? (inflacaoAbs / totLicit) * 100 : 0;
@@ -247,8 +250,9 @@ function renderVisao() {
         };
   // Calcular extrapolação dos Indiretos rodando uma "mini-projeção" rápida
   let totExtrapInd = 0;
-  // v0.58b: usa PROJ_RAW filtrado pela obra ativa
-  const _PROJ_VG = typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : PROJ_RAW;
+  // v0.58b: usa APP_STATE.dados.projRaw filtrado pela obra ativa
+  const _PROJ_VG =
+    typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : APP_STATE.dados.projRaw;
   if (Array.isArray(_PROJ_VG) && _PROJ_VG.length && typeof projetarServico === 'function') {
     const dataCorteVG = document.getElementById('projDataCorte')?.value || defaultDataCorte();
     const dataFimVG = document.getElementById('projDataFim')?.value || defaultDataFim();
@@ -322,8 +326,8 @@ function renderVisao() {
   // Toggle INCC/IPCA
   const toggleHtml = `
     <div class="toggle-group" style="margin-top:8px;">
-      <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="incc" class="toggle-btn ${CORRECAO_INDICE === 'incc' ? 'active' : ''}">INCC</button>
-      <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="ipca" class="toggle-btn ${CORRECAO_INDICE === 'ipca' ? 'active' : ''}">IPCA</button>
+      <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="incc" class="toggle-btn ${APP_STATE.config.correcaoIndice === 'incc' ? 'active' : ''}">INCC</button>
+      <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="ipca" class="toggle-btn ${APP_STATE.config.correcaoIndice === 'ipca' ? 'active' : ''}">IPCA</button>
     </div>
   `;
 
@@ -359,7 +363,7 @@ function renderVisao() {
 
     <!-- Card Fluxo Atual (Gestão) -->
     <div class="kpi kpi-wide ${kpiBrutoCls}">
-      <div class="label">📊 ${escHtml(GESTAO_LABEL)}</div>
+      <div class="label">📊 ${escHtml(APP_STATE.config.gestaoLabel)}</div>
       <div class="value">${fmtR$(totGestao)}</div>
       <div class="sub">planejamento vigente</div>
       <hr style="border:none; border-top:1px solid var(--border); margin:10px 0;">
@@ -376,16 +380,16 @@ function renderVisao() {
     </div>
 
     <!-- Card 3 — Tendência projetada (versão compacta v0.43) -->
-    <div class="kpi kpi-wide ${CARD3_MODO === 'liquido' ? tendLiqCls : tendBrutoCls}">
+    <div class="kpi kpi-wide ${APP_STATE.config.card3Modo === 'liquido' ? tendLiqCls : tendBrutoCls}">
       <div class="label">🔮 Tendência Final Projetada</div>
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:6px 0 8px;">
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-          <div style="font-size:24px; font-weight:700; color:var(--text-strong);">${fmtR$(CARD3_MODO === 'liquido' ? tendFinalLiq : tendFinal)}</div>
-          <div style="font-size:12px; color:var(--text-soft);">${CARD3_MODO === 'liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
+          <div style="font-size:24px; font-weight:700; color:var(--text-strong);">${fmtR$(APP_STATE.config.card3Modo === 'liquido' ? tendFinalLiq : tendFinal)}</div>
+          <div style="font-size:12px; color:var(--text-soft);">${APP_STATE.config.card3Modo === 'liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
         </div>
         <div class="toggle-group">
-          <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="bruto" class="toggle-btn ${CARD3_MODO === 'bruto' ? 'active' : ''}">Bruto</button>
-          <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${CARD3_MODO === 'liquido' ? 'active' : ''}">Líquido</button>
+          <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="bruto" class="toggle-btn ${APP_STATE.config.card3Modo === 'bruto' ? 'active' : ''}">Bruto</button>
+          <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${APP_STATE.config.card3Modo === 'liquido' ? 'active' : ''}">Líquido</button>
         </div>
       </div>
       ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto >= 0 ? '+' : '') + fmtR$(desvioBruto), desvioBruto > 0 ? 'var(--sem-erro)' : desvioBruto < 0 ? 'var(--sem-ok)' : 'var(--text-soft)', 'gestão atual vs licitação')}
@@ -565,16 +569,16 @@ function renderVisao() {
   renderTopList(downs, false, 'top10Down');
 }
 
-// Filtro interativo do donut (toggle por tipo) — donutHidden e _lastTipoSum em AppState.donut
+// Filtro interativo do donut (toggle por tipo) — APP_STATE.donut.hidden e APP_STATE.donut.lastTipoSum em AppState.donut
 
 function toggleDonutSlice(key) {
-  if (donutHidden.has(key)) donutHidden.delete(key);
-  else donutHidden.add(key);
-  if (_lastTipoSum) renderDonut(_lastTipoSum);
+  if (APP_STATE.donut.hidden.has(key)) APP_STATE.donut.hidden.delete(key);
+  else APP_STATE.donut.hidden.add(key);
+  if (APP_STATE.donut.lastTipoSum) renderDonut(APP_STATE.donut.lastTipoSum);
 }
 
 function renderDonut(tipoSum) {
-  _lastTipoSum = tipoSum;
+  APP_STATE.donut.lastTipoSum = tipoSum;
   const aum = Math.max(0, tipoSum.aumento_real);
   const rem = Math.max(0, tipoSum.remanejamento);
   const eco = Math.max(0, tipoSum.economia);
@@ -602,7 +606,7 @@ function renderDonut(tipoSum) {
     { key: 'sem', v: sem, lbl: 'Sem class.', icon: '⚪' },
   ];
 
-  const visibleSegs = allSegs.filter((s) => s.v > 0 && !donutHidden.has(s.key));
+  const visibleSegs = allSegs.filter((s) => s.v > 0 && !APP_STATE.donut.hidden.has(s.key));
   const series = visibleSegs.map((s) => s.v);
   const labels = visibleSegs.map((s) => s.icon + ' ' + s.lbl);
   const colorMap = {
@@ -640,7 +644,7 @@ function renderDonut(tipoSum) {
             show: true,
             total: {
               show: true,
-              label: donutHidden.size > 0 ? 'Total (filtro ativo)' : 'Total flows',
+              label: APP_STATE.donut.hidden.size > 0 ? 'Total (filtro ativo)' : 'Total flows',
               formatter: function (w) {
                 const sum = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
                 return fmtR$k(sum);
@@ -690,7 +694,7 @@ function renderDonut(tipoSum) {
 }
 
 export function installLegacyOverviewView(
-  { runtime, storage, viewStates, dashboardRepository, authService },
+  { runtime, storage, viewStates, dashboardRepository, authService, state },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -703,6 +707,7 @@ export function installLegacyOverviewView(
   renderDashboardState = viewStates.render;
   supaSaveDashboardKey = dashboardRepository.saveDashboardKey;
   isAdminGeral = authService.isAdmin;
+  APP_STATE = state;
   Object.assign(target, {
     renderAderenciaProj,
     irParaAba,

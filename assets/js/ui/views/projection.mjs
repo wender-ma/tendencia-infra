@@ -1,10 +1,15 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { PROJECTION_CATALOG } from '../../data/projection-catalog.mjs';
 import {
   formatCompactNumber as fmtR$k,
   formatNumber as fmt,
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
+
+const HIERARQUIA = PROJECTION_CATALOG.hierarchy;
+const SERVICOS_META = PROJECTION_CATALOG.services;
+const INSUMOS_META = PROJECTION_CATALOG.inputs;
 
 let reportNonFatalError;
 let uiCriarKpi;
@@ -16,10 +21,11 @@ let ensureXlsx;
 let authToast;
 let openModal;
 let renderDashboardState;
+let APP_STATE;
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
-// PROJ_RAW declarado na seção ESTADO GLOBAL acima
+// APP_STATE.dados.projRaw declarado na seção ESTADO GLOBAL acima
 
 // Definir mês corrente (default)
 function defaultDataCorte() {
@@ -30,7 +36,8 @@ function defaultDataCorte() {
 function defaultDataFim() {
   // último mês do CSV
   // v0.58b: usa dados da obra ativa
-  const _p = typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : PROJ_RAW;
+  const _p =
+    typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : APP_STATE.dados.projRaw;
   if (!_p.length) return defaultDataCorte();
   return _p
     .map((r) => r.mes)
@@ -176,9 +183,9 @@ function calcularFlowsPendentesPorGrupo() {
       out['Outros'] += valor;
       return;
     }
-    const tendItem = (Array.isArray(DATA_T) ? DATA_T : []).find(
-      (t) => t.is_folha && t.cod_insumo === insDest,
-    );
+    const tendItem = (
+      Array.isArray(APP_STATE.dados.tendencia) ? APP_STATE.dados.tendencia : []
+    ).find((t) => t.is_folha && t.cod_insumo === insDest);
     if (tendItem && tendItem.grupo && out.hasOwnProperty(tendItem.grupo)) {
       out[tendItem.grupo] += valor;
     } else {
@@ -242,7 +249,7 @@ function calcStatus(diff, planejado, tolerancia) {
 }
 
 function renderProjecao() {
-  // v0.58b: filtra PROJ_RAW pela obra ativa
+  // v0.58b: filtra APP_STATE.dados.projRaw pela obra ativa
   const PROJ_OBRA = getProjRawObraAtiva();
   if (!PROJ_OBRA.length) {
     initProjecao();
@@ -573,7 +580,7 @@ function flowsPorInsumo(insumo) {
 
 function flowsPorServico(cod_servico) {
   if (!cod_servico) return null;
-  // pegar todos os insumos desse serviço a partir do PROJ_RAW
+  // pegar todos os insumos desse serviço a partir do APP_STATE.dados.projRaw
   const insumosSet = new Set(
     getProjRawObraAtiva()
       .filter((r) => r.servico === cod_servico)
@@ -619,15 +626,19 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
   const fs = document.getElementById('projFilterStatus').value;
   const fg = document.getElementById('projFilterGrupo').value;
 
-  // mapa de Valor Gestão por (servico|insumo|item_cod) da última gestão fechada do HISTORICO
+  // mapa de Valor Gestão por (servico|insumo|item_cod) da última gestão fechada do APP_STATE.dados.historico
   // (filtrado pela obra ativa)
   const mapaValorGestao = {};
   let _ultGestaoLabel = null;
-  if (HISTORICO && Array.isArray(HISTORICO.gestoes) && Array.isArray(HISTORICO.items)) {
-    _ultGestaoLabel = acharUltimaGestaoCronologica(HISTORICO.gestoes);
+  if (
+    APP_STATE.dados.historico &&
+    Array.isArray(APP_STATE.dados.historico.gestoes) &&
+    Array.isArray(APP_STATE.dados.historico.items)
+  ) {
+    _ultGestaoLabel = acharUltimaGestaoCronologica(APP_STATE.dados.historico.gestoes);
     if (_ultGestaoLabel) {
-      HISTORICO.items
-        .filter((it) => it.codigo_obra === OBRA_ATIVA)
+      APP_STATE.dados.historico.items
+        .filter((it) => it.codigo_obra === APP_STATE.obra.ativa)
         .forEach((it) => {
           if (!it.insumo) return;
           const chaveComp =
@@ -747,7 +758,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
         grupo: grupoDoServico(getServicoCod(idx)),
         empty: true,
       };
-      // injetar Valor Gestão do HISTORICO por chave composta
+      // injetar Valor Gestão do APP_STATE.dados.historico por chave composta
       const _servCod = getServicoCod(idx);
       const _chaveVG = (_servCod || '') + '|' + (n.cod_insumo || '') + '|' + (n.cod || '');
       const _vg = mapaValorGestao[_chaveVG] || 0;
@@ -1088,7 +1099,8 @@ function projCollapseAll() {
 // Exporta a Projeção Detalhada COMPLETA (hierarquia toda expandida, sem filtros) em Excel
 async function exportarProjecaoDetalhada() {
   try {
-    const _proj = typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : PROJ_RAW;
+    const _proj =
+      typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : APP_STATE.dados.projRaw;
     if (!_proj || !_proj.length) {
       authToast(
         '⚠️ Não há dados de Projeção para exportar. Carregue o CSV de Gestões primeiro.',
@@ -1104,7 +1116,7 @@ async function exportarProjecaoDetalhada() {
     const tolerancia = parseFloat(document.getElementById('projTolerancia').value) || 50000;
 
     // Re-executa o pipeline pra pegar projServicos e projInsumos SEM depender do render (não muda estado)
-    // Reagrupa PROJ_RAW por (servico, insumo, mes)
+    // Reagrupa APP_STATE.dados.projRaw por (servico, insumo, mes)
     const byServMes = {};
     const byServInsMes = {};
     _proj.forEach((r) => {
@@ -1129,11 +1141,15 @@ async function exportarProjecaoDetalhada() {
     // Mapa Valor Gestão (mesma lógica da render)
     const mapaValorGestao = {};
     let ultGestao = null;
-    if (HISTORICO && Array.isArray(HISTORICO.gestoes) && Array.isArray(HISTORICO.items)) {
-      ultGestao = acharUltimaGestaoCronologica(HISTORICO.gestoes);
+    if (
+      APP_STATE.dados.historico &&
+      Array.isArray(APP_STATE.dados.historico.gestoes) &&
+      Array.isArray(APP_STATE.dados.historico.items)
+    ) {
+      ultGestao = acharUltimaGestaoCronologica(APP_STATE.dados.historico.gestoes);
       if (ultGestao) {
-        HISTORICO.items
-          .filter((it) => it.codigo_obra === OBRA_ATIVA)
+        APP_STATE.dados.historico.items
+          .filter((it) => it.codigo_obra === APP_STATE.obra.ativa)
           .forEach((it) => {
             if (!it.insumo) return;
             const k = (it.servico || '') + '|' + (it.insumo || '') + '|' + (it.item_cod || '');
@@ -1327,7 +1343,7 @@ async function exportarProjecaoDetalhada() {
 
     // Aba de metadados
     const meta = [
-      { Campo: 'Obra', Valor: OBRA_ATIVA || '' },
+      { Campo: 'Obra', Valor: APP_STATE.obra.ativa || '' },
       { Campo: 'Última gestão (Valor Gestão)', Valor: ultGestao || '' },
       { Campo: 'Data de corte', Valor: dataCorte },
       { Campo: 'Data fim', Valor: dataFim },
@@ -1381,7 +1397,7 @@ async function exportarProjecaoDetalhada() {
     ws2['!cols'] = [{ wch: 32 }, { wch: 40 }];
     XLSX.utils.book_append_sheet(wb, ws2, 'Metadados');
 
-    const nomeArq = `projecao-detalhada_${OBRA_ATIVA || 'obra'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const nomeArq = `projecao-detalhada_${APP_STATE.obra.ativa || 'obra'}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, nomeArq);
     console.log('[EXPORT] Projeção Detalhada exportada:', nomeArq, `(${linhas.length} linhas)`);
   } catch (e) {
@@ -1818,7 +1834,7 @@ function renderFlowsRefletidosSection(servico, insumo) {
 }
 
 export function installLegacyProjectionView(
-  { runtime, loadXlsx, feedback, modals, viewStates },
+  { runtime, loadXlsx, feedback, modals, viewStates, state },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -1831,6 +1847,7 @@ export function installLegacyProjectionView(
   authToast = feedback.toast;
   openModal = modals.open;
   renderDashboardState = viewStates.render;
+  APP_STATE = state;
   Object.assign(target, {
     defaultDataCorte,
     defaultDataFim,

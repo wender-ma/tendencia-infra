@@ -2237,11 +2237,3 @@ export const PROJECTION_CATALOG = Object.freeze({
   services: Object.freeze(services),
   inputs: Object.freeze(inputs),
 });
-
-export function installLegacyProjectionCatalog(target = window) {
-  Object.assign(target, {
-    HIERARQUIA: PROJECTION_CATALOG.hierarchy,
-    SERVICOS_META: PROJECTION_CATALOG.services,
-    INSUMOS_META: PROJECTION_CATALOG.inputs,
-  });
-}

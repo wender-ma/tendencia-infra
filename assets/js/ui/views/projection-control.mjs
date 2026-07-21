@@ -1,11 +1,14 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { DASHBOARD_CONFIG, STORAGE_KEYS } from '../../config.js';
 import {
   debounce,
   formatCompactNumber as fmtR$k,
   formatNumber as fmt,
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
+
+const PROJ_CTRL_KEY = STORAGE_KEYS.projectionControl;
 
 let runAsyncSafely;
 let resolveColor;
@@ -23,6 +26,7 @@ let supaDeleteMov;
 let SUPA;
 let isEditorDaObraAtiva;
 let requireEditor;
+let APP_STATE;
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
@@ -139,7 +143,7 @@ function applyLocksToUI() {
 
 // v0.60.5 — alterna o cadeado de um campo (saldo | data | insumo)
 function toggleLockCampo(campo) {
-  if (!requireEditorForActiveProject('alterar os bloqueios da projeção')) return;
+  if (!requireEditor('alterar os bloqueios da projeção')) return;
   if (!PROJ_CTRL_STATE.locks) PROJ_CTRL_STATE.locks = { saldo: false, data: false, insumo: false };
   PROJ_CTRL_STATE.locks[campo] = !PROJ_CTRL_STATE.locks[campo];
   applyLocksToUI();
@@ -325,15 +329,14 @@ function renderProjCtrl() {
   // Busca o valor atual do insumo controlado na aba TENDÊNCIA
   const insumoCtrl = (PROJ_CTRL_STATE.insumo || 'I011890').trim();
   let valorSistema = null;
-  if (Array.isArray(DATA_T)) {
+  if (Array.isArray(APP_STATE.dados.tendencia)) {
     // Soma de todos os insumos da Tendência que casam com o cod_insumo (geralmente 1 único)
-    valorSistema = DATA_T.filter((t) => t.is_folha && t.cod_insumo === insumoCtrl).reduce(
-      (s, t) => s + (t.gestao || 0),
-      0,
-    );
+    valorSistema = APP_STATE.dados.tendencia
+      .filter((t) => t.is_folha && t.cod_insumo === insumoCtrl)
+      .reduce((s, t) => s + (t.gestao || 0), 0);
     if (valorSistema === 0) valorSistema = null; // não encontrado
   }
-  const TOL_CONF = CONFIG.tolerancia_conferencia; // tolerância em R$
+  const TOL_CONF = DASHBOARD_CONFIG.tolerancia_conferencia; // tolerância em R$
   let confDiff = null,
     confStatus = 'na';
   if (valorSistema != null) {
@@ -712,7 +715,7 @@ function openMovForm(editingId) {
 }
 
 async function saveMovForm(editingId) {
-  if (!requireEditorForActiveProject('salvar movimentações')) return;
+  if (!requireEditor('salvar movimentações')) return;
   const get = (id) => document.getElementById(id).value.trim();
   const tipo = get('mov_tipo');
   const data = get('mov_data');
@@ -821,6 +824,7 @@ export function installLegacyProjectionControlView(
     authService,
     authUi,
     supabaseClient,
+    state,
   },
   target = window,
 ) {
@@ -840,6 +844,7 @@ export function installLegacyProjectionControlView(
   SUPA = supabaseClient;
   isEditorDaObraAtiva = authService.canEditActiveProject;
   requireEditor = authUi.requireEditor;
+  APP_STATE = state;
   Object.defineProperty(target, 'PROJ_CTRL_STATE', {
     configurable: true,
     get: () => PROJ_CTRL_STATE,

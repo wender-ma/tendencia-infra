@@ -18,7 +18,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.waitForFunction(
     () =>
       typeof window.dashboardServices?.actions?.resolve('handleAuthClick') === 'function' &&
-      window.AppState === window.dashboardState &&
+      Boolean(window.dashboardServices?.state) &&
       window.dashboardServices?.auth.state.ready === true &&
       window.dashboardServices?.performance.snapshot().boot.completed === true,
   );
@@ -125,17 +125,17 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const rejected = authService.resolvePermissions([
       { role: 'editor', status: 'rejected', codigo_obra: 'OBRA-A' },
     ]);
-    const originalTendency = window.DATA_T;
+    const state = window.dashboardServices.state;
+    const originalTendency = state.dados.tendencia;
     const tendencyMarker = [{ stateContract: true }];
-    window.DATA_T = tendencyMarker;
-    const aliasWritesState = window.AppState.dados.tendencia === tendencyMarker;
-    window.AppState.dados.tendencia = originalTendency;
-    const stateWritesAlias = window.DATA_T === originalTendency;
+    state.dados.tendencia = tendencyMarker;
+    const centralStateWrites = state.dados.tendencia === tendencyMarker;
+    state.dados.tendencia = originalTendency;
 
     authService.state.isEditor = true;
     authService.state.isAdminGeral = false;
     authService.state.editaObras = ['STATE-OBRA'];
-    window.OBRA_ATIVA = 'STATE-OBRA';
+    state.obra.ativa = 'STATE-OBRA';
     const authReadsActiveProject = authService.canEditActiveProject();
     const maliciousPayloads = [
       '<script>window.__xss=1</script>',
@@ -207,13 +207,11 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         rejected: !rejected.isEditor && !rejected.isAdminGeral,
       },
       stateContract: {
-        singleton: window.AppState === window.dashboardState,
-        aliasWritesState,
-        stateWritesAlias,
-        uploadsReference: window.LAST_UPLOADS === window.AppState.uploads,
+        registered: Boolean(state),
+        centralStateWrites,
         authReadsActiveProject,
       },
-      hasExternalConfig: window.dashboardConfig?.dashboard === window.CONFIG,
+      hasExternalConfig: window.dashboardServices.config.dashboard.table_page_size === 100,
       hasApexCharts: typeof window.ApexCharts === 'function',
       hasDashboardHandler:
         typeof window.dashboardServices.actions.resolve('handleAuthClick') === 'function',
@@ -374,6 +372,36 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'requireUploadPermission',
         'syncEditingControls',
         'updateAuthUI',
+        'AppState',
+        'dashboardState',
+        'DATA_T',
+        'DATA_F',
+        'HISTORICO',
+        'PROJ_RAW',
+        'GESTAO_LABEL',
+        'EVOL_GLOBAL',
+        'CARD3_MODO',
+        'CORRECAO_INDICE',
+        'OBRAS',
+        'OBRA_ATIVA',
+        'MAP_DESTINO',
+        'MAP_ORIGEM',
+        'LAST_UPLOADS',
+        'donutHidden',
+        '_lastTipoSum',
+        'sortKey',
+        'sortDir',
+        'sortKeyF',
+        'sortDirF',
+        'CONFIG',
+        'HEADER_KEY',
+        'STORAGE_KEY',
+        'MANUAL_KEY',
+        'PROJ_CTRL_KEY',
+        'dashboardConfig',
+        'HIERARQUIA',
+        'SERVICOS_META',
+        'INSUMOS_META',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };
@@ -402,10 +430,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {
-      singleton: true,
-      aliasWritesState: true,
-      stateWritesAlias: true,
-      uploadsReference: true,
+      registered: true,
+      centralStateWrites: true,
       authReadsActiveProject: true,
     },
     hasExternalConfig: true,

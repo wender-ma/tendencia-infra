@@ -32,6 +32,7 @@ let AUTH;
 let isEditorDaObraAtiva;
 let isAdminGeral;
 let requireUploadPermission;
+let APP_STATE;
 
 const MANUAL_TEXT = {
   tendencia:
@@ -51,7 +52,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
     return;
   }
   // v0.58a: guard obra ativa (upload sem obra selecionada não faz sentido)
-  if (!OBRA_ATIVA) {
+  if (!APP_STATE.obra.ativa) {
     authToast(
       '❌ Nenhuma obra selecionada. Escolha uma obra no header antes de fazer upload.',
       'err',
@@ -93,7 +94,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
           throw new Error(
             'TENDÊNCIA: nenhuma linha válida encontrada. Os dados atuais foram mantidos.',
           );
-        DATA_T = parsed;
+        APP_STATE.dados.tendencia = parsed;
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
         // rebuildar datalist de insumos após upload novo
@@ -103,7 +104,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         } catch (e) {
           reportNonFatalError('Upload/reconstruir lista de insumos', e);
         }
-        linhas = DATA_T.length;
+        linhas = APP_STATE.dados.tendencia.length;
         result = `TENDÊNCIA: ${linhas} linhas`;
       } else if (kind === 'flows') {
         const parsed = parseFlowsValor(txt);
@@ -111,19 +112,19 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
           throw new Error(
             'FLOWS: nenhum aditivo válido encontrado. Os dados atuais foram mantidos.',
           );
-        DATA_F = parsed;
+        APP_STATE.dados.flows = parsed;
         applyManuals();
         loadClassifications();
-        linhas = DATA_F.length;
+        linhas = APP_STATE.dados.flows.length;
         result = `FLOWS: ${linhas} aditivos`;
       } else if (kind === 'gestoes') {
         const parsed = parseGestoes(txt);
-        // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
+        // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar APP_STATE.dados.historico com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
-          HISTORICO = parsed;
-          // sobrescreve GESTAO_LABEL com última gestão cronológica
+          APP_STATE.dados.historico = parsed;
+          // sobrescreve APP_STATE.config.gestaoLabel com última gestão cronológica
           atualizarGestaoLabelPelaHistoria();
-          // se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+          // se coluna Gestão da Tendência estiver vazia, usa APP_STATE.dados.historico como fallback
           aplicarFallbackGestaoDoHistorico();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
@@ -239,7 +240,7 @@ async function handleExcelUpload(ev) {
     return;
   }
   // v0.58a: guard obra ativa
-  if (!OBRA_ATIVA) {
+  if (!APP_STATE.obra.ativa) {
     authToast(
       '❌ Nenhuma obra selecionada. Escolha uma obra no header antes de fazer upload.',
       'err',
@@ -425,7 +426,7 @@ async function _processExcelSheets(workbook, mapping, file) {
       if (step.parser === 'tendencia') {
         const parsed = parseTendencia(csv);
         if (!parsed.length) throw new Error('TENDÊNCIA: nenhuma linha válida encontrada.');
-        DATA_T = parsed;
+        APP_STATE.dados.tendencia = parsed;
         // rebuildar datalist de insumos após upload novo
         try {
           INSUMOS_OPTIONS = buildInsumosList();
@@ -435,22 +436,22 @@ async function _processExcelSheets(workbook, mapping, file) {
         }
         // fallback pra coluna Gestão vazia (virada de mês)
         aplicarFallbackGestaoDoHistorico();
-        linhas = DATA_T.length;
+        linhas = APP_STATE.dados.tendencia.length;
       } else if (step.parser === 'flows') {
         const parsed = parseFlowsValor(csv);
         if (!parsed.length) throw new Error('FLOWS: nenhum aditivo válido encontrado.');
-        DATA_F = parsed;
+        APP_STATE.dados.flows = parsed;
         applyManuals();
         loadClassifications();
-        linhas = DATA_F.length;
+        linhas = APP_STATE.dados.flows.length;
       } else if (step.parser === 'gestoes') {
         const parsed = parseGestoes(csv);
-        // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar HISTORICO com CSV/aba vazia)
+        // v0.57.1 FIX: só sobrescrever se realmente veio conteúdo (evita zerar APP_STATE.dados.historico com CSV/aba vazia)
         if (parsed && parsed.items && parsed.items.length > 0) {
-          HISTORICO = parsed;
-          // sobrescreve GESTAO_LABEL com última gestão cronológica
+          APP_STATE.dados.historico = parsed;
+          // sobrescreve APP_STATE.config.gestaoLabel com última gestão cronológica
           atualizarGestaoLabelPelaHistoria();
-          // se coluna Gestão da Tendência estiver vazia, usa HISTORICO como fallback
+          // se coluna Gestão da Tendência estiver vazia, usa APP_STATE.dados.historico como fallback
           aplicarFallbackGestaoDoHistorico();
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
@@ -665,8 +666,10 @@ function renderUploadsCentral() {
   // Bloco Excel destacado no topo
   // ============================================================
   // "Última planilha Excel" = pegar o registro mais recente com upload_group_id
-  // que existe em pelo menos um dos LAST_UPLOADS.
-  const groupCandidates = kinds.map((k) => LAST_UPLOADS[k]).filter((u) => u && u.upload_group_id);
+  // que existe em pelo menos um dos APP_STATE.uploads.
+  const groupCandidates = kinds
+    .map((k) => APP_STATE.uploads[k])
+    .filter((u) => u && u.upload_group_id);
   const excelRuntimeBlock = renderUploadRuntimeBlock(kinds);
   const excelProcessing = kinds.some((kind) => UPLOAD_RUNTIME_STATE[kind]?.status === 'processing');
   let lastExcel = null;
@@ -675,7 +678,7 @@ function renderUploadsCentral() {
     groupCandidates.sort((a, b) => new Date(b.enviado_em) - new Date(a.enviado_em));
     const gid = groupCandidates[0].upload_group_id;
     const relatedKinds = kinds.filter(
-      (k) => LAST_UPLOADS[k] && LAST_UPLOADS[k].upload_group_id === gid,
+      (k) => APP_STATE.uploads[k] && APP_STATE.uploads[k].upload_group_id === gid,
     );
     lastExcel = {
       ...groupCandidates[0],
@@ -715,7 +718,7 @@ function renderUploadsCentral() {
   const csvCardsHtml = kinds
     .map((k) => {
       const meta = UPLOAD_META[k];
-      const last = LAST_UPLOADS[k];
+      const last = APP_STATE.uploads[k];
       const runtimeBlock = renderUploadRuntimeBlock(k);
       const isProcessing = UPLOAD_RUNTIME_STATE[k]?.status === 'processing';
       const permissionAttr = meta.global
@@ -871,7 +874,9 @@ async function _renderUploadsHistoryList(kind) {
           .map((r) => {
             const isAtivo = !!r.is_active;
             const cleanStoragePath = sanitizeStoragePath(r.storage_path);
-            const safeObra = OBRA_ATIVA ? OBRA_ATIVA.replace(/[^\w.\-]/g, '_') : '';
+            const safeObra = APP_STATE.obra.ativa
+              ? APP_STATE.obra.ativa.replace(/[^\w.\-]/g, '_')
+              : '';
             const hasValidStoragePath =
               !!cleanStoragePath && !!safeObra && cleanStoragePath.startsWith(safeObra + '/');
             const canDownload =
@@ -1002,7 +1007,8 @@ async function marcarUploadComoAtivo(uploadId, kind) {
       .maybeSingle();
     alvo = targetRecord;
     if (readErr || !alvo) throw new Error('Arquivo não encontrado no banco');
-    if (alvo.codigo_obra !== OBRA_ATIVA) throw new Error('Arquivo fora do escopo da obra ativa');
+    if (alvo.codigo_obra !== APP_STATE.obra.ativa)
+      throw new Error('Arquivo fora do escopo da obra ativa');
     if (!alvo.storage_path)
       throw new Error(
         'Arquivo não tem cópia no Storage (upload muito antigo). Impossível reativar.',
@@ -1061,7 +1067,7 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     return;
   }
 
-  LAST_UPLOADS[kind] = activation.active;
+  APP_STATE.uploads[kind] = activation.active;
   setUploadRuntimeState(kind, 'active');
   debouncedRender();
   renderUploadsCentral();
@@ -1085,7 +1091,7 @@ function _parsearECarregar(kind, csv) {
     }
     const parsed = parseTendencia(csv);
     if (!parsed.length) throw new Error('CSV Tendência não retornou linhas válidas');
-    DATA_T = parsed;
+    APP_STATE.dados.tendencia = parsed;
     // rebuildar datalist de insumos após upload novo
     try {
       INSUMOS_OPTIONS = buildInsumosList();
@@ -1105,7 +1111,7 @@ function _parsearECarregar(kind, csv) {
     }
     const parsed = parseFlowsValor(csv);
     if (!parsed.length) throw new Error('CSV Flows não retornou aditivos válidos');
-    DATA_F = parsed;
+    APP_STATE.dados.flows = parsed;
     applyManuals();
     loadClassifications();
   } else if (kind === 'gestoes') {
@@ -1114,7 +1120,7 @@ function _parsearECarregar(kind, csv) {
     }
     const parsed = parseGestoes(csv);
     if (parsed && parsed.items && parsed.items.length > 0) {
-      HISTORICO = parsed;
+      APP_STATE.dados.historico = parsed;
       atualizarGestaoLabelPelaHistoria();
     } else {
       throw new Error('CSV Gestões não retornou linhas válidas');
@@ -1132,7 +1138,8 @@ async function excluirUpload(uploadId, kind) {
       .eq('id', uploadId)
       .maybeSingle();
     if (readErr || !rec) throw new Error('Arquivo não encontrado');
-    if (rec.codigo_obra !== OBRA_ATIVA) throw new Error('Arquivo fora do escopo da obra ativa');
+    if (rec.codigo_obra !== APP_STATE.obra.ativa)
+      throw new Error('Arquivo fora do escopo da obra ativa');
     if (rec.is_active) {
       authToast('🔒 Não é possível excluir o arquivo ativo. Ative outro primeiro.', 'warn', 4500);
       return;
@@ -1150,7 +1157,7 @@ async function excluirUpload(uploadId, kind) {
     if (cleanStoragePath) {
       const { data: otherReferences, error: referenceError } = await SUPA.from('upload_history')
         .select('id')
-        .eq('codigo_obra', OBRA_ATIVA)
+        .eq('codigo_obra', APP_STATE.obra.ativa)
         .eq('storage_path', cleanStoragePath)
         .neq('id', uploadId)
         .limit(1);
@@ -1160,7 +1167,7 @@ async function excluirUpload(uploadId, kind) {
     // Remove primeiro o metadata para nunca deixar o histórico apontando para arquivo ausente.
     const { error: dbErr } = await SUPA.from('upload_history')
       .delete()
-      .eq('codigo_obra', OBRA_ATIVA)
+      .eq('codigo_obra', APP_STATE.obra.ativa)
       .eq('id', uploadId);
     if (dbErr) throw dbErr;
     if (removeStoredFile) {
@@ -1190,7 +1197,7 @@ function renderSourcesHeaders() {
       .filter(Boolean);
     const parts = kinds.map((k) => {
       const meta = UPLOAD_META[k];
-      const last = LAST_UPLOADS[k];
+      const last = APP_STATE.uploads[k];
       if (!last) {
         return `<span class="src-item src-empty" title="Nenhum arquivo enviado ainda para ${meta ? meta.label : k}">${meta ? meta.icon : ''} ${meta ? meta.label : k}: (sem dados)</span>`;
       }
@@ -1213,6 +1220,7 @@ export function installLegacyUploadUI(
     authService,
     authUi,
     supabaseClient,
+    state,
   },
   target = window,
 ) {
@@ -1247,6 +1255,7 @@ export function installLegacyUploadUI(
   isEditorDaObraAtiva = authService.canEditActiveProject;
   isAdminGeral = authService.isAdmin;
   requireUploadPermission = authUi.requireUploadPermission;
+  APP_STATE = state;
   Object.assign(target, {
     MANUAL_TEXT,
     renderUploadsCentral,

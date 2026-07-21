@@ -50,19 +50,3 @@ export const DASHBOARD_CONFIG = Object.freeze({
     '09.02': 'Serviços Iniciais Adicionais',
   }),
 });
-
-export function installLegacyConfig(target = window) {
-  Object.assign(target, {
-    CONFIG: DASHBOARD_CONFIG,
-    HEADER_KEY: STORAGE_KEYS.header,
-    STORAGE_KEY: STORAGE_KEYS.classifications,
-    MANUAL_KEY: STORAGE_KEYS.manuals,
-    PROJ_CTRL_KEY: STORAGE_KEYS.projectionControl,
-  });
-
-  target.dashboardConfig = Object.freeze({
-    dashboard: DASHBOARD_CONFIG,
-    storageKeys: STORAGE_KEYS,
-    supabaseUrl: SUPABASE_CONFIG.url,
-  });
-}

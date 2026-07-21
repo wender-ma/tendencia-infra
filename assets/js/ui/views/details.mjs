@@ -13,6 +13,7 @@ let paginateRows;
 let renderPaginationControls;
 let renderDashboardState;
 let openModal;
+let APP_STATE;
 
 // ============ DETALHAMENTO ============
 let filtersBound = false;
@@ -68,7 +69,7 @@ function isTableRowActivation(event) {
 }
 
 function populateFilters() {
-  const grupos = [...new Set(DATA_T.map((d) => d.grupo))].sort();
+  const grupos = [...new Set(APP_STATE.dados.tendencia.map((d) => d.grupo))].sort();
   const sel = document.getElementById('filterGrupo');
   const cur = sel.value;
   sel.replaceChildren(
@@ -91,12 +92,12 @@ function _evolClass(d) {
 
 function renderTable() {
   bindDetailFilters();
-  // atualizar header da coluna Gestão com o GESTAO_LABEL atual
+  // atualizar header da coluna Gestão com o APP_STATE.config.gestaoLabel atual
   const thG = document.getElementById('thGestao');
-  if (thG && GESTAO_LABEL) {
+  if (thG && APP_STATE.config.gestaoLabel) {
     // Encurta 'GESTÃO 07-2026' pra 'Gestão 07/26' pra caber
-    const m = GESTAO_LABEL.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
-    thG.textContent = m ? `Gestão ${m[1]}/${m[2].slice(-2)}` : GESTAO_LABEL;
+    const m = APP_STATE.config.gestaoLabel.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
+    thG.textContent = m ? `Gestão ${m[1]}/${m[2].slice(-2)}` : APP_STATE.config.gestaoLabel;
   }
   // guard sem dados
   if (!obraTemTendencia()) {
@@ -120,7 +121,7 @@ function renderTable() {
   const fa = document.getElementById('filterAditivo').value;
   const onlyFolhas = document.getElementById('onlyFolhas').checked;
 
-  const rows = DATA_T.filter((d) => {
+  const rows = APP_STATE.dados.tendencia.filter((d) => {
     if (onlyFolhas && !d.is_folha) return false;
     if (
       q &&
@@ -153,32 +154,41 @@ function renderTable() {
 
   rows.sort((a, b) => {
     let va, vb;
-    if (sortKey === 'pct') {
+    if (APP_STATE.sort.key === 'pct') {
       va = a.licitacao ? (a.gestao - a.licitacao) / a.licitacao : -Infinity;
       vb = b.licitacao ? (b.gestao - b.licitacao) / b.licitacao : -Infinity;
-    } else if (sortKey === 'diferenca') {
+    } else if (APP_STATE.sort.key === 'diferenca') {
       va = a.licitacao != null && a.gestao != null ? a.gestao - a.licitacao : -Infinity;
       vb = b.licitacao != null && b.gestao != null ? b.gestao - b.licitacao : -Infinity;
-    } else if (sortKey === 'aditivo_total') {
+    } else if (APP_STATE.sort.key === 'aditivo_total') {
       va = Math.abs(a.aditivo_total || 0);
       vb = Math.abs(b.aditivo_total || 0);
     } else {
-      va = a[sortKey];
-      vb = b[sortKey];
+      va = a[APP_STATE.sort.key];
+      vb = b[APP_STATE.sort.key];
     }
     if (va == null) va = -Infinity;
     if (vb == null) vb = -Infinity;
-    if (typeof va === 'string') return sortDir * va.localeCompare(vb);
-    return sortDir * (va - vb);
+    if (typeof va === 'string') return APP_STATE.sort.dir * va.localeCompare(vb);
+    return APP_STATE.sort.dir * (va - vb);
   });
 
-  // Marca cada item com seu índice original em DATA_T (evita indexOf O(n²) no render)
+  // Marca cada item com seu índice original em APP_STATE.dados.tendencia (evita indexOf O(n²) no render)
   const idxMap = new Map();
-  DATA_T.forEach((d, i) => idxMap.set(d, i));
+  APP_STATE.dados.tendencia.forEach((d, i) => idxMap.set(d, i));
   const detailPage = paginateRows(
     'detail',
     rows,
-    JSON.stringify([q, fg, fs, fa, onlyFolhas, sortKey, sortDir, OBRA_ATIVA]),
+    JSON.stringify([
+      q,
+      fg,
+      fs,
+      fa,
+      onlyFolhas,
+      APP_STATE.sort.key,
+      APP_STATE.sort.dir,
+      APP_STATE.obra.ativa,
+    ]),
   );
 
   replaceWithParsedMarkup(
@@ -222,7 +232,7 @@ function renderTable() {
   document.getElementById('count').textContent =
     `${rows.filter((r) => r.is_folha).length} itens · exibindo ${detailPage.start}–${detailPage.end}`;
   renderPaginationControls('detailPagination', 'detail', detailPage, renderTable);
-  updateSortHeaderState('th[data-sort]', 'data-sort', sortKey, sortDir);
+  updateSortHeaderState('th[data-sort]', 'data-sort', APP_STATE.sort.key, APP_STATE.sort.dir);
 }
 
 function activateDetailRow(event) {
@@ -244,7 +254,10 @@ function salvarFiltros() {
       filterAditivo: document.getElementById('filterAditivo')?.value || '',
       onlyFolhas: document.getElementById('onlyFolhas')?.checked ?? true,
     };
-    localStorage.setItem('jzurique_filters_' + (OBRA_ATIVA || 'default'), JSON.stringify(filtros));
+    localStorage.setItem(
+      'jzurique_filters_' + (APP_STATE.obra.ativa || 'default'),
+      JSON.stringify(filtros),
+    );
   } catch (e) {
     reportNonFatalError('Filtros/salvar', e);
   }
@@ -253,7 +266,7 @@ function salvarFiltros() {
 // Restaurar filtros do localStorage
 function restaurarFiltros() {
   try {
-    const raw = localStorage.getItem('jzurique_filters_' + (OBRA_ATIVA || 'default'));
+    const raw = localStorage.getItem('jzurique_filters_' + (APP_STATE.obra.ativa || 'default'));
     if (!raw) return;
     const filtros = JSON.parse(raw);
     const el = (id) => document.getElementById(id);
@@ -269,7 +282,7 @@ function restaurarFiltros() {
 
 // ============ MODAL DE ITEM ============
 function openItem(idx) {
-  const d = DATA_T[idx];
+  const d = APP_STATE.dados.tendencia[idx];
   if (!d.is_folha) return;
   const diff = d.licitacao != null && d.gestao != null ? d.gestao - d.licitacao : null;
   const pct = d.licitacao && d.gestao != null ? (diff / d.licitacao) * 100 : null;
@@ -351,7 +364,7 @@ function renderFlowMini(f, isOrigem = false) {
 }
 
 export function installLegacyDetailsView(
-  { runtime, pagination, viewStates, modals },
+  { runtime, pagination, viewStates, modals, state },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -359,6 +372,7 @@ export function installLegacyDetailsView(
   renderPaginationControls = pagination.renderControls;
   renderDashboardState = viewStates.render;
   openModal = modals.open;
+  APP_STATE = state;
   Object.assign(target, {
     updateSortHeaderState,
     bindSortableHeaders,
@@ -371,14 +385,14 @@ export function installLegacyDetailsView(
   bindSortableHeaders(
     'th[data-sort]',
     'data-sort',
-    () => ({ key: sortKey, direction: sortDir }),
+    () => ({ key: APP_STATE.sort.key, direction: APP_STATE.sort.dir }),
     (key) => {
-      if (sortKey === key) sortDir = -sortDir;
+      if (APP_STATE.sort.key === key) APP_STATE.sort.dir = -APP_STATE.sort.dir;
       else {
-        sortKey = key;
-        sortDir = ['item', 'grupo', 'cod_insumo'].includes(key) ? 1 : -1;
+        APP_STATE.sort.key = key;
+        APP_STATE.sort.dir = ['item', 'grupo', 'cod_insumo'].includes(key) ? 1 : -1;
       }
-      updateSortHeaderState('th[data-sort]', 'data-sort', sortKey, sortDir);
+      updateSortHeaderState('th[data-sort]', 'data-sort', APP_STATE.sort.key, APP_STATE.sort.dir);
       renderTable();
     },
   );

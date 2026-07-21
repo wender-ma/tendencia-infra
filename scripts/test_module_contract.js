@@ -79,7 +79,6 @@ for (const exportedContract of [
   'export const SUPABASE_CONFIG',
   'export const STORAGE_KEYS',
   'export const DASHBOARD_CONFIG',
-  'export function installLegacyConfig',
 ]) {
   assert(
     config.includes(exportedContract),
@@ -305,7 +304,6 @@ assert(
 
 for (const catalogContract of [
   'export const PROJECTION_CATALOG',
-  'export function installLegacyProjectionCatalog',
   'hierarchy: Object.freeze(hierarchy)',
   'services: Object.freeze(services)',
   'inputs: Object.freeze(inputs)',
@@ -334,14 +332,8 @@ assert(
   bootstrap.indexOf('mountStaticViews();') < bootstrap.indexOf('installActionDelegation({'),
   'Abas estáticas devem existir antes da delegação de eventos',
 );
-assert(
-  bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('Promise.resolve()'),
-  'Configuracao deve ser instalada antes das dependencias',
-);
-assert(
-  bootstrap.indexOf('installLegacyProjectionCatalog();') < bootstrap.indexOf('Promise.resolve()'),
-  'Catalogo de projecao deve ser instalado antes do legado',
-);
+assert(!bootstrap.includes('installLegacyConfig'), 'Configuração voltou ao escopo global');
+assert(!bootstrap.includes('installLegacyProjectionCatalog'), 'Catálogo voltou ao escopo global');
 assert(
   bootstrap.includes('createSupabaseService(SUPABASE_CONFIG, {') &&
     bootstrap.includes('reportError: (context, error) => logger.warn(context, error)'),

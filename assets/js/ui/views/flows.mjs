@@ -1,6 +1,9 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { debounce, formatNumber as fmt, formatNumber as fmtR$ } from '../dashboard-runtime.mjs';
+import { STORAGE_KEYS } from '../../config.js';
+
+const STORAGE_KEY = STORAGE_KEYS.classifications;
 
 let runAsyncSafely;
 let getFlowsObraAtiva;
@@ -10,6 +13,8 @@ let SafeStorage;
 let renderDashboardState;
 let supaPatchClassification;
 let isEditorDaObraAtiva;
+let requireEditor;
+let APP_STATE;
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;
@@ -21,14 +26,19 @@ function bindFlowInteractions() {
   bindSortableHeaders(
     'th[data-sort-flow]',
     'data-sort-flow',
-    () => ({ key: sortKeyF, direction: sortDirF }),
+    () => ({ key: APP_STATE.sort.keyF, direction: APP_STATE.sort.dirF }),
     (key) => {
-      if (sortKeyF === key) sortDirF = -sortDirF;
+      if (APP_STATE.sort.keyF === key) APP_STATE.sort.dirF = -APP_STATE.sort.dirF;
       else {
-        sortKeyF = key;
-        sortDirF = -1;
+        APP_STATE.sort.keyF = key;
+        APP_STATE.sort.dirF = -1;
       }
-      updateSortHeaderState('th[data-sort-flow]', 'data-sort-flow', sortKeyF, sortDirF);
+      updateSortHeaderState(
+        'th[data-sort-flow]',
+        'data-sort-flow',
+        APP_STATE.sort.keyF,
+        APP_STATE.sort.dirF,
+      );
       renderFlowTable();
     },
   );
@@ -278,15 +288,16 @@ function renderFlowTable() {
   });
 
   rows.sort((a, b) => {
-    let va = a[sortKeyF],
-      vb = b[sortKeyF];
+    let va = a[APP_STATE.sort.keyF],
+      vb = b[APP_STATE.sort.keyF];
     if (va == null) va = '';
     if (vb == null) vb = '';
     if (typeof va === 'string' && typeof vb === 'string') {
-      if (sortKeyF === 'n_alteracao') return sortDirF * (parseInt(va) - parseInt(vb));
-      return sortDirF * va.localeCompare(vb);
+      if (APP_STATE.sort.keyF === 'n_alteracao')
+        return APP_STATE.sort.dirF * (parseInt(va) - parseInt(vb));
+      return APP_STATE.sort.dirF * va.localeCompare(vb);
     }
-    return sortDirF * (va - vb);
+    return APP_STATE.sort.dirF * (va - vb);
   });
 
   const tipoLabel = {
@@ -315,9 +326,9 @@ function renderFlowTable() {
       fdf,
       Number.isNaN(fvmin) ? '' : fvmin,
       Number.isNaN(fvmax) ? '' : fvmax,
-      sortKeyF,
-      sortDirF,
-      OBRA_ATIVA,
+      APP_STATE.sort.keyF,
+      APP_STATE.sort.dirF,
+      APP_STATE.obra.ativa,
       ...Object.keys(MS_EXCLUDED)
         .sort()
         .map((key) => `${key}:${[...MS_EXCLUDED[key]].sort().join(',')}`),
@@ -372,7 +383,12 @@ function renderFlowTable() {
   document.getElementById('flowCount').textContent =
     `${rows.length} aditivos · exibindo ${flowPage.start}–${flowPage.end} · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s, f) => s + (f.custo_flowmaster || 0), 0))}`;
   renderPaginationControls('flowPagination', 'flows', flowPage, renderFlowTable);
-  updateSortHeaderState('th[data-sort-flow]', 'data-sort-flow', sortKeyF, sortDirF);
+  updateSortHeaderState(
+    'th[data-sort-flow]',
+    'data-sort-flow',
+    APP_STATE.sort.keyF,
+    APP_STATE.sort.dirF,
+  );
   // Sincronizar checkbox header e barra de massa
   syncSelectAllHeader();
   updateMassBar();
@@ -380,7 +396,7 @@ function renderFlowTable() {
 
 // Handler do select de "refletido" (3 estados: pendente / sim / nao)
 function onRefletidoChange(sel) {
-  if (!requireEditorForActiveProject('alterar o status de reflexo')) {
+  if (!requireEditor('alterar o status de reflexo')) {
     renderFlowTable();
     return;
   }
@@ -392,7 +408,7 @@ function onRefletidoChange(sel) {
   // manter campo legado 'refletido' = (status === 'sim') por compatibilidade
   f.refletido = status === 'sim';
   // chave composta + sync Supabase
-  const codigoObra = f.codigo_obra || OBRA_ATIVA || '';
+  const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
   const key = codigoObra + ':' + nAlt;
   const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
@@ -418,7 +434,7 @@ function onRefletidoChange(sel) {
 }
 
 export function installLegacyFlowsView(
-  { runtime, pagination, storage, viewStates, dashboardRepository, authService },
+  { runtime, pagination, storage, viewStates, dashboardRepository, authService, authUi, state },
   target = window,
 ) {
   runAsyncSafely = runtime.runAsyncSafely;
@@ -429,6 +445,8 @@ export function installLegacyFlowsView(
   renderDashboardState = viewStates.render;
   supaPatchClassification = dashboardRepository.patchClassification;
   isEditorDaObraAtiva = authService.canEditActiveProject;
+  requireEditor = authUi.requireEditor;
+  APP_STATE = state;
   Object.assign(target, {
     renderFlows,
     renderFlowTable,

@@ -1,6 +1,5 @@
 import { createApplication } from './application.mjs';
-import { DASHBOARD_CONFIG, installLegacyConfig, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
-import { installLegacyProjectionCatalog } from './data/projection-catalog.mjs';
+import { DASHBOARD_CONFIG, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
 import { installLegacyImportParsers } from './parsers/index.mjs';
 import { createPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService } from './ui/feedback.mjs';
@@ -17,7 +16,7 @@ import { createUploadMaintenance } from './ui/upload-maintenance.mjs';
 import { createPaginationService } from './ui/pagination.mjs';
 import { createViewStateService } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
-import { createAppState, installLegacyStateGlobals } from './state.js';
+import { createAppState } from './state.js';
 import { createSupabaseService } from './services/supabase-service.js';
 import { createAuthService } from './services/auth-service.js';
 import {
@@ -55,8 +54,6 @@ function showBootstrapError(error) {
 }
 
 mountStaticViews();
-installLegacyConfig();
-installLegacyProjectionCatalog();
 const logger = createLogger();
 const actionRegistry = createActionRegistry();
 actionRegistry.register({ print: () => window.print() });
@@ -67,7 +64,6 @@ const syncStatusService = createSyncStatusService({
   isOnline: () => Boolean(supabaseService.client),
 });
 const appState = createAppState();
-installLegacyStateGlobals(appState);
 const performanceService = createPerformanceMonitor();
 const feedbackService = createFeedbackService();
 const storageService = createSafeStorage({
@@ -120,7 +116,7 @@ authUiRef.current = authUi;
 actionRegistry.register(createAuthUiActions(authUi));
 const uploadRepository = createUploadRepository({
   getClient: () => supabaseService.client,
-  getActiveProject: () => window.OBRA_ATIVA,
+  getActiveProject: () => appState.obra.ativa,
   getCurrentUser: () => authService.state.user,
   isEditor: () => authService.canEditActiveProject(),
   isAdmin: () => authService.isAdmin(),
@@ -136,11 +132,11 @@ const excelService = createExcelService();
 const dashboardExportService = createDashboardExportService({
   ensureXlsx,
   getState: () => ({
-    tendency: window.DATA_T || [],
+    tendency: appState.dados.tendencia,
     flows: dashboardRuntime.getActiveFlows(),
     projectionControl: window.PROJ_CTRL_STATE || {},
-    activeProject: window.OBRA_ATIVA || '',
-    project: window.getObraInfo?.(window.OBRA_ATIVA) || null,
+    activeProject: appState.obra.ativa || '',
+    project: projectController?.getProjectInfo(appState.obra.ativa) || null,
     auth: authService.state,
   }),
   toast: (...args) => feedbackService.toast(...args),
@@ -149,7 +145,7 @@ const dashboardExportService = createDashboardExportService({
 actionRegistry.register(createDashboardExportActions(dashboardExportService));
 const dashboardRepository = createDashboardRepository({
   getClient: () => supabaseService.client,
-  getActiveProject: () => window.OBRA_ATIVA,
+  getActiveProject: () => appState.obra.ativa,
   getCurrentUser: () => authService.state.user,
   canEditActiveProject: () => authService.canEditActiveProject(),
   isAdmin: () => authService.isAdmin(),
@@ -267,10 +263,10 @@ const uploadCoordinator = createUploadCoordinator({
   reportCleanupError: (context, error) => logger.warn(context, error),
 });
 const dashboardShell = createDashboardShell({
-  getManagementLabel: () => window.GESTAO_LABEL,
-  getHeaderEditable: () => window._headerEditable === true,
+  getManagementLabel: () => appState.config.gestaoLabel,
+  getHeaderEditable: () => appState.config.headerEditable === true,
   setHeaderEditable: (value) => {
-    window._headerEditable = value;
+    appState.config.headerEditable = value;
   },
   authorizeAdmin: () => authUi.requireAdmin('acessar esta função administrativa'),
   isAdmin: () => authService.isAdmin(),
@@ -324,6 +320,7 @@ Promise.resolve()
         authService,
         authUi,
         supabaseClient: supabaseService.client,
+        state: appState,
       }),
     );
     actionRegistry.register(
@@ -338,6 +335,7 @@ Promise.resolve()
         authService,
         authUi,
         supabaseClient: supabaseService.client,
+        state: appState,
       }),
     );
     actionRegistry.register(
@@ -350,6 +348,7 @@ Promise.resolve()
         uploadRepository,
         authService,
         supabaseClient: supabaseService.client,
+        state: appState,
       }),
     );
     installLegacyDetailsView({
@@ -357,6 +356,7 @@ Promise.resolve()
       pagination: paginationService,
       viewStates: viewStateService,
       modals: modalService,
+      state: appState,
     });
     actionRegistry.register(
       installLegacyFlowsView({
@@ -366,12 +366,15 @@ Promise.resolve()
         viewStates: viewStateService,
         dashboardRepository,
         authService,
+        authUi,
+        state: appState,
       }),
     );
     installLegacyHistoryView({
       runtime: dashboardRuntime,
       pagination: paginationService,
       viewStates: viewStateService,
+      state: appState,
     });
     actionRegistry.register(
       installLegacyOverviewView({
@@ -380,6 +383,7 @@ Promise.resolve()
         viewStates: viewStateService,
         dashboardRepository,
         authService,
+        state: appState,
       }),
     );
     actionRegistry.register(
@@ -389,6 +393,7 @@ Promise.resolve()
         feedback: feedbackService,
         modals: modalService,
         viewStates: viewStateService,
+        state: appState,
       }),
     );
     actionRegistry.register(
@@ -402,6 +407,7 @@ Promise.resolve()
         authService,
         authUi,
         supabaseClient: supabaseService.client,
+        state: appState,
       }),
     );
 
@@ -461,6 +467,12 @@ Promise.resolve()
     });
     window.dashboardServices = Object.freeze({
       application,
+      state: appState,
+      config: Object.freeze({
+        dashboard: DASHBOARD_CONFIG,
+        storageKeys: STORAGE_KEYS,
+        supabaseUrl: SUPABASE_CONFIG.url,
+      }),
       actions: actionRegistry,
       supabase: supabaseService,
       auth: authService,

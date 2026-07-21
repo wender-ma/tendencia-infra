@@ -185,7 +185,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar tabelas em módulos de UI.
 - [x] Separar cada aba dinâmica em um módulo de visualização (a aba Manual permanece estática).
 - [x] Remover o coordenador monolítico e iniciar toda a aplicação por módulos ES (adaptadores globais temporários permanecem para compatibilidade entre módulos já extraídos).
-- [ ] Remover aliases e adaptadores globais gradualmente até os módulos consumirem serviços e estado por importação ou injeção direta (serviços e ações já encapsulados; aliases de estado e APIs entre views ainda estão em migração).
+- [ ] Remover aliases e adaptadores globais gradualmente até os módulos consumirem serviços e estado por importação ou injeção direta (serviços, ações, estado, configuração e catálogo já encapsulados; APIs entre views ainda estão em migração).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
 ### 10. Modernizar dependências e build
@@ -318,3 +318,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Testes XSS ampliados e caminhos de Storage endurecidos contra esquemas e travessia                                                                       | `test_xss_contract.js`                                      |
 | 21/07/2026 | Coordenador de upload extraído e testado com commit, falha de ativação e rollback parcial                                                                | `upload-transaction.mjs`                                    |
 | 21/07/2026 | Detalhamento, Flows e Histórico limitados a 100 linhas por página com controles acessíveis                                                               | `ui/pagination.mjs`                                         |
+| 21/07/2026 | Estado, configuração e catálogo deixaram de publicar aliases globais e passaram a ser consumidos por importação ou injeção                              | `state.js`, `config.js`, `data/projection-catalog.mjs`      |

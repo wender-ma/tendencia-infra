@@ -14,6 +14,7 @@ let UPLOADS_BUCKET;
 let SUPA;
 let AUTH;
 let isAdminGeral;
+let APP_STATE;
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -23,7 +24,7 @@ let isAdminGeral;
 //           mudarRoleEditor, deletarObra (hard delete)
 // ============================================================================
 
-// -------------- OBRAS (v0.62) --------------
+// -------------- APP_STATE.obra.obras (v0.62) --------------
 
 async function renderObrasAdmin() {
   const tbody = document.getElementById('obrasAdminTbody');
@@ -248,7 +249,7 @@ async function toggleObraAtiva(codigo, novoValor) {
     await renderObrasAdmin();
     await carregarObras();
     renderObrasDropdown();
-    if (!novoValor && codigo === OBRA_ATIVA) {
+    if (!novoValor && codigo === APP_STATE.obra.ativa) {
       authToast('⚠️ Você está vendo uma obra desativada. Troque no dropdown.', 'warn', 5000);
     }
   } catch (e) {
@@ -290,13 +291,13 @@ async function cleanupDeletedObraStorage(codigo, rawPaths) {
 }
 
 function clearDeletedActiveObra() {
-  OBRA_ATIVA = null;
+  APP_STATE.obra.ativa = null;
   SafeStorage.remove('jzurique_obra_ativa');
   resetDadosObra();
-  HISTORICO = { gestoes: [], items: [], totals: {} };
-  PROJ_RAW = [];
-  Object.keys(LAST_UPLOADS).forEach((key) => {
-    LAST_UPLOADS[key] = null;
+  APP_STATE.dados.historico = { gestoes: [], items: [], totals: {} };
+  APP_STATE.dados.projRaw = [];
+  Object.keys(APP_STATE.uploads).forEach((key) => {
+    APP_STATE.uploads[key] = null;
   });
   try {
     const url = new URL(window.location);
@@ -328,8 +329,8 @@ async function deletarObra(codigo, nome) {
     await renderEditoresAdmin();
     await carregarObras();
 
-    if (codigo === OBRA_ATIVA) {
-      const proximaObra = OBRAS.find((obra) => obra.ativa);
+    if (codigo === APP_STATE.obra.ativa) {
+      const proximaObra = APP_STATE.obra.obras.find((obra) => obra.ativa);
       if (proximaObra) await trocarObra(proximaObra.codigo_obra);
       else {
         clearDeletedActiveObra();
@@ -402,7 +403,7 @@ async function renderEditoresAdmin() {
     }
     // agrupa por email
     const obrasByCodigo = {};
-    OBRAS.forEach((o) => {
+    APP_STATE.obra.obras.forEach((o) => {
       obrasByCodigo[o.codigo_obra] = o;
     });
     const grupos = {};
@@ -551,7 +552,7 @@ function closeEditorForm() {
 async function populaObrasCheckboxes(marcadasSet) {
   const container = document.getElementById('editorObrasCheckboxes');
   if (!container) return;
-  const obrasAtivas = OBRAS.filter((o) => o.ativa);
+  const obrasAtivas = APP_STATE.obra.obras.filter((o) => o.ativa);
   if (obrasAtivas.length === 0) {
     replaceWithParsedMarkup(
       container,
@@ -800,6 +801,7 @@ export function installLegacyAdminView(
     uploadRepository,
     authService,
     supabaseClient,
+    state,
   },
   target = window,
 ) {
@@ -816,6 +818,7 @@ export function installLegacyAdminView(
   SUPA = supabaseClient;
   AUTH = authService.state;
   isAdminGeral = authService.isAdmin;
+  APP_STATE = state;
   Object.assign(target, {
     renderObrasAdmin,
     renderEditoresAdmin,

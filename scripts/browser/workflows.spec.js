@@ -12,16 +12,16 @@ async function openOfflineDashboard(page) {
 test('troca de obra atualiza estado, seletor e URL', async ({ page }) => {
   await openOfflineDashboard(page);
   await page.evaluate(() => {
-    window.AppState.obra.obras = [
+    window.dashboardServices.state.obra.obras = [
       { codigo_obra: 'OBRA-A', nome: 'Obra A', ativa: true },
       { codigo_obra: 'OBRA-B', nome: 'Obra B', ativa: true },
     ];
-    window.AppState.obra.ativa = 'OBRA-A';
+    window.dashboardServices.state.obra.ativa = 'OBRA-A';
     window.dashboardServices.projectController.renderObrasDropdown();
   });
 
   await page.locator('#obraSelector').selectOption('OBRA-B');
-  await page.waitForFunction(() => window.AppState.obra.ativa === 'OBRA-B');
+  await page.waitForFunction(() => window.dashboardServices.state.obra.ativa === 'OBRA-B');
   await expect(page.locator('#obraSelector')).toHaveValue('OBRA-B');
   await expect(page.locator('#obraNomeGrande')).toHaveText('Obra B');
   await expect(page).toHaveURL(/(?:\?|&)obra=OBRA-B(?:&|$)/);
@@ -39,8 +39,8 @@ test('editor altera status de Flow preservando a obra ativa', async ({ page }) =
       isPending: false,
       editaObras: ['OBRA-A'],
     });
-    window.AppState.obra.ativa = 'OBRA-A';
-    window.AppState.dados.flows = [
+    window.dashboardServices.state.obra.ativa = 'OBRA-A';
+    window.dashboardServices.state.dados.flows = [
       {
         codigo_obra: 'OBRA-A',
         n_alteracao: 'ADT-E2E-1',
@@ -66,7 +66,7 @@ test('editor altera status de Flow preservando a obra ativa', async ({ page }) =
   await expect(status).toBeEnabled();
   await status.selectOption('sim');
   await expect
-    .poll(() => page.evaluate(() => window.AppState.dados.flows[0].refletido_status))
+    .poll(() => page.evaluate(() => window.dashboardServices.state.dados.flows[0].refletido_status))
     .toBe('sim');
 });
 

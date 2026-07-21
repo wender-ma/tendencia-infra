@@ -16,8 +16,8 @@ function assert(condition, message) {
 
 assert(stateModule.includes('export function createAppState('), 'Factory do estado ausente');
 assert(
-  stateModule.includes('export function installLegacyStateGlobals('),
-  'Adaptador de estado ausente',
+  !stateModule.includes('installLegacyStateGlobals'),
+  'Estado voltou a publicar aliases globais',
 );
 assert(
   stateModule.includes("import { STORAGE_KEYS } from './config.js'"),
@@ -36,48 +36,9 @@ assert(
   'Persistencia do indice ausente',
 );
 
-const aliases = [
-  'DATA_T',
-  'DATA_F',
-  'HISTORICO',
-  'PROJ_RAW',
-  'sortKey',
-  'sortDir',
-  'sortKeyF',
-  'sortDirF',
-  'GESTAO_LABEL',
-  'EVOL_GLOBAL',
-  'CARD3_MODO',
-  'CORRECAO_INDICE',
-  '_headerEditable',
-  'OBRAS',
-  'OBRA_ATIVA',
-  'MAP_DESTINO',
-  'MAP_ORIGEM',
-  'donutHidden',
-  '_lastTipoSum',
-];
-
-for (const alias of aliases) {
-  assert(new RegExp(`\\b${alias}: \\['`).test(stateModule), `Alias de estado ausente: ${alias}`);
-}
-assert(stateModule.includes('descriptors.LAST_UPLOADS'), 'Alias de uploads ausente');
-assert(
-  stateModule.includes('target.dashboardState = state'),
-  'Referencia publica do estado ausente',
-);
-
 assert(bootstrap.includes("from './state.js'"), 'Bootstrap nao importa o modulo de estado');
 assert(bootstrap.includes('const appState = createAppState();'), 'Bootstrap nao cria o estado');
-assert(
-  bootstrap.includes('installLegacyStateGlobals(appState);'),
-  'Bootstrap nao instala os aliases',
-);
-assert(
-  bootstrap.indexOf('installLegacyStateGlobals(appState);') <
-    bootstrap.indexOf('Promise.resolve()'),
-  'Estado deve existir antes do carregamento do legado',
-);
+assert(bootstrap.includes('state: appState'), 'Bootstrap não injeta o estado central nos módulos');
 assert(
   bootstrap.includes('getActiveProject: () => appState.obra.ativa'),
   'Auth nao consulta a obra no estado central',
@@ -105,9 +66,7 @@ async function verifyStateFactory() {
 
 verifyStateFactory()
   .then(() => {
-    console.log(
-      `Contrato de estado: modulo externo e ${aliases.length + 1} aliases sincronizados OK`,
-    );
+    console.log('Contrato de estado: módulo único injetado sem aliases globais OK');
   })
   .catch((error) => {
     console.error(error);

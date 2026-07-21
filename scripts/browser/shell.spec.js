@@ -18,7 +18,7 @@ test('tema, navegação por teclado e alerta de defasagem funcionam', async ({ p
   await expect(page.locator('#tab-visao')).toHaveAttribute('aria-hidden', 'true');
 
   await page.evaluate(() => {
-    window.GESTAO_LABEL = 'GESTÃO 01-2026';
+    window.dashboardServices.state.config.gestaoLabel = 'GESTÃO 01-2026';
     window.verificarDadosDesatualizados();
   });
   await expect(page.locator('#alertBanner .alert-banner')).toHaveClass(/is-critical/);

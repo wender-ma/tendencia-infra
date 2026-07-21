@@ -32,8 +32,8 @@ test('impressão da aba ativa e exportação XLSX funcionam', async ({ page }, t
 
   await page.emulateMedia({ media: 'screen' });
   await page.evaluate(() => {
-    window.OBRA_ATIVA = 'OBRA-TESTE';
-    window.DATA_T = [
+    window.dashboardServices.state.obra.ativa = 'OBRA-TESTE';
+    window.dashboardServices.state.dados.tendencia = [
       {
         grupo: 'Obras Civis',
         cod: '01.01',

@@ -2,7 +2,7 @@ import { createApplication } from './application.mjs';
 import { DASHBOARD_CONFIG, installLegacyConfig, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
 import { installLegacyProjectionCatalog } from './data/projection-catalog.mjs';
 import { installLegacyImportParsers } from './parsers/index.mjs';
-import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
+import { createPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService } from './ui/feedback.mjs';
 import { createModalService } from './ui/modals.mjs';
 import { createActionRegistry, installActionDelegation } from './ui/actions.mjs';
@@ -34,10 +34,10 @@ import {
 } from './services/dashboard-repository.mjs';
 import { ensureApexCharts, ensureXlsx } from './services/dependency-service.mjs';
 import { createExcelService } from './services/excel-service.mjs';
-import { createLogger, installLogger } from './services/logger.mjs';
+import { createLogger } from './services/logger.mjs';
 import { createProjectRepository } from './services/project-repository.mjs';
 import { createSafeStorage } from './services/storage-service.mjs';
-import { createSyncStatusService, installLegacySyncStatus } from './services/sync-status.mjs';
+import { createSyncStatusService } from './services/sync-status.mjs';
 import { validateUploadFile } from './services/upload-policy.mjs';
 import {
   createUploadCoordinator,
@@ -50,7 +50,7 @@ import {
 import { executeUploadTransaction } from './services/upload-transaction.mjs';
 
 function showBootstrapError(error) {
-  window.dashboardLogger?.error('Boot/carregar dashboard', error);
+  logger.error('Boot/carregar dashboard', error);
 
   const badge = document.getElementById('supaBadge');
   if (badge) {
@@ -68,7 +68,6 @@ mountStaticViews();
 installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();
-installLogger(logger);
 const actionRegistry = createActionRegistry();
 actionRegistry.register({ print: () => window.print() });
 const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
@@ -78,11 +77,9 @@ installLegacySupabaseGlobals(supabaseService);
 const syncStatusService = createSyncStatusService({
   isOnline: () => Boolean(supabaseService.client),
 });
-installLegacySyncStatus(syncStatusService);
 const appState = createAppState();
 installLegacyStateGlobals(appState);
 const performanceService = createPerformanceMonitor();
-installPerformanceMonitor(performanceService);
 const parserService = installLegacyImportParsers({
   state: appState,
   config: DASHBOARD_CONFIG,
@@ -128,7 +125,7 @@ const uploadRepository = createUploadRepository({
     window.requireUploadPermission?.(kind, description) === true,
   retry: (operation) => supabaseService.retry(operation),
   maxPerType: DASHBOARD_CONFIG.max_uploads_por_tipo,
-  onMutation: (error, context) => window.handleUploadRepositoryMutation?.(error, context),
+  onMutation: (error, context) => syncStatusService.recordMutation(error, context),
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyUploadRepository(uploadRepository);
@@ -154,7 +151,7 @@ const dashboardRepository = createDashboardRepository({
   canEditActiveProject: () => window.isEditorDaObraAtiva?.() === true,
   isAdmin: () => window.isAdminGeral?.() === true,
   retry: (operation) => supabaseService.retry(operation),
-  onMutation: (error) => window.handleUploadRepositoryMutation?.(error, 'Dados'),
+  onMutation: (error) => syncStatusService.recordMutation(error, 'Dados'),
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyDashboardRepository(dashboardRepository);

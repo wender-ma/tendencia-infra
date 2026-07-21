@@ -95,15 +95,3 @@ export function createSyncStatusService({
 
   return Object.freeze({ begin, finish, markError, markSynced, recordMutation, render, snapshot });
 }
-
-export function installLegacySyncStatus(service, target = window) {
-  Object.assign(target, {
-    beginSupaOperation: service.begin,
-    finishSupaOperation: service.finish,
-    getDashboardSyncStatus: service.snapshot,
-    handleUploadRepositoryMutation: service.recordMutation,
-    markDashboardSyncError: service.markError,
-    markDashboardSynced: service.markSynced,
-    updateSupaBadge: service.render,
-  });
-}

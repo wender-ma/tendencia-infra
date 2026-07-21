@@ -57,10 +57,3 @@ export function createPerformanceMonitor({
 
   return Object.freeze({ record, measure, completeBoot, snapshot });
 }
-
-export function installPerformanceMonitor(service, target = window) {
-  Object.defineProperty(target, 'dashboardPerformance', {
-    configurable: true,
-    value: service,
-  });
-}

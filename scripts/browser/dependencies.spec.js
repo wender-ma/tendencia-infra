@@ -20,7 +20,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       typeof window.dashboardServices?.actions?.resolve('handleAuthClick') === 'function' &&
       window.AppState === window.dashboardState &&
       window.AUTH?.ready === true &&
-      window.dashboardPerformance?.snapshot().boot.completed === true,
+      window.dashboardServices?.performance.snapshot().boot.completed === true,
   );
 
   const runtime = await page.evaluate(async () => {
@@ -107,13 +107,13 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const syncSaving =
       document.getElementById('supaBadge')?.dataset.syncState === 'saving' &&
-      window.getDashboardSyncStatus().pending === 1;
+      window.dashboardServices.syncStatus.snapshot().pending === 1;
     releaseSyncOperation('ok');
     await pendingSyncOperation;
     const syncCompleted =
       document.getElementById('supaBadge')?.dataset.syncState === 'synced' &&
-      window.getDashboardSyncStatus().pending === 0 &&
-      window.getDashboardSyncStatus().lastSync;
+      window.dashboardServices.syncStatus.snapshot().pending === 0 &&
+      window.dashboardServices.syncStatus.snapshot().lastSync;
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
     ]);
@@ -192,10 +192,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasModalService: confirmUsesText && confirmResult === false,
       storagePathSecurity: dangerousStoragePathsRejected && validStoragePathAccepted,
       hasPerformanceService:
-        performanceService === window.dashboardPerformance &&
         performanceService.snapshot().boot.domNodes > 0 &&
         performanceService.snapshot().operations['render:visao']?.count >= 1,
-      hasLoggerService: loggerIsSanitized && window.dashboardLogger === loggerService,
+      hasLoggerService: loggerIsSanitized,
       hasUploadPolicy: uploadPolicyWorks,
       hasPagination: paginationWorks,
       hasViewStates: viewStateIsSafe,
@@ -316,6 +315,15 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'saveManualForm',
         'saveMovForm',
         'massConfirmCallback',
+        'dashboardPerformance',
+        'dashboardLogger',
+        'beginSupaOperation',
+        'finishSupaOperation',
+        'getDashboardSyncStatus',
+        'handleUploadRepositoryMutation',
+        'markDashboardSyncError',
+        'markDashboardSynced',
+        'updateSupaBadge',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };

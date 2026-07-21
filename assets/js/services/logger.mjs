@@ -54,10 +54,3 @@ export function createLogger({
     clear: () => entries.splice(0),
   });
 }
-
-export function installLogger(service, target = window) {
-  Object.defineProperty(target, 'dashboardLogger', {
-    configurable: true,
-    value: service,
-  });
-}

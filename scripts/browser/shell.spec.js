@@ -3,7 +3,9 @@ const { expect, test } = require('@playwright/test');
 test('tema, navegação por teclado e alerta de defasagem funcionam', async ({ page }) => {
   await page.route('https://*.supabase.co/**', (route) => route.abort());
   await page.goto('/');
-  await page.waitForFunction(() => window.dashboardPerformance?.snapshot().boot.completed === true);
+  await page.waitForFunction(
+    () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+  );
 
   await page.locator('#themeToggle').click();
   await expect(page.locator('body')).toHaveClass(/dark/);
@@ -24,7 +26,9 @@ test('tema, navegação por teclado e alerta de defasagem funcionam', async ({ p
   expect(await page.locator('#alertBanner [style]').count()).toBe(0);
 
   await page.reload();
-  await page.waitForFunction(() => window.dashboardPerformance?.snapshot().boot.completed === true);
+  await page.waitForFunction(
+    () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+  );
   await expect(page.locator('body')).toHaveClass(/dark/);
   await expect(page.locator('[data-tab="flows"]')).toHaveClass(/active/);
 });

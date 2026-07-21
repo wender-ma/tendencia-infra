@@ -3,7 +3,9 @@ const { expect, test } = require('@playwright/test');
 test('modal de acesso valida formulários e monta identidade como texto', async ({ page }) => {
   await page.route('https://*.supabase.co/**', (route) => route.abort());
   await page.goto('/');
-  await page.waitForFunction(() => window.dashboardPerformance?.snapshot().boot.completed === true);
+  await page.waitForFunction(
+    () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+  );
 
   await page.locator('#authBtn').click();
   await expect(page.locator('#loginTabLogin')).toHaveAttribute('aria-selected', 'true');

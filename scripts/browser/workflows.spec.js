@@ -3,7 +3,9 @@ const { expect, test } = require('@playwright/test');
 async function openOfflineDashboard(page) {
   await page.route('https://*.supabase.co/**', (route) => route.abort());
   await page.goto('/');
-  await page.waitForFunction(() => window.dashboardPerformance?.snapshot().boot.completed === true);
+  await page.waitForFunction(
+    () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+  );
   await page.waitForFunction(() => window.AUTH?.ready === true);
 }
 

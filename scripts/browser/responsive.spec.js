@@ -6,11 +6,15 @@ const viewports = [
 ];
 
 for (const viewport of viewports) {
-  test(`layout ${viewport.name} sem overflow ou sobreposição estrutural`, async ({ browser }, testInfo) => {
+  test(`layout ${viewport.name} sem overflow ou sobreposição estrutural`, async ({
+    browser,
+  }, testInfo) => {
     const page = await browser.newPage({ viewport });
-    await page.route('https://*.supabase.co/**', route => route.abort());
+    await page.route('https://*.supabase.co/**', (route) => route.abort());
     await page.goto('/');
-    await page.waitForFunction(() => window.dashboardPerformance?.snapshot().boot.completed === true);
+    await page.waitForFunction(
+      () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+    );
 
     const layout = await page.evaluate(() => {
       const header = document.querySelector('.page-header').getBoundingClientRect();
@@ -30,17 +34,19 @@ for (const viewport of viewports) {
 
     await page.locator('#authBtn').click();
     await expect(page.locator('#loginModalBackdrop')).toHaveClass(/show/);
-    const dialogLayout = await page.locator('#loginModalBackdrop [role="dialog"]').evaluate(dialog => {
-      const rect = dialog.getBoundingClientRect();
-      return {
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-      };
-    });
+    const dialogLayout = await page
+      .locator('#loginModalBackdrop [role="dialog"]')
+      .evaluate((dialog) => {
+        const rect = dialog.getBoundingClientRect();
+        return {
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+        };
+      });
     expect(dialogLayout.left).toBeGreaterThanOrEqual(0);
     expect(dialogLayout.right).toBeLessThanOrEqual(dialogLayout.viewportWidth);
     expect(dialogLayout.top).toBeGreaterThanOrEqual(0);

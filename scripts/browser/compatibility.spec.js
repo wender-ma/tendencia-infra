@@ -4,7 +4,9 @@ const { expect, test } = require('@playwright/test');
 test('impressão da aba ativa e exportação XLSX funcionam', async ({ page }, testInfo) => {
   await page.route('https://*.supabase.co/**', (route) => route.abort());
   await page.goto('/');
-  await page.waitForFunction(() => window.dashboardPerformance?.snapshot().boot.completed === true);
+  await page.waitForFunction(
+    () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+  );
 
   await page.emulateMedia({ media: 'print' });
   const printLayout = await page.evaluate(() => ({

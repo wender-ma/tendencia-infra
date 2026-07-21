@@ -11,6 +11,7 @@ import { createViewStateService, installLegacyViewStateGlobals } from './ui/view
 import { mountStaticViews } from './ui/static-views.mjs';
 import { installLegacyUploadUI } from './ui/uploads.mjs';
 import { installLegacyHistoryView } from './ui/views/history.mjs';
+import { installLegacyProjectionControlView } from './ui/views/projection-control.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -93,6 +94,7 @@ const uploadRepository = createUploadRepository({
 installLegacyUploadRepository(uploadRepository);
 installLegacyUploadUI();
 installLegacyHistoryView();
+installLegacyProjectionControlView();
 installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);

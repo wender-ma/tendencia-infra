@@ -182,8 +182,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar parsers de Tendência, Flows e Gestões.
 - [x] Separar modais, toasts e loading em módulos de UI.
 - [x] Separar uploads em módulos próprios de política, transação, repositório e interface.
-- [ ] Separar tabelas em módulos de UI.
-- [ ] Separar cada aba em um módulo de visualização (Uploads e Histórico concluídos; demais abas pendentes).
+- [ ] Separar tabelas em módulos de UI (Histórico, uploads e movimentações da projeção concluídos; demais tabelas pendentes).
+- [ ] Separar cada aba em um módulo de visualização (Uploads, Histórico e Controle de Projeção concluídos; demais abas pendentes).
 - [ ] Remover aliases e variáveis globais gradualmente (catálogos estáticos isolados; módulo de uploads ainda usa adaptador temporário para o legado).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 

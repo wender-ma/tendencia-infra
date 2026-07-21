@@ -8,6 +8,10 @@ const moduleSource = fs.readFileSync(path.join(root, 'assets/js/ui/view-states.m
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
+const projectionControlView = fs.readFileSync(
+  path.join(root, 'assets/js/ui/views/projection-control.mjs'),
+  'utf8',
+);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -21,9 +25,9 @@ assert(bootstrap.includes('installLegacyViewStateGlobals(viewStateService)'), 'E
 assert(bootstrap.includes('viewStates: viewStateService'), 'Serviço de estado não publicado');
 assert(!legacy.includes('renderPlaceholderSemDados'), 'Placeholder HTML legado ainda está presente');
 
-const movementTable = legacy.slice(
-  legacy.indexOf('function renderMovTable('),
-  legacy.indexOf('// Event delegation para botões da tabela de movimentações'),
+const movementTable = projectionControlView.slice(
+  projectionControlView.indexOf('function renderMovTable('),
+  projectionControlView.indexOf('function clearMovFilters('),
 );
 assert(!movementTable.includes('historyPage'), 'Tabela de movimentações contém paginação do histórico');
 assert(!movementTable.includes('compare'), 'Tabela de movimentações depende de filtro do histórico');

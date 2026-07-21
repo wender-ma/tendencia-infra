@@ -19,6 +19,7 @@ function loadProjectSources() {
     readProjectFile('assets/js/dashboard-legacy.js'),
     readProjectFile('assets/js/ui/uploads.mjs'),
     readProjectFile('assets/js/ui/views/history.mjs'),
+    readProjectFile('assets/js/ui/views/projection-control.mjs'),
   ].join('\n');
   return {
     root,

@@ -15,6 +15,10 @@ const uploadRepository = fs.readFileSync(
 );
 const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
+const projectionControlView = fs.readFileSync(
+  path.join(root, 'assets/js/ui/views/projection-control.mjs'),
+  'utf8',
+);
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 
@@ -61,6 +65,12 @@ assert(!uploadUi.includes('.innerHTML'), 'Interface de uploads não pode montar 
 assert(historyView.includes('export function installLegacyHistoryView'), 'View de histórico não foi modularizada');
 assert(historyView.includes('function renderHistHeatmap('), 'Tabela histórica ausente da view');
 assert(!historyView.includes('.innerHTML'), 'View de histórico não pode montar HTML sem parser');
+assert(
+  projectionControlView.includes('export function installLegacyProjectionControlView'),
+  'View de controle de projeção não foi modularizada',
+);
+assert(projectionControlView.includes('function renderMovTable('), 'Tabela de movimentações ausente da view');
+assert(!projectionControlView.includes('.innerHTML'), 'View de controle de projeção não pode montar HTML sem parser');
 
 for (const catalogContract of [
   'export const PROJECTION_CATALOG',
@@ -113,6 +123,8 @@ for (const removedLegacyContract of [
   'async function handleExcelUpload(',
   'function renderUploadsCentral(',
   'function renderHistorico(',
+  'function renderProjCtrl(',
+  'function renderMovTable(',
 ]) {
   assert(!legacy.includes(removedLegacyContract), `Responsabilidade ainda presente no legado: ${removedLegacyContract}`);
 }

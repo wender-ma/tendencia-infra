@@ -79,7 +79,7 @@ assert(/function toast[\s\S]*?setAttribute\(["']aria-live["']/.test(feedbackModu
 assert(/id="loginErro"[^>]*role="alert"/.test(html) && /id="signupErro"[^>]*role="alert"/.test(html), 'Erros de autenticação não são anunciados');
 
 ['obraForm', 'editorForm', 'loginEmailForm', 'signupEmailForm'].forEach(id => {
-  assert(new RegExp(`<form\\b[^>]*id="${id}"[^>]*onsubmit=`).test(html), `Formulário #${id} sem evento submit`);
+  assert(new RegExp(`<form\\b[^>]*id="${id}"[^>]*data-submit-action=`).test(html), `Formulário #${id} sem evento submit delegado`);
 });
 assert(source.includes('data-modal-form="manual"'), 'Aditivo manual precisa usar formulário semântico');
 assert(source.includes('data-modal-form="movement"'), 'Movimentação precisa usar formulário semântico');

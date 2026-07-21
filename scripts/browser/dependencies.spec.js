@@ -273,6 +273,31 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.getByRole('button', { name: 'Fechar acesso ao dashboard' }).click();
   await expect(page.locator('#loginModalBackdrop')).not.toHaveClass(/show/);
 
+  const delegatedSubmits = await page.evaluate(() => {
+    const calls = [];
+    const handlers = {
+      obraForm: 'salvarObraForm',
+      editorForm: 'salvarEditorForm',
+      loginEmailForm: 'doSignInEmail',
+      signupEmailForm: 'doSignUpEmail',
+    };
+    for (const [formId, handlerName] of Object.entries(handlers)) {
+      const original = window[handlerName];
+      window[handlerName] = () => calls.push(handlerName);
+      const event = new Event('submit', { bubbles: true, cancelable: true });
+      const accepted = document.getElementById(formId).dispatchEvent(event);
+      calls.push(`${formId}:${accepted ? 'navegou' : 'prevenido'}`);
+      window[handlerName] = original;
+    }
+    return calls;
+  });
+  expect(delegatedSubmits).toEqual([
+    'salvarObraForm', 'obraForm:prevenido',
+    'salvarEditorForm', 'editorForm:prevenido',
+    'doSignInEmail', 'loginEmailForm:prevenido',
+    'doSignUpEmail', 'signupEmailForm:prevenido',
+  ]);
+
   await page.getByRole('tab', { name: /Uploads/ }).click();
   await page.locator('#uploadsAdvancedToggle').click();
   await expect(page.locator('#uploadsAdvancedBody')).toHaveClass(/open/);

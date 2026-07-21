@@ -858,7 +858,7 @@ async function populaObrasCheckboxes(marcadasSet) {
   }
   container.innerHTML = obrasAtivas.map(o => {
     const checked = marcadasSet.has(o.codigo_obra) ? 'checked' : '';
-    return `<label style="display:flex; gap:8px; align-items:center; padding:5px 8px; border-radius:4px; cursor:pointer;" onmouseover="this.style.background='var(--fgr-red-light)'" onmouseout="this.style.background=''">
+    return `<label class="editor-project-option">
       <input type="checkbox" class="editor-obra-cb" value="${escAttr(o.codigo_obra)}" ${checked} style="width:16px; height:16px; cursor:pointer;">
       <code style="font-size:11px; color:var(--text-soft);">${escHtml(o.codigo_obra)}</code>
       <span style="font-size:13px;">${escHtml(o.nome)}</span>
@@ -8463,8 +8463,8 @@ function switchLoginTab(modo) {
   const isLogin = modo === 'login';
   document.getElementById('loginTabLogin').classList.toggle('active', isLogin);
   document.getElementById('loginTabSignup').classList.toggle('active', !isLogin);
-  document.getElementById('loginPanelLogin').style.display = isLogin ? 'block' : 'none';
-  document.getElementById('loginPanelSignup').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('loginPanelLogin').hidden = !isLogin;
+  document.getElementById('loginPanelSignup').hidden = isLogin;
 }
 
 // -------- HANDLERS DE LOGIN --------

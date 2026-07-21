@@ -27,6 +27,26 @@ for (const viewport of viewports) {
     expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth + 1);
     expect(layout.headerOverlapsMain).toBe(false);
     expect(layout.activePanelVisible).toBe(true);
+
+    await page.locator('#authBtn').click();
+    await expect(page.locator('#loginModalBackdrop')).toHaveClass(/show/);
+    const dialogLayout = await page.locator('#loginModalBackdrop [role="dialog"]').evaluate(dialog => {
+      const rect = dialog.getBoundingClientRect();
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    expect(dialogLayout.left).toBeGreaterThanOrEqual(0);
+    expect(dialogLayout.right).toBeLessThanOrEqual(dialogLayout.viewportWidth);
+    expect(dialogLayout.top).toBeGreaterThanOrEqual(0);
+    expect(dialogLayout.bottom).toBeLessThanOrEqual(dialogLayout.viewportHeight);
+    await page.getByRole('button', { name: 'Fechar acesso ao dashboard' }).click();
+
     await testInfo.attach(`dashboard-${viewport.name}`, {
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',

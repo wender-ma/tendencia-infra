@@ -2,6 +2,7 @@ const EVENT_ATTRIBUTES = Object.freeze({
   click: 'data-click-action',
   change: 'data-change-action',
   input: 'data-input-action',
+  submit: 'data-submit-action',
 });
 
 function actionArguments(element, event) {
@@ -22,7 +23,7 @@ function actionArguments(element, event) {
 function dispatchAction(element, event, attribute, target) {
   if (element.matches(':disabled,[aria-disabled="true"]')) return;
   if (element.dataset.backdropDismiss === 'true' && event.target !== element) return;
-  if (element.tagName === 'A') event.preventDefault();
+  if (element.tagName === 'A' || element.tagName === 'FORM') event.preventDefault();
 
   const fileTarget = element.dataset.fileTarget;
   if (fileTarget) {

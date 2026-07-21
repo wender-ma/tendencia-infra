@@ -3,8 +3,8 @@
 
   <div class="card">
     <h2>📈 Evolução do total da obra <span class="hint">Orçamento Licitação → cada gestão</span></h2>
-    <div id="histChart" style="position: relative; height: 320px;"></div>
-    <div id="histLegend" style="margin-top: 12px; font-size: 12px; color: var(--text-soft); display: flex; gap: 16px; flex-wrap: wrap;"></div>
+    <div id="histChart" class="history-chart"></div>
+    <div id="histLegend" class="history-legend"></div>
   </div>
 
   <div class="grid-2">
@@ -31,14 +31,14 @@
       </label>
       <span class="toolbar-count" id="histCount"></span>
     </div>
-    <div class="table-wrap" style="max-height:600px;">
+    <div class="table-wrap table-wrap-medium">
       <table id="histTbl">
         <thead id="histThead"></thead>
         <tbody id="histTbody"></tbody>
       </table>
     </div>
     <div class="table-pagination" id="historyPagination" hidden aria-label="Paginação do histórico"></div>
-    <div style="margin-top:8px; font-size:11px; color:var(--text-soft);">
+    <div class="table-note">
       💡 Coluna <strong>Licitação</strong> = orçamento original (ponto zero) · Verde = reduziu vs a referência · Vermelho = aumentou · Cinza = sem alteração. Passe o mouse na célula para ver o valor.
     </div>
   </div>

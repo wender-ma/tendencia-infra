@@ -47,7 +47,16 @@ for (const viewport of viewports) {
     expect(dialogLayout.bottom).toBeLessThanOrEqual(dialogLayout.viewportHeight);
     await page.getByRole('button', { name: 'Fechar acesso ao dashboard' }).click();
 
-    for (const tabName of ['manual', 'flows', 'projecao']) {
+    for (const tabName of [
+      'visao',
+      'flows',
+      'projecao',
+      'projecao_ctrl',
+      'detalhe',
+      'historico',
+      'uploads',
+      'manual',
+    ]) {
       await page.locator(`.tab[data-tab="${tabName}"]`).click();
       await expect(page.locator(`#tab-${tabName}`)).toHaveClass(/active/);
       const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);

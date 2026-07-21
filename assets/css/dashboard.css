@@ -870,6 +870,14 @@ body:not(.is-admin-geral) [data-admin-control],
   background: var(--fgr-red-light);
   color: var(--sem-erro);
 }
+.btn-sm.warning-soft {
+  border-color: var(--sem-alerta);
+  background: var(--sem-alerta-bg);
+  color: var(--sem-alerta);
+}
+.modal--confirm { max-width: 520px; }
+.provider-icon { font-size: 16px; }
+.signup-intro { margin: 0 0 12px; color: var(--text-soft); font-size: 12px; }
 
 /* Flows */
 .flows-discarded { margin-top: 10px; }
@@ -934,6 +942,63 @@ body:not(.is-admin-geral) [data-admin-control],
 .projection-legend-mark.actual { height: 10px; background: var(--fgr-red-light); }
 .projection-table { max-height: 700px; }
 .table-note { margin-top: 8px; color: var(--text-soft); font-size: 11px; }
+
+/* Controle de Projeção */
+.projection-control-intro { margin: 8px 0 12px; color: var(--text-medium); font-size: 12.5px; }
+.projection-control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.projection-balance-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.projection-control-banner { margin-bottom: 14px; }
+.projection-control-chart { height: 280px; }
+.table-wrap-medium { max-height: 600px; }
+.table-col-50-center { width: 50px; text-align: center; }
+
+/* Uploads */
+.uploads-intro { margin: 8px 0 14px; color: var(--text-medium); font-size: 13px; }
+.uploads-info {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent-info-vivid);
+  border-radius: 4px;
+  background: var(--accent-info-bg);
+  color: var(--accent-info-text);
+  font-size: 12px;
+}
+.uploads-maintenance {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--sem-erro);
+  border-radius: 4px;
+  background: var(--sem-erro-soft);
+}
+.uploads-maintenance-title { color: var(--sem-erro); font-size: 13px; }
+.uploads-maintenance-copy { margin: 4px 0 10px; color: var(--sem-erro-text); font-size: 11.5px; }
+.uploads-maintenance-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Gráficos estáticos */
+.history-chart { position: relative; height: 320px; }
+.history-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.overview-donut { min-height: 320px; }
 
 @media (max-width: 900px) {
   .header { flex-wrap: wrap; }

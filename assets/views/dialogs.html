@@ -54,7 +54,7 @@
 </div>
 
 <div class="modal-bg" id="confirmModalBg" aria-hidden="true" data-click-action="closeConfirmModal" data-action-mode="bool" data-action-arg="false" data-backdrop-dismiss="true">
-  <div class="modal" id="confirmModalDialog" role="dialog" aria-modal="true" aria-label="Confirmação" tabindex="-1" style="max-width:520px;">
+  <div class="modal modal--confirm" id="confirmModalDialog" role="dialog" aria-modal="true" aria-label="Confirmação" tabindex="-1">
     <button type="button" class="modal-close" data-click-action="closeConfirmModal" data-action-mode="bool" data-action-arg="false" aria-label="Fechar confirmação">×</button>
     <div id="confirmModalContent"></div>
   </div>
@@ -77,7 +77,7 @@
     <!-- PAINEL LOGIN -->
     <div id="loginPanelLogin">
       <button type="button" class="login-provider-button" data-click-action="doSignInGoogle">
-        <span style="font-size:16px;">🔷</span> Entrar com Google
+        <span class="provider-icon">🔷</span> Entrar com Google
       </button>
       <div class="login-divider">
         <span>ou com email</span>
@@ -98,7 +98,7 @@
 
     <!-- PAINEL SIGNUP -->
     <div id="loginPanelSignup" hidden>
-      <p style="font-size:12px; color:var(--text-soft); margin:0 0 12px;">
+      <p class="signup-intro">
         Sua conta será criada como <strong>"aguardando aprovação"</strong>. Um administrador precisa liberar seu acesso pra editar dados.
       </p>
       <form id="signupEmailForm" class="auth-form" data-submit-action="doSignUpEmail">
@@ -107,16 +107,16 @@
           <input type="text" id="signupNome" autocomplete="name" class="field-control">
         </div>
         <div>
-          <label for="signupEmail" class="field-label">Email <span style="color:var(--sem-erro);">*</span></label>
+          <label for="signupEmail" class="field-label">Email <span class="required-mark">*</span></label>
           <input type="email" id="signupEmail" autocomplete="email" required class="field-control">
         </div>
         <div>
-          <label for="signupSenha" class="field-label">Senha <span style="color:var(--sem-erro);">*</span></label>
+          <label for="signupSenha" class="field-label">Senha <span class="required-mark">*</span></label>
           <input type="password" id="signupSenha" autocomplete="new-password" minlength="6" required class="field-control">
           <div class="field-help">Mínimo 6 caracteres.</div>
         </div>
         <div>
-          <label for="signupSenha2" class="field-label">Confirmar senha <span style="color:var(--sem-erro);">*</span></label>
+          <label for="signupSenha2" class="field-label">Confirmar senha <span class="required-mark">*</span></label>
           <input type="password" id="signupSenha2" autocomplete="new-password" minlength="6" required class="field-control">
         </div>
         <div id="signupErro" class="form-error" role="alert" aria-live="assertive"></div>

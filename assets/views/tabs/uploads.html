@@ -1,24 +1,24 @@
 <div class="card">
     <h2>📤 Central de Uploads</h2>
-    <p style="font-size:13px; color:var(--text-medium); margin: 8px 0 14px;">
+    <p class="uploads-intro">
       Todas as atualizações de dados do dashboard em um lugar só. A partir da <strong>v0.54</strong> a forma recomendada é enviar
       <strong>uma planilha Excel completa</strong> (<code>.xlsx</code>/<code>.xlsm</code>) contendo as 3 abas — o dashboard extrai tudo automaticamente.
       Se preferir, uploads individuais por CSV continuam disponíveis em <em>Modo avançado</em>.
     </p>
     <div id="uploadsCentral" class="uploads-central"></div>
-    <div style="margin-top:16px; padding:10px 14px; background:var(--accent-info-bg); border-left:3px solid var(--accent-info-vivid); border-radius:4px; font-size:12px; color:var(--accent-info-text);">
+    <div class="uploads-info">
       💡 <strong>Dica:</strong> Envios ficam registrados no histórico. Clique em <strong>📜 Histórico</strong> em qualquer bloco pra ver os últimos arquivos enviados e <strong>baixá-los novamente</strong>. Mantemos automaticamente os <strong>últimos 12 arquivos por tipo</strong> (rolling backup) — mais antigos são descartados. Download só para usuários logados (link temporário de 60 segundos).
     </div>
 
     <!-- v0.57: Zona de manutenção -->
-    <div style="margin-top:16px; padding:12px 16px; background:var(--sem-erro-soft); border-left:3px solid var(--sem-erro); border-radius:4px;">
-      <strong style="font-size:13px; color:var(--sem-erro);">🛠️ Manutenção</strong>
-      <p style="font-size:11.5px; color:var(--sem-erro-text); margin:4px 0 10px;">
+    <div class="uploads-maintenance">
+      <strong class="uploads-maintenance-title">🛠️ Manutenção</strong>
+      <p class="uploads-maintenance-copy">
         Use se os dados estiverem inconsistentes ou você quiser forçar um reset do que está persistido na nuvem.
       </p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn-sm" data-editor-only style="background:var(--sem-alerta-bg); border:1px solid var(--sem-alerta); color:var(--sem-alerta);" data-click-action="resetCacheDados" title="Apaga os dados parseados salvos no Supabase. Próximo upload vai reconstruir do zero.">🧹 Resetar cache de dados</button>
-        <button class="btn-sm" data-editor-only style="background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" data-click-action="apagarHistoricoUploads" title="Apaga todo o histórico de uploads (metadados + arquivos no Storage). Ação irreversível.">🗑️ Limpar histórico de uploads</button>
+      <div class="uploads-maintenance-actions">
+        <button class="btn-sm warning-soft" data-editor-only data-click-action="resetCacheDados" title="Apaga os dados parseados salvos no Supabase. Próximo upload vai reconstruir do zero.">🧹 Resetar cache de dados</button>
+        <button class="btn-sm danger-soft" data-editor-only data-click-action="apagarHistoricoUploads" title="Apaga todo o histórico de uploads (metadados + arquivos no Storage). Ação irreversível.">🗑️ Limpar histórico de uploads</button>
       </div>
     </div>
   </div>

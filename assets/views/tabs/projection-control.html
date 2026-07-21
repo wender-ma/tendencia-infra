@@ -1,16 +1,16 @@
 <div class="sources-header" id="srcHeader_projecao_ctrl" data-sources="tendencia,flows"></div>
   <div class="card">
     <h2>📦 Controle da Verba de Projeção de Gastos <span class="hint">insumo I011890</span></h2>
-    <p style="font-size:12.5px; color:var(--text-medium); margin: 8px 0 12px;">
+    <p class="projection-control-intro">
       Controle de <strong>todas as entradas e saídas</strong> da Verba de Projeção, incluindo movimentações que não passam por aditivo (remanejamentos básicos, aportes manuais, devoluções).
       Aditivos marcados como <strong>✅ Refletido</strong> que tocam o insumo I011890 são importados automaticamente.
     </p>
 
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
+    <div class="projection-control-grid">
       <div>
         <label for="projCtrlSaldoInicial" class="field-label">💰 Saldo inicial</label>
         <div class="field-control-row">
-          <input type="text" id="projCtrlSaldoInicial" data-edit-control placeholder="ex: 4.541.431,52" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px; font-variant-numeric:tabular-nums; text-align:right;">
+          <input type="text" id="projCtrlSaldoInicial" class="projection-balance-input" data-edit-control placeholder="ex: 4.541.431,52">
           <button type="button" id="lockBtnSaldo" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="saldo" title="Travar / destravar edição" aria-label="Travar ou destravar edição do saldo inicial" class="field-lock-button">🔓</button>
         </div>
         <div class="field-help">Verba inicial da Projeção de Gastos</div>
@@ -35,18 +35,18 @@
   </div>
 
   <div class="kpis" id="projCtrlKpis"></div>
-  <div id="projCtrlConfBanner" style="margin-bottom: 14px;"></div>
+  <div id="projCtrlConfBanner" class="projection-control-banner"></div>
 
   <div class="card">
     <h2>📊 Evolução do saldo <span class="hint">aportes − consumos ao longo do tempo</span></h2>
-    <div id="projCtrlChart" style="height: 280px;"></div>
+    <div id="projCtrlChart" class="projection-control-chart"></div>
   </div>
 
   <div class="card">
     <h2>📋 Movimentações
       <span class="panel-actions">
-        <button class="btn-sm primary" data-editor-only data-click-action="openMovForm" style="font-size:12px;">➕ Nova movimentação</button>
-        <button class="btn-sm" data-click-action="exportarControleProjXLSX" style="font-size:12px;" title="Exporta movimentações + saldo acumulado em Excel">💾 Exportar Excel</button>
+        <button class="btn-sm primary" data-editor-only data-click-action="openMovForm">➕ Nova movimentação</button>
+        <button class="btn-sm" data-click-action="exportarControleProjXLSX" title="Exporta movimentações + saldo acumulado em Excel">💾 Exportar Excel</button>
       </span>
     </h2>
 
@@ -64,30 +64,30 @@
         <option value="entrada">⬅️ Só entradas</option>
         <option value="saida">➡️ Só saídas</option>
       </select>
-      <button class="btn-sm" data-click-action="clearMovFilters" style="font-size:11px;">🧹 Limpar</button>
+      <button class="btn-sm compact" data-click-action="clearMovFilters">🧹 Limpar</button>
       <span class="toolbar-count" id="movCount"></span>
     </div>
 
-    <div class="table-wrap" style="max-height:600px;">
+    <div class="table-wrap table-wrap-medium">
       <table>
         <thead>
           <tr>
-            <th style="width:90px;">Data</th>
-            <th style="width:130px;">Tipo</th>
-            <th style="width:50px; text-align:center;">↔</th>
-            <th style="width:130px;">Origem (saiu de)</th>
-            <th style="width:130px;">Destino (foi para)</th>
+            <th class="table-col-90">Data</th>
+            <th class="table-col-130">Tipo</th>
+            <th class="table-col-50-center">↔</th>
+            <th class="table-col-130">Origem (saiu de)</th>
+            <th class="table-col-130">Destino (foi para)</th>
             <th>Descrição / Justificativa</th>
-            <th style="width:120px;">Responsável</th>
-            <th class="num" style="width:130px;">Valor (R$)</th>
-            <th class="num" style="width:130px;">Saldo após</th>
+            <th class="table-col-120">Responsável</th>
+            <th class="num table-col-130">Valor (R$)</th>
+            <th class="num table-col-130">Saldo após</th>
           </tr>
         </thead>
         <tbody id="movTbody"></tbody>
       </table>
     </div>
 
-    <div style="margin-top:8px; font-size:11px; color:var(--text-soft);">
+    <div class="table-note">
       💡 <strong>Entrada</strong> ⬅️ = o insumo controlado recebeu verba (origem é outro insumo).
       <strong>Saída</strong> ➡️ = o insumo controlado liberou verba (destino é outro insumo).
       Movimentações <strong>via Flow</strong> são importadas automaticamente dos aditivos marcados como ✅ Refletido — para editá-las ou desfazer, vá na aba "🔗 Flows".

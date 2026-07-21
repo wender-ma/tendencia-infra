@@ -11,6 +11,7 @@ import { createViewStateService, installLegacyViewStateGlobals } from './ui/view
 import { mountStaticViews } from './ui/static-views.mjs';
 import { installLegacyUploadUI } from './ui/uploads.mjs';
 import { installLegacyDetailsView } from './ui/views/details.mjs';
+import { installLegacyFlowsView } from './ui/views/flows.mjs';
 import { installLegacyHistoryView } from './ui/views/history.mjs';
 import { installLegacyProjectionControlView } from './ui/views/projection-control.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
@@ -95,6 +96,7 @@ const uploadRepository = createUploadRepository({
 installLegacyUploadRepository(uploadRepository);
 installLegacyUploadUI();
 installLegacyDetailsView();
+installLegacyFlowsView();
 installLegacyHistoryView();
 installLegacyProjectionControlView();
 installActionDelegation();

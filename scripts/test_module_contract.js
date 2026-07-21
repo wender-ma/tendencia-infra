@@ -18,6 +18,7 @@ const uploadRepository = fs.readFileSync(
 );
 const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
 const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.mjs'), 'utf8');
+const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
 const projectionControlView = fs.readFileSync(
   path.join(root, 'assets/js/ui/views/projection-control.mjs'),
@@ -96,6 +97,9 @@ assert(
 );
 assert(detailsView.includes('function renderTable('), 'Tabela de detalhamento ausente da view');
 assert(!detailsView.includes('.innerHTML'), 'View de detalhamento não pode montar HTML sem parser');
+assert(flowsView.includes('export function installLegacyFlowsView'), 'View de Flows não foi modularizada');
+assert(flowsView.includes('function renderFlowTable('), 'Tabela de Flows ausente da view');
+assert(!flowsView.includes('.innerHTML'), 'View de Flows não pode montar HTML sem parser');
 assert(
   historyView.includes('export function installLegacyHistoryView'),
   'View de histórico não foi modularizada',
@@ -185,6 +189,9 @@ for (const removedLegacyContract of [
   'function renderUploadsCentral(',
   'function renderTable(',
   'function openItem(',
+  'function renderFlows(',
+  'function renderFlowTable(',
+  'function onRefletidoChange(',
   'function renderHistorico(',
   'function renderProjCtrl(',
   'function renderMovTable(',

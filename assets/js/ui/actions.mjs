@@ -20,7 +20,7 @@ function actionArguments(element, event) {
   return [];
 }
 
-function dispatchAction(element, event, attribute, target) {
+function dispatchAction(element, event, attribute, target, reportError) {
   if (element.matches(':disabled,[aria-disabled="true"]')) return;
   if (element.dataset.backdropDismiss === 'true' && event.target !== element) return;
   if (element.tagName === 'A' || element.tagName === 'FORM') event.preventDefault();
@@ -34,7 +34,7 @@ function dispatchAction(element, event, attribute, target) {
   const actionName = element.getAttribute(attribute);
   const action = target[actionName];
   if (typeof action !== 'function') {
-    target.reportNonFatalError?.(
+    reportError(
       `Interface/ação ausente/${actionName}`,
       new Error(`Ação não encontrada: ${actionName}`),
     );
@@ -44,19 +44,23 @@ function dispatchAction(element, event, attribute, target) {
   try {
     const result = action(...actionArguments(element, event));
     if (result && typeof result.catch === 'function') {
-      result.catch((error) => target.reportNonFatalError?.(`Interface/${actionName}`, error));
+      result.catch((error) => reportError(`Interface/${actionName}`, error));
     }
   } catch (error) {
-    target.reportNonFatalError?.(`Interface/${actionName}`, error);
+    reportError(`Interface/${actionName}`, error);
   }
 }
 
-export function installActionDelegation({ root = document, target = window } = {}) {
+export function installActionDelegation({
+  root = document,
+  target = window,
+  reportError = () => {},
+} = {}) {
   for (const [eventName, attribute] of Object.entries(EVENT_ATTRIBUTES)) {
     root.addEventListener(eventName, (event) => {
       const element = event.target.closest?.(`[${attribute}]`);
       if (!element) return;
-      dispatchAction(element, event, attribute, target);
+      dispatchAction(element, event, attribute, target, reportError);
     });
   }
 

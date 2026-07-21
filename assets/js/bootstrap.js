@@ -9,11 +9,7 @@ import { installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
-import {
-  createDashboardRuntime,
-  formatNumber,
-  installLegacyDashboardRuntime,
-} from './ui/dashboard-runtime.mjs';
+import { createDashboardRuntime, formatNumber } from './ui/dashboard-runtime.mjs';
 import {
   createProjectController,
   installLegacyProjectController,
@@ -97,6 +93,7 @@ const parserService = installLegacyImportParsers({
   state: appState,
   config: DASHBOARD_CONFIG,
   monitor: performanceService,
+  reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
 });
 const feedbackService = createFeedbackService();
 installLegacyFeedbackGlobals(feedbackService);
@@ -193,7 +190,6 @@ const dashboardRuntime = createDashboardRuntime({
     uploads: () => window.renderUploadsCentral?.(),
   },
 });
-installLegacyDashboardRuntime(dashboardRuntime);
 const projectRepository = createProjectRepository({
   getClient: () => window.SUPA,
   warn: (context, error) => logger.warn(context, error),
@@ -323,15 +319,15 @@ Promise.resolve()
       import('./ui/views/projection.mjs'),
       import('./ui/views/projection-control.mjs'),
     ]);
-    installLegacyFlowEditor();
-    installLegacyUploadUI();
-    installLegacyAdminView();
-    installLegacyDetailsView();
-    installLegacyFlowsView();
-    installLegacyHistoryView();
-    installLegacyOverviewView();
-    installLegacyProjectionView();
-    installLegacyProjectionControlView();
+    installLegacyFlowEditor(dashboardRuntime);
+    installLegacyUploadUI(dashboardRuntime);
+    installLegacyAdminView(dashboardRuntime);
+    installLegacyDetailsView(dashboardRuntime);
+    installLegacyFlowsView(dashboardRuntime);
+    installLegacyHistoryView(dashboardRuntime);
+    installLegacyOverviewView(dashboardRuntime);
+    installLegacyProjectionView(dashboardRuntime);
+    installLegacyProjectionControlView(dashboardRuntime);
 
     const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
       reportError: (context, error) => logger.warn(context, error),
@@ -386,7 +382,9 @@ Promise.resolve()
       reportError: (context, error) => logger.warn(context, error),
     });
     installLegacyUploadMaintenance(uploadMaintenance);
-    installActionDelegation();
+    installActionDelegation({
+      reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
+    });
     const application = createApplication({
       state: appState,
       projectController,

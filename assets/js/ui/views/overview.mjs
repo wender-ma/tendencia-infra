@@ -6,6 +6,13 @@ import {
   formatPercentage as fmtPct,
 } from '../dashboard-runtime.mjs';
 
+let reportNonFatalError;
+let runAsyncSafely;
+let resolveColor;
+let renderApexChart;
+let getProjRawObraAtiva;
+let getFlowsObraAtiva;
+
 // ============ VISÃO GERAL ============
 // GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
 // declarados na seção ESTADO GLOBAL acima
@@ -678,7 +685,13 @@ function renderDonut(tipoSum) {
   renderApexChart('donutChart', options);
 }
 
-export function installLegacyOverviewView(target = window) {
+export function installLegacyOverviewView(runtime, target = window) {
+  reportNonFatalError = runtime.reportNonFatalError;
+  runAsyncSafely = runtime.runAsyncSafely;
+  resolveColor = runtime.resolveColor;
+  renderApexChart = runtime.renderApexChart;
+  getProjRawObraAtiva = runtime.getActiveProjection;
+  getFlowsObraAtiva = runtime.getActiveFlows;
   Object.assign(target, {
     setCard3Modo,
     setCorrecaoIndice,

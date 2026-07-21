@@ -1,6 +1,10 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from './dom.mjs';
 
+let reportNonFatalError;
+let runAsyncSafely;
+let debouncedRender;
+
 const MANUAL_TEXT = {
   tendencia:
     '📈 ABA TENDÊNCIA (formato v0.55+)\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba TENDÊNCIA\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui usando o botão "📤 Carregar CSV"\n\nO arquivo deve manter as colunas de Código, Serviço, Insumo, Item, Licitação, IPCA, INCC, Gestão, Diferença e Evoluções nas posições documentadas.\n\n⚠️ O formato antigo de 17 colunas não é mais aceito.\nVeja a aba "ℹ️ Manual" para detalhes completos.',
@@ -1169,7 +1173,10 @@ function renderSourcesHeaders() {
   });
 }
 
-export function installLegacyUploadUI(target = window) {
+export function installLegacyUploadUI(runtime, target = window) {
+  reportNonFatalError = runtime.reportNonFatalError;
+  runAsyncSafely = runtime.runAsyncSafely;
+  debouncedRender = runtime.debouncedRender;
   Object.assign(target, {
     MANUAL_TEXT,
     handleUpload,

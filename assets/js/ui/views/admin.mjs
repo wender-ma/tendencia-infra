@@ -1,6 +1,9 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
 
+let reportNonFatalError;
+let renderAll;
+
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
 // SUBSTITUI as funções v0.61: renderObrasAdmin, renderEditoresAdmin,
@@ -776,7 +779,9 @@ async function rejeitarPendente(email) {
   }
 }
 
-export function installLegacyAdminView(target = window) {
+export function installLegacyAdminView(runtime, target = window) {
+  reportNonFatalError = runtime.reportNonFatalError;
+  renderAll = runtime.renderAll;
   Object.assign(target, {
     renderObrasAdmin,
     openObraForm,

@@ -330,7 +330,7 @@ assert(
 );
 
 assert(
-  bootstrap.indexOf('mountStaticViews();') < bootstrap.indexOf('installActionDelegation();'),
+  bootstrap.indexOf('mountStaticViews();') < bootstrap.indexOf('installActionDelegation({'),
   'Abas estáticas devem existir antes da delegação de eventos',
 );
 assert(
@@ -450,8 +450,8 @@ assert(
   'Runtime modular do dashboard ausente',
 );
 assert(
-  dashboardRuntime.includes('export function installLegacyDashboardRuntime'),
-  'Adaptador temporário do runtime ausente',
+  !dashboardRuntime.includes('export function installLegacyDashboardRuntime'),
+  'Runtime não deve voltar a publicar adaptador global',
 );
 
 console.log('Contrato modular: configuracao, catalogos, bootstrap e servico Supabase separados OK');

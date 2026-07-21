@@ -9,6 +9,11 @@ import {
   LICENSE_LABEL as LIC_LABEL,
 } from '../dashboard-runtime.mjs';
 
+let uiCriarKpi;
+let resolveColor;
+let renderApexChart;
+let getHistoricoObraAtiva;
+
 const CENT_TOLERANCE = DASHBOARD_CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
 let filtersBound = false;
@@ -388,6 +393,10 @@ function renderHistHeatmap() {
   renderPaginationControls('historyPagination', 'history', historyPage, renderHistHeatmap);
 }
 
-export function installLegacyHistoryView(target = window) {
+export function installLegacyHistoryView(runtime, target = window) {
+  uiCriarKpi = runtime.createKpi;
+  resolveColor = runtime.resolveColor;
+  renderApexChart = runtime.renderApexChart;
+  getHistoricoObraAtiva = runtime.getActiveHistory;
   target.renderHistorico = renderHistorico;
 }

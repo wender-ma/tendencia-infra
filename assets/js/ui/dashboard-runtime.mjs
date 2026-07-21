@@ -254,22 +254,3 @@ export function createDashboardRuntime({
     renderAll,
   });
 }
-
-export function installLegacyDashboardRuntime(runtime, target = window) {
-  Object.assign(target, {
-    reportNonFatalError: runtime.reportNonFatalError,
-    runAsyncSafely: runtime.runAsyncSafely,
-    uiCriarKpi: runtime.createKpi,
-    resolveColor: runtime.resolveColor,
-    renderApexChart: runtime.renderApexChart,
-    filtrarPorObraAtiva: runtime.filterByActiveProject,
-    getHistoricoObraAtiva: runtime.getActiveHistory,
-    getProjRawObraAtiva: runtime.getActiveProjection,
-    getFlowsObraAtiva: runtime.getActiveFlows,
-    buildLinks: runtime.buildLinks,
-    renderTab: runtime.renderTab,
-    debouncedRender: runtime.debouncedRender,
-    getActiveTabName: runtime.getActiveTabName,
-    renderAll: runtime.renderAll,
-  });
-}

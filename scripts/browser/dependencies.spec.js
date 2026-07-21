@@ -99,7 +99,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     );
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
     let releaseSyncOperation;
-    const pendingSyncOperation = window.runAsyncSafely(
+    const pendingSyncOperation = window.dashboardServices.runtime.runAsyncSafely(
       new Promise(resolve => { releaseSyncOperation = resolve; }),
       'Teste/sincronização',
     );
@@ -222,6 +222,21 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasExternalConfig: window.dashboardConfig?.dashboard === window.CONFIG,
       hasApexCharts: typeof window.ApexCharts === 'function',
       hasDashboardHandler: typeof window.handleAuthClick === 'function',
+      runtimeGlobalsRemoved: [
+        'reportNonFatalError',
+        'runAsyncSafely',
+        'uiCriarKpi',
+        'resolveColor',
+        'renderApexChart',
+        'filtrarPorObraAtiva',
+        'getHistoricoObraAtiva',
+        'getProjRawObraAtiva',
+        'getFlowsObraAtiva',
+        'buildLinks',
+        'renderTab',
+        'debouncedRender',
+        'renderAll',
+      ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };
   });
@@ -258,6 +273,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasExternalConfig: true,
     hasApexCharts: true,
     hasDashboardHandler: true,
+    runtimeGlobalsRemoved: true,
   });
   expect(runtime.status).not.toBe('Falha ao iniciar');
   expect(pageErrors).toEqual([]);

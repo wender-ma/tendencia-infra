@@ -2,6 +2,12 @@
 import { replaceWithParsedMarkup } from './dom.mjs';
 import { formatNumber as fmt, formatNumber as fmtR$ } from './dashboard-runtime.mjs';
 
+let reportNonFatalError;
+let runAsyncSafely;
+let getFlowsObraAtiva;
+let buildLinks;
+let debouncedRender;
+
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
   if (!text) return;
@@ -1333,7 +1339,12 @@ async function deleteManual(id) {
 
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
-export function installLegacyFlowEditor(target = window) {
+export function installLegacyFlowEditor(runtime, target = window) {
+  reportNonFatalError = runtime.reportNonFatalError;
+  runAsyncSafely = runtime.runAsyncSafely;
+  getFlowsObraAtiva = runtime.getActiveFlows;
+  buildLinks = runtime.buildLinks;
+  debouncedRender = runtime.debouncedRender;
   Object.assign(target, {
     showManualText,
     loadClassifications,

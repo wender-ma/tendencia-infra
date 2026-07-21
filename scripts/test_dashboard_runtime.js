@@ -13,7 +13,6 @@ const { pathToFileURL } = require('url');
     formatCompactNumber,
     formatNumber,
     formatPercentage,
-    installLegacyDashboardRuntime,
     tendencyStatus,
   } = await import(moduleUrl.href);
 
@@ -105,26 +104,6 @@ const { pathToFileURL } = require('url');
   );
   assert(events.includes('finish-error'));
   assert(events.some((event) => Array.isArray(event) && event[0] === 'toast'));
-
-  const target = {};
-  installLegacyDashboardRuntime(runtime, target);
-  assert.strictEqual(target.renderAll, runtime.renderAll);
-  assert.strictEqual(target.getFlowsObraAtiva, runtime.getActiveFlows);
-  for (const removedGlobal of [
-    'debounce',
-    'fmt',
-    'fmtR$',
-    'fmtR$k',
-    'fmtPct',
-    'statusOf',
-    'LIC_LABEL',
-  ]) {
-    assert.strictEqual(
-      target[removedGlobal],
-      undefined,
-      `${removedGlobal} não deve voltar ao escopo global`,
-    );
-  }
 
   console.log('Runtime do dashboard: formatos, vínculos, render e falhas assíncronas OK');
 })().catch((error) => {

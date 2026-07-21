@@ -6,6 +6,13 @@ import {
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
 
+let reportNonFatalError;
+let uiCriarKpi;
+let resolveColor;
+let renderApexChart;
+let getProjRawObraAtiva;
+let getFlowsObraAtiva;
+
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
 // PROJ_RAW declarado na seção ESTADO GLOBAL acima
@@ -1806,7 +1813,13 @@ function renderFlowsRefletidosSection(servico, insumo) {
   `;
 }
 
-export function installLegacyProjectionView(target = window) {
+export function installLegacyProjectionView(runtime, target = window) {
+  reportNonFatalError = runtime.reportNonFatalError;
+  uiCriarKpi = runtime.createKpi;
+  resolveColor = runtime.resolveColor;
+  renderApexChart = runtime.renderApexChart;
+  getProjRawObraAtiva = runtime.getActiveProjection;
+  getFlowsObraAtiva = runtime.getActiveFlows;
   Object.assign(target, {
     defaultDataCorte,
     defaultDataFim,

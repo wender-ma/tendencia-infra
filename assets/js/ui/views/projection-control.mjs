@@ -7,6 +7,11 @@ import {
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
 
+let runAsyncSafely;
+let resolveColor;
+let renderApexChart;
+let getFlowsObraAtiva;
+
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
 let PROJ_CTRL_STATE = {
@@ -793,7 +798,11 @@ async function deleteMov(id) {
   renderProjCtrl();
 }
 
-export function installLegacyProjectionControlView(target = window) {
+export function installLegacyProjectionControlView(runtime, target = window) {
+  runAsyncSafely = runtime.runAsyncSafely;
+  resolveColor = runtime.resolveColor;
+  renderApexChart = runtime.renderApexChart;
+  getFlowsObraAtiva = runtime.getActiveFlows;
   Object.defineProperty(target, 'PROJ_CTRL_STATE', {
     configurable: true,
     get: () => PROJ_CTRL_STATE,

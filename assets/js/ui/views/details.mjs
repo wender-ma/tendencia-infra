@@ -8,6 +8,8 @@ import {
   tendencyStatus as statusOf,
 } from '../dashboard-runtime.mjs';
 
+let reportNonFatalError;
+
 // ============ DETALHAMENTO ============
 let filtersBound = false;
 
@@ -344,7 +346,8 @@ function renderFlowMini(f, isOrigem = false) {
     </div>`;
 }
 
-export function installLegacyDetailsView(target = window) {
+export function installLegacyDetailsView(runtime, target = window) {
+  reportNonFatalError = runtime.reportNonFatalError;
   Object.assign(target, {
     updateSortHeaderState,
     bindSortableHeaders,

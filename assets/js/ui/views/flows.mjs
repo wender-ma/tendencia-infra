@@ -2,6 +2,9 @@
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { debounce, formatNumber as fmt, formatNumber as fmtR$ } from '../dashboard-runtime.mjs';
 
+let runAsyncSafely;
+let getFlowsObraAtiva;
+
 // ============ FLOWS TAB ============
 let interactionsBound = false;
 
@@ -408,7 +411,9 @@ function onRefletidoChange(sel) {
   syncAllViewsFromFlows();
 }
 
-export function installLegacyFlowsView(target = window) {
+export function installLegacyFlowsView(runtime, target = window) {
+  runAsyncSafely = runtime.runAsyncSafely;
+  getFlowsObraAtiva = runtime.getActiveFlows;
   Object.assign(target, {
     renderFlows,
     clearFlowFilters,

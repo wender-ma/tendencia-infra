@@ -179,7 +179,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar módulo de autenticação e autorização.
 - [x] Criar serviço de acesso ao Supabase.
 - [x] Criar módulo único de estado.
-- [ ] Separar parsers de Tendência, Flows e Gestões.
+- [x] Separar parsers de Tendência, Flows e Gestões.
 - [ ] Separar uploads, modais, toasts e tabelas em módulos de UI.
 - [ ] Separar cada aba em um módulo de visualização.
 - [ ] Remover aliases e variáveis globais gradualmente.
@@ -212,21 +212,21 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 ### 12. Fortalecer os parsers
 
-- [ ] Mapear colunas por nome de cabeçalho, não por posição fixa.
-- [ ] Validar delimitador, BOM e encoding.
-- [ ] Definir formato de data explícito e sem ambiguidade.
-- [ ] Validar números nos formatos brasileiro e internacional.
-- [ ] Detectar aspas ou linhas malformadas.
-- [ ] Validar o arquivo inteiro antes de alterar o estado global.
-- [ ] Produzir relatório de linhas aceitas, ignoradas e rejeitadas.
-- [ ] Preservar o dataset anterior quando a importação falhar.
+- [x] Mapear colunas por nome de cabeçalho, não por posição fixa.
+- [x] Validar delimitador, BOM e encoding.
+- [x] Definir formato de data explícito e sem ambiguidade.
+- [x] Validar números nos formatos brasileiro e internacional.
+- [x] Detectar aspas ou linhas malformadas.
+- [x] Validar o arquivo inteiro antes de alterar o estado global.
+- [x] Produzir relatório de linhas aceitas, ignoradas e rejeitadas.
+- [x] Preservar o dataset anterior quando a importação falhar.
 
 ## P2: qualidade, testes e operação
 
-- [ ] Criar testes unitários para números e datas.
-- [ ] Criar testes unitários para os três parsers.
-- [ ] Criar testes de autorização por papel e obra.
-- [ ] Criar testes de XSS para campos importados.
+- [x] Criar testes unitários para números e datas.
+- [x] Criar testes unitários para os três parsers.
+- [x] Criar testes de autorização por papel e obra.
+- [x] Criar testes de XSS para campos importados.
 - [ ] Criar testes de integração para upload e rollback.
 - [ ] Criar testes E2E para login, troca de obra, edição e administração.
 - [ ] Criar testes visuais para mobile e desktop.
@@ -286,3 +286,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Configuração e credenciais públicas extraídas do legado; cliente e retry centralizados em serviço Supabase com suporte a variáveis de ambiente | `assets/js/services/supabase-service.js` |
 | 21/07/2026 | Sessão, provedores de login, whitelist e autorização por papel/obra extraídos para serviço de autenticação | `assets/js/services/auth-service.js` |
 | 21/07/2026 | Estado compartilhado e aliases temporários extraídos do legado; autenticação ligada diretamente à obra ativa central | `assets/js/state.js` |
+| 21/07/2026 | Parsers de Tendência, Flows e Gestões extraídos; layouts por cabeçalho, CSV robusto, relatórios e testes unitários adicionados | `assets/js/parsers/` |

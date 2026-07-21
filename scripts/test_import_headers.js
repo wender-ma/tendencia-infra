@@ -1,24 +1,7 @@
 #!/usr/bin/env node
 
-const vm = require('vm');
-const { loadProjectSources } = require('./load_project_sources');
-
-const { javascript } = loadProjectSources();
-
-function extractSource(startMarker, endMarker) {
-  const start = javascript.indexOf(startMarker);
-  const end = javascript.indexOf(endMarker, start);
-  if (start < 0 || end < 0) {
-    throw new Error(`Bloco não encontrado: ${startMarker}`);
-  }
-  return javascript.slice(start, end);
-}
-
-const validationSource = extractSource('const IMPORT_HEADER_RULES =', '// parseNum agora');
-const csvParserSource = extractSource('function parseCSVRows(text)', 'function normInsumo');
-const context = {};
-
-vm.runInNewContext(`${validationSource}\n${csvParserSource}`, context);
+const path = require('path');
+const { pathToFileURL } = require('url');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -31,66 +14,88 @@ function expectError(callback, expectedParts) {
   } catch (error) {
     message = error.message;
   }
-  expectedParts.forEach(part => {
+  for (const part of expectedParts) {
     assert(message.includes(part), `Mensagem não contém "${part}": ${message}`);
-  });
+  }
 }
 
-const tendencia = Array(14).fill('');
-tendencia[1] = ' CÓD. ';
-tendencia[2] = 'Cód. Serviço';
-tendencia[3] = 'Cód. Insumo';
-tendencia[4] = 'Item';
-tendencia[6] = 'ORÇ. LICITAÇÃO';
-tendencia[7] = 'CORRIGIDO IPCA';
-tendencia[8] = 'CORRIGIDO INCC';
-tendencia[9] = 'GESTÃO 05-2026';
-tendencia[10] = 'DIFERENÇA';
-tendencia[12] = 'EVOLUÇÃO\nTEÓRICA';
-tendencia[13] = 'EVOLUÇÃO FINANCEIRA';
-context.validateImportHeaders('tendencia', [tendencia]);
+async function main() {
+  const moduleUrl = pathToFileURL(
+    path.resolve(__dirname, '../assets/js/parsers/shared.mjs'),
+  ).href;
+  const {
+    parseDelimitedRows,
+    resolveImportColumns,
+    validateImportHeaders,
+  } = await import(moduleUrl);
 
-const flows = [
-  '\ufeffCod_aditivo',
-  'Descr_status',
-  'Descr_areaatual',
-  'Descr_setorcriacao',
-  'Data_criacao',
-  'Descr_motivo',
-  'Descr_observacao_motivo',
-  'Descr_descricaoaditivo',
-  'Cod_obra',
-  'Valor Aprovado ou Solicitado',
-  'Vlr_planejamento',
-  'Departamento',
-  'Ins. Planej.',
-  'Ins. Remanej.',
-  'Refletido',
-];
-context.validateImportHeaders('flows', [flows]);
+  const tendencia = [
+    'Item',
+    'Cód. Serviço',
+    'Cód. Insumo',
+    'CÓD.',
+    'ORÇ. LICITAÇÃO',
+    'CORRIGIDO IPCA',
+    'CORRIGIDO INCC',
+    'GESTÃO 05-2026',
+    'DIFERENÇA',
+    'EVOLUÇÃO\nTEÓRICA',
+    'EVOLUÇÃO FINANCEIRA',
+  ];
+  const tendencyColumns = resolveImportColumns('tendencia', [tendencia]);
+  assert(tendencyColumns.item === 0, 'Tendência não mapeou colunas pelo cabeçalho');
+  assert(tendencyColumns.code === 3, 'Código foi confundido com código de serviço');
 
-const gestoes = [
-  'Mês pagamento',
-  'Key planejamento',
-  'Descr classificaçãofinanceira',
-  'Valor total líquido',
-  'Descr gestão',
-];
-context.validateImportHeaders('gestoes', [gestoes]);
+  const flows = [
+    '\ufeffCod_aditivo',
+    'Descr_status',
+    'Descr_areaatual',
+    'Descr_setorcriacao',
+    'Data_criacao',
+    'Descr_motivo',
+    'Descr_observacao_motivo',
+    'Descr_descricaoaditivo',
+    'Cod_obra',
+    'Valor Aprovado ou Solicitado',
+    'Vlr_planejamento',
+    'Departamento',
+    'Ins. Planej.',
+    'Ins. Remanej.',
+    'Refletido',
+  ];
+  validateImportHeaders('flows', [flows]);
 
-const csvRows = context.parseCSVRows(flows.map(value => `"${value}"`).join(';') + '\n1;x');
-context.validateImportHeaders('flows', csvRows);
+  const gestoes = [
+    'Mês pagamento',
+    'Key planejamento',
+    'Descr classificaçãofinanceira',
+    'Valor total líquido',
+    'Descr gestão',
+  ];
+  validateImportHeaders('gestoes', [gestoes]);
 
-expectError(
-  () => context.validateImportHeaders('gestoes', [['Descr_gestao']]),
-  ['Key_planejamento', 'Nenhum dado foi importado']
-);
+  const semicolonRows = parseDelimitedRows(flows.map(value => `"${value}"`).join(';') + '\n1;x');
+  validateImportHeaders('flows', semicolonRows);
+  const tabRows = parseDelimitedRows(flows.join('\t') + '\n1\tx');
+  validateImportHeaders('flows', tabRows);
 
-const shiftedFlows = flows.slice();
-[shiftedFlows[0], shiftedFlows[1]] = [shiftedFlows[1], shiftedFlows[0]];
-expectError(
-  () => context.validateImportHeaders('flows', [shiftedFlows]),
-  ['posição incorreta', 'coluna 1']
-);
+  expectError(
+    () => validateImportHeaders('gestoes', [['Descr_gestao']]),
+    ['Key_planejamento', 'Nenhum dado foi importado'],
+  );
+  expectError(
+    () => parseDelimitedRows('a;b\n"campo sem fim'),
+    ['aspas não foi encerrado'],
+  );
+  expectError(
+    () => parseDelimitedRows('a;b\ntexto\ufffd;valor'),
+    ['encoding inválido'],
+  );
 
-console.log('Validação de cabeçalhos: 6 cenários OK');
+  console.log('Validação de cabeçalhos e CSV: 8 cenários OK');
+}
+
+main().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

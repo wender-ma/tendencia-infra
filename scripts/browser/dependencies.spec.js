@@ -25,6 +25,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
 
   const runtime = await page.evaluate(() => {
     const authService = window.dashboardServices.auth;
+    const parserService = window.dashboardServices.parsers;
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
@@ -54,6 +55,11 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasSupabase: typeof window.supabase.createClient === 'function',
       hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
       hasAuthService: authService.state === window.AUTH,
+      hasParserService: (
+        typeof parserService?.parseTendencia === 'function'
+        && parserService.parseNumber('1.234,56') === 1234.56
+        && window.parseNumero === parserService.parseNumber
+      ),
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -79,6 +85,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasSupabase: true,
     hasSupabaseService: true,
     hasAuthService: true,
+    hasParserService: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {

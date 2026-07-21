@@ -184,7 +184,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar uploads em módulos próprios de política, transação, repositório, coordenação e interface.
 - [x] Separar tabelas em módulos de UI.
 - [x] Separar cada aba dinâmica em um módulo de visualização (a aba Manual permanece estática).
-- [x] Remover o coordenador monolítico e iniciar toda a aplicação por módulos ES (adaptadores globais temporários permanecem para compatibilidade entre módulos já extraídos).
+- [x] Remover o coordenador monolítico e iniciar toda a aplicação por módulos ES.
 - [x] Remover aliases e adaptadores globais; módulos consomem serviços, estado e APIs de views por importação ou injeção direta.
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
@@ -193,7 +193,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar `package.json` e lockfile.
 - [x] Fixar versões exatas de Supabase, SheetJS e ApexCharts.
 - [x] Configurar Vite ou ferramenta equivalente.
-- [x] Gerar assets minificados e com hash, incluindo o script clássico legado.
+- [x] Gerar assets minificados e com hash, sem script clássico legado.
 - [x] Remover scripts bloqueantes do `head`.
 - [x] Externalizar favicon e logo em arquivos otimizados.
 - [ ] Configurar Content Security Policy sem `unsafe-inline` (scripts já restritos a `self`; estilos inline do legado/ApexCharts ainda impedem a conclusão).
@@ -203,8 +203,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] Retirar datasets grandes de `dashboard_config`.
-- [ ] Avaliar tabelas normalizadas ou JSON versionado no Storage.
+- [ ] Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md` (depende de migration no Supabase de desenvolvimento).
+- [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
 - [x] Carregar ApexCharts somente quando uma visualização possui gráfico para renderizar.
@@ -320,3 +320,5 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Detalhamento, Flows e Histórico limitados a 100 linhas por página com controles acessíveis                                                               | `ui/pagination.mjs`                                         |
 | 21/07/2026 | Estado, configuração e catálogo deixaram de publicar aliases globais e passaram a ser consumidos por importação ou injeção                              | `state.js`, `config.js`, `data/projection-catalog.mjs`      |
 | 21/07/2026 | Views, parsers e dependências sob demanda deixaram o escopo global; composição passou a usar um registro interno de APIs                                 | `assets/js/bootstrap.js`                                    |
+| 21/07/2026 | Persistência de snapshots grandes avaliada; JSON versionado em bucket privado escolhido para a migração gradual                                          | `docs/adr_dashboard_datasets.md`                            |
+| 21/07/2026 | Migration de snapshots versionados, RLS, ativação transacional, rollback e testes PostgreSQL preparados                                                   | `20260721211500_dashboard_datasets.sql`                     |

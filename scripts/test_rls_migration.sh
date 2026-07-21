@@ -18,14 +18,21 @@ docker run --rm --detach \
   --volume "$ROOT_DIR:/workspace:ro" \
   "$IMAGE" >/dev/null
 
+ready=false
 for _ in $(seq 1 30); do
-  if docker exec "$CONTAINER" pg_isready -U postgres -d tendencia_test >/dev/null 2>&1; then
-    break
+  if docker exec "$CONTAINER" \
+    psql --quiet --tuples-only -U postgres -d tendencia_test -c 'select 1' >/dev/null 2>&1; then
+    sleep 2
+    if docker exec "$CONTAINER" \
+      psql --quiet --tuples-only -U postgres -d tendencia_test -c 'select 1' >/dev/null 2>&1; then
+      ready=true
+      break
+    fi
   fi
   sleep 1
 done
 
-if ! docker exec "$CONTAINER" pg_isready -U postgres -d tendencia_test >/dev/null 2>&1; then
+if [[ "$ready" != true ]]; then
   echo "Erro: PostgreSQL nao ficou pronto no tempo esperado." >&2
   exit 1
 fi
@@ -44,6 +51,11 @@ run_sql "Aplicando migration RLS" "supabase/migrations/20260720172000_rls_harden
 run_sql "Validando estado endurecido" "supabase/tests/assert_hardened.sql"
 run_sql "Aplicando operacoes administrativas atomicas" "supabase/migrations/20260720203000_admin_transactions.sql"
 run_sql "Validando transacoes administrativas" "supabase/tests/assert_admin_transactions.sql"
+run_sql "Aplicando snapshots versionados" "supabase/migrations/20260721211500_dashboard_datasets.sql"
+run_sql "Validando snapshots versionados" "supabase/tests/assert_dashboard_datasets.sql"
+run_sql "Removendo objetos dos snapshots de teste" "supabase/tests/cleanup_dashboard_dataset_objects.sql"
+run_sql "Aplicando rollback dos snapshots versionados" "supabase/rollback/20260721211500_dashboard_datasets_rollback.sql"
+run_sql "Validando rollback dos snapshots versionados" "supabase/tests/assert_dashboard_datasets_rollback.sql"
 run_sql "Aplicando rollback das transacoes administrativas" "supabase/rollback/20260720203000_admin_transactions_rollback.sql"
 run_sql "Validando rollback das transacoes administrativas" "supabase/tests/assert_admin_transactions_rollback.sql"
 run_sql "Aplicando rollback emergencial" "supabase/rollback/20260720172000_rls_hardening_rollback.sql"

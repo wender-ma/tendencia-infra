@@ -206,6 +206,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Avaliar tabelas normalizadas ou JSON versionado no Storage.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
+- [x] Carregar ApexCharts somente quando uma visualização possui gráfico para renderizar.
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [ ] Paginar ou virtualizar tabelas grandes.
 - [x] Processar Excel em Web Worker.
@@ -234,7 +235,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Criar testes E2E para login, troca de obra, edição e administração.
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
-- [ ] Executar Lighthouse no CI.
+- [x] Executar Lighthouse no CI com orçamentos e relatório para download.
 - [x] Configurar lint e formatação automática para os módulos extraídos.
 - [x] Adicionar logs de erro com contexto, retenção limitada e redação de dados sensíveis.
 - [x] Documentar execução local, build, deploy e rollback.
@@ -306,3 +307,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | CSP aplicada com scripts locais e conexões limitadas ao Supabase; exceção temporária mantida somente para estilos inline | `public/_headers` |
 | 21/07/2026 | Logger local limitado criado com contexto e redação automática de emails, tokens e query strings | `services/logger.mjs` |
 | 21/07/2026 | Política de upload centralizada; CSV e Excel compartilham validação e progresso percentual de leitura | `services/upload-policy.mjs` |
+| 21/07/2026 | Lighthouse integrado ao CI; ApexCharts sob demanda elevou performance medida de 37 para 73 | `scripts/run_lighthouse.js` |

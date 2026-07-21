@@ -50,7 +50,7 @@ assert(bootstrap.includes("from './state.js'"), 'Bootstrap nao importa o modulo 
 assert(bootstrap.includes('const appState = createAppState();'), 'Bootstrap nao cria o estado');
 assert(bootstrap.includes('installLegacyStateGlobals(appState);'), 'Bootstrap nao instala os aliases');
 assert(
-  bootstrap.indexOf('installLegacyStateGlobals(appState);') < bootstrap.indexOf('ensureApexCharts()'),
+  bootstrap.indexOf('installLegacyStateGlobals(appState);') < bootstrap.indexOf('Promise.resolve()'),
   'Estado deve existir antes do carregamento do legado',
 );
 assert(bootstrap.includes('getActiveProject: () => appState.obra.ativa'), 'Auth nao consulta a obra no estado central');

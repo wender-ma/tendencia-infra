@@ -20,6 +20,7 @@
   .tab-content.active { display: block; }
   .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 12px; margin-bottom: 16px; }
+  #kpis:empty { min-height: 190px; }
   .kpi { background: var(--bg-card); border-radius: 10px; padding: 14px 16px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--fgr-red-vivid); }
   .kpi.green { border-left-color: var(--sem-ok); }
@@ -644,6 +645,7 @@ body:not(.is-admin-geral) [data-admin-control],
     padding: 8px 12px;
   }
   .kpis { grid-template-columns: minmax(0, 1fr); }
+  #kpis:empty { min-height: 190px; }
   .card { padding: 12px; }
   .card h2 {
     align-items: flex-start;

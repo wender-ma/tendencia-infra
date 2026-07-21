@@ -57,7 +57,7 @@ installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
 
-ensureApexCharts()
+Promise.resolve()
   .then(() => {
     const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
       reportError: (context, error) => logger.warn(context, error),

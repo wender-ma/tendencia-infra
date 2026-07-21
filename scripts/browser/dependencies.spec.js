@@ -18,7 +18,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.waitForFunction(() => (
     typeof window.supabase?.createClient === 'function'
     && typeof window.ensureXlsx === 'function'
-    && typeof window.ApexCharts === 'function'
+    && typeof window.ensureApexCharts === 'function'
     && typeof window.handleAuthClick === 'function'
     && window.AppState === window.dashboardState
     && window.AUTH?.ready === true
@@ -48,8 +48,12 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     );
     const xlsxLoadedAtBoot = performance.getEntriesByType('resource')
       .some(entry => /\/xlsx-[^/]+\.js(?:$|\?)/.test(entry.name));
+    const apexLoadedAtBoot = performance.getEntriesByType('resource')
+      .some(entry => /\/apexcharts[^/]*\.js(?:$|\?)/.test(entry.name));
     const xlsxModule = await window.ensureXlsx();
     const xlsxLoadedOnDemand = typeof xlsxModule.read === 'function' && window.XLSX === xlsxModule;
+    const apexCharts = await window.dashboardServices.dependencies.ensureApexCharts();
+    const apexLoadedOnDemand = typeof apexCharts === 'function' && window.ApexCharts === apexCharts;
     const workerWorkbook = xlsxModule.utils.book_new();
     xlsxModule.utils.book_append_sheet(
       workerWorkbook,
@@ -109,6 +113,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       sheetJsVersion: window.XLSX.version,
       xlsxLoadedAtBoot,
       xlsxLoadedOnDemand,
+      apexLoadedAtBoot,
+      apexLoadedOnDemand,
       excelWorkerParsed,
       hasSupabase: typeof window.supabase.createClient === 'function',
       hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
@@ -151,6 +157,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     sheetJsVersion: '0.20.3',
     xlsxLoadedAtBoot: false,
     xlsxLoadedOnDemand: true,
+    apexLoadedAtBoot: false,
+    apexLoadedOnDemand: true,
     excelWorkerParsed: true,
     hasSupabase: true,
     hasSupabaseService: true,

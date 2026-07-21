@@ -11,18 +11,20 @@
     "format:check": "prettier --check assets/js",
     "check": "npm run lint && npm run format:check && npm test && npm run build",
     "test": "node scripts/run_contract_tests.js",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:lighthouse": "npm run build && node scripts/run_lighthouse.js"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
     "@playwright/test": "1.61.1",
     "eslint": "10.7.0",
     "globals": "17.7.0",
+    "lighthouse": "13.4.1",
     "prettier": "3.9.6",
     "vite": "8.1.5"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.19.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.100.0",

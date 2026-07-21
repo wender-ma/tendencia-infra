@@ -81,9 +81,12 @@ function resolveColor(cssVar) {
 
 // Instâncias ApexCharts ativas (para destruir antes de re-renderizar)
 const _apexCharts = {};
+const _apexRenderVersions = {};
 
 // Helper para criar/atualizar gráfico ApexCharts de forma segura
-function renderApexChart(containerId, options) {
+async function renderApexChart(containerId, options) {
+  const renderVersion = (_apexRenderVersions[containerId] || 0) + 1;
+  _apexRenderVersions[containerId] = renderVersion;
   // Destruir instância anterior se existir
   if (_apexCharts[containerId]) {
     try { _apexCharts[containerId].destroy(); } catch(e) { reportNonFatalError('ApexCharts/destroy', e); }
@@ -93,6 +96,8 @@ function renderApexChart(containerId, options) {
   if (!el) return null;
   el.replaceChildren();
   try {
+    await ensureApexCharts();
+    if (_apexRenderVersions[containerId] !== renderVersion || !el.isConnected) return null;
     const chart = new ApexCharts(el, options);
     chart.render();
     _apexCharts[containerId] = chart;

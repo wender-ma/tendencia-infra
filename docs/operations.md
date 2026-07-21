@@ -2,7 +2,7 @@
 
 ## Desenvolvimento local
 
-Requisitos: Node.js `^20.19.0` ou `>=22.12.0` e npm.
+Requisitos: Node.js `>=22.19.0` e npm.
 
 ```bash
 npm ci
@@ -19,10 +19,13 @@ Antes de publicar:
 ```bash
 npm run check
 npm run test:browser
+npm run test:lighthouse
 npm audit --audit-level=high
 ```
 
 `npm run check` executa lint, verificação de formatação, contratos e build. O teste de navegador executa smoke funcional, axe e inspeções responsivas com Supabase remoto bloqueado.
+
+`npm run test:lighthouse` audita o build de produção com mínimos de 65 em performance, 90 em acessibilidade, 85 em boas práticas e 75 em SEO. O relatório completo fica em `.lighthouseci/lhr.json`; a verificação de indexabilidade é omitida porque o dashboard interno usa `noindex` deliberadamente.
 
 ## Deploy do frontend
 

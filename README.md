@@ -27,7 +27,7 @@ Dashboard de tendência orçamentária
 - `index.html`: arquivo principal do dashboard.
 - `package.json`: scripts do Vite e suíte de contratos do projeto.
 - `assets/css/`: folhas de estilo externas carregadas na ordem `tokens`, `base`, `components` e `dashboard`.
-- `assets/js/bootstrap.js`: instala os serviços locais e carrega ApexCharts antes de iniciar o dashboard.
+- `assets/js/bootstrap.js`: instala os serviços locais e inicia o dashboard; bibliotecas pesadas entram sob demanda.
 - `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
 - `assets/js/state.js`: estado compartilhado de dados, obra ativa, filtros, uploads e preferências.
 - `assets/js/performance.mjs`: métricas locais de boot, DOM, parsing e renderização.
@@ -36,7 +36,7 @@ Dashboard de tendência orçamentária
 - `public/_headers`: headers defensivos e política de cache para hospedagem estática compatível.
 - `vercel.json`: build, saída e headers aplicados no ambiente publicado da Vercel.
 - `assets/js/services/supabase-service.js`: criação do cliente Supabase e política compartilhada de retry.
-- `assets/js/services/dependency-service.mjs`: carregamento sob demanda do SheetJS e cache das dependências pesadas.
+- `assets/js/services/dependency-service.mjs`: carregamento sob demanda e cache do SheetJS e ApexCharts.
 - `assets/js/services/excel-service.mjs`: leitura com progresso e processamento de planilhas em Web Worker.
 - `assets/js/services/logger.mjs`: buffer local de diagnóstico com contexto e redação de dados sensíveis.
 - `assets/js/services/upload-policy.mjs`: validação única de tamanho, arquivo vazio e extensões aceitas.

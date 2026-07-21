@@ -28,5 +28,14 @@ jobs:
         run: npm run check
       - name: Browser, axe and visual smoke
         run: npm run test:browser
+      - name: Lighthouse budgets
+        run: npm run test:lighthouse
+      - name: Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/lhr.json
+          if-no-files-found: ignore
       - name: Dependency audit
         run: npm audit --audit-level=high

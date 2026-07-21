@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const headers = fs.readFileSync(path.join(root, 'public/_headers'), 'utf8');
 const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
+const robots = fs.readFileSync(path.join(root, 'public/robots.txt'), 'utf8');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -14,6 +15,7 @@ function assert(condition, message) {
 
 assert(/<meta name="description" content="[^"]{50,160}">/.test(html), 'Meta description ausente ou inadequada');
 assert(/<meta name="robots" content="noindex, nofollow, noarchive">/.test(html), 'Dashboard interno precisa bloquear indexação');
+assert(/^User-agent: \*\nDisallow: \/\s*$/m.test(robots), 'robots.txt interno deve ser válido e bloquear rastreamento');
 for (const header of [
   'X-Content-Type-Options: nosniff',
   'X-Frame-Options: DENY',

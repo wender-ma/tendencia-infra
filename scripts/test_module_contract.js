@@ -32,7 +32,7 @@ assert(service.includes('export function installLegacySupabaseGlobals'), 'Adapta
 assert(/BASE_RETRY_DELAY_MS \* \(?2 \*\* attempt\)?/.test(service), 'Retry exponencial do Supabase ausente');
 
 assert(
-  bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('ensureApexCharts()'),
+  bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('Promise.resolve()'),
   'Configuracao deve ser instalada antes das dependencias',
 );
 assert(

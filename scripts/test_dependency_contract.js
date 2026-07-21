@@ -61,7 +61,10 @@ for (const expectedImport of [
   assert(bootstrap.includes(expectedImport), `Import ausente no bootstrap: ${expectedImport}`);
 }
 assert(!bootstrap.includes('?url'), 'Bootstrap voltou a carregar script clássico como asset');
-assert(!bootstrap.includes("createElement('script')"), 'Bootstrap voltou a injetar script clássico');
+assert(
+  !bootstrap.includes("createElement('script')"),
+  'Bootstrap voltou a injetar script clássico',
+);
 
 for (const expectedImport of ["import('xlsx')", "import('apexcharts')"]) {
   assert(
@@ -89,7 +92,11 @@ assert(
   supabaseService.includes("from '@supabase/supabase-js'"),
   'SDK do Supabase ausente no servico local',
 );
-assert(supabaseService.includes('target.supabase'), 'Compatibilidade global do Supabase ausente');
+assert(
+  !supabaseService.includes('target.supabase'),
+  'Fábrica do SDK Supabase não deve ser publicada globalmente',
+);
+assert(supabaseService.includes('target.SUPA'), 'Cliente Supabase compatível ausente');
 
 assert(dependencyService.includes('window.XLSX'), 'Compatibilidade global do SheetJS ausente');
 assert(

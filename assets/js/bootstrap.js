@@ -74,8 +74,12 @@ installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();
 installLogger(logger);
+const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
+  reportError: (context, error) => logger.warn(context, error),
+});
+installLegacySupabaseGlobals(supabaseService);
 const syncStatusService = createSyncStatusService({
-  isOnline: () => Boolean(window.SUPA),
+  isOnline: () => Boolean(supabaseService.client),
 });
 installLegacySyncStatus(syncStatusService);
 const appState = createAppState();
@@ -113,7 +117,7 @@ const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.t
 const viewStateService = createViewStateService();
 installLegacyViewStateGlobals(viewStateService);
 const uploadRepository = createUploadRepository({
-  getClient: () => window.SUPA,
+  getClient: () => supabaseService.client,
   getActiveProject: () => window.OBRA_ATIVA,
   getCurrentUser: () => window.AUTH?.user,
   isEditor: () => window.isEditorDaObraAtiva?.() === true,
@@ -124,7 +128,7 @@ const uploadRepository = createUploadRepository({
       : window.isEditorDaObraAtiva?.() === true,
   requirePermission: (kind, description) =>
     window.requireUploadPermission?.(kind, description) === true,
-  retry: (operation) => window.supaRetry(operation),
+  retry: (operation) => supabaseService.retry(operation),
   maxPerType: DASHBOARD_CONFIG.max_uploads_por_tipo,
   onMutation: (error, context) => window.handleUploadRepositoryMutation?.(error, context),
   warn: (context, error) => logger.warn(context, error),
@@ -146,12 +150,12 @@ const dashboardExportService = createDashboardExportService({
 });
 installLegacyDashboardExports(dashboardExportService);
 const dashboardRepository = createDashboardRepository({
-  getClient: () => window.SUPA,
+  getClient: () => supabaseService.client,
   getActiveProject: () => window.OBRA_ATIVA,
   getCurrentUser: () => window.AUTH?.user,
   canEditActiveProject: () => window.isEditorDaObraAtiva?.() === true,
   isAdmin: () => window.isAdminGeral?.() === true,
-  retry: (operation) => window.supaRetry(operation),
+  retry: (operation) => supabaseService.retry(operation),
   onMutation: (error) => window.handleUploadRepositoryMutation?.(error, 'Dados'),
   warn: (context, error) => logger.warn(context, error),
 });
@@ -178,7 +182,7 @@ const dashboardRuntime = createDashboardRuntime({
   },
 });
 const projectRepository = createProjectRepository({
-  getClient: () => window.SUPA,
+  getClient: () => supabaseService.client,
   warn: (context, error) => logger.warn(context, error),
 });
 const projectController = createProjectController({
@@ -196,7 +200,7 @@ const projectController = createProjectController({
     correctionIndex: STORAGE_KEYS.correctionIndex,
     cardMode: STORAGE_KEYS.cardMode,
   },
-  hasBackend: () => Boolean(window.SUPA),
+  hasBackend: () => Boolean(supabaseService.client),
   getUploadRuntimeState: () => window.UPLOAD_RUNTIME_STATE || {},
   updateAuthUi: () => window.updateAuthUI?.(),
   showLoading: () => feedbackService.showLoading(),
@@ -218,7 +222,7 @@ const projectController = createProjectController({
 });
 installLegacyProjectController(projectController);
 const uploadCoordinator = createUploadCoordinator({
-  getClient: () => window.SUPA,
+  getClient: () => supabaseService.client,
   getActiveProject: () => appState.obra.ativa,
   getDashboardData: () => ({
     tendency: appState.dados.tendencia,
@@ -324,10 +328,6 @@ Promise.resolve()
     installLegacyProjectionView({ runtime: dashboardRuntime, loadXlsx: ensureXlsx });
     installLegacyProjectionControlView({ runtime: dashboardRuntime, storage: storageService });
 
-    const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
-      reportError: (context, error) => logger.warn(context, error),
-    });
-    installLegacySupabaseGlobals(supabaseService);
     const authService = createAuthService({
       supabaseClient: supabaseService.client,
       getActiveProject: () => appState.obra.ativa,
@@ -391,7 +391,7 @@ Promise.resolve()
       storageKeys: STORAGE_KEYS,
       syncStatus: syncStatusService,
       performanceMonitor: performanceService,
-      hasBackend: () => Boolean(window.SUPA),
+      hasBackend: () => Boolean(supabaseService.client),
       buildInputList: () => window.buildInsumosList?.() || [],
       setInputOptions: (options) => {
         window.INSUMOS_OPTIONS = options;

@@ -185,7 +185,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar tabelas em módulos de UI.
 - [x] Separar cada aba dinâmica em um módulo de visualização (a aba Manual permanece estática).
 - [x] Remover o coordenador monolítico e iniciar toda a aplicação por módulos ES (adaptadores globais temporários permanecem para compatibilidade entre módulos já extraídos).
-- [ ] Remover aliases e adaptadores globais gradualmente até os módulos consumirem serviços e estado por importação ou injeção direta (runtime, storage, paginação, Excel, validação e transações já usam importação/injeção e não são publicados no `window`).
+- [ ] Remover aliases e adaptadores globais gradualmente até os módulos consumirem serviços e estado por importação ou injeção direta (runtime, storage, paginação, Excel, validação, transações, retry e APIs internas de auth já não são publicados no `window`).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
 ### 10. Modernizar dependências e build

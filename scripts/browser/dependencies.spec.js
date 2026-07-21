@@ -17,7 +17,6 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(
     () =>
-      typeof window.supabase?.createClient === 'function' &&
       typeof window.handleAuthClick === 'function' &&
       window.AppState === window.dashboardState &&
       window.AUTH?.ready === true &&
@@ -182,7 +181,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       apexLoadedAtBoot,
       apexLoadedOnDemand,
       excelWorkerParsed,
-      hasSupabase: typeof window.supabase.createClient === 'function',
+      hasSupabase: Boolean(window.dashboardServices?.supabase?.client),
       hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
       hasAuthService: authService.state === window.AUTH,
       hasParserService:
@@ -242,6 +241,12 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'executeUploadTransaction',
         'ensureXlsx',
         'ensureApexCharts',
+        'supabase',
+        'supaRetry',
+        'AUTH_SERVICE',
+        'checkEditorPermission',
+        'applySession',
+        'initAuth',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };

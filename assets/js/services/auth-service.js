@@ -262,10 +262,6 @@ export function createAuthService({
 
 export function installLegacyAuthGlobals(service, target = window) {
   target.AUTH = service.state;
-  target.AUTH_SERVICE = service;
-  target.checkEditorPermission = service.checkEditorPermission;
   target.isEditorDaObraAtiva = service.canEditActiveProject;
   target.isAdminGeral = service.isAdmin;
-  target.applySession = service.applySession;
-  target.initAuth = service.init;
 }

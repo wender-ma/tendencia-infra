@@ -11,13 +11,18 @@ function loadProjectSources() {
   const viewDirectory = path.join(root, 'assets/views/tabs');
   const viewMarkup = fs
     .readdirSync(viewDirectory)
-    .filter(file => file.endsWith('.html'))
+    .filter((file) => file.endsWith('.html'))
     .sort()
-    .map(file => fs.readFileSync(path.join(viewDirectory, file), 'utf8'));
-  const html = [readProjectFile('index.html'), readProjectFile('assets/views/dialogs.html'), ...viewMarkup].join('\n');
+    .map((file) => fs.readFileSync(path.join(viewDirectory, file), 'utf8'));
+  const html = [
+    readProjectFile('index.html'),
+    readProjectFile('assets/views/dialogs.html'),
+    ...viewMarkup,
+  ].join('\n');
   const javascript = [
     readProjectFile('assets/js/dashboard-legacy.js'),
     readProjectFile('assets/js/ui/uploads.mjs'),
+    readProjectFile('assets/js/ui/views/details.mjs'),
     readProjectFile('assets/js/ui/views/history.mjs'),
     readProjectFile('assets/js/ui/views/projection-control.mjs'),
   ].join('\n');

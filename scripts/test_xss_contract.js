@@ -17,8 +17,6 @@ const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
 );
-const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
-const securitySurface = `${legacy}\n${uploadUi}`;
 const modularSources = [
   'assets/js/bootstrap.js',
   'assets/js/config.js',
@@ -29,6 +27,7 @@ const modularSources = [
   ...listSourceFiles(path.join(root, 'assets/js/ui')).map(file => path.relative(root, file)),
 ].map(file => [file, fs.readFileSync(path.join(root, file), 'utf8')]);
 const allJavaScript = [legacy, ...modularSources.map(([_file, source]) => source)].join('\n');
+const securitySurface = allJavaScript;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

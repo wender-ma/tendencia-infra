@@ -15,12 +15,12 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 
 ## Níveis de prioridade
 
-| Prioridade | Significado | Momento recomendado |
-| --- | --- | --- |
-| P0 Crítico | Segurança, perda de dados ou acesso indevido | Imediato |
-| P1 Alto | Bugs, confiabilidade, mobile e acessibilidade essencial | Próxima versão |
-| P2 Médio | Arquitetura, performance, testes e manutenção | Após estabilização |
-| P3 Baixo | Polimento visual, SEO e melhorias opcionais | Evolução contínua |
+| Prioridade | Significado                                             | Momento recomendado |
+| ---------- | ------------------------------------------------------- | ------------------- |
+| P0 Crítico | Segurança, perda de dados ou acesso indevido            | Imediato            |
+| P1 Alto    | Bugs, confiabilidade, mobile e acessibilidade essencial | Próxima versão      |
+| P2 Médio   | Arquitetura, performance, testes e manutenção           | Após estabilização  |
+| P3 Baixo   | Polimento visual, SEO e melhorias opcionais             | Evolução contínua   |
 
 ## Estado inicial
 
@@ -182,8 +182,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar parsers de Tendência, Flows e Gestões.
 - [x] Separar modais, toasts e loading em módulos de UI.
 - [x] Separar uploads em módulos próprios de política, transação, repositório e interface.
-- [ ] Separar tabelas em módulos de UI (Histórico, uploads e movimentações da projeção concluídos; demais tabelas pendentes).
-- [ ] Separar cada aba em um módulo de visualização (Uploads, Histórico e Controle de Projeção concluídos; demais abas pendentes).
+- [ ] Separar tabelas em módulos de UI (Detalhamento, Histórico, uploads e movimentações da projeção concluídos; demais tabelas pendentes).
+- [ ] Separar cada aba em um módulo de visualização (Detalhamento, Uploads, Histórico e Controle de Projeção concluídos; demais abas pendentes).
 - [ ] Remover aliases e variáveis globais gradualmente (catálogos estáticos isolados; módulo de uploads ainda usa adaptador temporário para o legado).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
@@ -268,47 +268,47 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 Use esta seção para registrar decisões que alterem o roadmap.
 
-| Data | Decisão | Motivo | Responsável |
-| --- | --- | --- | --- |
-| 20/07/2026 | Priorizar auditoria do Supabase antes das mudanças visuais | Segurança e integridade dos dados dependem da camada de banco | A definir |
-| 20/07/2026 | Reservar uploads de Flows, Gestões e Excel completo para administradores | Esses arquivos alteram conjuntos globais ou multiobra | A definir |
-| 20/07/2026 | Planejar o dashboard como interno no primeiro rascunho de RLS | É o perfil mais seguro até o negócio aprovar explicitamente leitura pública | A definir |
-| 20/07/2026 | Preservar temporariamente a leitura pública apenas das tabelas operacionais | Evita mudar o produto sem decisão do negócio; whitelist, histórico e arquivos passam a exigir autenticação | A definir |
+| Data       | Decisão                                                                     | Motivo                                                                                                     | Responsável |
+| ---------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------- |
+| 20/07/2026 | Priorizar auditoria do Supabase antes das mudanças visuais                  | Segurança e integridade dos dados dependem da camada de banco                                              | A definir   |
+| 20/07/2026 | Reservar uploads de Flows, Gestões e Excel completo para administradores    | Esses arquivos alteram conjuntos globais ou multiobra                                                      | A definir   |
+| 20/07/2026 | Planejar o dashboard como interno no primeiro rascunho de RLS               | É o perfil mais seguro até o negócio aprovar explicitamente leitura pública                                | A definir   |
+| 20/07/2026 | Preservar temporariamente a leitura pública apenas das tabelas operacionais | Evita mudar o produto sem decisão do negócio; whitelist, histórico e arquivos passam a exigir autenticação | A definir   |
 
 ## Histórico de progresso
 
-| Data | Alteração | Referência |
-| --- | --- | --- |
-| 20/07/2026 | Roadmap inicial criado a partir da revisão técnica do `index.html` | `1cb9096` |
-| 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade | `1cb9096` |
-| 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados | `1cb9096` |
-| 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados | `supabase/migrations/20260720172000_rls_hardening.sql` |
-| 20/07/2026 | CSS monolítico separado em tokens, base, componentes e dashboard, com contrato automatizado de assets | `assets/css/` |
-| 20/07/2026 | Vite configurado com lockfile, suíte centralizada em `npm test` e build de produção validado | `package.json` |
-| 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |
-| 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports | `scripts/test_accessibility_contract.js` |
-| 21/07/2026 | Dependências de navegador fixadas e carregadas localmente pelo Vite; CDNs removidos, JavaScript principal externalizado e smoke test de navegador criado | `assets/js/bootstrap.js` |
-| 21/07/2026 | Configuração e credenciais públicas extraídas do legado; cliente e retry centralizados em serviço Supabase com suporte a variáveis de ambiente | `assets/js/services/supabase-service.js` |
-| 21/07/2026 | Sessão, provedores de login, whitelist e autorização por papel/obra extraídos para serviço de autenticação | `assets/js/services/auth-service.js` |
-| 21/07/2026 | Estado compartilhado e aliases temporários extraídos do legado; autenticação ligada diretamente à obra ativa central | `assets/js/state.js` |
-| 21/07/2026 | Parsers de Tendência, Flows e Gestões extraídos; layouts por cabeçalho, CSV robusto, relatórios e testes unitários adicionados | `assets/js/parsers/` |
-| 21/07/2026 | Feedback, loading e pilha de modais extraídos; confirmação dinâmica passou a usar APIs DOM seguras | `assets/js/ui/` |
-| 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados | `public/_headers` |
-| 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão | `renderAll()` |
-| 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba | `assets/js/performance.mjs` |
-| 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS | `docs/innerhtml_inventory_2026-07-21.md` |
-| 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop | `.github/workflows/ci.yml` |
-| 21/07/2026 | Manual alinhado às permissões por obra, falhas offline, retenção e parsers atuais | `index.html` |
-| 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados | `docs/operations.md` |
-| 21/07/2026 | Leituras de classificações e configurações limitadas à obra ativa e às chaves globais necessárias | `supaLoadDashboardConfig()` |
-| 21/07/2026 | SheetJS retirado do boot e carregado sob demanda, mantendo gráficos com descarte antes do redesenho | `dependency-service.mjs` |
-| 21/07/2026 | Leitura de arquivos com percentual e parsing/conversão de Excel movidos para Web Worker | `excel-service.mjs` |
-| 21/07/2026 | Handlers inline removidos do HTML e dos templates; ações de interface centralizadas por delegação | `ui/actions.mjs` |
-| 21/07/2026 | CSP aplicada com scripts locais e conexões limitadas ao Supabase; exceção temporária mantida somente para estilos inline | `public/_headers` |
-| 21/07/2026 | Logger local limitado criado com contexto e redação automática de emails, tokens e query strings | `services/logger.mjs` |
-| 21/07/2026 | Política de upload centralizada; CSV e Excel compartilham validação e progresso percentual de leitura | `services/upload-policy.mjs` |
-| 21/07/2026 | Lighthouse integrado ao CI; ApexCharts sob demanda elevou performance medida de 37 para 73 | `scripts/run_lighthouse.js` |
-| 21/07/2026 | Script clássico legado minificado após emissão, preservando fonte legível e nomes globais | `vite.config.mjs` |
-| 21/07/2026 | Testes XSS ampliados e caminhos de Storage endurecidos contra esquemas e travessia | `test_xss_contract.js` |
-| 21/07/2026 | Coordenador de upload extraído e testado com commit, falha de ativação e rollback parcial | `upload-transaction.mjs` |
-| 21/07/2026 | Detalhamento, Flows e Histórico limitados a 100 linhas por página com controles acessíveis | `ui/pagination.mjs` |
+| Data       | Alteração                                                                                                                                                | Referência                                                  |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 20/07/2026 | Roadmap inicial criado a partir da revisão técnica do `index.html`                                                                                       | `1cb9096`                                                   |
+| 20/07/2026 | Guards por obra/admin, endurecimento de uploads globais, correções XSS e comunicação de privacidade                                                      | `1cb9096`                                                   |
+| 20/07/2026 | Contrato público Supabase auditado; exposição anônima documentada; rascunho de RLS e inventário SQL preparados                                           | `1cb9096`                                                   |
+| 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados                                                           | `supabase/migrations/20260720172000_rls_hardening.sql`      |
+| 20/07/2026 | CSS monolítico separado em tokens, base, componentes e dashboard, com contrato automatizado de assets                                                    | `assets/css/`                                               |
+| 20/07/2026 | Vite configurado com lockfile, suíte centralizada em `npm test` e build de produção validado                                                             | `package.json`                                              |
+| 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas                                               | `supabase/migrations/20260720203000_admin_transactions.sql` |
+| 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports                                                           | `scripts/test_accessibility_contract.js`                    |
+| 21/07/2026 | Dependências de navegador fixadas e carregadas localmente pelo Vite; CDNs removidos, JavaScript principal externalizado e smoke test de navegador criado | `assets/js/bootstrap.js`                                    |
+| 21/07/2026 | Configuração e credenciais públicas extraídas do legado; cliente e retry centralizados em serviço Supabase com suporte a variáveis de ambiente           | `assets/js/services/supabase-service.js`                    |
+| 21/07/2026 | Sessão, provedores de login, whitelist e autorização por papel/obra extraídos para serviço de autenticação                                               | `assets/js/services/auth-service.js`                        |
+| 21/07/2026 | Estado compartilhado e aliases temporários extraídos do legado; autenticação ligada diretamente à obra ativa central                                     | `assets/js/state.js`                                        |
+| 21/07/2026 | Parsers de Tendência, Flows e Gestões extraídos; layouts por cabeçalho, CSV robusto, relatórios e testes unitários adicionados                           | `assets/js/parsers/`                                        |
+| 21/07/2026 | Feedback, loading e pilha de modais extraídos; confirmação dinâmica passou a usar APIs DOM seguras                                                       | `assets/js/ui/`                                             |
+| 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados                                                           | `public/_headers`                                           |
+| 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão                                           | `renderAll()`                                               |
+| 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba                                                                        | `assets/js/performance.mjs`                                 |
+| 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS                                            | `docs/innerhtml_inventory_2026-07-21.md`                    |
+| 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop                                                                         | `.github/workflows/ci.yml`                                  |
+| 21/07/2026 | Manual alinhado às permissões por obra, falhas offline, retenção e parsers atuais                                                                        | `index.html`                                                |
+| 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados                                                                        | `docs/operations.md`                                        |
+| 21/07/2026 | Leituras de classificações e configurações limitadas à obra ativa e às chaves globais necessárias                                                        | `supaLoadDashboardConfig()`                                 |
+| 21/07/2026 | SheetJS retirado do boot e carregado sob demanda, mantendo gráficos com descarte antes do redesenho                                                      | `dependency-service.mjs`                                    |
+| 21/07/2026 | Leitura de arquivos com percentual e parsing/conversão de Excel movidos para Web Worker                                                                  | `excel-service.mjs`                                         |
+| 21/07/2026 | Handlers inline removidos do HTML e dos templates; ações de interface centralizadas por delegação                                                        | `ui/actions.mjs`                                            |
+| 21/07/2026 | CSP aplicada com scripts locais e conexões limitadas ao Supabase; exceção temporária mantida somente para estilos inline                                 | `public/_headers`                                           |
+| 21/07/2026 | Logger local limitado criado com contexto e redação automática de emails, tokens e query strings                                                         | `services/logger.mjs`                                       |
+| 21/07/2026 | Política de upload centralizada; CSV e Excel compartilham validação e progresso percentual de leitura                                                    | `services/upload-policy.mjs`                                |
+| 21/07/2026 | Lighthouse integrado ao CI; ApexCharts sob demanda elevou performance medida de 37 para 73                                                               | `scripts/run_lighthouse.js`                                 |
+| 21/07/2026 | Script clássico legado minificado após emissão, preservando fonte legível e nomes globais                                                                | `vite.config.mjs`                                           |
+| 21/07/2026 | Testes XSS ampliados e caminhos de Storage endurecidos contra esquemas e travessia                                                                       | `test_xss_contract.js`                                      |
+| 21/07/2026 | Coordenador de upload extraído e testado com commit, falha de ativação e rollback parcial                                                                | `upload-transaction.mjs`                                    |
+| 21/07/2026 | Detalhamento, Flows e Histórico limitados a 100 linhas por página com controles acessíveis                                                               | `ui/pagination.mjs`                                         |

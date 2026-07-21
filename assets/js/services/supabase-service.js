@@ -44,5 +44,4 @@ export function installLegacySupabaseGlobals(service, target = window) {
   target.supabase = Object.freeze({ createClient });
   target.SUPA = service.client;
   target.supaRetry = service.retry;
-  target.dashboardServices = Object.freeze({ supabase: service });
 }

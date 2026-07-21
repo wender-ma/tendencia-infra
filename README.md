@@ -30,6 +30,7 @@ Dashboard de tendência orçamentária
 - `assets/js/bootstrap.js`: carrega Supabase, SheetJS e ApexCharts pelos pacotes locais antes de iniciar o dashboard.
 - `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
 - `assets/js/services/supabase-service.js`: criação do cliente Supabase e política compartilhada de retry.
+- `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
 - `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
@@ -88,9 +89,11 @@ Os testes podem também ser executados individualmente:
 ./scripts/test_upload_transaction_contract.js
 ./scripts/test_admin_transaction_contract.js
 ./scripts/test_dependency_contract.js
+./scripts/test_module_contract.js
+./scripts/test_auth_contract.js
 ```
 
-Os testes cobrem cabeçalhos, datas, diálogos, dependências locais e ausência de blocos de erro silenciosos.
+Os testes cobrem cabeçalhos, datas, diálogos, dependências, módulos, autorização e ausência de blocos de erro silenciosos.
 
 ## Desenvolvimento e build
 

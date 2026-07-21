@@ -1980,21 +1980,6 @@ function updateSupaBadge() {
   el.title = 'Conectado ao Supabase (ainda sem sincronização recente)';
 }
 
-// ============================================================================
-// v0.48 — AUTH MODULE (Google login + whitelist)
-// ============================================================================
-const AUTH = {
-  user: null,          // objeto do Supabase (email, id, name, picture)
-  session: null,       // sessão do Supabase (com JWT)
-  isEditor: false,     // true se logado E aprovado (editor ou admin)
-  isAdminGeral: false, // true se role='admin'
-  editaObras: [],      // lista de códigos de obra que pode editar (se não for admin)
-  isPending: false,    // true se cadastrado mas aguardando aprovação
-  role: null,          // 'admin' | 'editor' | 'pending' | null (anon)
-  whitelistChecked: false,
-  ready: false,        // primeira verificação de sessão concluída
-};
-
 function authToast(msg, kind='info', ms=3500) {
   let el = document.getElementById('authToast');
   if (!el) {
@@ -2011,60 +1996,6 @@ function authToast(msg, kind='info', ms=3500) {
   requestAnimationFrame(() => el.classList.add('show'));
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), ms);
-}
-
-async function checkEditorPermission(email) {
-  // retorna { isEditor, isAdminGeral, editaObras[], isPending, role }
-  // Lê role/status novos (SQL 10). Rejeita rows com status='rejected' ou role='pending'
-  const nada = { isEditor: false, isAdminGeral: false, editaObras: [], isPending: false, role: null };
-  if (!SUPA || !email) return nada;
-  try {
-    const { data, error } = await SUPA
-      .from('editores_permitidos')
-      .select('email, codigo_obra, role, status')
-      .eq('email', email.toLowerCase());
-    if (error) { console.warn('[AUTH] erro checar whitelist:', error); return nada; }
-    if (!Array.isArray(data) || data.length === 0) return nada;
-
-    // Considerar só rows ativas
-    const ativos = data.filter(r => (r.status || 'active') === 'active');
-    if (ativos.length === 0) return nada;
-
-    // Pending = tem alguma linha pending E nenhuma admin/editor ativa
-    const isPending = ativos.every(r => r.role === 'pending');
-    if (isPending) return { ...nada, isPending: true, role: 'pending' };
-
-    // Admin?
-    const isAdminGeral = ativos.some(r => r.role === 'admin');
-    // Editor de obras específicas (rows com codigo_obra E role='editor')
-    const editaObras = ativos
-      .filter(r => r.role === 'editor' && r.codigo_obra != null)
-      .map(r => r.codigo_obra);
-
-    const isEditor = isAdminGeral || editaObras.length > 0;
-    if (!isEditor) return nada;
-
-    return {
-      isEditor: true,
-      isAdminGeral,
-      editaObras,
-      isPending: false,
-      role: isAdminGeral ? 'admin' : 'editor',
-    };
-  } catch (e) { console.warn('[AUTH] excecao whitelist:', e); return nada; }
-}
-
-// retorna true se o usuário pode editar a OBRA_ATIVA atual
-// (admin edita tudo, editor precisa ter a obra no editaObras)
-function isEditorDaObraAtiva() {
-  if (!AUTH || !AUTH.isEditor) return false;
-  if (AUTH.isAdminGeral) return true;
-  if (!OBRA_ATIVA) return false;
-  return Array.isArray(AUTH.editaObras) && AUTH.editaObras.includes(OBRA_ATIVA);
-}
-
-function isAdminGeral() {
-  return !!(AUTH && AUTH.ready && AUTH.user && AUTH.isAdminGeral);
 }
 
 function syncEditingControls() {
@@ -2149,86 +2080,25 @@ function updateAuthUI() {
   }
 }
 
-async function applySession(session, isFreshLogin = false) {
-  AUTH.session = session || null;
-  AUTH.user = session?.user || null;
-  if (AUTH.user) {
-    const _perm = await checkEditorPermission(AUTH.user.email);
-    AUTH.isEditor     = !!_perm.isEditor;
-    AUTH.isAdminGeral = !!_perm.isAdminGeral;
-    AUTH.editaObras   = Array.isArray(_perm.editaObras) ? _perm.editaObras : [];
-    AUTH.isPending    = !!_perm.isPending;
-    AUTH.role         = _perm.role || null;
-    AUTH.whitelistChecked = true;
-    // Toasts só na 1ª entrada (login novo) — não em cada refresh/boot
-    if (isFreshLogin) {
-      if (!AUTH.isEditor) {
-        authToast(`👁️ Logado como ${AUTH.user.email}, mas sem permissão para editar. Fale com o admin para adicionar seu email.`, 'warn', 6000);
-      } else {
-        authToast(`✏️ Bem-vindo, ${AUTH.user.email}! Você pode editar.`, 'ok', 3000);
-      }
+function getActiveProjectCode() {
+  return OBRA_ATIVA;
+}
+
+function handleAuthServiceStateChanged({ isFreshLogin = false } = {}) {
+  if (isFreshLogin && AUTH.user) {
+    if (!AUTH.isEditor) {
+      authToast(`👁️ Logado como ${AUTH.user.email}, mas sem permissão para editar. Fale com o admin para adicionar seu email.`, 'warn', 6000);
+    } else {
+      authToast(`✏️ Bem-vindo, ${AUTH.user.email}! Você pode editar.`, 'ok', 3000);
     }
-  } else {
-    AUTH.isEditor = false;
-    AUTH.isAdminGeral = false;
-    AUTH.editaObras = [];
-    AUTH.isPending = false;
-    AUTH.role = null;
   }
-  AUTH.ready = true;
+
   updateAuthUI();
-  // Re-renderiza flows/projecao/central pra atualizar botões que dependem de isEditor
   try {
     if (typeof renderFlows === 'function') renderFlows();
     if (typeof renderProjCtrl === 'function' && document.getElementById('projCtrlMovsList')) renderProjCtrl();
     if (typeof renderUploadsCentral === 'function') renderUploadsCentral();
   } catch(e){ reportNonFatalError('Auth/atualizar interface', e); }
-}
-
-async function initAuth() {
-  if (!SUPA || !SUPA.auth) {
-    AUTH.ready = true;
-    updateAuthUI();
-    return;
-  }
-  // 1) Pega sessão atual (se voltou de OAuth, o SDK já processa a URL)
-  try {
-    const { data: { session } } = await SUPA.auth.getSession();
-    await applySession(session);
-  } catch (e) {
-    console.warn('[AUTH] getSession err:', e);
-    AUTH.ready = true;
-    updateAuthUI();
-  }
-  // 2) Ouve mudanças (login, logout, refresh de token)
-  SUPA.auth.onAuthStateChange(async (event, session) => {
-    console.log('[AUTH] evento:', event);
-    // Detecta login FRESCO: consome a flag criada pelo fluxo de login antes da autenticação.
-    // Aceita SIGNED_IN OU INITIAL_SESSION (SDK v2 pode disparar qualquer um após OAuth).
-    // Só válido se flag tem <60s (evita toast fantasma em sessão restaurada dias depois).
-    let isFreshLogin = false;
-    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-      try {
-        const raw = sessionStorage.getItem('jz_fresh_login');
-        if (raw) {
-          const ts = parseInt(raw, 10);
-          if (!isNaN(ts) && (Date.now() - ts) < 60_000) {
-            isFreshLogin = true;
-          }
-          // Consome sempre (mesmo se expirada) pra não vazar pra próxima
-          sessionStorage.removeItem('jz_fresh_login');
-        }
-      } catch(e){ reportNonFatalError('Auth/sessão de login recente', e); }
-    }
-    await applySession(session, isFreshLogin);
-    // Limpar params residuais (?code=... ou #access_token=...) após login bem-sucedido
-    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && window.history.replaceState) {
-      if (window.location.search.includes('code=') || window.location.hash.includes('access_token=')) {
-        const clean = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, clean);
-      }
-    }
-  });
 }
 
 // ---- GUARD helper: uso nos handlers de edição ----
@@ -9508,17 +9378,11 @@ function switchLoginTab(modo) {
 
 async function doSignInGoogle() {
   if (!SUPA) { authToast('Supabase não conectado', 'err'); return; }
-  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e) { reportNonFatalError('Auth/marcar login Google', e); }
   closeLoginModal();
-  const { error } = await SUPA.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin + window.location.pathname,
-      queryParams: { prompt: 'select_account' },
-    }
+  const { error } = await AUTH_SERVICE.signInWithGoogle({
+    redirectTo: window.location.origin + window.location.pathname,
   });
   if (error) {
-    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e) { reportNonFatalError('Auth/limpar login Google', e); }
     authToast('Erro no login Google: ' + error.message, 'err');
   }
 }
@@ -9533,10 +9397,8 @@ async function doSignInEmail() {
     return;
   }
   if (!SUPA) { erroEl.textContent = 'Supabase não conectado.'; return; }
-  try { sessionStorage.setItem('jz_fresh_login', String(Date.now())); } catch(e) { reportNonFatalError('Auth/marcar login por email', e); }
-  const { error } = await SUPA.auth.signInWithPassword({ email, password: senha });
+  const { error } = await AUTH_SERVICE.signInWithPassword({ email, password: senha });
   if (error) {
-    try { sessionStorage.removeItem('jz_fresh_login'); } catch(e) { reportNonFatalError('Auth/limpar login por email', e); }
     // Mensagens mais amigáveis
     let msg = error.message || 'Erro desconhecido';
     if (msg.includes('Invalid login credentials')) msg = 'Email ou senha incorretos.';
@@ -9560,13 +9422,11 @@ async function doSignUpEmail() {
   if (senha.length < 6) { erroEl.textContent = 'Senha precisa ter no mínimo 6 caracteres.'; return; }
   if (senha !== senha2) { erroEl.textContent = 'As senhas não conferem.'; return; }
   if (!SUPA) { erroEl.textContent = 'Supabase não conectado.'; return; }
-  const { error } = await SUPA.auth.signUp({
+  const { error } = await AUTH_SERVICE.signUp({
     email,
     password: senha,
-    options: {
-      data: { name: nome || undefined },
-      emailRedirectTo: window.location.origin + window.location.pathname,
-    }
+    name: nome,
+    emailRedirectTo: window.location.origin + window.location.pathname,
   });
   if (error) {
     let msg = error.message || 'Erro desconhecido';
@@ -9590,7 +9450,7 @@ async function handleAuthClick() {
     // Logout — mesmo comportamento de antes
     const confirmed = await confirmModal('Sair da conta?', 'Você continuará vendo o dashboard, mas não conseguirá editar.', { confirmText: 'Sair', destructive: false });
     if (!confirmed) return;
-    const { error } = await SUPA.auth.signOut();
+    const { error } = await AUTH_SERVICE.signOut();
     if (error) authToast('Erro ao sair: ' + error.message, 'err');
   } else {
     // Abrir modal em vez de ir direto pro Google

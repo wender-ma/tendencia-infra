@@ -19,22 +19,47 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     && typeof window.XLSX?.read === 'function'
     && typeof window.ApexCharts === 'function'
     && typeof window.handleAuthClick === 'function'
+    && window.AUTH?.ready === true
   ));
 
-  const runtime = await page.evaluate(() => ({
-    sheetJsVersion: window.XLSX.version,
-    hasSupabase: typeof window.supabase.createClient === 'function',
-    hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
-    hasExternalConfig: window.dashboardConfig?.dashboard === window.CONFIG,
-    hasApexCharts: typeof window.ApexCharts === 'function',
-    hasDashboardHandler: typeof window.handleAuthClick === 'function',
-    status: document.getElementById('supaBadge')?.textContent,
-  }));
+  const runtime = await page.evaluate(() => {
+    const authService = window.dashboardServices.auth;
+    const admin = authService.resolvePermissions([
+      { role: 'admin', status: 'active', codigo_obra: null },
+    ]);
+    const editor = authService.resolvePermissions([
+      { role: 'editor', status: 'active', codigo_obra: 'OBRA-A' },
+      { role: 'editor', status: 'rejected', codigo_obra: 'OBRA-B' },
+    ]);
+    const rejected = authService.resolvePermissions([
+      { role: 'editor', status: 'rejected', codigo_obra: 'OBRA-A' },
+    ]);
+
+    return {
+      sheetJsVersion: window.XLSX.version,
+      hasSupabase: typeof window.supabase.createClient === 'function',
+      hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
+      hasAuthService: authService.state === window.AUTH,
+      authStartsReadOnly: !window.isAdminGeral() && !window.isEditorDaObraAtiva(),
+      authorizationMatrix: {
+        admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
+        editor: editor.isEditor && editor.editaObras.join(',') === 'OBRA-A',
+        rejected: !rejected.isEditor && !rejected.isAdminGeral,
+      },
+      hasExternalConfig: window.dashboardConfig?.dashboard === window.CONFIG,
+      hasApexCharts: typeof window.ApexCharts === 'function',
+      hasDashboardHandler: typeof window.handleAuthClick === 'function',
+      status: document.getElementById('supaBadge')?.textContent,
+    };
+  });
 
   expect(runtime).toMatchObject({
     sheetJsVersion: '0.20.3',
     hasSupabase: true,
     hasSupabaseService: true,
+    hasAuthService: true,
+    authStartsReadOnly: true,
+    authorizationMatrix: { admin: true, editor: true, rejected: true },
     hasExternalConfig: true,
     hasApexCharts: true,
     hasDashboardHandler: true,

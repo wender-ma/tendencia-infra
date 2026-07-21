@@ -4,6 +4,10 @@ import {
   createSupabaseService,
   installLegacySupabaseGlobals,
 } from './services/supabase-service.js';
+import {
+  createAuthService,
+  installLegacyAuthGlobals,
+} from './services/auth-service.js';
 
 function showBootstrapError(error) {
   console.error('[BOOT] Falha ao carregar o dashboard:', error);
@@ -26,6 +30,17 @@ Promise.all([import('xlsx'), import('apexcharts')])
   .then(([xlsxModule, apexchartsModule]) => {
     const supabaseService = createSupabaseService(SUPABASE_CONFIG);
     installLegacySupabaseGlobals(supabaseService);
+    const authService = createAuthService({
+      supabaseClient: supabaseService.client,
+      getActiveProject: () => window.getActiveProjectCode?.() || null,
+      onStateChange: details => window.handleAuthServiceStateChanged?.(details),
+      reportError: (context, error) => window.reportNonFatalError?.(context, error),
+    });
+    installLegacyAuthGlobals(authService);
+    window.dashboardServices = Object.freeze({
+      supabase: supabaseService,
+      auth: authService,
+    });
     window.XLSX = xlsxModule;
     window.ApexCharts = apexchartsModule.default;
 

@@ -30,6 +30,7 @@ export function createUploadRepository({
   getActiveProject,
   getCurrentUser,
   isEditor,
+  isAdmin,
   canManageKind,
   requirePermission,
   retry = (operation) => operation(),
@@ -248,6 +249,55 @@ export function createUploadRepository({
     return stale.length;
   }
 
+  async function clearProjectHistory() {
+    if (!isAdmin?.()) throw new Error('Apenas administradores podem apagar o histórico de uploads');
+    const supabase = assertClient('Supabase indisponível para apagar o histórico de uploads');
+    const project = assertProject('Nenhuma obra ativa para apagar o histórico de uploads');
+    const { data: records, error: readError } = await supabase
+      .from('upload_history')
+      .select('id,storage_path')
+      .eq('codigo_obra', project);
+    if (readError) {
+      onMutation(readError, 'Histórico');
+      throw readError;
+    }
+
+    const projectPrefix = `${safeStorageSegment(project)}/`;
+    const paths = new Set();
+    for (const record of records || []) {
+      if (!record.storage_path) continue;
+      const path = sanitizeStoragePath(record.storage_path);
+      if (!path || !path.startsWith(projectPrefix)) {
+        throw new Error('O histórico contém um caminho de arquivo fora do escopo da obra');
+      }
+      paths.add(path);
+    }
+
+    if (paths.size) {
+      const { error: storageError } = await supabase.storage
+        .from(UPLOADS_BUCKET)
+        .remove([...paths]);
+      if (storageError) {
+        onMutation(storageError, 'Storage');
+        throw new Error(
+          'Falha ao remover arquivos do Storage. Os registros foram mantidos por segurança.',
+          { cause: storageError },
+        );
+      }
+    }
+
+    const { error: deleteError } = await supabase
+      .from('upload_history')
+      .delete()
+      .eq('codigo_obra', project);
+    if (deleteError) {
+      onMutation(deleteError, 'Histórico');
+      throw deleteError;
+    }
+    onMutation(null, 'Histórico');
+    return (records || []).length;
+  }
+
   async function uploadFile(kind, file) {
     const supabase = assertClient('Storage do Supabase indisponível');
     if (!supabase.storage) throw new Error('Storage do Supabase indisponível');
@@ -389,6 +439,7 @@ export function createUploadRepository({
     markRecordsFailed,
     removeStoredUpload,
     cleanupIncompleteUploads,
+    clearProjectHistory,
     uploadFile,
     listByType,
     getDownloadUrl,

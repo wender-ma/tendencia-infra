@@ -9,6 +9,10 @@ import { installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
+import {
+  createUploadMaintenance,
+  installLegacyUploadMaintenance,
+} from './ui/upload-maintenance.mjs';
 import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
@@ -99,6 +103,7 @@ const uploadRepository = createUploadRepository({
   getActiveProject: () => window.OBRA_ATIVA,
   getCurrentUser: () => window.AUTH?.user,
   isEditor: () => window.isEditorDaObraAtiva?.() === true,
+  isAdmin: () => window.isAdminGeral?.() === true,
   canManageKind: (kind) =>
     window.isGlobalUploadKind?.(kind)
       ? window.isAdminGeral?.() === true
@@ -236,7 +241,6 @@ Promise.resolve()
     installLegacyOverviewView();
     installLegacyProjectionView();
     installLegacyProjectionControlView();
-    installActionDelegation();
 
     const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
       reportError: (context, error) => logger.warn(context, error),
@@ -265,6 +269,33 @@ Promise.resolve()
       reportError: (context, error) => logger.warn(context, error),
     });
     installLegacyAuthUi(authUi);
+    const uploadMaintenance = createUploadMaintenance({
+      dashboardRepository,
+      uploadRepository,
+      getActiveProject: () => appState.obra.ativa,
+      getProjectInfo: (project) => window.getObraInfo?.(project),
+      requireEditor: (description) => window.requireEditor?.(description) === true,
+      requireAdmin: (description) => window.requireAdmin?.(description) === true,
+      isAdmin: () => window.isAdminGeral?.() === true,
+      requestConfirmation: (...args) => modalService.confirm(...args),
+      toast: (...args) => feedbackService.toast(...args),
+      clearLocalEvolution: () => {
+        try {
+          window.localStorage.removeItem('jzurique_evol_global');
+        } catch (error) {
+          logger.warn('Cache/remover evolução local', error);
+        }
+      },
+      clearLatestUploads: () => {
+        for (const kind of Object.keys(appState.uploads)) appState.uploads[kind] = null;
+      },
+      renderUploads: () => window.renderUploadsCentral?.(),
+      renderSourceHeaders: () => window.renderSourcesHeaders?.(),
+      reload: () => window.location.reload(),
+      reportError: (context, error) => logger.warn(context, error),
+    });
+    installLegacyUploadMaintenance(uploadMaintenance);
+    installActionDelegation();
     window.dashboardServices = Object.freeze({
       supabase: supabaseService,
       auth: authService,
@@ -285,6 +316,7 @@ Promise.resolve()
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
       uploadRepository,
       uploadCoordinator,
+      uploadMaintenance,
       uploadTransactions: Object.freeze({ execute: executeUploadTransaction }),
     });
 

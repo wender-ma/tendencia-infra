@@ -13,6 +13,18 @@ const CLASSIFICATION_FIELDS = new Set([
   'refletido_status',
 ]);
 
+const RESETTABLE_PROJECT_KEYS = new Set([
+  DASHBOARD_DATA_KEYS.DATA_T,
+  DASHBOARD_DATA_KEYS.DATA_F,
+  DASHBOARD_DATA_KEYS.GESTAO_LABEL,
+  'evol_global',
+]);
+
+const RESETTABLE_GLOBAL_KEYS = new Set([
+  DASHBOARD_DATA_KEYS.HISTORICO,
+  DASHBOARD_DATA_KEYS.PROJ_RAW,
+]);
+
 function classificationMap(rows = []) {
   return Object.fromEntries(
     rows.map((row) => [
@@ -339,6 +351,34 @@ export function createDashboardRepository({
     );
   }
 
+  async function deleteDashboardKeys(keys) {
+    const supabase = client();
+    const project = activeProject();
+    if (!supabase) throw new Error('Supabase indisponível para limpar o cache');
+    if (!project) throw new Error('Nenhuma obra ativa para limpar o cache');
+
+    const projectPrefix = `${project}:`;
+    const normalizedKeys = [...new Set((keys || []).map((key) => String(key || '').trim()))].filter(
+      Boolean,
+    );
+    if (!normalizedKeys.length) return 0;
+
+    for (const key of normalizedKeys) {
+      const projectKey = key.startsWith(projectPrefix) ? key.slice(projectPrefix.length) : null;
+      if (projectKey && RESETTABLE_PROJECT_KEYS.has(projectKey)) {
+        if (!canEditActiveProject?.()) {
+          throw new Error('Sem permissão para limpar o cache desta obra');
+        }
+        continue;
+      }
+      if (RESETTABLE_GLOBAL_KEYS.has(key) && isAdmin?.()) continue;
+      throw new Error('Uma chave fora do escopo da obra foi recusada');
+    }
+
+    await mutate(() => supabase.from('dashboard_config').delete().in('chave', normalizedKeys));
+    return normalizedKeys.length;
+  }
+
   return Object.freeze({
     loadClassifications,
     patchClassification,
@@ -352,6 +392,7 @@ export function createDashboardRepository({
     deleteMovement,
     loadDashboardConfig,
     saveDashboardKey,
+    deleteDashboardKeys,
   });
 }
 

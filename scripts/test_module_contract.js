@@ -33,6 +33,10 @@ const uploadRepository = fs.readFileSync(
   'utf8',
 );
 const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
+const uploadMaintenance = fs.readFileSync(
+  path.join(root, 'assets/js/ui/upload-maintenance.mjs'),
+  'utf8',
+);
 const adminView = fs.readFileSync(path.join(root, 'assets/js/ui/views/admin.mjs'), 'utf8');
 const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.mjs'), 'utf8');
 const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
@@ -172,6 +176,19 @@ for (const uploadUiContract of [
   );
 }
 assert(!uploadUi.includes('.innerHTML'), 'Interface de uploads não pode montar HTML sem parser');
+assert(
+  uploadMaintenance.includes('export function createUploadMaintenance'),
+  'Manutenção de uploads não foi modularizada',
+);
+assert(
+  uploadMaintenance.includes('export function installLegacyUploadMaintenance'),
+  'Adaptador temporário da manutenção de uploads ausente',
+);
+assert(
+  !legacy.includes('async function resetCacheDados(') &&
+    !legacy.includes('async function apagarHistoricoUploads('),
+  'Ações destrutivas de upload não podem permanecer no legado',
+);
 assert(
   adminView.includes('export function installLegacyAdminView'),
   'View administrativa não foi modularizada',

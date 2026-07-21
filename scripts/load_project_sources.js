@@ -29,6 +29,7 @@ function loadProjectSources() {
     readProjectFile('assets/js/ui/auth-ui.mjs'),
     readProjectFile('assets/js/ui/shell.mjs'),
     readProjectFile('assets/js/ui/uploads.mjs'),
+    readProjectFile('assets/js/ui/upload-maintenance.mjs'),
     readProjectFile('assets/js/ui/views/admin.mjs'),
     readProjectFile('assets/js/ui/views/details.mjs'),
     readProjectFile('assets/js/ui/views/flows.mjs'),

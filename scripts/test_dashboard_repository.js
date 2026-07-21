@@ -135,6 +135,49 @@ class Query {
   await repository.patchClassification('ADT-2', { custo_flowmaster: 1 }, 'OBRA-B');
   assert.strictEqual(calls.length, callCount, 'Patch fora da obra ativa deve ser ignorado');
 
+  const deletedCount = await repository.deleteDashboardKeys([
+    'OBRA-A:dados_tendencia',
+    'OBRA-A:dados_flows',
+  ]);
+  assert.strictEqual(deletedCount, 2);
+  const deleteCall = calls.find(
+    (call) => call.table === 'dashboard_config' && call.method === 'delete',
+  );
+  assert(deleteCall, 'Limpeza do cache não executou DELETE');
+  assert(
+    calls.some(
+      (call) =>
+        call.table === 'dashboard_config' &&
+        call.method === 'in' &&
+        call.args[0] === 'chave' &&
+        call.args[1].length === 2,
+    ),
+    'Limpeza do cache não agrupou as chaves',
+  );
+
+  const scopedCallCount = calls.length;
+  await assert.rejects(
+    repository.deleteDashboardKeys(['OBRA-B:dados_tendencia']),
+    /fora do escopo/,
+  );
+  await assert.rejects(repository.deleteDashboardKeys(['dados_historico']), /fora do escopo/);
+  assert.strictEqual(
+    calls.length,
+    scopedCallCount,
+    'Chaves sem permissão não podem chegar ao banco',
+  );
+
+  const adminRepository = createDashboardRepository({
+    getClient: () => client,
+    getActiveProject: () => 'OBRA-A',
+    canEditActiveProject: () => true,
+    isAdmin: () => true,
+  });
+  assert.strictEqual(
+    await adminRepository.deleteDashboardKeys(['dados_historico', 'dados_projraw']),
+    2,
+  );
+
   console.log('Repositório do dashboard: escopo, campos permitidos e metadados OK');
 })().catch((error) => {
   console.error(error);

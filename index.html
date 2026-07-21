@@ -729,21 +729,22 @@
         <li><code>🔗 Conectando…</code> — SDK inicializando (primeiros 1-2 segundos após abrir)</li>
         <li><code>☁️ Sincronizado</code> — tudo em dia com a nuvem ✅</li>
         <li><code>⚠️ Erro ao sincronizar</code> — falha na última operação (passe o mouse pra ver detalhes)</li>
-        <li><code>🔴 Offline (local)</code> — sem conexão; alterações ficam só no navegador até voltar</li>
+        <li><code>🔴 Offline (local)</code> — sem conexão; operações remotas falham e precisam ser repetidas depois que a conexão voltar</li>
       </ul>
     </div>
 
     <h3 style="font-size:14px; margin:18px 0 8px; color:var(--sem-ok);">🔐 Login e permissões</h3>
     <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--sem-ok);">
-      <p>Modelo <strong>ver = livre / editar = restrito</strong>:</p>
+      <p>Modelo atual <strong>ver = qualquer pessoa com o link / editar = restrito por papel e obra</strong>:</p>
       <ul style="margin:6px 0 8px 24px;">
-        <li><strong>Sem login</strong> — qualquer pessoa com o link consegue <strong>ver</strong> tudo (badge <code>👁️ Visualização</code>). Botões de edição ficam escondidos ou cinzas.</li>
-        <li><strong>Logado + email na whitelist</strong> — badge fica verde com chip <code>EDITOR</code>. Todos os botões de edição liberam.</li>
-        <li><strong>Logado mas fora da whitelist</strong> — badge fica azul com chip <code>SEM PERMISSÃO</code>. Consegue ver, mas não editar. Fale com o admin para ser adicionado.</li>
+        <li><strong>Sem login</strong> — qualquer pessoa com o link consegue visualizar os dados de todas as obras. Botões de edição ficam escondidos ou desabilitados.</li>
+        <li><strong>Editor ativo</strong> — pode editar somente as obras atribuídas ao seu email. Nas demais obras continua em modo de leitura.</li>
+        <li><strong>Administrador</strong> — pode editar todas as obras, gerenciar usuários/obras e executar uploads globais de Gestões.</li>
+        <li><strong>Conta pendente, rejeitada ou sem permissão</strong> — consegue visualizar, mas não editar.</li>
       </ul>
-      <p style="margin-top:8px;"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header, escolha sua conta Google, pronto. Não precisa cadastro nem senha.</p>
+      <p style="margin-top:8px;"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header e use Google ou email e senha. Contas novas por email ficam aguardando aprovação.</p>
       <p style="margin-top:8px; padding:8px 12px; background:var(--fgr-red-light); border-radius:4px; color:var(--fgr-red);">
-        📧 <strong>Para pedir permissão de edição:</strong> envie seu email do Google (o mesmo que usou pra logar) para o admin. Ele adiciona você na whitelist em 10 segundos.
+        📧 <strong>Para pedir permissão de edição:</strong> informe ao administrador o mesmo email usado no login e quais obras você precisa editar.
       </p>
     </div>
 
@@ -765,7 +766,7 @@
       <p style="margin-top:8px;">Em ambos os modos, cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
       <p style="margin-top:8px;">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
       <p style="margin-top:8px; padding:8px 12px; background:#f0fdf4; border-radius:4px; color:var(--sem-ok);">
-        📦 <strong>Backup automático:</strong> desde a v0.53, cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém automaticamente os <strong>últimos 12 arquivos por tipo</strong> (~1 ano de histórico mensal). Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code> (identificados no histórico com badge <em>via Excel</em>).
+        📦 <strong>Retenção de uploads:</strong> cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém os <strong>12 arquivos mais recentes por tipo</strong>; ao entrar o 13º, o mais antigo é removido. Arquivos inativos podem ser excluídos por usuários autorizados. O arquivo ativo precisa ser substituído antes da exclusão. Administradores podem limpar todo o histórico. Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code>.
       </p>
     </div>
 
@@ -833,7 +834,7 @@
         💡 <strong>Linha 2 é o subheader com totais globais</strong> (área vendável, valores totais e <strong>% globais de evolução</strong>). A linha 1 é o cabeçalho de nomes, dados começam na linha 3.
       </p>
       <p><strong>Linhas:</strong> linha 1 = cabeçalho. A partir da linha 2 são os dados.</p>
-      <p><strong>Cabeçalho obrigatório:</strong> as colunas descritas acima devem permanecer nas posições originais; espaços, acentos e maiúsculas são normalizados durante a validação.</p>
+      <p><strong>Cabeçalho obrigatório:</strong> as colunas descritas acima são localizadas pelo nome e podem mudar de posição; espaços, acentos e maiúsculas são normalizados durante a validação.</p>
       <p style="margin-top:8px; padding:8px 12px; background:var(--fgr-red-light); border-radius:4px; color:var(--fgr-red);">✨ <strong>Novidade v0.55:</strong> o arquivo agora tem 22 colunas (era 17). Foram adicionadas <code>EVOLUÇÃO TEÓRICA</code> e <code>EVOLUÇÃO FINANCEIRA</code> (integração com o Prevision) para calcular a <strong>Aderência Físico-Financeira</strong> da obra. Custos indiretos não entram nessa conta.</p>
       <p style="margin-top:8px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:4px; color:var(--sem-alerta);">⚠️ Formato anterior (17 colunas, sem EVOLUÇÃO) <strong>não é mais aceito</strong> a partir da v0.55.</p>
     </div>
@@ -854,7 +855,7 @@
         <li><code>O</code> — Refletido</li>
       </ul>
       <p><strong>Linhas:</strong> linha 1 = cabeçalho; dados a partir da linha 2.</p>
-      <p><strong>Cabeçalho obrigatório:</strong> as 15 colunas devem permanecer nessa ordem.</p>
+      <p><strong>Cabeçalho obrigatório:</strong> as 15 colunas são localizadas pelo nome e podem mudar de ordem.</p>
       <p style="margin-top:8px;"><strong>Importante:</strong> as edições e os aditivos manuais que você cria neste dashboard <strong>NÃO são apagados</strong> quando você sobe um novo CSV. Eles ficam preservados.</p>
     </div>
 
@@ -863,7 +864,7 @@
       <p><strong>Como exportar:</strong> Aba <code>Gestões</code> da planilha → Salvar Como → CSV UTF-8.</p>
       <p style="margin-top:8px;"><strong>Estrutura esperada (27 colunas):</strong></p>
       <ul style="margin:6px 0 8px 24px;">
-        <li><code>B</code> — Empreendimento (filtro: <code>Jardins Zurique</code>)</li>
+        <li><code>B</code> — Empreendimento (informativo)</li>
         <li><code>D</code> — Nome da gestão (ex: <code>GESTÃO MM-AAAA</code>, <code>Atual</code>)</li>
         <li><code>H</code> — Classificação financeira (filtro: <code>Obra</code>)</li>
         <li><code>K</code> — Key_planejamento (chave igual à coluna A da Tendência)</li>
@@ -871,15 +872,15 @@
         <li><code>J</code> — Mês de pagamento</li>
         <li><code>Z</code> — Insumo (ex: <code>I001148</code>, <code>ADM5189</code>)</li>
       </ul>
-      <p><strong>Lógica:</strong> o dashboard soma <code>Val_totalliquido</code> por <code>Key_planejamento</code> e <code>Gestão</code>, filtrando apenas <code>Jardins Zurique</code> e <code>Obra</code> e chave contendo <code>-21O-</code>.</p>
+      <p><strong>Lógica:</strong> o dashboard soma <code>Val_totalliquido</code> por <code>Key_planejamento</code> e <code>Gestão</code>, considera a classificação financeira <code>Obra</code> e identifica cada obra pelo prefixo da chave de planejamento.</p>
       <p><strong>Cabeçalhos obrigatórios:</strong> <code>Descr_gestao</code>, <code>Descr_classificacaofinanceira</code>, <code>Key_planejamento</code>, <code>Val_totalliquido</code> e <code>Mes_pagamento</code>. A ordem pode variar.</p>
     </div>
 
     <h3 style="font-size:14px; margin:18px 0 8px; color:#6b21a8;">💡 Dicas gerais</h3>
     <ul style="font-size:12.5px; color:var(--text-medium); margin-left:24px;">
-      <li>Formato dos CSVs: <strong>UTF-8 com separador <code>;</code></strong> (padrão BR do Excel).</li>
+      <li>Formato dos CSVs: <strong>UTF-8</strong>; os separadores <code>;</code>, vírgula e tabulação são detectados automaticamente.</li>
       <li>Valores em R$ podem vir com <code>.</code> de milhar e <code>,</code> de decimal — o dashboard converte automaticamente.</li>
-      <li>Datas podem ser <code>dd/mm/aaaa</code> ou número serial Excel (ex: <code>46147</code>) — converte automaticamente.</li>
+      <li>Datas aceitas: <code>dd/mm/aaaa</code>, <code>mm/dd/aaaa</code> quando inequívoca, ou <code>aaaa-mm-dd</code>. Datas inválidas são rejeitadas.</li>
       <li>O dashboard <strong>detecta automaticamente</strong> o tipo do CSV pelo cabeçalho e rejeita se você subir o errado.</li>
       <li>O processamento dos arquivos ocorre no navegador. Arquivos e dados consolidados são enviados ao <strong>Supabase</strong> para sincronização entre usuários autorizados.</li>
       <li>Aditivos manuais e classificações também usam o <code>localStorage</code> como cache local e são sincronizados com o Supabase quando o usuário possui permissão de edição na obra ativa.</li>

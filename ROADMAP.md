@@ -106,8 +106,8 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Remover a afirmação de funcionamento `100% offline` (implementado em `1cb9096`).
 - [x] Explicar quais dados ficam no `localStorage` (implementado em `1cb9096`).
 - [x] Explicar quais dados e arquivos são enviados ao Supabase (implementado em `1cb9096`).
-- [ ] Informar quem pode visualizar e editar cada obra.
-- [ ] Documentar retenção e exclusão dos backups de upload.
+- [x] Informar quem pode visualizar e editar cada obra.
+- [x] Documentar retenção e exclusão dos backups de upload.
 - [ ] Validar os textos com o responsável pelos dados do projeto.
 
 ## P1: confiabilidade e funcionalidade
@@ -236,7 +236,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Executar Lighthouse no CI.
 - [x] Configurar lint e formatação automática para os módulos extraídos.
 - [ ] Adicionar logs de erro com contexto e sem dados sensíveis.
-- [ ] Documentar execução local, build, deploy e rollback.
+- [x] Documentar execução local, build, deploy e rollback.
 
 ## P3: UX, UI e metadados
 
@@ -246,7 +246,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Melhorar feedback de salvamento e sincronização.
 - [ ] Mostrar progresso real em uploads grandes.
 - [ ] Revisar estados vazios, loading e erro de cada aba.
-- [ ] Revisar textos e termos técnicos apresentados ao usuário.
+- [x] Revisar textos e termos técnicos apresentados ao usuário.
 - [x] Adicionar `meta description`.
 - [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
 - [ ] Adicionar Open Graph somente se o produto for público.
@@ -296,3 +296,5 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba | `assets/js/performance.mjs` |
 | 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS | `docs/innerhtml_inventory_2026-07-21.md` |
 | 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop | `.github/workflows/ci.yml` |
+| 21/07/2026 | Manual alinhado às permissões por obra, falhas offline, retenção e parsers atuais | `index.html` |
+| 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados | `docs/operations.md` |

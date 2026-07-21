@@ -34,6 +34,7 @@ Dashboard de tendência orçamentária
 - `assets/js/parsers/`: parsers testáveis de Tendência, Flows e Gestões e normalizadores compartilhados.
 - `assets/js/ui/`: serviços compartilhados de feedback, loading e modais acessíveis.
 - `public/_headers`: headers defensivos e política de cache para hospedagem estática compatível.
+- `vercel.json`: build, saída e headers aplicados no ambiente publicado da Vercel.
 - `assets/js/services/supabase-service.js`: criação do cliente Supabase e política compartilhada de retry.
 - `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
 - `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.
@@ -42,6 +43,7 @@ Dashboard de tendência orçamentária
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
 - `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
 - `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
+- `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
 - `experiments/preview-modal.html`: protótipo isolado do modal.
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.

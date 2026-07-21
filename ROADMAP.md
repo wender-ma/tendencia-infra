@@ -208,7 +208,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
 - [x] Carregar ApexCharts somente quando uma visualização possui gráfico para renderizar.
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
-- [ ] Paginar ou virtualizar tabelas grandes.
+- [x] Paginar Detalhamento, Flows e Histórico em blocos de 100 linhas.
 - [x] Processar Excel em Web Worker.
 - [ ] Revisar o limite de upload de 50 MB com arquivos reais representativos (política já centralizada e limites automatizados).
 - [x] Medir tempo de boot, tempo de parsing/renderização e quantidade de nós no DOM.
@@ -311,3 +311,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Script clássico legado minificado após emissão, preservando fonte legível e nomes globais | `vite.config.mjs` |
 | 21/07/2026 | Testes XSS ampliados e caminhos de Storage endurecidos contra esquemas e travessia | `test_xss_contract.js` |
 | 21/07/2026 | Coordenador de upload extraído e testado com commit, falha de ativação e rollback parcial | `upload-transaction.mjs` |
+| 21/07/2026 | Detalhamento, Flows e Histórico limitados a 100 linhas por página com controles acessíveis | `ui/pagination.mjs` |

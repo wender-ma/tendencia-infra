@@ -33,6 +33,21 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const performanceService = window.dashboardServices.performance;
     const loggerService = window.dashboardServices.logger;
     const uploadPolicy = window.dashboardServices.uploadPolicy;
+    const pagination = window.dashboardServices.pagination;
+    const paginationHost = document.createElement('div');
+    paginationHost.id = 'paginationBrowserTest';
+    document.body.appendChild(paginationHost);
+    const paginationRows = Array.from({ length: 205 }, (_, index) => index + 1);
+    let paginationResult = pagination.paginate('browser-test', paginationRows, 'all');
+    pagination.renderControls('paginationBrowserTest', 'browser-test', paginationResult, () => {});
+    paginationHost.querySelector('[aria-label="Próxima página"]').click();
+    paginationResult = pagination.paginate('browser-test', paginationRows, 'all');
+    const paginationWorks = (
+      paginationResult.page === 2
+      && paginationResult.items[0] === 101
+      && paginationHost.textContent.includes('Página 1 de 3')
+    );
+    paginationHost.remove();
     const uploadPolicyWorks = (
       uploadPolicy.validate({ name: 'dados.csv', size: 100 }, 'csv').valid
       && uploadPolicy.validate({ name: 'dados.exe', size: 100 }, 'excel').code === 'extension'
@@ -156,6 +171,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       ),
       hasLoggerService: loggerIsSanitized && window.dashboardLogger === loggerService,
       hasUploadPolicy: uploadPolicyWorks,
+      hasPagination: paginationWorks,
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -193,6 +209,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasPerformanceService: true,
     hasLoggerService: true,
     hasUploadPolicy: true,
+    hasPagination: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {

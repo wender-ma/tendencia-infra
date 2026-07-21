@@ -25,6 +25,7 @@ export const DASHBOARD_CONFIG = Object.freeze({
   tolerancia_projecao: 10000,
   max_uploads_por_tipo: 12,
   max_linhas_tabela: 1000,
+  table_page_size: 100,
   max_descricao_flow: 300,
   max_justificativa_flow: 400,
   debounce_render: 200,

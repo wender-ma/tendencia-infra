@@ -5,6 +5,7 @@ import { createPerformanceMonitor, installPerformanceMonitor } from './performan
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
+import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -55,6 +56,8 @@ const feedbackService = createFeedbackService();
 installLegacyFeedbackGlobals(feedbackService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
+const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.table_page_size });
+installLegacyPaginationGlobals(paginationService);
 installLegacyDependencyGlobals();
 installLegacyUploadPolicy();
 installLegacyUploadTransaction();
@@ -81,6 +84,7 @@ Promise.resolve()
       parsers: parserService,
       feedback: feedbackService,
       modals: modalService,
+      pagination: paginationService,
       performance: performanceService,
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
       excel: excelService,

@@ -2948,6 +2948,8 @@ function renderTable() {
     const countEl = document.getElementById('count');
     if (tbody) tbody.innerHTML = '<tr><td colspan="11">' + renderPlaceholderSemDados('📋', 'Detalhamento sem dados', null) + '</td></tr>';
     if (countEl) countEl.textContent = '';
+    const emptyPage = paginateRows('detail', [], 'empty');
+    renderPaginationControls('detailPagination', 'detail', emptyPage, renderTable);
     return;
   }
   const q = document.getElementById('search').value.toLowerCase();
@@ -2985,8 +2987,13 @@ function renderTable() {
   // Marca cada item com seu índice original em DATA_T (evita indexOf O(n²) no render)
   const idxMap = new Map();
   DATA_T.forEach((d, i) => idxMap.set(d, i));
+  const detailPage = paginateRows(
+    'detail',
+    rows,
+    JSON.stringify([q, fg, fs, fa, onlyFolhas, sortKey, sortDir, OBRA_ATIVA]),
+  );
 
-  document.getElementById('tbody').innerHTML = rows.map((d, idx) => {
+  document.getElementById('tbody').innerHTML = detailPage.items.map((d, idx) => {
     const st = statusOf(d.licitacao, d.gestao);
     const diff = (d.licitacao != null && d.gestao != null) ? (d.gestao - d.licitacao) : null;
     const pct = (d.licitacao && d.gestao != null) ? (diff/d.licitacao*100) : null;
@@ -3013,7 +3020,8 @@ function renderTable() {
       <td>${badge}</td>
     </tr>`;
   }).join('');
-  document.getElementById('count').textContent = `${rows.filter(r=>r.is_folha).length} itens`;
+  document.getElementById('count').textContent = `${rows.filter(r=>r.is_folha).length} itens · exibindo ${detailPage.start}–${detailPage.end}`;
+  renderPaginationControls('detailPagination', 'detail', detailPage, renderTable);
   updateSortHeaderState('th[data-sort]', 'data-sort', sortKey, sortDir);
 }
 
@@ -4412,8 +4420,17 @@ function renderFlowTable() {
     cancelado:'<span class="badge gray">🚫 Cancelado</span>',
     sem_classificacao:'<span class="badge gray">⚪ Sem class.</span>', misto:'<span class="badge gray">⚪ Misto</span>'};
   const depBadge = {Finalizado:'green', Projeto:'amber', Cancelado:'gray', Planejamento:'blue', Orçamento:'blue', Obra:'amber'};
+  const flowPage = paginateRows(
+    'flows',
+    rows,
+    JSON.stringify([
+      q, fdi, fdf, Number.isNaN(fvmin) ? '' : fvmin, Number.isNaN(fvmax) ? '' : fvmax,
+      sortKeyF, sortDirF, OBRA_ATIVA,
+      ...Object.keys(MS_EXCLUDED).sort().map(key => `${key}:${[...MS_EXCLUDED[key]].sort().join(',')}`),
+    ]),
+  );
 
-  document.getElementById('flowTbody').innerHTML = rows.map(f => {
+  document.getElementById('flowTbody').innerHTML = flowPage.items.map(f => {
     const valEdited = f._edited_v ? ' edited' : '';
     const valCls = (f.custo_flowmaster||0) < 0 ? 'neg' : (f.custo_flowmaster||0) > 0 ? 'pos' : '';
     const valStr = f.custo_flowmaster != null ? fmt(f.custo_flowmaster) : '';
@@ -4449,7 +4466,8 @@ function renderFlowTable() {
   }).join('');
   const refletidos = rows.filter(r => (r.refletido_status||'') === 'sim').length;
   const naorefl = rows.filter(r => (r.refletido_status||'') === 'nao').length;
-  document.getElementById('flowCount').textContent = `${rows.length} aditivos · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s,f)=>s+(f.custo_flowmaster||0),0))}`;
+  document.getElementById('flowCount').textContent = `${rows.length} aditivos · exibindo ${flowPage.start}–${flowPage.end} · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s,f)=>s+(f.custo_flowmaster||0),0))}`;
+  renderPaginationControls('flowPagination', 'flows', flowPage, renderFlowTable);
   updateSortHeaderState('th[data-sort-flow]', 'data-sort-flow', sortKeyF, sortDirF);
   // Sincronizar checkbox header e barra de massa
   syncSelectAllHeader();
@@ -4486,20 +4504,7 @@ function onRefletidoChange(sel) {
   const tr = sel.closest('tr');
   if (tr) tr.style.background = status === 'sim' ? '#ecfdf5' : (status === 'nao' ? '#fef2f2' : '');
   sel.className = 'refletido-select status-' + status;
-  // Atualizar contador no rodapé
-  const allRows = document.querySelectorAll('#flowTbody tr');
-  let visibleCount = 0, refletCount = 0, naoCount = 0, totVal = 0;
-  allRows.forEach(r => {
-    visibleCount++;
-    const sIn = r.querySelector('select.refletido-select');
-    if (sIn) {
-      if (sIn.value === 'sim') refletCount++;
-      else if (sIn.value === 'nao') naoCount++;
-    }
-    const inp = r.querySelector('input.valor-input');
-    if (inp) totVal += parseNumero(inp.value) || 0;
-  });
-  document.getElementById('flowCount').textContent = `${visibleCount} aditivos · ✅ ${refletCount} · ❌ ${naoCount} · Σ ${fmtR$(totVal)}`;
+  renderFlowTable();
   // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
   syncAllViewsFromFlows();
 }
@@ -7476,6 +7481,11 @@ function renderMovTable(movs, saldoFinal) {
     const db = b.data || b.data_br || '';
     return db.localeCompare(da);
   });
+  const historyPage = paginateRows(
+    'history',
+    filtered,
+    JSON.stringify([q, compare, onlyChanged, OBRA_ATIVA, gestoes]),
+  );
 
   const tipoBadge = {
     aditivo: '<span class="badge blue">🔵 Aditivo</span>',
@@ -8148,7 +8158,7 @@ function renderHistHeatmap() {
   `;
 
   // Tbody
-  document.getElementById('histTbody').innerHTML = filtered.map(it => {
+  document.getElementById('histTbody').innerHTML = historyPage.items.map(it => {
     const cells = gestoes.map((g, i) => {
       const v = it[g] || 0;
       if (v === 0 && i > 0 && (it[gestoes[i-1]]||0) === 0) {
@@ -8181,7 +8191,8 @@ function renderHistHeatmap() {
       <td class="hist-cell ${dTotal<0?'down-strong':dTotal>0?'up-strong':'flat'}" style="font-weight:700;">${pctTot!=null?(pctTot>=0?'+':'')+pctTot.toFixed(1)+'%':'—'}</td>
     </tr>`;
   }).join('');
-  document.getElementById('histCount').textContent = `${filtered.length} de ${items.length} itens`;
+  document.getElementById('histCount').textContent = `${filtered.length} de ${items.length} itens · exibindo ${historyPage.start}–${historyPage.end}`;
+  renderPaginationControls('historyPagination', 'history', historyPage, renderHistHeatmap);
 }
 
 // Debounce para filtros do heatmap histórico

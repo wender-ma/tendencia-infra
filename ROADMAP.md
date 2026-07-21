@@ -192,7 +192,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar `package.json` e lockfile.
 - [x] Fixar versões exatas de Supabase, SheetJS e ApexCharts.
 - [x] Configurar Vite ou ferramenta equivalente.
-- [ ] Gerar assets minificados e com hash (CSS e bootstrap concluídos; script legado externo recebe hash, mas ainda não é minificado).
+- [x] Gerar assets minificados e com hash, incluindo o script clássico legado.
 - [x] Remover scripts bloqueantes do `head`.
 - [x] Externalizar favicon e logo em arquivos otimizados.
 - [ ] Configurar Content Security Policy sem `unsafe-inline` (scripts já restritos a `self`; estilos inline do legado/ApexCharts ainda impedem a conclusão).
@@ -308,3 +308,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Logger local limitado criado com contexto e redação automática de emails, tokens e query strings | `services/logger.mjs` |
 | 21/07/2026 | Política de upload centralizada; CSV e Excel compartilham validação e progresso percentual de leitura | `services/upload-policy.mjs` |
 | 21/07/2026 | Lighthouse integrado ao CI; ApexCharts sob demanda elevou performance medida de 37 para 73 | `scripts/run_lighthouse.js` |
+| 21/07/2026 | Script clássico legado minificado após emissão, preservando fonte legível e nomes globais | `vite.config.mjs` |

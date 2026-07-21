@@ -386,7 +386,6 @@ export function installLegacyProjectController(controller, target = window) {
     resolverObraInicial: controller.resolverObraInicial,
     carregarObras: controller.carregarObras,
     renderObrasDropdown: controller.renderObrasDropdown,
-    trocarObra: controller.trocarObra,
     acharUltimaGestaoCronologica: controller.findLatestManagement,
     atualizarGestaoLabelPelaHistoria: controller.atualizarGestaoLabelPelaHistoria,
     aplicarFallbackGestaoDoHistorico: controller.aplicarFallbackGestaoDoHistorico,
@@ -396,4 +395,5 @@ export function installLegacyProjectController(controller, target = window) {
     aplicarDadosPersistidos: controller.aplicarDadosPersistidos,
     posCarregarDados: controller.posCarregarDados,
   });
+  return Object.freeze({ trocarObra: controller.trocarObra });
 }

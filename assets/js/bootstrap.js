@@ -219,7 +219,7 @@ const projectController = createProjectController({
   formatValue: (value) => formatNumber(value),
   reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
 });
-installLegacyProjectController(projectController);
+actionRegistry.register(installLegacyProjectController(projectController));
 const uploadCoordinator = createUploadCoordinator({
   getClient: () => supabaseService.client,
   getActiveProject: () => appState.obra.ativa,
@@ -309,23 +309,44 @@ Promise.resolve()
       import('./ui/views/projection.mjs'),
       import('./ui/views/projection-control.mjs'),
     ]);
-    installLegacyFlowEditor({ runtime: dashboardRuntime, storage: storageService });
-    installLegacyUploadUI({
-      runtime: dashboardRuntime,
-      excel: excelService,
-      validateUpload: validateUploadFile,
-    });
-    installLegacyAdminView({ runtime: dashboardRuntime, storage: storageService });
+    actionRegistry.register(
+      installLegacyFlowEditor({ runtime: dashboardRuntime, storage: storageService }),
+    );
+    actionRegistry.register(
+      installLegacyUploadUI({
+        runtime: dashboardRuntime,
+        excel: excelService,
+        validateUpload: validateUploadFile,
+      }),
+    );
+    actionRegistry.register(
+      installLegacyAdminView({
+        runtime: dashboardRuntime,
+        storage: storageService,
+        projectController,
+      }),
+    );
     installLegacyDetailsView({ runtime: dashboardRuntime, pagination: paginationService });
-    installLegacyFlowsView({
-      runtime: dashboardRuntime,
-      pagination: paginationService,
-      storage: storageService,
-    });
+    actionRegistry.register(
+      installLegacyFlowsView({
+        runtime: dashboardRuntime,
+        pagination: paginationService,
+        storage: storageService,
+      }),
+    );
     installLegacyHistoryView({ runtime: dashboardRuntime, pagination: paginationService });
-    installLegacyOverviewView({ runtime: dashboardRuntime, storage: storageService });
-    installLegacyProjectionView({ runtime: dashboardRuntime, loadXlsx: ensureXlsx });
-    installLegacyProjectionControlView({ runtime: dashboardRuntime, storage: storageService });
+    actionRegistry.register(
+      installLegacyOverviewView({ runtime: dashboardRuntime, storage: storageService }),
+    );
+    actionRegistry.register(
+      installLegacyProjectionView({ runtime: dashboardRuntime, loadXlsx: ensureXlsx }),
+    );
+    actionRegistry.register(
+      installLegacyProjectionControlView({
+        runtime: dashboardRuntime,
+        storage: storageService,
+      }),
+    );
 
     const authService = createAuthService({
       supabaseClient: supabaseService.client,

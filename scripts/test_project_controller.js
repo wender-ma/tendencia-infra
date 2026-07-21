@@ -180,8 +180,9 @@ const { pathToFileURL } = require('url');
   assert(events.some(([name]) => name === 'render'));
 
   const target = {};
-  installLegacyProjectController(controller, target);
-  assert.strictEqual(target.trocarObra, controller.trocarObra);
+  const actions = installLegacyProjectController(controller, target);
+  assert.strictEqual(actions.trocarObra, controller.trocarObra);
+  assert.strictEqual(target.trocarObra, undefined);
   assert.strictEqual(target.recarregarDadosDaObra, controller.recarregarDadosDaObra);
 
   console.log('Controlador de obras: resolução, fallback, restauração e troca segura OK');

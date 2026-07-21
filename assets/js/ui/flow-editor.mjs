@@ -1348,13 +1348,9 @@ export function installLegacyFlowEditor({ runtime, storage }, target = window) {
   debouncedRender = runtime.debouncedRender;
   SafeStorage = storage;
   Object.assign(target, {
-    showManualText,
     loadClassifications,
     readClassificationMap,
     saveClassification,
-    clearClassifications,
-    reloadClassifications,
-    exportClassifications,
     buildInsumosList,
     renderInsumoSelect,
     displayForValue,
@@ -1369,29 +1365,16 @@ export function installLegacyFlowEditor({ runtime, storage }, target = window) {
     ttRow,
     ttDiv,
     syncAllViewsFromFlows,
-    onClassifChange,
     updateEditCount,
     renderFlowsAggregates,
-    msToggle,
-    msFilterOpts,
-    msSelectAll,
-    msInvert,
-    msClose,
     msMatches,
     msResetAll,
-    toggleMassSelect,
-    toggleSelectAllVisible,
     syncSelectAllHeader,
     clearMassSelection,
     updateMassBar,
-    massAplicarDestino,
-    massAplicarOrigem,
-    massAplicarRefletido,
-    onValorChange,
     loadManuals,
     saveManuals,
     applyManuals,
-    openManualForm,
     saveManualForm,
     deleteManual,
   });
@@ -1410,4 +1393,24 @@ export function installLegacyFlowEditor({ runtime, storage }, target = window) {
   });
 
   document.addEventListener('click', closeMultiSelectOnOutsideClick);
+  return Object.freeze({
+    showManualText,
+    clearClassifications,
+    reloadClassifications,
+    exportClassifications,
+    onClassifChange,
+    msToggle,
+    msFilterOpts,
+    msSelectAll,
+    msInvert,
+    msClose,
+    toggleMassSelect,
+    toggleSelectAllVisible,
+    clearMassSelection,
+    massAplicarDestino,
+    massAplicarOrigem,
+    massAplicarRefletido,
+    onValorChange,
+    openManualForm,
+  });
 }

@@ -695,12 +695,11 @@ export function installLegacyOverviewView({ runtime, storage }, target = window)
   getFlowsObraAtiva = runtime.getActiveFlows;
   SafeStorage = storage;
   Object.assign(target, {
-    setCard3Modo,
-    setCorrecaoIndice,
     renderAderenciaProj,
     irParaAba,
     obraTemTendencia,
     renderVisao,
     toggleDonutSlice,
   });
+  return Object.freeze({ setCard3Modo, setCorrecaoIndice });
 }

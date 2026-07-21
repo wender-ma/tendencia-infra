@@ -4,6 +4,7 @@ import { replaceWithParsedMarkup } from '../dom.mjs';
 let reportNonFatalError;
 let renderAll;
 let SafeStorage;
+let trocarObra;
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -780,23 +781,14 @@ async function rejeitarPendente(email) {
   }
 }
 
-export function installLegacyAdminView({ runtime, storage }, target = window) {
+export function installLegacyAdminView({ runtime, storage, projectController }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
   renderAll = runtime.renderAll;
   SafeStorage = storage;
+  trocarObra = projectController.trocarObra;
   Object.assign(target, {
     renderObrasAdmin,
-    openObraForm,
-    closeObraForm,
-    editarObraAdmin,
-    salvarObraForm,
     renderEditoresAdmin,
-    openEditorForm,
-    closeEditorForm,
-    editorObrasMarcarTodas,
-    editorFormOnRoleChange,
-    salvarEditorForm,
-    excluirUsuarioDoModal,
     renderPendentesAdmin,
   });
 
@@ -807,4 +799,18 @@ export function installLegacyAdminView({ runtime, storage }, target = window) {
   document
     .getElementById('pendentesAdminTbody')
     ?.addEventListener('click', handlePendentesAdminClick);
+  return Object.freeze({
+    renderObrasAdmin,
+    openObraForm,
+    closeObraForm,
+    salvarObraForm,
+    renderEditoresAdmin,
+    openEditorForm,
+    closeEditorForm,
+    editorObrasMarcarTodas,
+    editorFormOnRoleChange,
+    salvarEditorForm,
+    excluirUsuarioDoModal,
+    renderPendentesAdmin,
+  });
 }

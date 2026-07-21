@@ -1830,9 +1830,6 @@ export function installLegacyProjectionView({ runtime, loadXlsx }, target = wind
     projetarServico,
     renderProjecao,
     toggleProjExpand,
-    projExpandAll,
-    projCollapseAll,
-    exportarProjecaoDetalhada,
     openProjDrill,
   });
 
@@ -1879,4 +1876,5 @@ export function installLegacyProjectionView({ runtime, loadXlsx }, target = wind
       renderProjecao();
     },
   );
+  return Object.freeze({ projExpandAll, projCollapseAll, exportarProjecaoDetalhada });
 }

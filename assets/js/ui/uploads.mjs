@@ -1185,14 +1185,13 @@ export function installLegacyUploadUI({ runtime, excel, validateUpload }, target
   validateUploadFile = validateUpload;
   Object.assign(target, {
     MANUAL_TEXT,
+    renderUploadsCentral,
+    renderSourcesHeaders,
+  });
+  return Object.freeze({
     handleUpload,
     handleExcelUpload,
     toggleAdvancedUploads,
-    renderUploadsCentral,
     openUploadsHistory,
-    downloadUploadFile,
-    marcarUploadComoAtivo,
-    excluirUpload,
-    renderSourcesHeaders,
   });
 }

@@ -422,8 +422,7 @@ export function installLegacyFlowsView({ runtime, pagination, storage }, target 
   SafeStorage = storage;
   Object.assign(target, {
     renderFlows,
-    clearFlowFilters,
     renderFlowTable,
-    onRefletidoChange,
   });
+  return Object.freeze({ clearFlowFilters, onRefletidoChange });
 }

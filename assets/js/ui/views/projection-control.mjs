@@ -817,9 +817,6 @@ export function installLegacyProjectionControlView({ runtime, storage }, target 
     applyLocksToUI,
     initProjCtrl,
     renderProjCtrl,
-    toggleLockCampo,
-    clearMovFilters,
-    openMovForm,
     saveMovForm,
     editMov,
     deleteMov,
@@ -831,4 +828,5 @@ export function installLegacyProjectionControlView({ runtime, storage }, target 
     if (button.dataset.action === 'edit-mov') editMov(button.dataset.id);
     if (button.dataset.action === 'delete-mov') deleteMov(button.dataset.id);
   });
+  return Object.freeze({ toggleLockCampo, clearMovFilters, openMovForm });
 }

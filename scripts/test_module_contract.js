@@ -12,6 +12,7 @@ const projectionCatalog = fs.readFileSync(
 );
 const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.mjs'), 'utf8');
 const domUi = fs.readFileSync(path.join(root, 'assets/js/ui/dom.mjs'), 'utf8');
+const flowEditor = fs.readFileSync(path.join(root, 'assets/js/ui/flow-editor.mjs'), 'utf8');
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
@@ -69,6 +70,9 @@ assert(
 );
 assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
 assert(domUi.includes('export function installLegacyDomGlobals'), 'Adaptador DOM do legado ausente');
+assert(flowEditor.includes('export function installLegacyFlowEditor'), 'Editor de Flows não foi modularizado');
+assert(flowEditor.includes('function massAplicarDestino('), 'Ações em massa ausentes do editor de Flows');
+assert(!flowEditor.includes('.innerHTML'), 'Editor de Flows não pode montar HTML sem parser');
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
   'export function createUploadRepository',
@@ -207,6 +211,11 @@ for (const removedLegacyContract of [
   'function handleUpload(',
   'async function handleExcelUpload(',
   'function renderUploadsCentral(',
+  'function loadClassifications(',
+  'function syncAllViewsFromFlows(',
+  'function msRenderPanel(',
+  'function massAplicarDestino(',
+  'function openManualForm(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

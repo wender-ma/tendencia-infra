@@ -13,6 +13,7 @@ const dependencyService = fs.readFileSync(
 );
 const supabaseService = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const dashboardPath = path.join(root, 'assets/js/dashboard-legacy.js');
+const flowEditorPath = path.join(root, 'assets/js/ui/flow-editor.mjs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -36,11 +37,16 @@ assert(
   'SheetJS deve permanecer fixado no pacote oficial 0.20.3',
 );
 assert(fs.existsSync(dashboardPath), 'Script principal externo ausente');
-assert(fs.statSync(dashboardPath).size > 100_000, 'Script principal externo parece incompleto');
+assert(fs.existsSync(flowEditorPath), 'Módulo do editor de Flows ausente');
+assert(
+  fs.statSync(dashboardPath).size + fs.statSync(flowEditorPath).size > 100_000,
+  'Código principal parece incompleto',
+);
 
 for (const expectedImport of [
   "from './dashboard-legacy.js?url'",
   "from './config.js'",
+  "from './ui/flow-editor.mjs'",
   "from './services/supabase-service.js'",
 ]) {
   assert(bootstrap.includes(expectedImport), `Import ausente no bootstrap: ${expectedImport}`);

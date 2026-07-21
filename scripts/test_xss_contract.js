@@ -57,8 +57,8 @@ for (const escapedExternalValue of [
 }
 
 assert(!/\.innerHTML\s*=\s*(?:error|message|msg|e\.message|err\.message)\b/.test(securitySurface), 'Erro externo atribuído diretamente a innerHTML');
-assert(legacy.includes('function escHtml('), 'Codificador de texto HTML ausente');
-assert(legacy.includes('function escAttr('), 'Codificador de atributos ausente');
+assert(allJavaScript.includes('function escHtml('), 'Codificador de texto HTML ausente');
+assert(allJavaScript.includes('function escAttr('), 'Codificador de atributos ausente');
 assert(uploadRepository.includes('function sanitizeStoragePath('), 'Sanitização de caminho de Storage ausente');
 for (const dangerousPathPattern of [
   '/^[a-z][a-z0-9+.-]*:/i',

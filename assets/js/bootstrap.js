@@ -7,6 +7,7 @@ import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedba
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
+import { installLegacyFlowEditor } from './ui/flow-editor.mjs';
 import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
@@ -99,6 +100,7 @@ const uploadRepository = createUploadRepository({
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyUploadRepository(uploadRepository);
+installLegacyFlowEditor();
 installLegacyUploadUI();
 installLegacyAdminView();
 installLegacyDetailsView();

@@ -15,6 +15,7 @@ import {
   ensureXlsx,
   installLegacyDependencyGlobals,
 } from './services/dependency-service.mjs';
+import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
 
 function showBootstrapError(error) {
   console.error('[BOOT] Falha ao carregar o dashboard:', error);
@@ -46,6 +47,8 @@ installLegacyFeedbackGlobals(feedbackService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
 installLegacyDependencyGlobals();
+const excelService = createExcelService();
+installLegacyExcelGlobals(excelService);
 
 ensureApexCharts()
   .then(() => {
@@ -66,6 +69,7 @@ ensureApexCharts()
       modals: modalService,
       performance: performanceService,
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
+      excel: excelService,
     });
 
     const dashboardScript = document.createElement('script');

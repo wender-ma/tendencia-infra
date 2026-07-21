@@ -35,6 +35,19 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       .some(entry => /\/xlsx-[^/]+\.js(?:$|\?)/.test(entry.name));
     const xlsxModule = await window.ensureXlsx();
     const xlsxLoadedOnDemand = typeof xlsxModule.read === 'function' && window.XLSX === xlsxModule;
+    const workerWorkbook = xlsxModule.utils.book_new();
+    xlsxModule.utils.book_append_sheet(
+      workerWorkbook,
+      xlsxModule.utils.aoa_to_sheet([['codigo', 'valor'], ['A-1', 123]]),
+      'Tendencia',
+    );
+    const workerResult = await window.dashboardServices.excel.parseBuffer(
+      xlsxModule.write(workerWorkbook, { bookType: 'xlsx', type: 'array' }),
+    );
+    const excelWorkerParsed = (
+      workerResult.sheetNames.join(',') === 'Tendencia'
+      && workerResult.csvBySheet.Tendencia.includes('A-1;123')
+    );
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
@@ -81,6 +94,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       sheetJsVersion: window.XLSX.version,
       xlsxLoadedAtBoot,
       xlsxLoadedOnDemand,
+      excelWorkerParsed,
       hasSupabase: typeof window.supabase.createClient === 'function',
       hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
       hasAuthService: authService.state === window.AUTH,
@@ -120,6 +134,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     sheetJsVersion: '0.20.3',
     xlsxLoadedAtBoot: false,
     xlsxLoadedOnDemand: true,
+    excelWorkerParsed: true,
     hasSupabase: true,
     hasSupabaseService: true,
     hasAuthService: true,

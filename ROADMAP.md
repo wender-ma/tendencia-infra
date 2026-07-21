@@ -208,7 +208,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [ ] Paginar ou virtualizar tabelas grandes.
-- [ ] Processar Excel em Web Worker.
+- [x] Processar Excel em Web Worker.
 - [ ] Revisar o limite de upload de 50 MB com medições reais.
 - [x] Medir tempo de boot, tempo de parsing/renderização e quantidade de nós no DOM.
 - [x] Manter o descarte de instâncias ApexCharts antes de redesenhar.
@@ -245,7 +245,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Reduzir estilos inline e regras com `!important`.
 - [ ] Consolidar as cores em tokens oficiais.
 - [ ] Melhorar feedback de salvamento e sincronização.
-- [ ] Mostrar progresso real em uploads grandes.
+- [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.
 - [ ] Revisar estados vazios, loading e erro de cada aba.
 - [x] Revisar textos e termos técnicos apresentados ao usuário.
 - [x] Adicionar `meta description`.
@@ -301,3 +301,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados | `docs/operations.md` |
 | 21/07/2026 | Leituras de classificações e configurações limitadas à obra ativa e às chaves globais necessárias | `supaLoadDashboardConfig()` |
 | 21/07/2026 | SheetJS retirado do boot e carregado sob demanda, mantendo gráficos com descarte antes do redesenho | `dependency-service.mjs` |
+| 21/07/2026 | Leitura de arquivos com percentual e parsing/conversão de Excel movidos para Web Worker | `excel-service.mjs` |

@@ -4728,18 +4728,9 @@ function _autoDetectSheets(sheetNames) {
   return result;
 }
 
-// Converte uma aba do workbook pra string CSV (que os parsers existentes já entendem)
+// Obtém o CSV preparado pelo Worker (os parsers existentes continuam independentes do Excel).
 function _sheetToCSV(workbook, sheetName) {
-  const ws = workbook.Sheets[sheetName];
-  if (!ws) return '';
-  // Datas do Excel saem em ISO para não depender da localidade do navegador/SheetJS.
-  return XLSX.utils.sheet_to_csv(ws, {
-    FS: ';',
-    RS: '\n',
-    blankrows: false,
-    strip: false,
-    dateNF: 'yyyy-mm-dd',
-  });
+  return workbook?.csvBySheet?.[sheetName] || '';
 }
 
 function _preflightExcelHeaders(workbook, mapping) {
@@ -4786,23 +4777,15 @@ async function handleExcelUpload(ev) {
     return;
   }
 
-  try {
-    _renderExcelProgress('⏳ Carregando leitor de planilhas...');
-    await ensureXlsx();
-  } catch (error) {
-    reportNonFatalError('Excel/carregar biblioteca', error);
-    authToast('❌ Não foi possível carregar o leitor de planilhas. Tente novamente.', 'err', 5000);
-    _renderExcelProgress(null);
-    return;
-  }
-
   const excelKinds = ['tendencia', 'flows', 'gestoes'];
   setUploadRuntimeState(excelKinds, 'processing', 'Lendo a planilha Excel');
-  _renderExcelProgress('⏳ Lendo arquivo...');
+  _renderExcelProgress('⏳ Lendo arquivo: 0%');
   let workbook;
   try {
-    const buf = await file.arrayBuffer();
-    workbook = XLSX.read(buf, { type: 'array', cellDates: true });
+    workbook = await readExcelFile(file, {
+      onProgress: percent => _renderExcelProgress(`⏳ Lendo arquivo: ${percent}%`),
+      onReadComplete: () => _renderExcelProgress('⚙️ Processando planilha...'),
+    });
   } catch (e) {
     setUploadRuntimeState(excelKinds, 'failed', e.message || String(e));
     authToast('❌ Erro ao ler o arquivo: ' + e.message, 'err', 5000);
@@ -4811,7 +4794,7 @@ async function handleExcelUpload(ev) {
     return;
   }
 
-  const sheetNames = workbook.SheetNames || [];
+  const sheetNames = workbook.sheetNames || [];
   _renderExcelProgress(`📋 ${sheetNames.length} aba(s) encontrada(s): ${sheetNames.join(', ')}`);
 
   // Tentar auto-detectar
@@ -5461,10 +5444,9 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     const isExcel = /\.xlsx?$|\.xlsm$/i.test(alvo.nome_arquivo);
     // 3) Re-parseia
     if (isExcel) {
-      await ensureXlsx();
       const buf = await resp.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
-      const sheetNames = wb.SheetNames || [];
+      const wb = await readExcelBuffer(buf);
+      const sheetNames = wb.sheetNames || [];
       const mapping = _autoDetectSheets(sheetNames);
       // Só processa a aba correspondente ao tipo
       const sheetName = mapping[kind];

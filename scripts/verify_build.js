@@ -4,17 +4,17 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const sourcePath = path.join(root, 'assets/js/dashboard-legacy.js');
 const distAssets = path.join(root, 'dist/assets');
 const legacyFiles = fs.readdirSync(distAssets).filter(file => /^dashboard-legacy-[\w-]+\.js$/.test(file));
+const mainFiles = fs.readdirSync(distAssets).filter(file => /^index-[\w-]+\.js$/.test(file));
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(legacyFiles.length === 1, `Build deveria emitir um script legado com hash; encontrados: ${legacyFiles.length}`);
-const sourceBytes = fs.statSync(sourcePath).size;
-const builtBytes = fs.statSync(path.join(distAssets, legacyFiles[0])).size;
-assert(builtBytes < sourceBytes * 0.75, `Script legado não foi minificado: ${builtBytes}/${sourceBytes} bytes`);
+assert(legacyFiles.length === 0, `Build voltou a emitir script legado: ${legacyFiles.join(', ')}`);
+assert(mainFiles.length === 1, `Build deveria emitir um módulo principal; encontrados: ${mainFiles.length}`);
+const builtBytes = fs.statSync(path.join(distAssets, mainFiles[0])).size;
+assert(builtBytes > 0, 'Módulo principal do build está vazio');
 
-console.log(`Build verificado: legado ${sourceBytes} -> ${builtBytes} bytes (${Math.round((1 - builtBytes / sourceBytes) * 100)}% menor)`);
+console.log(`Build verificado: módulo principal com ${builtBytes} bytes e nenhum script clássico legado`);

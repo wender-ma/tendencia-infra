@@ -32,7 +32,10 @@ backdropIds.forEach(id => {
 
 const dialogCount = (html.match(/<[^>]+\srole="dialog"/g) || []).length;
 assert(dialogCount === backdropIds.length, `Esperados ${backdropIds.length} diálogos; encontrados ${dialogCount}`);
-assert(!/(^|[^A-Za-z])confirm\s*\(/m.test(source), 'Ainda existe confirm() nativo');
+assert(
+  !/(?:\b(?:window|globalThis)\.confirm\s*\(|(^|[^\w.])confirm\s*\()/m.test(source),
+  'Ainda existe confirm() nativo',
+);
 assert(modalModule.includes('function openLayer('), 'Runtime compartilhado de abertura ausente');
 assert(modalModule.includes('function closeLayer('), 'Runtime compartilhado de fechamento ausente');
 assert(modalModule.includes("event.key !== 'Tab'"), 'Focus trap ausente');

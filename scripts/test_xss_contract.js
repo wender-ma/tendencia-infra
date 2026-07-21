@@ -12,7 +12,6 @@ function listSourceFiles(directory) {
   });
 }
 
-const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
@@ -20,9 +19,10 @@ const uploadRepository = fs.readFileSync(
 const javascriptFiles = listSourceFiles(path.join(root, 'assets/js'))
   .filter((file) => /\.m?js$/.test(file))
   .map((file) => path.relative(root, file));
-const modularSources = javascriptFiles
-  .filter((file) => file !== 'assets/js/dashboard-legacy.js')
-  .map((file) => [file, fs.readFileSync(path.join(root, file), 'utf8')]);
+const modularSources = javascriptFiles.map((file) => [
+  file,
+  fs.readFileSync(path.join(root, file), 'utf8'),
+]);
 const allJavaScript = javascriptFiles
   .map((file) => fs.readFileSync(path.join(root, file), 'utf8'))
   .join('\n');

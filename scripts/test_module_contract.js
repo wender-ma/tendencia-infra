@@ -63,7 +63,13 @@ const projectionControlView = fs.readFileSync(
   'utf8',
 );
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
-const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
+const application = fs.readFileSync(path.join(root, 'assets/js/application.mjs'), 'utf8');
+const dashboardRuntime = fs.readFileSync(
+  path.join(root, 'assets/js/ui/dashboard-runtime.mjs'),
+  'utf8',
+);
+const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
+const coordinatorSources = `${bootstrap}\n${application}`;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -197,9 +203,9 @@ assert(
   'Adaptador temporário da manutenção de uploads ausente',
 );
 assert(
-  !legacy.includes('async function resetCacheDados(') &&
-    !legacy.includes('async function apagarHistoricoUploads('),
-  'Ações destrutivas de upload não podem permanecer no legado',
+  !coordinatorSources.includes('async function resetCacheDados(') &&
+    !coordinatorSources.includes('async function apagarHistoricoUploads('),
+  'Ações destrutivas de upload não podem permanecer no coordenador',
 );
 assert(
   projectController.includes('export function createProjectController'),
@@ -224,8 +230,8 @@ for (const removedProjectFunction of [
   'function aplicarDadosPersistidos(',
 ]) {
   assert(
-    !legacy.includes(removedProjectFunction),
-    `Ciclo de obras ainda duplicado no legado: ${removedProjectFunction}`,
+    !coordinatorSources.includes(removedProjectFunction),
+    `Ciclo de obras ainda duplicado no coordenador: ${removedProjectFunction}`,
   );
 }
 assert(
@@ -429,9 +435,23 @@ for (const removedLegacyContract of [
   'function renderMovTable(',
 ]) {
   assert(
-    !legacy.includes(removedLegacyContract),
-    `Responsabilidade ainda presente no legado: ${removedLegacyContract}`,
+    !coordinatorSources.includes(removedLegacyContract),
+    `Responsabilidade ainda presente no coordenador: ${removedLegacyContract}`,
   );
 }
+
+assert(!fs.existsSync(legacyPath), 'Script clássico legado voltou ao projeto');
+assert(
+  application.includes('export function createApplication'),
+  'Inicializador modular da aplicação ausente',
+);
+assert(
+  dashboardRuntime.includes('export function createDashboardRuntime'),
+  'Runtime modular do dashboard ausente',
+);
+assert(
+  dashboardRuntime.includes('export function installLegacyDashboardRuntime'),
+  'Adaptador temporário do runtime ausente',
+);
 
 console.log('Contrato modular: configuracao, catalogos, bootstrap e servico Supabase separados OK');

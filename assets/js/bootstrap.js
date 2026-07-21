@@ -1,4 +1,4 @@
-import dashboardUrl from './dashboard-legacy.js?url';
+import { createApplication } from './application.mjs';
 import { DASHBOARD_CONFIG, installLegacyConfig, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
 import { installLegacyProjectionCatalog } from './data/projection-catalog.mjs';
 import { installLegacyImportParsers } from './parsers/index.mjs';
@@ -9,6 +9,7 @@ import { installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
+import { createDashboardRuntime, installLegacyDashboardRuntime } from './ui/dashboard-runtime.mjs';
 import {
   createProjectController,
   installLegacyProjectController,
@@ -146,7 +147,7 @@ const dashboardExportService = createDashboardExportService({
   ensureXlsx,
   getState: () => ({
     tendency: window.DATA_T || [],
-    flows: window.getFlowsObraAtiva?.() || [],
+    flows: dashboardRuntime.getActiveFlows(),
     projectionControl: window.PROJ_CTRL_STATE || {},
     activeProject: window.OBRA_ATIVA || '',
     project: window.getObraInfo?.(window.OBRA_ATIVA) || null,
@@ -167,6 +168,28 @@ const dashboardRepository = createDashboardRepository({
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyDashboardRepository(dashboardRepository);
+const dashboardRuntime = createDashboardRuntime({
+  state: appState,
+  config: DASHBOARD_CONFIG,
+  syncStatus: syncStatusService,
+  performanceMonitor: performanceService,
+  ensureApexCharts,
+  logger,
+  toast: (...args) => feedbackService.toast(...args),
+  populateFilters: () => window.populateFilters?.(),
+  renderSourcesHeaders: () => window.renderSourcesHeaders?.(),
+  renderers: {
+    overview: () => window.renderVisao?.(),
+    flows: () => window.renderFlows?.(),
+    details: () => window.renderTable?.(),
+    history: () => window.renderHistorico?.(),
+    projection: () => window.renderProjecao?.(),
+    initializeProjection: () => window.initProjecao?.(),
+    projectionControl: () => window.initProjCtrl?.(),
+    uploads: () => window.renderUploadsCentral?.(),
+  },
+});
+installLegacyDashboardRuntime(dashboardRuntime);
 const projectRepository = createProjectRepository({
   getClient: () => window.SUPA,
   warn: (context, error) => logger.warn(context, error),
@@ -192,7 +215,7 @@ const projectController = createProjectController({
   showLoading: () => feedbackService.showLoading(),
   hideLoading: () => feedbackService.hideLoading(),
   toast: (...args) => feedbackService.toast(...args),
-  renderAll: () => window.renderAll?.(),
+  renderAll: () => dashboardRuntime.renderAll(),
   applyManuals: () => window.applyManuals?.(),
   loadClassifications: () => window.loadClassifications?.(),
   buildInputList: () => window.buildInsumosList?.() || [],
@@ -203,15 +226,8 @@ const projectController = createProjectController({
   loadProjectionControl: () => window.loadProjCtrl?.(),
   getProjectionControlState: () => window.PROJ_CTRL_STATE,
   applyProjectionLocks: () => window.applyLocksToUI?.(),
-  formatValue: (value) =>
-    Number(value).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }),
-  reportError: (context, error, userMessage) => {
-    if (window.reportNonFatalError) window.reportNonFatalError(context, error, userMessage);
-    else logger.warn(context, error);
-  },
+  formatValue: (value) => window.fmt(value),
+  reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
 });
 installLegacyProjectController(projectController);
 const uploadCoordinator = createUploadCoordinator({
@@ -262,15 +278,15 @@ const dashboardShell = createDashboardShell({
   },
   authorizeAdmin: () => window.requireAdmin?.('acessar esta função administrativa') === true,
   isAdmin: () => window.isAdminGeral?.() === true,
-  renderTab: (tabName) => window.renderTab?.(tabName),
+  renderTab: (tabName) => dashboardRuntime.renderTab(tabName),
   renderAdmin: () => {
     window.renderPendentesAdmin?.();
     window.renderObrasAdmin?.();
     window.renderEditoresAdmin?.();
   },
   saveHeaderTitle: (title) => {
-    if (!window.supaSaveDashboardKey || !window.runAsyncSafely) return;
-    void window.runAsyncSafely(
+    if (!window.supaSaveDashboardKey) return;
+    void dashboardRuntime.runAsyncSafely(
       window.supaSaveDashboardKey('header_title', title),
       'Config/salvar título',
       'O título foi salvo apenas neste navegador.',
@@ -367,7 +383,32 @@ Promise.resolve()
     });
     installLegacyUploadMaintenance(uploadMaintenance);
     installActionDelegation();
+    const application = createApplication({
+      state: appState,
+      projectController,
+      authService,
+      uploadRepository,
+      dashboardRuntime,
+      dashboardShell,
+      storage: storageService,
+      storageKeys: STORAGE_KEYS,
+      syncStatus: syncStatusService,
+      performanceMonitor: performanceService,
+      hasBackend: () => Boolean(window.SUPA),
+      buildInputList: () => window.buildInsumosList?.() || [],
+      setInputOptions: (options) => {
+        window.INSUMOS_OPTIONS = options;
+      },
+      buildDatalist: () => window.buildDatalist?.(),
+      applyManuals: () => window.applyManuals?.(),
+      loadClassifications: () => window.loadClassifications?.() || 0,
+      updateEditCount: () => window.updateEditCount?.(),
+      restoreFilters: () => window.restaurarFiltros?.(),
+      toast: (...args) => feedbackService.toast(...args),
+      reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
+    });
     window.dashboardServices = Object.freeze({
+      application,
       supabase: supabaseService,
       auth: authService,
       authUi,
@@ -381,6 +422,7 @@ Promise.resolve()
       excel: excelService,
       exports: dashboardExportService,
       dashboardRepository,
+      runtime: dashboardRuntime,
       projectRepository,
       projectController,
       storage: storageService,
@@ -393,11 +435,6 @@ Promise.resolve()
       uploadMaintenance,
       uploadTransactions: Object.freeze({ execute: executeUploadTransaction }),
     });
-
-    const dashboardScript = document.createElement('script');
-    dashboardScript.src = dashboardUrl;
-    dashboardScript.async = false;
-    dashboardScript.addEventListener('error', showBootstrapError);
-    document.body.appendChild(dashboardScript);
+    await application.start();
   })
   .catch(showBootstrapError);

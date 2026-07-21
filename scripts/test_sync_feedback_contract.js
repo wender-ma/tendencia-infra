@@ -3,10 +3,10 @@
 const assertNode = require('assert');
 const path = require('path');
 const { pathToFileURL } = require('url');
-const { loadProjectSources, readProjectFile } = require('./load_project_sources');
+const { readProjectFile } = require('./load_project_sources');
 
-const { javascript } = loadProjectSources();
 const syncService = readProjectFile('assets/js/services/sync-status.mjs');
+const dashboardRuntime = readProjectFile('assets/js/ui/dashboard-runtime.mjs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -25,12 +25,12 @@ assert(
 );
 assert(!syncService.includes('status.lastError}`'), 'Badge ainda expõe erro interno');
 
-const safeRunner = javascript.slice(
-  javascript.indexOf('function runAsyncSafely('),
-  javascript.indexOf('// SafeStorage'),
+const safeRunner = dashboardRuntime.slice(
+  dashboardRuntime.indexOf('async function runAsyncSafely('),
+  dashboardRuntime.indexOf('function createKpi('),
 );
-assert(safeRunner.includes('beginSupaOperation()'), 'Operações seguras não iniciam feedback');
-assert(safeRunner.includes('finishSupaOperation(error)'), 'Falhas não encerram feedback');
+assert(safeRunner.includes('syncStatus.begin()'), 'Operações seguras não iniciam feedback');
+assert(safeRunner.includes('syncStatus.finish(error)'), 'Falhas não encerram feedback');
 
 (async () => {
   const moduleUrl = pathToFileURL(path.resolve(__dirname, '../assets/js/services/sync-status.mjs'));

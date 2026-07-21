@@ -8,7 +8,7 @@ const tokens = fs.readFileSync(path.join(root, 'assets/css/tokens.css'), 'utf8')
 const visualSources = [
   'assets/css/base.css',
   'assets/css/dashboard.css',
-  'assets/js/dashboard-legacy.js',
+  'assets/js/ui/dashboard-runtime.mjs',
 ].map(file => ({ file, source: fs.readFileSync(path.join(root, file), 'utf8') }));
 
 function assert(condition, message) {
@@ -35,6 +35,6 @@ for (const { file, source } of visualSources) {
 assert(tokens.includes('body.dark'), 'Tokens do tema escuro ausentes');
 assert(tokens.includes('--accent-purple:        #A78BFA'), 'Acento roxo não possui variante escura');
 assert(!visualSources.some(({ source }) => /colors:\s*\[\s*['"]var\(--/.test(source)), 'ApexCharts recebeu variável CSS sem resolução');
-assert(visualSources.some(({ source }) => source.includes('const themeRoot = document.body || document.documentElement')), 'Gráficos não resolvem tokens a partir do tema ativo');
+assert(visualSources.some(({ source }) => source.includes('documentRef.body || documentRef.documentElement')), 'Gráficos não resolvem tokens a partir do tema ativo');
 
 console.log('Contrato de cores: paleta centralizada e temas claro/escuro sem hex disperso OK');

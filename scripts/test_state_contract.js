@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const stateModule = fs.readFileSync(path.join(root, 'assets/js/state.js'), 'utf8');
 const configModule = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
-const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
+const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -83,17 +83,7 @@ assert(
   'Auth nao consulta a obra no estado central',
 );
 
-for (const removedLegacyContract of [
-  'const AppState =',
-  'Object.defineProperties(window, {',
-  'const LAST_UPLOADS =',
-  'function getActiveProjectCode(',
-]) {
-  assert(
-    !legacy.includes(removedLegacyContract),
-    `Estado ainda declarado no legado: ${removedLegacyContract}`,
-  );
-}
+assert(!fs.existsSync(legacyPath), 'Estado voltou a depender de coordenador legado');
 
 async function verifyStateFactory() {
   const moduleUrl = pathToFileURL(path.join(root, 'assets/js/state.js'));

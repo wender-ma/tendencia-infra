@@ -12,7 +12,6 @@ const worker = fs.readFileSync(
   path.join(root, 'assets/js/workers/excel-reader.worker.mjs'),
   'utf8',
 );
-const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
 
 function assert(condition, message) {
@@ -24,7 +23,7 @@ assert(service.includes('reader.addEventListener(\'progress\''), 'Leitura não r
 assert(service.includes('worker.terminate()'), 'Worker não é encerrado após o processamento');
 assert(worker.includes("from 'xlsx'"), 'Worker não usa o parser SheetJS local');
 assert(worker.includes('sheet_to_csv'), 'Conversão das abas não ocorre no Worker');
-assert(!`${legacy}\n${uploadUi}`.includes('XLSX.read('), 'Interface voltou a processar Excel na thread principal');
+assert(!uploadUi.includes('XLSX.read('), 'Interface voltou a processar Excel na thread principal');
 assert(uploadUi.includes('await readExcelFile(file,'), 'Upload não usa o serviço de Worker');
 assert(uploadUi.includes('await readExcelBuffer(buf)'), 'Reativação não usa o serviço de Worker');
 

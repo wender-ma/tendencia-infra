@@ -6,7 +6,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const moduleSource = fs.readFileSync(path.join(root, 'assets/js/ui/view-states.mjs'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
-const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
+const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
 const projectionControlView = fs.readFileSync(
   path.join(root, 'assets/js/ui/views/projection-control.mjs'),
@@ -23,7 +23,7 @@ assert(moduleSource.includes('textContent = message'), 'Mensagem do estado deve 
 assert(moduleSource.includes("kind === 'error' ? 'alert' : 'status'"), 'Semântica de status/erro ausente');
 assert(bootstrap.includes('installLegacyViewStateGlobals(viewStateService)'), 'Estado não instalado no bootstrap');
 assert(bootstrap.includes('viewStates: viewStateService'), 'Serviço de estado não publicado');
-assert(!legacy.includes('renderPlaceholderSemDados'), 'Placeholder HTML legado ainda está presente');
+assert(!fs.existsSync(legacyPath), 'Coordenador legado voltou ao projeto');
 
 const movementTable = projectionControlView.slice(
   projectionControlView.indexOf('function renderMovTable('),

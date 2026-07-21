@@ -10,7 +10,7 @@ Dashboard de tendência orçamentária
 ├── package-lock.json       # Versões exatas das dependências instaladas
 ├── assets/
 │   ├── css/                # Tokens, base, componentes e estilos do dashboard
-│   ├── js/                 # Configuração, estado, parsers, serviços e código legado
+│   ├── js/                 # Configuração, estado, parsers, serviços e interface
 │   └── images/             # Imagens e capturas de tela
 ├── backups/                # Cópias antigas do index.html
 │   └── snapshots/           # Backups automáticos compactados
@@ -28,6 +28,7 @@ Dashboard de tendência orçamentária
 - `package.json`: scripts do Vite e suíte de contratos do projeto.
 - `assets/css/`: folhas de estilo externas carregadas na ordem `tokens`, `base`, `components` e `dashboard`.
 - `assets/js/bootstrap.js`: instala os serviços locais e inicia o dashboard; bibliotecas pesadas entram sob demanda.
+- `assets/js/application.mjs`: coordena o boot idempotente da aplicação.
 - `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
 - `assets/js/state.js`: estado compartilhado de dados, obra ativa, filtros, uploads e preferências.
 - `assets/js/performance.mjs`: métricas locais de boot, DOM, parsing e renderização.
@@ -43,7 +44,6 @@ Dashboard de tendência orçamentária
 - `assets/js/services/upload-transaction.mjs`: coordenação de commit e rollback compensatório dos uploads.
 - `assets/js/ui/actions.mjs`: delegação central das ações declaradas pelo HTML e pelos templates.
 - `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
-- `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.

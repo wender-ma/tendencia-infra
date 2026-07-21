@@ -1,24 +1,27 @@
 #!/usr/bin/env node
 
-const { loadProjectSources } = require('./load_project_sources');
+const fs = require('fs');
+const path = require('path');
 
-const { javascript } = loadProjectSources();
+const root = path.resolve(__dirname, '..');
+const shell = fs.readFileSync(path.join(root, 'assets/js/ui/shell.mjs'), 'utf8');
+const runtime = fs.readFileSync(path.join(root, 'assets/js/ui/dashboard-runtime.mjs'), 'utf8');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function extract(start, end) {
-  const from = javascript.indexOf(start);
-  const to = javascript.indexOf(end, from + start.length);
+function extract(source, start, end) {
+  const from = source.indexOf(start);
+  const to = source.indexOf(end, from + start.length);
   assert(from >= 0 && to > from, `Bloco ausente: ${start}`);
-  return javascript.slice(from, to);
+  return source.slice(from, to);
 }
 
-const activation = extract('function activateTab(', 'function getVisibleTabs(');
+const activation = extract(shell, 'function activateTab(', 'function getVisibleTabs(');
 assert(activation.includes('renderTab(tab.dataset.tab)'), 'Troca de aba precisa renderizar a visão ativada');
 
-const renderAll = extract('function renderAll()', "document.getElementById('now')");
+const renderAll = extract(runtime, 'function renderAll()', 'function debouncedRender(');
 assert(renderAll.includes('renderTab(getActiveTabName())'), 'Renderização geral precisa limitar-se à aba ativa');
 for (const hiddenRender of [
   'renderVisao()',

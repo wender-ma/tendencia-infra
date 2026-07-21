@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '..');
 const authService = fs.readFileSync(path.join(root, 'assets/js/services/auth-service.js'), 'utf8');
 const authUi = fs.readFileSync(path.join(root, 'assets/js/ui/auth-ui.mjs'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
-const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
+const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -50,22 +50,7 @@ assert(
   'Servico de auth nao pode manipular a interface',
 );
 
-for (const removedLegacyContract of [
-  'const AUTH =',
-  'async function checkEditorPermission(',
-  'SUPA.auth.getSession()',
-  'SUPA.auth.onAuthStateChange(',
-  'SUPA.auth.signInWithOAuth(',
-  'SUPA.auth.signInWithPassword(',
-  'SUPA.auth.signUp(',
-  'SUPA.auth.signOut()',
-  "sessionStorage.setItem('jz_fresh_login'",
-]) {
-  assert(
-    !legacy.includes(removedLegacyContract),
-    `Autenticacao ainda acoplada ao legado: ${removedLegacyContract}`,
-  );
-}
+assert(!fs.existsSync(legacyPath), 'Autenticação voltou a depender de coordenador legado');
 
 for (const delegatedAction of [
   'authService.signInWithGoogle(',

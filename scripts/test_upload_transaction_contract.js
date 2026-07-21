@@ -143,11 +143,11 @@ assert(
   'Limpeza de uploads interrompidos ausente',
 );
 assert(
-  javascript.includes('await supaCleanupIncompleteUploads()'),
+  javascript.includes('await uploadRepository.cleanupIncompleteUploads()'),
   'Recuperação de uploads incompletos não roda no boot',
 );
 assert(
-  javascript.includes("state.status === 'processing'"),
+  javascript.includes("upload.status === 'processing'"),
   'Troca de obra precisa ser bloqueada durante uploads',
 );
 assert(

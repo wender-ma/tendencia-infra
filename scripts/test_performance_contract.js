@@ -9,8 +9,8 @@ function assert(condition, message) {
 }
 
 async function main() {
-  const legacy = fs.readFileSync(
-    path.resolve(__dirname, '../assets/js/dashboard-legacy.js'),
+  const runtime = fs.readFileSync(
+    path.resolve(__dirname, '../assets/js/ui/dashboard-runtime.mjs'),
     'utf8',
   );
   const moduleUrl = pathToFileURL(
@@ -37,8 +37,8 @@ async function main() {
   assert(snapshot.operations.async.count === 1, 'Operação assíncrona não contabilizada');
   assert(snapshot.operations.failed.count === 1, 'Operação com erro não contabilizada');
   assert(
-    (legacy.match(/new ApexCharts\(/g) || []).length === 1
-      && legacy.includes('_apexCharts[containerId].destroy()'),
+    (runtime.match(/new ApexCharts\(/g) || []).length === 1
+      && runtime.includes('previous.destroy()'),
     'Gráficos devem passar pelo helper que descarta a instância anterior',
   );
   console.log('Contrato de performance: boot, DOM, parser/render e erros mensuráveis OK');

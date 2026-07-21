@@ -3,7 +3,6 @@ import globals from 'globals';
 export default [
   {
     ignores: [
-      'assets/js/dashboard-legacy.js',
       'backups/**',
       'dist/**',
       'node_modules/**',

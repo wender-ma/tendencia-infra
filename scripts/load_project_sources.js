@@ -20,7 +20,8 @@ function loadProjectSources() {
     ...viewMarkup,
   ].join('\n');
   const javascript = [
-    readProjectFile('assets/js/dashboard-legacy.js'),
+    readProjectFile('assets/js/bootstrap.js'),
+    readProjectFile('assets/js/application.mjs'),
     readProjectFile('assets/js/services/dashboard-export.mjs'),
     readProjectFile('assets/js/services/dashboard-repository.mjs'),
     readProjectFile('assets/js/services/project-repository.mjs'),
@@ -29,6 +30,7 @@ function loadProjectSources() {
     readProjectFile('assets/js/services/upload-coordinator.mjs'),
     readProjectFile('assets/js/ui/flow-editor.mjs'),
     readProjectFile('assets/js/ui/auth-ui.mjs'),
+    readProjectFile('assets/js/ui/dashboard-runtime.mjs'),
     readProjectFile('assets/js/ui/shell.mjs'),
     readProjectFile('assets/js/ui/uploads.mjs'),
     readProjectFile('assets/js/ui/upload-maintenance.mjs'),

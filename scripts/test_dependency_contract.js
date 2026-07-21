@@ -15,8 +15,8 @@ const supabaseService = fs.readFileSync(
   path.join(root, 'assets/js/services/supabase-service.js'),
   'utf8',
 );
-const dashboardPath = path.join(root, 'assets/js/dashboard-legacy.js');
-const dashboardLegacy = fs.readFileSync(dashboardPath, 'utf8');
+const applicationPath = path.join(root, 'assets/js/application.mjs');
+const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
 const flowEditorPath = path.join(root, 'assets/js/ui/flow-editor.mjs');
 
 function assert(condition, message) {
@@ -46,26 +46,22 @@ assert(
   dependencies.xlsx === 'https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz',
   'SheetJS deve permanecer fixado no pacote oficial 0.20.3',
 );
-assert(fs.existsSync(dashboardPath), 'Script principal externo ausente');
+assert(fs.existsSync(applicationPath), 'Inicializador modular da aplicação ausente');
+assert(!fs.existsSync(legacyPath), 'Script clássico legado voltou ao projeto');
 assert(fs.existsSync(flowEditorPath), 'Módulo do editor de Flows ausente');
-assert(
-  fs.statSync(dashboardPath).size < 15_000,
-  'Coordenador legado voltou a concentrar responsabilidades extraídas',
-);
-assert(
-  dashboardLegacy.includes('function renderAll(') && dashboardLegacy.includes('await initAuth()'),
-  'Coordenador legado perdeu o render ou a inicialização temporária',
-);
 assert(fs.statSync(flowEditorPath).size > 40_000, 'Editor de Flows parece incompleto');
 
 for (const expectedImport of [
-  "from './dashboard-legacy.js?url'",
+  "from './application.mjs'",
+  "from './ui/dashboard-runtime.mjs'",
   "from './config.js'",
   "import('./ui/flow-editor.mjs')",
   "from './services/supabase-service.js'",
 ]) {
   assert(bootstrap.includes(expectedImport), `Import ausente no bootstrap: ${expectedImport}`);
 }
+assert(!bootstrap.includes('?url'), 'Bootstrap voltou a carregar script clássico como asset');
+assert(!bootstrap.includes("createElement('script')"), 'Bootstrap voltou a injetar script clássico');
 
 for (const expectedImport of ["import('xlsx')", "import('apexcharts')"]) {
   assert(

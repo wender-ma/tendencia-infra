@@ -439,74 +439,7 @@ function posCarregarDados() {
 
 // Persistência de classificações, manuais, projeção e configurações fornecida por services/dashboard-repository.mjs.
 
-function buildUploadDashboardRows(kinds) {
-  const requested = Array.isArray(kinds) ? [...new Set(kinds)] : ['tendencia', 'flows', 'gestoes'];
-  const values = new Map();
-
-  if (requested.includes('tendencia')) {
-    if (!Array.isArray(DATA_T) || !DATA_T.length) throw new Error('Tendência sem dados válidos para persistir');
-    values.set(keyPorObra(DATA_KEYS.DATA_T), JSON.stringify(DATA_T));
-    values.set(keyPorObra(DATA_KEYS.GESTAO_LABEL), String(GESTAO_LABEL || ''));
-  }
-  if (requested.includes('flows')) {
-    if (!Array.isArray(DATA_F) || !DATA_F.length) throw new Error('Flows sem dados válidos para persistir');
-    values.set(DATA_KEYS.DATA_F, JSON.stringify(DATA_F));
-  }
-  if (requested.includes('gestoes')) {
-    if (!HISTORICO?.items?.length) throw new Error('Histórico sem dados válidos para persistir');
-    values.set(DATA_KEYS.HISTORICO, JSON.stringify(HISTORICO));
-    values.set(DATA_KEYS.PROJ_RAW, JSON.stringify(Array.isArray(PROJ_RAW) ? PROJ_RAW : []));
-  }
-
-  const updatedAt = new Date().toISOString();
-  return [...values].map(([chave, valor]) => ({ chave, valor, updated_at: updatedAt }));
-}
-
-async function supaCaptureDashboardRows(kinds) {
-  if (!SUPA) throw new Error('Supabase indisponível');
-  const keys = buildUploadDashboardRows(kinds).map(row => row.chave);
-  const { data, error } = await SUPA.from('dashboard_config')
-    .select('chave,valor')
-    .in('chave', keys);
-  if (error) throw error;
-  return { keys, rows: data || [] };
-}
-
-async function supaRestoreDashboardRows(snapshot) {
-  if (!snapshot?.keys?.length) return;
-  const updatedAt = new Date().toISOString();
-  const previousRows = (snapshot.rows || []).map(row => ({ ...row, updated_at: updatedAt }));
-  if (previousRows.length) {
-    const { error } = await SUPA.from('dashboard_config').upsert(previousRows, { onConflict: 'chave' });
-    if (error) throw error;
-  }
-  const previousKeys = new Set(previousRows.map(row => row.chave));
-  const keysToDelete = snapshot.keys.filter(key => !previousKeys.has(key));
-  if (keysToDelete.length) {
-    const { error } = await SUPA.from('dashboard_config').delete().in('chave', keysToDelete);
-    if (error) throw error;
-  }
-}
-
-// Persiste todas as chaves do conjunto em uma única instrução do PostgREST.
-async function supaSaveAllData(kinds) {
-  if (!SUPA) throw new Error('Supabase indisponível');
-  if (!isEditorDaObraAtiva()) throw new Error('Sem permissão para persistir dados da obra ativa');
-  if ((!Array.isArray(kinds) || kinds.some(isGlobalUploadKind)) && !isAdminGeral()) {
-    throw new Error('Apenas administradores podem persistir dados globais');
-  }
-  if (!OBRA_ATIVA) throw new Error('Nenhuma obra ativa para persistência');
-
-  const rows = buildUploadDashboardRows(kinds);
-  const { error } = await SUPA.from('dashboard_config').upsert(rows, { onConflict: 'chave' });
-  if (error) {
-    markDashboardSyncError(error);
-    throw error;
-  }
-  markDashboardSynced();
-  console.log(`[SUPA] ${rows.length} dataset(s) persistido(s) para obra ${OBRA_ATIVA}`);
-  return rows;
-}
+// Persistência transacional dos datasets fornecida por services/upload-coordinator.mjs.
 
 // v0.58b: reset dos dados da obra ativa
 //   - Chaves POR OBRA: dados_tendencia, dados_flows, gestao_label, evol_global (prefixadas)
@@ -590,73 +523,7 @@ async function apagarHistoricoUploads() {
 
 // ---------- UPLOAD HISTORY + STORAGE (v0.52 / v0.53) ----------
 // Bucket, limite e sanitização são fornecidos por services/upload-repository.mjs.
-const UPLOAD_RUNTIME_STATE = Object.create(null);
-
-function setUploadRuntimeState(kinds, status, message = '') {
-  (Array.isArray(kinds) ? kinds : [kinds]).forEach(kind => {
-    UPLOAD_RUNTIME_STATE[kind] = { status, message, updatedAt: new Date() };
-  });
-  const obraSelector = document.getElementById('obraSelector');
-  if (obraSelector) {
-    obraSelector.disabled = Object.values(UPLOAD_RUNTIME_STATE)
-      .some(state => state.status === 'processing');
-  }
-}
-
-function captureInMemoryUploadState() {
-  return {
-    DATA_T,
-    DATA_F,
-    HISTORICO,
-    PROJ_RAW,
-    GESTAO_LABEL,
-    EVOL_GLOBAL: { ...EVOL_GLOBAL },
-    INSUMOS_OPTIONS,
-  };
-}
-
-function restoreInMemoryUploadState(snapshot) {
-  if (!snapshot) return;
-  DATA_T = snapshot.DATA_T;
-  DATA_F = snapshot.DATA_F;
-  HISTORICO = snapshot.HISTORICO;
-  PROJ_RAW = snapshot.PROJ_RAW;
-  GESTAO_LABEL = snapshot.GESTAO_LABEL;
-  EVOL_GLOBAL = snapshot.EVOL_GLOBAL;
-  INSUMOS_OPTIONS = snapshot.INSUMOS_OPTIONS;
-  try { buildDatalist(); } catch (error) { reportNonFatalError('Upload/restaurar lista de insumos', error); }
-}
-
-async function commitPreparedUpload({ file, storageType, items, groupId = null, memorySnapshot }) {
-  return executeUploadTransaction(
-    { file, storageType, items, groupId, memorySnapshot },
-    {
-      captureDashboardRows: supaCaptureDashboardRows,
-      uploadFile: supaUploadFile,
-      createRecord: item => supaCreateUploadRecord(
-        item.kind,
-        item.fileName,
-        item.fileSize,
-        item.rows,
-        item.storagePath,
-        item.groupId,
-      ),
-      saveAllData: supaSaveAllData,
-      activateRecord: supaActivateUploadRecord,
-      rollbackActivation: supaRollbackUploadActivation,
-      restoreDashboardRows: supaRestoreDashboardRows,
-      markRecordsFailed: supaMarkUploadRecordsFailed,
-      removeStoredUpload: supaRemoveStoredUpload,
-      deleteRecords: supaDeleteUploadRecords,
-      restoreMemoryState: restoreInMemoryUploadState,
-      setRuntimeState: setUploadRuntimeState,
-      onActive: activeRecords => activeRecords.forEach(record => {
-        LAST_UPLOADS[record.tipo] = record;
-      }),
-      reportCleanupError: reportNonFatalError,
-    },
-  );
-}
+// Estado e commit dos uploads fornecidos por services/upload-coordinator.mjs.
 
 // Persistência do histórico e Storage é fornecida por services/upload-repository.mjs.
 

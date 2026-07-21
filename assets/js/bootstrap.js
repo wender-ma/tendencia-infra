@@ -33,6 +33,7 @@ import {
 } from './services/dashboard-export.mjs';
 import {
   createDashboardRepository,
+  DASHBOARD_DATA_KEYS,
   installLegacyDashboardRepository,
 } from './services/dashboard-repository.mjs';
 import {
@@ -44,6 +45,10 @@ import { createExcelService, installLegacyExcelGlobals } from './services/excel-
 import { createLogger, installLogger } from './services/logger.mjs';
 import { createSyncStatusService, installLegacySyncStatus } from './services/sync-status.mjs';
 import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
+import {
+  createUploadCoordinator,
+  installLegacyUploadCoordinator,
+} from './services/upload-coordinator.mjs';
 import {
   createUploadRepository,
   installLegacyUploadRepository,
@@ -152,6 +157,46 @@ const dashboardRepository = createDashboardRepository({
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyDashboardRepository(dashboardRepository);
+const uploadCoordinator = createUploadCoordinator({
+  getClient: () => window.SUPA,
+  getActiveProject: () => appState.obra.ativa,
+  getDashboardData: () => ({
+    tendency: appState.dados.tendencia,
+    flows: appState.dados.flows,
+    history: appState.dados.historico,
+    projectionRaw: appState.dados.projRaw,
+    managementLabel: appState.config.gestaoLabel,
+    evolution: appState.config.evolGlobal,
+    latestUploads: appState.uploads,
+  }),
+  restoreDashboardData: (snapshot) => {
+    appState.dados.tendencia = snapshot.tendency;
+    appState.dados.flows = snapshot.flows;
+    appState.dados.historico = snapshot.history;
+    appState.dados.projRaw = snapshot.projectionRaw;
+    appState.config.gestaoLabel = snapshot.managementLabel;
+    appState.config.evolGlobal = snapshot.evolution;
+  },
+  getInputOptions: () => window.INSUMOS_OPTIONS,
+  setInputOptions: (options) => {
+    window.INSUMOS_OPTIONS = options;
+  },
+  canEditActiveProject: () => window.isEditorDaObraAtiva?.() === true,
+  isAdmin: () => window.isAdminGeral?.() === true,
+  isGlobalKind: (kind) => window.isGlobalUploadKind?.(kind) === true,
+  dataKeys: DASHBOARD_DATA_KEYS,
+  uploadRepository,
+  executeTransaction: executeUploadTransaction,
+  setProjectSelectorDisabled: (disabled) => {
+    const selector = document.getElementById('obraSelector');
+    if (selector) selector.disabled = disabled;
+  },
+  rebuildInputList: () => window.buildDatalist?.(),
+  markSyncError: (error) => syncStatusService.markError(error),
+  markSynced: () => syncStatusService.markSynced(),
+  reportCleanupError: (context, error) => logger.warn(context, error),
+});
+installLegacyUploadCoordinator(uploadCoordinator);
 const dashboardShell = createDashboardShell({
   getManagementLabel: () => window.GESTAO_LABEL,
   getHeaderEditable: () => window._headerEditable === true,
@@ -226,6 +271,7 @@ Promise.resolve()
       syncStatus: syncStatusService,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
       uploadRepository,
+      uploadCoordinator,
       uploadTransactions: Object.freeze({ execute: executeUploadTransaction }),
     });
 

@@ -24,6 +24,10 @@ const dashboardRepository = fs.readFileSync(
   'utf8',
 );
 const syncStatus = fs.readFileSync(path.join(root, 'assets/js/services/sync-status.mjs'), 'utf8');
+const uploadCoordinator = fs.readFileSync(
+  path.join(root, 'assets/js/services/upload-coordinator.mjs'),
+  'utf8',
+);
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
@@ -133,6 +137,14 @@ assert(
 assert(
   !syncStatus.includes('.style.'),
   'Status de sincronização deve usar classes ou atributos CSS',
+);
+assert(
+  uploadCoordinator.includes('export function createUploadCoordinator'),
+  'Coordenador de uploads ausente',
+);
+assert(
+  uploadCoordinator.includes('export function installLegacyUploadCoordinator'),
+  'Adaptador temporário do coordenador de uploads ausente',
 );
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
@@ -334,6 +346,15 @@ for (const removedLegacyContract of [
   'function finishSupaOperation(',
   'function getDashboardSyncStatus(',
   'function updateSupaBadge(',
+  'function buildUploadDashboardRows(',
+  'async function supaCaptureDashboardRows(',
+  'async function supaRestoreDashboardRows(',
+  'async function supaSaveAllData(',
+  'const UPLOAD_RUNTIME_STATE =',
+  'function setUploadRuntimeState(',
+  'function captureInMemoryUploadState(',
+  'function restoreInMemoryUploadState(',
+  'async function commitPreparedUpload(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

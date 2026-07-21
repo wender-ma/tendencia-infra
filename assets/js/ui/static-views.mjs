@@ -8,6 +8,7 @@ import projectionControlMarkup from '../../views/tabs/projection-control.html?ra
 import projectionMarkup from '../../views/tabs/projection.html?raw';
 import uploadsMarkup from '../../views/tabs/uploads.html?raw';
 import dialogsMarkup from '../../views/dialogs.html?raw';
+import { parseLocalMarkup } from './dom.mjs';
 
 const STATIC_VIEWS = Object.freeze([
   ['tab-visao', overviewMarkup],
@@ -21,11 +22,6 @@ const STATIC_VIEWS = Object.freeze([
   ['tab-manual', manualMarkup],
   ['dialogMount', dialogsMarkup],
 ]);
-
-function parseLocalMarkup(markup) {
-  const parsed = new DOMParser().parseFromString(markup, 'text/html');
-  return [...parsed.body.childNodes].map((node) => document.importNode(node, true));
-}
 
 export function mountStaticViews(root = document) {
   for (const [targetId, markup] of STATIC_VIEWS) {

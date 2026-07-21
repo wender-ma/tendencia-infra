@@ -15,7 +15,10 @@ function loadProjectSources() {
     .sort()
     .map(file => fs.readFileSync(path.join(viewDirectory, file), 'utf8'));
   const html = [readProjectFile('index.html'), readProjectFile('assets/views/dialogs.html'), ...viewMarkup].join('\n');
-  const javascript = readProjectFile('assets/js/dashboard-legacy.js');
+  const javascript = [
+    readProjectFile('assets/js/dashboard-legacy.js'),
+    readProjectFile('assets/js/ui/uploads.mjs'),
+  ].join('\n');
   return {
     root,
     html,

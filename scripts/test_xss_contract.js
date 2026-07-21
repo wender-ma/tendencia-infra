@@ -9,6 +9,8 @@ const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
 );
+const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
+const securitySurface = `${legacy}\n${uploadUi}`;
 const modularSources = [
   'assets/js/bootstrap.js',
   'assets/js/config.js',
@@ -44,10 +46,10 @@ for (const escapedExternalValue of [
   'escHtml(r.nome_arquivo)',
   'escAttr(cleanStoragePath)',
 ]) {
-  assert(legacy.includes(escapedExternalValue), `Escape ausente em superfície externa: ${escapedExternalValue}`);
+  assert(securitySurface.includes(escapedExternalValue), `Escape ausente em superfície externa: ${escapedExternalValue}`);
 }
 
-assert(!/\.innerHTML\s*=\s*(?:error|message|msg|e\.message|err\.message)\b/.test(legacy), 'Erro externo atribuído diretamente a innerHTML');
+assert(!/\.innerHTML\s*=\s*(?:error|message|msg|e\.message|err\.message)\b/.test(securitySurface), 'Erro externo atribuído diretamente a innerHTML');
 assert(legacy.includes('function escHtml('), 'Codificador de texto HTML ausente');
 assert(legacy.includes('function escAttr('), 'Codificador de atributos ausente');
 assert(uploadRepository.includes('function sanitizeStoragePath('), 'Sanitização de caminho de Storage ausente');

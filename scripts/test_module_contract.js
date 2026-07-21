@@ -8,10 +8,12 @@ const config = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
 const projectionCatalog = fs.readFileSync(path.join(root, 'assets/js/data/projection-catalog.mjs'), 'utf8');
 const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.mjs'), 'utf8');
+const domUi = fs.readFileSync(path.join(root, 'assets/js/ui/dom.mjs'), 'utf8');
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
 );
+const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 
@@ -34,7 +36,7 @@ assert(config.includes('Object.freeze({'), 'Configuracoes precisam ser imutaveis
 assert(staticViews.includes("from '../../views/tabs/overview.html?raw'"), 'Aba de visão geral não foi externalizada');
 assert(staticViews.includes("from '../../views/dialogs.html?raw'"), 'Diálogos estáticos não foram externalizados');
 assert(staticViews.includes('export function mountStaticViews'), 'Montagem das abas estáticas ausente');
-assert(staticViews.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
+assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
   'export function createUploadRepository',
@@ -45,6 +47,16 @@ for (const repositoryContract of [
 ]) {
   assert(uploadRepository.includes(repositoryContract), `Contrato do repositório de uploads ausente: ${repositoryContract}`);
 }
+for (const uploadUiContract of [
+  'export function installLegacyUploadUI',
+  'function handleUpload(',
+  'async function handleExcelUpload(',
+  'function renderUploadsCentral(',
+  'function renderSourcesHeaders(',
+]) {
+  assert(uploadUi.includes(uploadUiContract), `Contrato da interface de uploads ausente: ${uploadUiContract}`);
+}
+assert(!uploadUi.includes('.innerHTML'), 'Interface de uploads não pode montar HTML sem parser');
 
 for (const catalogContract of [
   'export const PROJECTION_CATALOG',
@@ -93,6 +105,9 @@ for (const removedLegacyContract of [
   'async function supaCreateUploadRecord(',
   'async function supaUploadFile(',
   'async function supaLoadUploadsLatest(',
+  'function handleUpload(',
+  'async function handleExcelUpload(',
+  'function renderUploadsCentral(',
 ]) {
   assert(!legacy.includes(removedLegacyContract), `Responsabilidade ainda presente no legado: ${removedLegacyContract}`);
 }

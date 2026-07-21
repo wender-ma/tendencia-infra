@@ -195,7 +195,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Gerar assets minificados e com hash (CSS e bootstrap concluídos; script legado externo recebe hash, mas ainda não é minificado).
 - [x] Remover scripts bloqueantes do `head`.
 - [x] Externalizar favicon e logo em arquivos otimizados.
-- [ ] Configurar Content Security Policy sem `unsafe-inline`.
+- [ ] Configurar Content Security Policy sem `unsafe-inline` (scripts já restritos a `self`; estilos inline do legado/ApexCharts ainda impedem a conclusão).
 - [x] Configurar headers de segurança adequados ao ambiente de hospedagem.
 
 ### 11. Melhorar performance
@@ -303,3 +303,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | SheetJS retirado do boot e carregado sob demanda, mantendo gráficos com descarte antes do redesenho | `dependency-service.mjs` |
 | 21/07/2026 | Leitura de arquivos com percentual e parsing/conversão de Excel movidos para Web Worker | `excel-service.mjs` |
 | 21/07/2026 | Handlers inline removidos do HTML e dos templates; ações de interface centralizadas por delegação | `ui/actions.mjs` |
+| 21/07/2026 | CSP aplicada com scripts locais e conexões limitadas ao Supabase; exceção temporária mantida somente para estilos inline | `public/_headers` |

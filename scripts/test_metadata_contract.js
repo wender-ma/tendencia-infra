@@ -25,6 +25,11 @@ for (const header of [
 }
 assert(headers.includes('max-age=31536000, immutable'), 'Cache imutável de assets ausente');
 assert(headers.includes('/index.html\n  Cache-Control: no-cache'), 'HTML precisa revalidar cache');
+const cspLine = headers.split('\n').find(line => line.includes('Content-Security-Policy:')) || '';
+assert(cspLine.includes("script-src 'self'"), 'CSP deve aceitar scripts somente da própria origem');
+assert(cspLine.includes("script-src-attr 'none'"), 'CSP deve bloquear atributos JavaScript');
+assert(cspLine.includes('https://*.supabase.co'), 'CSP deve permitir a API do Supabase');
+assert(!/script-src[^;]*unsafe-inline/.test(cspLine), 'CSP não pode liberar JavaScript inline');
 assert(vercel.buildCommand === 'npm run build' && vercel.outputDirectory === 'dist', 'Build da Vercel incorreto');
 const vercelHeaderNames = vercel.headers.flatMap(rule => rule.headers.map(header => header.key));
 for (const headerName of [
@@ -33,6 +38,7 @@ for (const headerName of [
   'Referrer-Policy',
   'Permissions-Policy',
   'Cross-Origin-Opener-Policy',
+  'Content-Security-Policy',
 ]) {
   assert(vercelHeaderNames.includes(headerName), `Header ausente na Vercel: ${headerName}`);
 }

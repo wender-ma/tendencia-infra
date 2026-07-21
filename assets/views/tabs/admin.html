@@ -1,6 +1,6 @@
 <div class="card">
     <h2>⚙️ Administração <span class="hint">só visível para admin geral</span></h2>
-    <p style="font-size:12.5px; color:var(--text-medium); margin: 8px 0 12px;">
+    <p class="admin-intro">
       Gerenciar o catálogo de obras e a lista de editores permitidos.
       Todas as alterações são compartilhadas com toda a equipe em tempo real.
     </p>
@@ -10,10 +10,10 @@
   <div class="card">
     <h2>🔔 Cadastros aguardando aprovação <span class="hint" id="pendentesCount"></span>
       <span class="panel-actions">
-        <button class="btn-sm" data-click-action="renderPendentesAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
+        <button class="btn-sm" data-click-action="renderPendentesAdmin" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
       </span>
     </h2>
-    <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
+    <p class="admin-help">
       Usuários que criaram conta pelo botão "Criar conta" e ainda não têm permissão de edição.<br>
       <strong>Aprovar</strong> = vira editor sem obras (defina depois em Editores via 🏗️). <strong>Rejeitar</strong> = nega acesso permanente.
     </p>
@@ -24,12 +24,12 @@
             <th>Email</th>
             <th>Nome</th>
             <th>Observação</th>
-            <th style="width:150px;">Cadastrado em</th>
-            <th style="width:200px;">Ações</th>
+            <th class="table-col-150">Cadastrado em</th>
+            <th class="table-col-200">Ações</th>
           </tr>
         </thead>
         <tbody id="pendentesAdminTbody" aria-live="polite">
-          <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>
+          <tr><td colspan="5" class="table-empty">carregando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -39,11 +39,11 @@
   <div class="card">
     <h2>🏗️ Obras
       <span class="panel-actions">
-        <button class="btn-sm primary" data-click-action="openObraForm" style="font-size:12px;">➕ Nova obra</button>
-        <button class="btn-sm" data-click-action="renderObrasAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar obras">🔄</button>
+        <button class="btn-sm primary" data-click-action="openObraForm">➕ Nova obra</button>
+        <button class="btn-sm" data-click-action="renderObrasAdmin" title="Recarregar do Supabase" aria-label="Recarregar obras">🔄</button>
       </span>
     </h2>
-    <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
+    <p class="admin-help">
       Obras <strong>inativas</strong> ficam fora do dropdown do header (dados históricos preservados).<br>
       Coluna <strong>Origem</strong>: <span class="badge purple">✍️ Manual</span> = criada aqui, pode ser deletada (🗑️).
       <span class="badge gray">📥 Upload</span> = veio de arquivo de Gestões, só pode desativar.
@@ -52,17 +52,17 @@
       <table>
         <thead>
           <tr>
-            <th style="width:120px;">Código</th>
+            <th class="table-col-120">Código</th>
             <th>Nome</th>
-            <th style="width:140px;">Key EmpObraTD</th>
-            <th style="width:100px;">Origem</th>
-            <th style="width:100px;">Ativa</th>
-            <th style="width:140px;">Criada em</th>
-            <th style="width:190px;">Ações</th>
+            <th class="table-col-140">Key EmpObraTD</th>
+            <th class="table-col-100">Origem</th>
+            <th class="table-col-100">Ativa</th>
+            <th class="table-col-140">Criada em</th>
+            <th class="table-col-190">Ações</th>
           </tr>
         </thead>
         <tbody id="obrasAdminTbody" aria-live="polite">
-          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>
+          <tr><td colspan="7" class="table-empty">carregando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -72,11 +72,11 @@
   <div class="card">
     <h2>👥 Editores permitidos
       <span class="panel-actions">
-        <button class="btn-sm primary" data-click-action="openEditorForm" style="font-size:12px;">➕ Adicionar editor</button>
-        <button class="btn-sm" data-click-action="renderEditoresAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar editores">🔄</button>
+        <button class="btn-sm primary" data-click-action="openEditorForm">➕ Adicionar editor</button>
+        <button class="btn-sm" data-click-action="renderEditoresAdmin" title="Recarregar do Supabase" aria-label="Recarregar editores">🔄</button>
       </span>
     </h2>
-    <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
+    <p class="admin-help">
       💡 <strong>Admin</strong> (👑) gerencia obras, aprova cadastros e edita dados de qualquer obra.<br>
       <strong>Editor</strong> (✏️) edita só as obras marcadas na coluna "Obra". Editor sem obra atribuída não edita nada (⚠️).<br>
       Use ⬆️/⬇️ para alternar admin↔editor · 🏗️ para escolher obras do editor (checkbox) · 🗑️ para remover totalmente.
@@ -87,15 +87,15 @@
           <tr>
             <th>Email</th>
             <th>Nome</th>
-            <th style="width:100px;">Papel</th>
-            <th style="width:200px;">Obra</th>
+            <th class="table-col-100">Papel</th>
+            <th class="table-col-200">Obra</th>
             <th>Observação</th>
-            <th style="width:140px;">Adicionado em</th>
-            <th style="width:110px;">Ações</th>
+            <th class="table-col-140">Adicionado em</th>
+            <th class="table-col-110">Ações</th>
           </tr>
         </thead>
         <tbody id="editoresAdminTbody" aria-live="polite">
-          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>
+          <tr><td colspan="7" class="table-empty">carregando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -113,7 +113,7 @@
           <div class="field-help">Formato Key_planejamento (ex: <code>42-21O</code>, sem zero à esquerda). Imutável após criar.</div>
         </div>
         <div>
-          <label for="obraFormNome" class="field-label">Nome da obra <span style="color:var(--sem-erro);">*</span></label>
+          <label for="obraFormNome" class="field-label">Nome da obra <span class="required-mark">*</span></label>
           <input type="text" id="obraFormNome" required placeholder="ex: Jardins Zurique" class="field-control">
         </div>
         <div>
@@ -145,7 +145,7 @@
 
       <div class="form-stack">
         <div>
-          <label for="editorFormEmail" class="field-label">Email <span style="color:var(--sem-erro);">*</span></label>
+          <label for="editorFormEmail" class="field-label">Email <span class="required-mark">*</span></label>
           <input type="email" id="editorFormEmail" required placeholder="fulano@empresa.com" class="field-control">
           <div class="field-help">Precisa ser o email do Google/cadastro que a pessoa usa pra logar.</div>
         </div>
@@ -162,15 +162,15 @@
           <div id="editorFormRoleLabel" class="field-label">Papel</div>
           <div class="radio-group" role="radiogroup" aria-labelledby="editorFormRoleLabel">
             <label class="radio-option">
-              <input type="radio" name="editorFormRole" value="editor" data-change-action="editorFormOnRoleChange" style="cursor:pointer;">
+              <input type="radio" name="editorFormRole" value="editor" data-change-action="editorFormOnRoleChange">
               <span>✏️ <strong>Editor</strong></span>
             </label>
             <label class="radio-option">
-              <input type="radio" name="editorFormRole" value="admin" data-change-action="editorFormOnRoleChange" style="cursor:pointer;">
+              <input type="radio" name="editorFormRole" value="admin" data-change-action="editorFormOnRoleChange">
               <span>👑 <strong>Admin</strong></span>
             </label>
           </div>
-          <div style="font-size:11px; color:var(--text-soft); margin-top:6px;">
+          <div class="admin-role-help">
             <strong>Admin</strong> gerencia obras, aprova cadastros e edita todas as obras.<br>
             <strong>Editor</strong> edita só as obras marcadas abaixo.
           </div>
@@ -178,19 +178,19 @@
 
         <div id="editorFormObrasBlock">
           <div id="editorFormObrasLabel" class="field-label">Obras que pode editar</div>
-          <div style="display:flex; gap:6px; margin:6px 0;">
-            <button type="button" class="btn-sm" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="true" style="font-size:11px;">✅ Todas</button>
-            <button type="button" class="btn-sm" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="false" style="font-size:11px;">◻️ Nenhuma</button>
+          <div class="admin-project-actions">
+            <button type="button" class="btn-sm compact" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="true">✅ Todas</button>
+            <button type="button" class="btn-sm compact" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="false">◻️ Nenhuma</button>
           </div>
           <div id="editorObrasCheckboxes" class="editor-project-list" role="group" aria-labelledby="editorFormObrasLabel">
             <!-- checkboxes populados dinamicamente -->
           </div>
-          <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">Editor sem obra atribuída não consegue alterar nada (fica cadastrado no sistema).</div>
+          <div class="admin-project-note">Editor sem obra atribuída não consegue alterar nada (fica cadastrado no sistema).</div>
         </div>
       </div>
 
       <div class="dialog-actions dialog-actions--split">
-        <button type="button" id="editorFormDeleteBtn" class="btn-sm" data-click-action="excluirUsuarioDoModal" style="font-size:12px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
+        <button type="button" id="editorFormDeleteBtn" class="btn-sm danger-soft" data-click-action="excluirUsuarioDoModal" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
         <div class="action-group">
           <button type="button" class="btn-sm" data-click-action="closeEditorForm">Cancelar</button>
           <button type="submit" class="btn-sm primary">💾 Salvar</button>

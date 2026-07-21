@@ -258,6 +258,7 @@
   textarea.field-control { min-height: 60px; resize: vertical; }
   .radio-group { display: flex; gap: 16px; margin-top: 6px; }
   .radio-option { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .radio-option input { cursor: pointer; }
   .editor-project-list {
     display: grid;
     gap: 4px;
@@ -840,6 +841,31 @@ body:not(.is-admin-geral) [data-admin-control],
 }
 .manual-source-table td { padding: 6px; }
 .manual-tips { margin-left: 24px; color: var(--text-medium); font-size: 12.5px; }
+
+/* Administração */
+.admin-intro { margin: 8px 0 12px; color: var(--text-medium); font-size: 12.5px; }
+.admin-help { margin-bottom: 8px; color: var(--text-soft); font-size: 12px; }
+.admin-role-help { margin-top: 6px; color: var(--text-soft); font-size: 11px; }
+.admin-project-actions { display: flex; gap: 6px; margin: 6px 0; }
+.admin-project-note { margin-top: 4px; color: var(--text-soft); font-size: 11px; }
+.table-empty { padding: 20px; color: var(--text-lighter); text-align: center; }
+.table-col-50 { width: 50px; }
+.table-col-90 { width: 90px; }
+.table-col-100 { width: 100px; }
+.table-col-110 { width: 110px; }
+.table-col-120 { width: 120px; }
+.table-col-130 { width: 130px; }
+.table-col-140 { width: 140px; }
+.table-col-150 { width: 150px; }
+.table-col-170 { width: 170px; }
+.table-col-180 { width: 180px; }
+.table-col-190 { width: 190px; }
+.table-col-200 { width: 200px; }
+.btn-sm.danger-soft {
+  border-color: var(--sem-erro);
+  background: var(--fgr-red-light);
+  color: var(--sem-erro);
+}
 
 @media (max-width: 900px) {
   .header { flex-wrap: wrap; }

@@ -21,6 +21,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     && typeof window.handleAuthClick === 'function'
     && window.AppState === window.dashboardState
     && window.AUTH?.ready === true
+    && window.dashboardPerformance?.snapshot().boot.completed === true
   ));
 
   const runtime = await page.evaluate(async () => {
@@ -28,6 +29,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const parserService = window.dashboardServices.parsers;
     const feedbackService = window.dashboardServices.feedback;
     const modalService = window.dashboardServices.modals;
+    const performanceService = window.dashboardServices.performance;
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
@@ -82,6 +84,11 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       ),
       hasFeedbackService: toastUsesText && loadingShown && loadingHidden,
       hasModalService: confirmUsesText && confirmResult === false,
+      hasPerformanceService: (
+        performanceService === window.dashboardPerformance
+        && performanceService.snapshot().boot.domNodes > 0
+        && performanceService.snapshot().operations['render:visao']?.count >= 1
+      ),
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -110,6 +117,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasParserService: true,
     hasFeedbackService: true,
     hasModalService: true,
+    hasPerformanceService: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {
@@ -126,4 +134,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   expect(runtime.status).not.toBe('Falha ao iniciar');
   expect(pageErrors).toEqual([]);
   expect(failedLocalAssets).toEqual([]);
+
+  await page.getByRole('tab', { name: /Flows \/ Aditivos/ }).click();
+  await expect(page.locator('#tab-flows')).toHaveClass(/active/);
+  await expect(page.locator('#tab-btn-flows')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#flowTbody')).toBeAttached();
 });

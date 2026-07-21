@@ -30,6 +30,7 @@ Dashboard de tendência orçamentária
 - `assets/js/bootstrap.js`: carrega Supabase, SheetJS e ApexCharts pelos pacotes locais antes de iniciar o dashboard.
 - `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
 - `assets/js/state.js`: estado compartilhado de dados, obra ativa, filtros, uploads e preferências.
+- `assets/js/performance.mjs`: métricas locais de boot, DOM, parsing e renderização.
 - `assets/js/parsers/`: parsers testáveis de Tendência, Flows e Gestões e normalizadores compartilhados.
 - `assets/js/ui/`: serviços compartilhados de feedback, loading e modais acessíveis.
 - `public/_headers`: headers defensivos e política de cache para hospedagem estática compatível.

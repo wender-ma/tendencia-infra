@@ -30,21 +30,24 @@ function persistTendencyEvolution(target, state, evolution) {
     ));
 }
 
-export function installLegacyImportParsers({ state, config, target = window }) {
+export function installLegacyImportParsers({ state, config, monitor, target = window }) {
   const reports = { tendencia: null, flows: null, gestoes: null };
+  const measured = (name, operation) => (
+    monitor ? monitor.measure(`parse:${name}`, operation) : operation()
+  );
 
   const service = Object.freeze({
     parseNumber,
-    parseTendencia: (text, options = {}) => parseTendenciaFile(text, {
+    parseTendencia: (text, options = {}) => measured('tendencia', () => parseTendenciaFile(text, {
       correctionIndex: options.correctionIndex ?? state.config.correcaoIndice,
       groups: options.groups ?? config.grupos_map,
-    }),
-    parseFlows: (text, options = {}) => parseFlowsFile(text, {
+    })),
+    parseFlows: (text, options = {}) => measured('flows', () => parseFlowsFile(text, {
       projects: options.projects ?? state.obra.obras,
       descriptionLimit: options.descriptionLimit ?? config.max_descricao_flow,
       justificationLimit: options.justificationLimit ?? config.max_justificativa_flow,
-    }),
-    parseGestoes: parseGestoesFile,
+    })),
+    parseGestoes: text => measured('gestoes', () => parseGestoesFile(text)),
   });
 
   Object.assign(target, {

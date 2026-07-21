@@ -1,6 +1,7 @@
 import dashboardUrl from './dashboard-legacy.js?url';
 import { DASHBOARD_CONFIG, installLegacyConfig, SUPABASE_CONFIG } from './config.js';
 import { installLegacyImportParsers } from './parsers/index.mjs';
+import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
@@ -31,7 +32,13 @@ function showBootstrapError(error) {
 installLegacyConfig();
 const appState = createAppState();
 installLegacyStateGlobals(appState);
-const parserService = installLegacyImportParsers({ state: appState, config: DASHBOARD_CONFIG });
+const performanceService = createPerformanceMonitor();
+installPerformanceMonitor(performanceService);
+const parserService = installLegacyImportParsers({
+  state: appState,
+  config: DASHBOARD_CONFIG,
+  monitor: performanceService,
+});
 const feedbackService = createFeedbackService();
 installLegacyFeedbackGlobals(feedbackService);
 const modalService = createModalService();
@@ -54,6 +61,7 @@ Promise.all([import('xlsx'), import('apexcharts')])
       parsers: parserService,
       feedback: feedbackService,
       modals: modalService,
+      performance: performanceService,
     });
     window.XLSX = xlsxModule;
     window.ApexCharts = apexchartsModule.default;

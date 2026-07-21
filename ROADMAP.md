@@ -204,12 +204,12 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Evitar carregar todas as classificações de todas as obras no boot.
 - [ ] Retirar datasets grandes de `dashboard_config`.
 - [ ] Avaliar tabelas normalizadas ou JSON versionado no Storage.
-- [ ] Renderizar somente a aba ativa.
-- [ ] Evitar `renderAll()` após pequenas alterações.
+- [x] Renderizar somente a aba ativa.
+- [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [ ] Paginar ou virtualizar tabelas grandes.
 - [ ] Processar Excel em Web Worker.
 - [ ] Revisar o limite de upload de 50 MB com medições reais.
-- [ ] Medir tempo de boot, tempo de parsing e quantidade de nós no DOM.
+- [x] Medir tempo de boot, tempo de parsing/renderização e quantidade de nós no DOM.
 - [ ] Manter o descarte de instâncias ApexCharts antes de redesenhar.
 
 ### 12. Fortalecer os parsers
@@ -291,3 +291,5 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Parsers de Tendência, Flows e Gestões extraídos; layouts por cabeçalho, CSV robusto, relatórios e testes unitários adicionados | `assets/js/parsers/` |
 | 21/07/2026 | Feedback, loading e pilha de modais extraídos; confirmação dinâmica passou a usar APIs DOM seguras | `assets/js/ui/` |
 | 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados | `public/_headers` |
+| 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão | `renderAll()` |
+| 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba | `assets/js/performance.mjs` |

@@ -2294,9 +2294,7 @@ function activateTab(tab) {
   });
 
   salvarAbaAtiva(tab.dataset.tab);
-  if (tab.dataset.tab === 'projecao_ctrl' && typeof initProjCtrl === 'function') {
-    initProjCtrl();
-  }
+  if (typeof renderTab === 'function') renderTab(tab.dataset.tab);
   if (tab.dataset.tab === 'admin') {
     if (typeof renderPendentesAdmin === 'function') renderPendentesAdmin();
     if (typeof renderObrasAdmin === 'function') renderObrasAdmin();
@@ -8238,7 +8236,9 @@ const debouncedHistHeatmap = debounce(renderHistHeatmap, 300);
 // ============ OTIMIZAÇÕES DE RENDERIZAÇÃO ============
 // Função para renderizar apenas a aba ativa (evita re-renderizar todas as abas)
 function renderTab(tabName) {
-  switch(tabName) {
+  const startedAt = performance.now();
+  try {
+    switch(tabName) {
     case 'visao':
       renderVisao();
       break;
@@ -8254,6 +8254,8 @@ function renderTab(tabName) {
     case 'projecao':
       if (PROJ_RAW && PROJ_RAW.length) {
         try { renderProjecao(); } catch(e) { console.warn('renderProjecao err:', e); }
+      } else {
+        initProjecao();
       }
       break;
     case 'projecao_ctrl':
@@ -8263,7 +8265,10 @@ function renderTab(tabName) {
       renderUploadsCentral();
       renderSourcesHeaders();
       break;
-    // Admin e Manual não precisam de re-renderização
+      // Admin e Manual não precisam de re-renderização
+    }
+  } finally {
+    dashboardPerformance?.record(`render:${tabName}`, performance.now() - startedAt);
   }
 }
 
@@ -8280,25 +8285,16 @@ function debouncedRender(tabName) {
   }, CONFIG.debounce_render);
 }
 
-// Função principal de renderização (mantida para compatibilidade)
+function getActiveTabName() {
+  return document.querySelector('.tab.active')?.dataset.tab || 'visao';
+}
+
+// Atualiza estruturas compartilhadas e renderiza somente a aba visível.
 function renderAll() {
   buildLinks();
   populateFilters();
-  renderVisao();
-  renderTable();
-  renderFlows();
-  renderHistorico();
-  // v0.57 FIX: initProjecao só inicializa filtros; se já foi inicializado, chamar renderProjecao direto
-  if (PROJ_RAW && PROJ_RAW.length) {
-    initProjecao();  // popula filtros na 1ª vez
-    try { renderProjecao(); } catch(e) { console.warn('renderProjecao err:', e); }
-  } else {
-    initProjecao(); // mostra estado vazio se sem dados
-  }
-  initProjCtrl();
-  // cabeçalhos de fontes + central de uploads
   try { renderSourcesHeaders(); } catch(e) { reportNonFatalError('Boot/renderizar fontes', e); }
-  try { renderUploadsCentral();  } catch(e) { reportNonFatalError('Boot/renderizar uploads', e); }
+  renderTab(getActiveTabName());
 }
 
 document.getElementById('now').textContent = new Date().toLocaleString('pt-BR');
@@ -8355,6 +8351,7 @@ updateSupaBadge();
   // Restaurar aba ativa e filtros salvos
   restaurarAbaAtiva();
   restaurarFiltros();
+  dashboardPerformance?.completeBoot();
 })();
 
 // ============================================================================

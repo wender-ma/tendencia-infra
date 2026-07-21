@@ -5,6 +5,10 @@ let reportNonFatalError;
 let renderAll;
 let SafeStorage;
 let trocarObra;
+let authToast;
+let confirmModal;
+let openModalLayer;
+let closeModalLayer;
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -781,11 +785,18 @@ async function rejeitarPendente(email) {
   }
 }
 
-export function installLegacyAdminView({ runtime, storage, projectController }, target = window) {
+export function installLegacyAdminView(
+  { runtime, storage, projectController, feedback, modals },
+  target = window,
+) {
   reportNonFatalError = runtime.reportNonFatalError;
   renderAll = runtime.renderAll;
   SafeStorage = storage;
   trocarObra = projectController.trocarObra;
+  authToast = feedback.toast;
+  confirmModal = modals.confirm;
+  openModalLayer = modals.openLayer;
+  closeModalLayer = modals.closeLayer;
   Object.assign(target, {
     renderObrasAdmin,
     renderEditoresAdmin,

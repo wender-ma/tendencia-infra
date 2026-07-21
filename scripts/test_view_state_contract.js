@@ -17,25 +17,46 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(moduleSource.includes('export function createViewStateService'), 'Factory de estados ausente');
+assert(
+  moduleSource.includes('export function createViewStateService'),
+  'Factory de estados ausente',
+);
 assert(moduleSource.includes('textContent = title'), 'Título do estado deve usar textContent');
 assert(moduleSource.includes('textContent = message'), 'Mensagem do estado deve usar textContent');
-assert(moduleSource.includes("kind === 'error' ? 'alert' : 'status'"), 'Semântica de status/erro ausente');
-assert(bootstrap.includes('installLegacyViewStateGlobals(viewStateService)'), 'Estado não instalado no bootstrap');
-assert(bootstrap.includes('viewStates: viewStateService'), 'Serviço de estado não publicado');
+assert(
+  moduleSource.includes("kind === 'error' ? 'alert' : 'status'"),
+  'Semântica de status/erro ausente',
+);
+assert(
+  !bootstrap.includes('installLegacyViewStateGlobals'),
+  'Estado visual voltou a ser instalado globalmente',
+);
+assert(
+  bootstrap.includes('viewStates: viewStateService'),
+  'Estado visual não foi injetado nas views',
+);
 assert(!fs.existsSync(legacyPath), 'Coordenador legado voltou ao projeto');
 
 const movementTable = projectionControlView.slice(
   projectionControlView.indexOf('function renderMovTable('),
   projectionControlView.indexOf('function clearMovFilters('),
 );
-assert(!movementTable.includes('historyPage'), 'Tabela de movimentações contém paginação do histórico');
-assert(!movementTable.includes('compare'), 'Tabela de movimentações depende de filtro do histórico');
+assert(
+  !movementTable.includes('historyPage'),
+  'Tabela de movimentações contém paginação do histórico',
+);
+assert(
+  !movementTable.includes('compare'),
+  'Tabela de movimentações depende de filtro do histórico',
+);
 
 const historyHeatmap = historyView.slice(
   historyView.indexOf('function renderHistHeatmap('),
   historyView.indexOf('export function installLegacyHistoryView'),
 );
-assert(historyHeatmap.indexOf('const historyPage') < historyHeatmap.indexOf('historyPage.items'), 'Página do histórico deve ser criada antes do uso');
+assert(
+  historyHeatmap.indexOf('const historyPage') < historyHeatmap.indexOf('historyPage.items'),
+  'Página do histórico deve ser criada antes do uso',
+);
 
 console.log('Contrato de estados: componente seguro, integração e regressões de paginação OK');

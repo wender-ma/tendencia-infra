@@ -7,6 +7,10 @@ let debouncedRender;
 let readExcelBuffer;
 let readExcelFile;
 let validateUploadFile;
+let authToast;
+let openModal;
+let closeModal;
+let confirmModal;
 
 const MANUAL_TEXT = {
   tendencia:
@@ -1176,13 +1180,20 @@ function renderSourcesHeaders() {
   });
 }
 
-export function installLegacyUploadUI({ runtime, excel, validateUpload }, target = window) {
+export function installLegacyUploadUI(
+  { runtime, excel, validateUpload, feedback, modals },
+  target = window,
+) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   debouncedRender = runtime.debouncedRender;
   readExcelBuffer = excel.parseBuffer;
   readExcelFile = excel.parseFile;
   validateUploadFile = validateUpload;
+  authToast = feedback.toast;
+  openModal = modals.open;
+  closeModal = modals.close;
+  confirmModal = modals.confirm;
   Object.assign(target, {
     MANUAL_TEXT,
     renderUploadsCentral,

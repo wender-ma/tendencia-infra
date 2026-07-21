@@ -3,11 +3,10 @@ import { DASHBOARD_CONFIG, installLegacyConfig, STORAGE_KEYS, SUPABASE_CONFIG } 
 import { installLegacyProjectionCatalog } from './data/projection-catalog.mjs';
 import { installLegacyImportParsers } from './parsers/index.mjs';
 import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
-import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
-import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
+import { createFeedbackService } from './ui/feedback.mjs';
+import { createModalService } from './ui/modals.mjs';
 import { createActionRegistry, installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
-import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
 import { createDashboardRuntime, formatNumber } from './ui/dashboard-runtime.mjs';
 import {
@@ -16,7 +15,7 @@ import {
 } from './ui/project-controller.mjs';
 import { createUploadMaintenance } from './ui/upload-maintenance.mjs';
 import { createPaginationService } from './ui/pagination.mjs';
-import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
+import { createViewStateService } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
@@ -66,7 +65,6 @@ function showBootstrapError(error) {
 }
 
 mountStaticViews();
-installLegacyDomGlobals();
 installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();
@@ -92,7 +90,6 @@ const parserService = installLegacyImportParsers({
   reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
 });
 const feedbackService = createFeedbackService();
-installLegacyFeedbackGlobals(feedbackService);
 const storageService = createSafeStorage({
   storage: (() => {
     try {
@@ -110,15 +107,13 @@ const storageService = createSafeStorage({
       5000,
     ),
 });
-const modalService = createModalService();
-installLegacyModalGlobals(modalService);
+const modalService = createModalService({ resolveAction: (name) => actionRegistry.resolve(name) });
 actionRegistry.register({
   closeModal: modalService.close,
   closeConfirmModal: modalService.closeConfirm,
 });
 const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.table_page_size });
 const viewStateService = createViewStateService();
-installLegacyViewStateGlobals(viewStateService);
 const uploadRepository = createUploadRepository({
   getClient: () => supabaseService.client,
   getActiveProject: () => window.OBRA_ATIVA,
@@ -148,7 +143,7 @@ const dashboardExportService = createDashboardExportService({
     project: window.getObraInfo?.(window.OBRA_ATIVA) || null,
     auth: window.AUTH || {},
   }),
-  toast: (...args) => window.authToast?.(...args),
+  toast: (...args) => feedbackService.toast(...args),
   reportError: (context, error) => logger.warn(context, error),
 });
 actionRegistry.register(createDashboardExportActions(dashboardExportService));
@@ -314,13 +309,20 @@ Promise.resolve()
       import('./ui/views/projection-control.mjs'),
     ]);
     actionRegistry.register(
-      installLegacyFlowEditor({ runtime: dashboardRuntime, storage: storageService }),
+      installLegacyFlowEditor({
+        runtime: dashboardRuntime,
+        storage: storageService,
+        feedback: feedbackService,
+        modals: modalService,
+      }),
     );
     actionRegistry.register(
       installLegacyUploadUI({
         runtime: dashboardRuntime,
         excel: excelService,
         validateUpload: validateUploadFile,
+        feedback: feedbackService,
+        modals: modalService,
       }),
     );
     actionRegistry.register(
@@ -328,27 +330,52 @@ Promise.resolve()
         runtime: dashboardRuntime,
         storage: storageService,
         projectController,
+        feedback: feedbackService,
+        modals: modalService,
       }),
     );
-    installLegacyDetailsView({ runtime: dashboardRuntime, pagination: paginationService });
+    installLegacyDetailsView({
+      runtime: dashboardRuntime,
+      pagination: paginationService,
+      viewStates: viewStateService,
+      modals: modalService,
+    });
     actionRegistry.register(
       installLegacyFlowsView({
         runtime: dashboardRuntime,
         pagination: paginationService,
         storage: storageService,
+        viewStates: viewStateService,
       }),
     );
-    installLegacyHistoryView({ runtime: dashboardRuntime, pagination: paginationService });
+    installLegacyHistoryView({
+      runtime: dashboardRuntime,
+      pagination: paginationService,
+      viewStates: viewStateService,
+    });
     actionRegistry.register(
-      installLegacyOverviewView({ runtime: dashboardRuntime, storage: storageService }),
+      installLegacyOverviewView({
+        runtime: dashboardRuntime,
+        storage: storageService,
+        viewStates: viewStateService,
+      }),
     );
     actionRegistry.register(
-      installLegacyProjectionView({ runtime: dashboardRuntime, loadXlsx: ensureXlsx }),
+      installLegacyProjectionView({
+        runtime: dashboardRuntime,
+        loadXlsx: ensureXlsx,
+        feedback: feedbackService,
+        modals: modalService,
+        viewStates: viewStateService,
+      }),
     );
     actionRegistry.register(
       installLegacyProjectionControlView({
         runtime: dashboardRuntime,
         storage: storageService,
+        feedback: feedbackService,
+        modals: modalService,
+        viewStates: viewStateService,
       }),
     );
 

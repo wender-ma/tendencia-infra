@@ -12,6 +12,11 @@ let resolveColor;
 let renderApexChart;
 let getFlowsObraAtiva;
 let SafeStorage;
+let authToast;
+let openModal;
+let closeModal;
+let confirmModal;
+let renderDashboardState;
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
@@ -799,12 +804,20 @@ async function deleteMov(id) {
   renderProjCtrl();
 }
 
-export function installLegacyProjectionControlView({ runtime, storage }, target = window) {
+export function installLegacyProjectionControlView(
+  { runtime, storage, feedback, modals, viewStates },
+  target = window,
+) {
   runAsyncSafely = runtime.runAsyncSafely;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
   getFlowsObraAtiva = runtime.getActiveFlows;
   SafeStorage = storage;
+  authToast = feedback.toast;
+  openModal = modals.open;
+  closeModal = modals.close;
+  confirmModal = modals.confirm;
+  renderDashboardState = viewStates.render;
   Object.defineProperty(target, 'PROJ_CTRL_STATE', {
     configurable: true,
     get: () => PROJ_CTRL_STATE,
@@ -817,7 +830,6 @@ export function installLegacyProjectionControlView({ runtime, storage }, target 
     applyLocksToUI,
     initProjCtrl,
     renderProjCtrl,
-    saveMovForm,
     editMov,
     deleteMov,
   });
@@ -828,5 +840,5 @@ export function installLegacyProjectionControlView({ runtime, storage }, target 
     if (button.dataset.action === 'edit-mov') editMov(button.dataset.id);
     if (button.dataset.action === 'delete-mov') deleteMov(button.dataset.id);
   });
-  return Object.freeze({ toggleLockCampo, clearMovFilters, openMovForm });
+  return Object.freeze({ toggleLockCampo, clearMovFilters, openMovForm, saveMovForm });
 }

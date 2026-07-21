@@ -7,6 +7,7 @@ let getFlowsObraAtiva;
 let paginateRows;
 let renderPaginationControls;
 let SafeStorage;
+let renderDashboardState;
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;
@@ -414,12 +415,16 @@ function onRefletidoChange(sel) {
   syncAllViewsFromFlows();
 }
 
-export function installLegacyFlowsView({ runtime, pagination, storage }, target = window) {
+export function installLegacyFlowsView(
+  { runtime, pagination, storage, viewStates },
+  target = window,
+) {
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
   paginateRows = pagination.paginate;
   renderPaginationControls = pagination.renderControls;
   SafeStorage = storage;
+  renderDashboardState = viewStates.render;
   Object.assign(target, {
     renderFlows,
     renderFlowTable,

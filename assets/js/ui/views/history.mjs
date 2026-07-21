@@ -15,6 +15,7 @@ let renderApexChart;
 let getHistoricoObraAtiva;
 let paginateRows;
 let renderPaginationControls;
+let renderDashboardState;
 
 const CENT_TOLERANCE = DASHBOARD_CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
@@ -395,12 +396,13 @@ function renderHistHeatmap() {
   renderPaginationControls('historyPagination', 'history', historyPage, renderHistHeatmap);
 }
 
-export function installLegacyHistoryView({ runtime, pagination }, target = window) {
+export function installLegacyHistoryView({ runtime, pagination, viewStates }, target = window) {
   uiCriarKpi = runtime.createKpi;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
   getHistoricoObraAtiva = runtime.getActiveHistory;
   paginateRows = pagination.paginate;
   renderPaginationControls = pagination.renderControls;
+  renderDashboardState = viewStates.render;
   target.renderHistorico = renderHistorico;
 }

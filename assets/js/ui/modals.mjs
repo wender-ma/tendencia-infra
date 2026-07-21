@@ -15,7 +15,11 @@ function appendTextElement(documentRef, parent, tagName, text, attributes = {}) 
   return element;
 }
 
-export function createModalService({ documentRef = document, windowRef = window } = {}) {
+export function createModalService({
+  documentRef = document,
+  windowRef = window,
+  resolveAction = () => undefined,
+} = {}) {
   const stack = [];
   let activeModal = null;
 
@@ -191,9 +195,9 @@ export function createModalService({ documentRef = document, windowRef = window 
     event.preventDefault();
     const submitter = event.submitter || form.querySelector('[type="submit"]');
     const action = submitter?.dataset.action;
-    if (action === 'save-manual') windowRef.saveManualForm?.(submitter.dataset.n);
-    else if (action === 'save-mov') windowRef.saveMovForm?.(submitter.dataset.id || '');
-    else if (action === 'mass-confirm') windowRef.massConfirmCallback?.();
+    if (action === 'save-manual') resolveAction('saveManualForm')?.(submitter.dataset.n);
+    else if (action === 'save-mov') resolveAction('saveMovForm')?.(submitter.dataset.id || '');
+    else if (action === 'mass-confirm') resolveAction('massConfirmCallback')?.();
   });
 
   return Object.freeze({
@@ -203,16 +207,5 @@ export function createModalService({ documentRef = document, windowRef = window 
     close,
     closeConfirm,
     confirm,
-  });
-}
-
-export function installLegacyModalGlobals(service, target = window) {
-  Object.assign(target, {
-    openModalLayer: service.openLayer,
-    closeModalLayer: service.closeLayer,
-    openModal: service.open,
-    closeModal: service.close,
-    closeConfirmModal: service.closeConfirm,
-    confirmModal: service.confirm,
   });
 }

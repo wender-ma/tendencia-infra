@@ -60,7 +60,3 @@ export function createViewStateService({ documentRef = document } = {}) {
 
   return Object.freeze({ render });
 }
-
-export function installLegacyViewStateGlobals(service, target = window) {
-  target.renderDashboardState = service.render;
-}

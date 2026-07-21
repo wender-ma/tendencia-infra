@@ -11,6 +11,8 @@ import {
 let reportNonFatalError;
 let paginateRows;
 let renderPaginationControls;
+let renderDashboardState;
+let openModal;
 
 // ============ DETALHAMENTO ============
 let filtersBound = false;
@@ -348,10 +350,15 @@ function renderFlowMini(f, isOrigem = false) {
     </div>`;
 }
 
-export function installLegacyDetailsView({ runtime, pagination }, target = window) {
+export function installLegacyDetailsView(
+  { runtime, pagination, viewStates, modals },
+  target = window,
+) {
   reportNonFatalError = runtime.reportNonFatalError;
   paginateRows = pagination.paginate;
   renderPaginationControls = pagination.renderControls;
+  renderDashboardState = viewStates.render;
+  openModal = modals.open;
   Object.assign(target, {
     updateSortHeaderState,
     bindSortableHeaders,

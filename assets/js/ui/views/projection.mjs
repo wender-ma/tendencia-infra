@@ -13,6 +13,9 @@ let renderApexChart;
 let getProjRawObraAtiva;
 let getFlowsObraAtiva;
 let ensureXlsx;
+let authToast;
+let openModal;
+let renderDashboardState;
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
@@ -1814,7 +1817,10 @@ function renderFlowsRefletidosSection(servico, insumo) {
   `;
 }
 
-export function installLegacyProjectionView({ runtime, loadXlsx }, target = window) {
+export function installLegacyProjectionView(
+  { runtime, loadXlsx, feedback, modals, viewStates },
+  target = window,
+) {
   reportNonFatalError = runtime.reportNonFatalError;
   uiCriarKpi = runtime.createKpi;
   resolveColor = runtime.resolveColor;
@@ -1822,6 +1828,9 @@ export function installLegacyProjectionView({ runtime, loadXlsx }, target = wind
   getProjRawObraAtiva = runtime.getActiveProjection;
   getFlowsObraAtiva = runtime.getActiveFlows;
   ensureXlsx = loadXlsx;
+  authToast = feedback.toast;
+  openModal = modals.open;
+  renderDashboardState = viewStates.render;
   Object.assign(target, {
     defaultDataCorte,
     defaultDataFim,

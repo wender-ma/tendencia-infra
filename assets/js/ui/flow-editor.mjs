@@ -8,6 +8,11 @@ let getFlowsObraAtiva;
 let buildLinks;
 let debouncedRender;
 let SafeStorage;
+let authToast;
+let openModal;
+let closeModal;
+let confirmModal;
+let massCallback;
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
@@ -893,21 +898,22 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
     </div>
     </form>
   `;
-  window._massCallback = callback;
-  window.massConfirmCallback = () => {
-    try {
-      window._massCallback();
-      closeModal();
-      renderFlowTable();
-      renderFlows();
-      // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
-      syncAllViewsFromFlows();
-    } catch (e) {
-      authToast('❌ Erro: ' + e.message, 'err', 5000);
-    }
-  };
+  massCallback = callback;
   replaceWithParsedMarkup(document.getElementById('modalContent'), html);
   openModal({ initialFocus: 'input, select, textarea' });
+}
+
+function massConfirmCallback() {
+  try {
+    massCallback?.();
+    closeModal();
+    renderFlowTable();
+    renderFlows();
+    // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
+    syncAllViewsFromFlows();
+  } catch (e) {
+    authToast('❌ Erro: ' + e.message, 'err', 5000);
+  }
 }
 
 // Limita a concorrência para não saturar a API durante edições em massa.
@@ -1340,13 +1346,17 @@ async function deleteManual(id) {
 
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
-export function installLegacyFlowEditor({ runtime, storage }, target = window) {
+export function installLegacyFlowEditor({ runtime, storage, feedback, modals }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
   buildLinks = runtime.buildLinks;
   debouncedRender = runtime.debouncedRender;
   SafeStorage = storage;
+  authToast = feedback.toast;
+  openModal = modals.open;
+  closeModal = modals.close;
+  confirmModal = modals.confirm;
   Object.assign(target, {
     loadClassifications,
     readClassificationMap,
@@ -1375,7 +1385,6 @@ export function installLegacyFlowEditor({ runtime, storage }, target = window) {
     loadManuals,
     saveManuals,
     applyManuals,
-    saveManualForm,
     deleteManual,
   });
 
@@ -1412,5 +1421,7 @@ export function installLegacyFlowEditor({ runtime, storage }, target = window) {
     massAplicarRefletido,
     onValorChange,
     openManualForm,
+    saveManualForm,
+    massConfirmCallback,
   });
 }

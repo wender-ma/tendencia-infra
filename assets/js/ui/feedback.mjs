@@ -32,11 +32,3 @@ export function createFeedbackService({ documentRef = document, windowRef = wind
     hideLoading: () => setLoading(false),
   });
 }
-
-export function installLegacyFeedbackGlobals(service, target = window) {
-  Object.assign(target, {
-    authToast: service.toast,
-    showLoading: service.showLoading,
-    hideLoading: service.hideLoading,
-  });
-}

@@ -13,6 +13,7 @@ let renderApexChart;
 let getProjRawObraAtiva;
 let getFlowsObraAtiva;
 let SafeStorage;
+let renderDashboardState;
 
 // ============ VISÃO GERAL ============
 // GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
@@ -686,7 +687,7 @@ function renderDonut(tipoSum) {
   renderApexChart('donutChart', options);
 }
 
-export function installLegacyOverviewView({ runtime, storage }, target = window) {
+export function installLegacyOverviewView({ runtime, storage, viewStates }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   resolveColor = runtime.resolveColor;
@@ -694,6 +695,7 @@ export function installLegacyOverviewView({ runtime, storage }, target = window)
   getProjRawObraAtiva = runtime.getActiveProjection;
   getFlowsObraAtiva = runtime.getActiveFlows;
   SafeStorage = storage;
+  renderDashboardState = viewStates.render;
   Object.assign(target, {
     renderAderenciaProj,
     irParaAba,

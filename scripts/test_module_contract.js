@@ -109,10 +109,7 @@ assert(
   'Montagem das abas estáticas ausente',
 );
 assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
-assert(
-  domUi.includes('export function installLegacyDomGlobals'),
-  'Adaptador DOM do legado ausente',
-);
+assert(!domUi.includes('installLegacyDomGlobals'), 'Helper DOM voltou a ser publicado globalmente');
 assert(
   flowEditor.includes('export function installLegacyFlowEditor'),
   'Editor de Flows não foi modularizado',

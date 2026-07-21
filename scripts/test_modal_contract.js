@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
+const path = require('path');
 const { loadProjectSources } = require('./load_project_sources');
 
 const { html, javascript, source } = loadProjectSources();
+const modalModule = fs.readFileSync(
+  path.resolve(__dirname, '../assets/js/ui/modals.mjs'),
+  'utf8',
+);
 const backdropIds = [
   'modalBg',
   'confirmModalBg',
@@ -27,9 +33,12 @@ backdropIds.forEach(id => {
 const dialogCount = (html.match(/<[^>]+\srole="dialog"/g) || []).length;
 assert(dialogCount === backdropIds.length, `Esperados ${backdropIds.length} diálogos; encontrados ${dialogCount}`);
 assert(!/(^|[^A-Za-z])confirm\s*\(/m.test(source), 'Ainda existe confirm() nativo');
-assert(javascript.includes('function openModalLayer('), 'Runtime compartilhado de abertura ausente');
-assert(javascript.includes('function closeModalLayer('), 'Runtime compartilhado de fechamento ausente');
-assert(javascript.includes("event.key !== 'Tab'"), 'Focus trap ausente');
-assert(javascript.includes("event.key === 'Escape'"), 'Fechamento por Escape ausente');
+assert(modalModule.includes('function openLayer('), 'Runtime compartilhado de abertura ausente');
+assert(modalModule.includes('function closeLayer('), 'Runtime compartilhado de fechamento ausente');
+assert(modalModule.includes("event.key !== 'Tab'"), 'Focus trap ausente');
+assert(modalModule.includes("event.key === 'Escape'"), 'Fechamento por Escape ausente');
+assert(modalModule.includes('content.replaceChildren()'), 'Confirmação precisa reconstruir DOM com segurança');
+assert(!modalModule.includes('.innerHTML'), 'Módulo de modais não deve usar innerHTML');
+assert(!javascript.includes('function openModalLayer('), 'Runtime de modais ainda duplicado no legado');
 
 console.log(`Contrato de modais: ${backdropIds.length} diálogos OK`);

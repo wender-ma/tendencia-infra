@@ -6,6 +6,10 @@ const { loadProjectSources } = require('./load_project_sources');
 
 const root = path.resolve(__dirname, '..');
 const { html, javascript, source } = loadProjectSources();
+const feedbackModule = fs.readFileSync(
+  path.join(root, 'assets/js/ui/feedback.mjs'),
+  'utf8',
+);
 const css = ['tokens.css', 'base.css', 'components.css', 'dashboard.css']
   .map(file => fs.readFileSync(path.join(root, 'assets', 'css', file), 'utf8'))
   .join('\n');
@@ -71,7 +75,7 @@ assert(/:where\([^}]+\):focus-visible\s*{/.test(css), 'Estilo global de foco vis
 assert(css.includes('--text-lighter:   #6B7280'), 'Contraste de texto secundário no tema claro não foi corrigido');
 assert(css.includes('--text-lighter:   #94A3B8'), 'Contraste de texto secundário no tema escuro não foi corrigido');
 assert(/id="loadingOverlay"[^>]*role="status"[^>]*aria-live="polite"/.test(html), 'Loading não é anunciado');
-assert(/function authToast[\s\S]*?setAttribute\('aria-live'/.test(javascript), 'Toasts não configuram aria-live');
+assert(/function toast[\s\S]*?setAttribute\('aria-live'/.test(feedbackModule), 'Toasts não configuram aria-live');
 assert(/id="loginErro"[^>]*role="alert"/.test(html) && /id="signupErro"[^>]*role="alert"/.test(html), 'Erros de autenticação não são anunciados');
 
 ['obraForm', 'editorForm', 'loginEmailForm', 'signupEmailForm'].forEach(id => {

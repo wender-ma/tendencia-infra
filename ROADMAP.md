@@ -180,7 +180,9 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar serviço de acesso ao Supabase.
 - [x] Criar módulo único de estado.
 - [x] Separar parsers de Tendência, Flows e Gestões.
-- [ ] Separar uploads, modais, toasts e tabelas em módulos de UI.
+- [x] Separar modais, toasts e loading em módulos de UI.
+- [ ] Separar uploads em módulo próprio.
+- [ ] Separar tabelas em módulos de UI.
 - [ ] Separar cada aba em um módulo de visualização.
 - [ ] Remover aliases e variáveis globais gradualmente.
 - [ ] Remover handlers `onclick`, `onchange` e `oninput` inline.
@@ -287,3 +289,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Sessão, provedores de login, whitelist e autorização por papel/obra extraídos para serviço de autenticação | `assets/js/services/auth-service.js` |
 | 21/07/2026 | Estado compartilhado e aliases temporários extraídos do legado; autenticação ligada diretamente à obra ativa central | `assets/js/state.js` |
 | 21/07/2026 | Parsers de Tendência, Flows e Gestões extraídos; layouts por cabeçalho, CSV robusto, relatórios e testes unitários adicionados | `assets/js/parsers/` |
+| 21/07/2026 | Feedback, loading e pilha de modais extraídos; confirmação dinâmica passou a usar APIs DOM seguras | `assets/js/ui/` |

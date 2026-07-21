@@ -150,6 +150,11 @@
   .modal .meta { font-size: 12px; color: var(--text-soft); margin-bottom: 16px; }
   .modal-close { float: right; cursor: pointer; font-size: 20px; color: var(--text-lighter); border: none; background: none; }
   .modal-close:hover { color: var(--text-strong); }
+  .confirm-modal-message { white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: var(--text-medium); margin: 16px 0; }
+  .confirm-modal-require { margin-top: 12px; }
+  .confirm-modal-require label { display: block; font-size: 11px; text-transform: uppercase; color: var(--text-soft); font-weight: 600; }
+  .confirm-modal-require input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 6px; margin-top: 4px; font-size: 13px; font-family: monospace; }
+  .confirm-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
   .flow-mini-card { background: var(--bg-page); border-radius: 8px; padding: 10px 12px;
     margin-bottom: 8px; border-left: 3px solid var(--border-strong); font-size: 12.5px; }
   .flow-mini-card.aumento_real { border-left-color: var(--fgr-red-vivid); }
@@ -688,4 +693,3 @@ body:not(.is-admin-geral) [data-admin-control],
 #obraSelector:focus {
   outline: 2px solid rgba(255,255,255,0.5);
 }
-

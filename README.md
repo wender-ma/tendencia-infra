@@ -31,6 +31,7 @@ Dashboard de tendência orçamentária
 - `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
 - `assets/js/state.js`: estado compartilhado de dados, obra ativa, filtros, uploads e preferências.
 - `assets/js/parsers/`: parsers testáveis de Tendência, Flows e Gestões e normalizadores compartilhados.
+- `assets/js/ui/`: serviços compartilhados de feedback, loading e modais acessíveis.
 - `assets/js/services/supabase-service.js`: criação do cliente Supabase e política compartilhada de retry.
 - `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
 - `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.

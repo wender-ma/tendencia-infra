@@ -1,6 +1,8 @@
 import dashboardUrl from './dashboard-legacy.js?url';
 import { DASHBOARD_CONFIG, installLegacyConfig, SUPABASE_CONFIG } from './config.js';
 import { installLegacyImportParsers } from './parsers/index.mjs';
+import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
+import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -30,6 +32,10 @@ installLegacyConfig();
 const appState = createAppState();
 installLegacyStateGlobals(appState);
 const parserService = installLegacyImportParsers({ state: appState, config: DASHBOARD_CONFIG });
+const feedbackService = createFeedbackService();
+installLegacyFeedbackGlobals(feedbackService);
+const modalService = createModalService();
+installLegacyModalGlobals(modalService);
 
 Promise.all([import('xlsx'), import('apexcharts')])
   .then(([xlsxModule, apexchartsModule]) => {
@@ -46,6 +52,8 @@ Promise.all([import('xlsx'), import('apexcharts')])
       supabase: supabaseService,
       auth: authService,
       parsers: parserService,
+      feedback: feedbackService,
+      modals: modalService,
     });
     window.XLSX = xlsxModule;
     window.ApexCharts = apexchartsModule.default;

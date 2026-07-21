@@ -244,15 +244,7 @@ export function createDashboardShell({
   });
 }
 
-export function installLegacyDashboardShell(shell, target = window) {
-  Object.assign(target, {
-    activateTab: shell.activateTab,
-    getVisibleTabs: shell.getVisibleTabs,
-    refreshHeaderSubtitle: shell.refreshHeaderSubtitle,
-    restaurarAbaAtiva: shell.restaurarAbaAtiva,
-    salvarAbaAtiva: shell.salvarAbaAtiva,
-    verificarDadosDesatualizados: shell.verificarDadosDesatualizados,
-  });
+export function createDashboardShellActions(shell) {
   shell.install();
   return Object.freeze({
     toggleHeaderEdit: shell.toggleHeaderEdit,

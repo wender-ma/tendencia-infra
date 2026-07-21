@@ -1,7 +1,9 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from './dom.mjs';
 import { formatNumber as fmt, formatNumber as fmtR$ } from './dashboard-runtime.mjs';
 import { STORAGE_KEYS } from '../config.js';
+import { classifyFlow, parseNumber } from '../parsers/shared.mjs';
+import { escAttr, escHtml, formatDate } from './formatters.mjs';
+import { MANUAL_TEXT } from './manual-text.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 const MANUAL_KEY = STORAGE_KEYS.manuals;
@@ -24,6 +26,8 @@ let SUPA;
 let isEditorDaObraAtiva;
 let requireEditor;
 let APP_STATE;
+let renderFlowTable;
+let renderFlows;
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
@@ -309,47 +313,6 @@ function buildDatalist() {
       `[DATALIST] ${INSUMOS_OPTIONS.length} insumos disponíveis no dropdown de classificação (${APP_STATE.obra.ativa || '—'})`,
     );
   }
-}
-
-// Converte data — aceita 'dd/mm/yyyy' OU número serial Excel (ex: 46147 = 26/05/2026)
-function formatDate(s) {
-  if (!s) return '';
-  s = String(s).trim();
-  // Já está em formato dd/mm/yyyy → retorna
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) return s.split(' ')[0];
-  // Número serial Excel (data: 30/12/1899 + N dias)
-  if (/^\d{4,6}$/.test(s)) {
-    const n = parseInt(s, 10);
-    // Sanidade: 25569 = 1970-01-01; 60000 ~ 2064. Aceitar 20000-60000
-    if (n > 20000 && n < 80000) {
-      const epoch = new Date(Date.UTC(1899, 11, 30));
-      const d = new Date(epoch.getTime() + n * 86400000);
-      const dd = String(d.getUTCDate()).padStart(2, '0');
-      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-      const yy = d.getUTCFullYear();
-      return `${dd}/${mm}/${yy}`;
-    }
-  }
-  // Formato ISO yyyy-mm-dd — valida mês (1-12) e dia (1-31)
-  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) {
-    const mes = parseInt(iso[2], 10);
-    const dia = parseInt(iso[3], 10);
-    if (mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31) {
-      return `${iso[3]}/${iso[2]}/${iso[1]}`;
-    }
-  }
-  return s;
-}
-
-function escHtml(s) {
-  return String(s ?? '').replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  );
-}
-function escAttr(s) {
-  return escHtml(s);
 }
 
 // ============ TOOLTIP SYSTEM (gráficos) ============
@@ -1086,7 +1049,7 @@ function massAplicarRefletido() {
 }
 
 // ============ EDIÇÃO DE VALOR (Fluxo Planejamento) ============
-// parseNumBR agora é um alias para parseNumero (definido no início do script)
+// Usa o parser numérico compartilhado para manter importações e edições consistentes.
 
 function onValorChange(input) {
   if (!requireEditor('alterar valores de aditivos')) {
@@ -1094,7 +1057,7 @@ function onValorChange(input) {
     return;
   }
   const nAlt = input.dataset.n;
-  const novo = parseNumero(input.value);
+  const novo = parseNumber(input.value);
   const f = getFlowsObraAtiva().find((x) => x.n_alteracao === nAlt);
   if (!f) return;
   f.custo_flowmaster = novo;
@@ -1283,7 +1246,7 @@ function saveManualForm(editingId) {
   const data = get('m_data');
   const desc = get('m_desc');
   const motivo = get('m_motivo');
-  const valor = parseNumero(get('m_valor'));
+  const valor = parseNumber(get('m_valor'));
   const dest = valueFromDisplay(get('m_dest'));
   const orig = valueFromDisplay(get('m_orig'));
   const just = get('m_just');
@@ -1359,20 +1322,18 @@ async function deleteManual(id) {
 
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
-export function installLegacyFlowEditor(
-  {
-    runtime,
-    storage,
-    feedback,
-    modals,
-    dashboardRepository,
-    authService,
-    authUi,
-    supabaseClient,
-    state,
-  },
-  target = window,
-) {
+export function createFlowEditor({
+  runtime,
+  storage,
+  feedback,
+  modals,
+  dashboardRepository,
+  authService,
+  authUi,
+  supabaseClient,
+  state,
+  views,
+}) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
@@ -1390,7 +1351,9 @@ export function installLegacyFlowEditor(
   isEditorDaObraAtiva = authService.canEditActiveProject;
   requireEditor = authUi.requireEditor;
   APP_STATE = state;
-  Object.assign(target, {
+  renderFlowTable = views.renderFlowTable;
+  renderFlows = views.renderFlows;
+  const api = {
     loadClassifications,
     readClassificationMap,
     saveClassification,
@@ -1419,23 +1382,14 @@ export function installLegacyFlowEditor(
     saveManuals,
     applyManuals,
     deleteManual,
-  });
-
-  Object.defineProperties(target, {
-    INSUMOS_OPTIONS: {
-      configurable: true,
-      get: () => INSUMOS_OPTIONS,
-      set: (value) => {
-        INSUMOS_OPTIONS = Array.isArray(value) ? value : [];
-      },
+    getInputOptions: () => INSUMOS_OPTIONS,
+    setInputOptions: (value) => {
+      INSUMOS_OPTIONS = Array.isArray(value) ? value : [];
     },
-    MS_EXCLUDED: { configurable: true, get: () => MS_EXCLUDED },
-    MS_DESTINO_OPTS: { configurable: true, get: () => MS_DESTINO_OPTS },
-    MASS_SELECTED: { configurable: true, get: () => MASS_SELECTED },
-  });
-
-  document.addEventListener('click', closeMultiSelectOnOutsideClick);
-  return Object.freeze({
+    getExcludedFilters: () => MS_EXCLUDED,
+    getDestinationOptions: () => MS_DESTINO_OPTS,
+    getMassSelection: () => MASS_SELECTED,
+    msUpdateBtn,
     showManualText,
     clearClassifications,
     reloadClassifications,
@@ -1456,5 +1410,7 @@ export function installLegacyFlowEditor(
     openManualForm,
     saveManualForm,
     massConfirmCallback,
-  });
+  };
+  document.addEventListener('click', closeMultiSelectOnOutsideClick);
+  return Object.freeze(api);
 }

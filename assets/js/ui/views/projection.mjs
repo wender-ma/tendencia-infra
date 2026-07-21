@@ -1,6 +1,11 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { PROJECTION_CATALOG } from '../../data/projection-catalog.mjs';
+import { escAttr, escHtml, formatDate } from '../formatters.mjs';
+import {
+  bindSortableHeaders,
+  isTableRowActivation,
+  updateSortHeaderState,
+} from '../table-interactions.mjs';
 import {
   formatCompactNumber as fmtR$k,
   formatNumber as fmt,
@@ -22,6 +27,10 @@ let authToast;
 let openModal;
 let renderDashboardState;
 let APP_STATE;
+let renderAderenciaProj;
+let acharUltimaGestaoCronologica;
+let getProjectionControlState;
+let renderVisao;
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
@@ -1109,7 +1118,7 @@ async function exportarProjecaoDetalhada() {
       );
       return;
     }
-    await ensureXlsx();
+    const XLSX = await ensureXlsx();
     const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
     const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
     const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
@@ -1598,7 +1607,8 @@ function openProjDrill(servico, insumo) {
 // Renderiza a seção "Movimentações de Projeção" no modal de drill-down da Tendência
 function renderMovimentacoesProjecaoSection(servico, insumo) {
   // Só faz sentido se houver insumo (linhas folha) - para serviço é mais complicado
-  const insumoControlado = PROJ_CTRL_STATE.insumo || 'I011890';
+  const projectionControlState = getProjectionControlState();
+  const insumoControlado = projectionControlState?.insumo || 'I011890';
   // Para insumo específico: mostrar movimentações que tocaram esse insumo (vindas da Projeção)
   // Para serviço: agregar dos insumos do serviço
   let alvos = [];
@@ -1619,7 +1629,7 @@ function renderMovimentacoesProjecaoSection(servico, insumo) {
   if (!alvos.length) return '';
 
   // Movimentações manuais (não-flow) que tocam algum desses alvos
-  const movsManuais = (PROJ_CTRL_STATE.movimentacoes || []).filter((m) => {
+  const movsManuais = (projectionControlState?.movimentacoes || []).filter((m) => {
     return alvos.includes(m.origem) || alvos.includes(m.destino);
   });
 
@@ -1833,10 +1843,17 @@ function renderFlowsRefletidosSection(servico, insumo) {
   `;
 }
 
-export function installLegacyProjectionView(
-  { runtime, loadXlsx, feedback, modals, viewStates, state },
-  target = window,
-) {
+export function createProjectionView({
+  runtime,
+  loadXlsx,
+  feedback,
+  modals,
+  viewStates,
+  state,
+  overview,
+  projectController,
+  projectionControl,
+}) {
   reportNonFatalError = runtime.reportNonFatalError;
   uiCriarKpi = runtime.createKpi;
   resolveColor = runtime.resolveColor;
@@ -1848,7 +1865,11 @@ export function installLegacyProjectionView(
   openModal = modals.open;
   renderDashboardState = viewStates.render;
   APP_STATE = state;
-  Object.assign(target, {
+  renderAderenciaProj = overview.renderAderenciaProj;
+  renderVisao = overview.renderVisao;
+  acharUltimaGestaoCronologica = projectController.findLatestManagement;
+  getProjectionControlState = projectionControl.getState;
+  const api = {
     defaultDataCorte,
     defaultDataFim,
     initProjecao,
@@ -1857,7 +1878,10 @@ export function installLegacyProjectionView(
     renderProjecao,
     toggleProjExpand,
     openProjDrill,
-  });
+    projExpandAll,
+    projCollapseAll,
+    exportarProjecaoDetalhada,
+  };
 
   document.getElementById('projTbody')?.addEventListener('click', activateProjectionRow);
   document.getElementById('projTbody')?.addEventListener('keydown', activateProjectionRow);
@@ -1902,5 +1926,5 @@ export function installLegacyProjectionView(
       renderProjecao();
     },
   );
-  return Object.freeze({ projExpandAll, projCollapseAll, exportarProjecaoDetalhada });
+  return Object.freeze(api);
 }

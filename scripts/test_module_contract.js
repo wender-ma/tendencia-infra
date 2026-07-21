@@ -70,10 +70,28 @@ const dashboardRuntime = fs.readFileSync(
 );
 const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
 const coordinatorSources = `${bootstrap}\n${application}`;
+const viewSources = [
+  flowEditor,
+  uploadUi,
+  adminView,
+  detailsView,
+  flowsView,
+  historyView,
+  overviewView,
+  projectionView,
+  projectionControlView,
+].join('\n');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+assert(!viewSources.includes('installLegacy'), 'Views voltaram a publicar adaptadores legados');
+assert(!viewSources.includes('eslint-disable no-undef'), 'Views voltaram a ocultar dependências');
+assert(
+  !/window\.(?:render|parse|load|build|apply|PROJ_CTRL|INSUMOS)/.test(bootstrap),
+  'Bootstrap voltou a coordenar módulos por aliases globais',
+);
 
 for (const exportedContract of [
   'export const SUPABASE_CONFIG',
@@ -110,7 +128,7 @@ assert(
 assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
 assert(!domUi.includes('installLegacyDomGlobals'), 'Helper DOM voltou a ser publicado globalmente');
 assert(
-  flowEditor.includes('export function installLegacyFlowEditor'),
+  flowEditor.includes('export function createFlowEditor'),
   'Editor de Flows não foi modularizado',
 );
 assert(
@@ -123,8 +141,8 @@ assert(
   'Controlador do shell do dashboard ausente',
 );
 assert(
-  dashboardShell.includes('export function installLegacyDashboardShell'),
-  'Adaptador temporário do shell ausente',
+  dashboardShell.includes('export function createDashboardShellActions'),
+  'Registro explícito de ações do shell ausente',
 );
 assert(!dashboardShell.includes('.innerHTML'), 'Shell não pode montar HTML sem parser');
 assert(
@@ -185,7 +203,7 @@ assert(
   'Repositório de uploads voltou a publicar adaptador global',
 );
 for (const uploadUiContract of [
-  'export function installLegacyUploadUI',
+  'export function createUploadView',
   'function handleUpload(',
   'async function handleExcelUpload(',
   'function renderUploadsCentral(',
@@ -215,8 +233,8 @@ assert(
   'Controlador de obras não foi modularizado',
 );
 assert(
-  projectController.includes('export function installLegacyProjectController'),
-  'Adaptador temporário do controlador de obras ausente',
+  projectController.includes('export function createProjectActions'),
+  'Registro explícito de ações do controlador de obras ausente',
 );
 assert(
   projectRepository.includes('export function createProjectRepository'),
@@ -238,7 +256,7 @@ for (const removedProjectFunction of [
   );
 }
 assert(
-  adminView.includes('export function installLegacyAdminView'),
+  adminView.includes('export function createAdminView'),
   'View administrativa não foi modularizada',
 );
 assert(
@@ -251,25 +269,25 @@ assert(
 );
 assert(!adminView.includes('.innerHTML'), 'View administrativa não pode montar HTML sem parser');
 assert(
-  detailsView.includes('export function installLegacyDetailsView'),
+  detailsView.includes('export function createDetailsView'),
   'View de detalhamento não foi modularizada',
 );
 assert(detailsView.includes('function renderTable('), 'Tabela de detalhamento ausente da view');
 assert(!detailsView.includes('.innerHTML'), 'View de detalhamento não pode montar HTML sem parser');
 assert(
-  flowsView.includes('export function installLegacyFlowsView'),
+  flowsView.includes('export function createFlowsView'),
   'View de Flows não foi modularizada',
 );
 assert(flowsView.includes('function renderFlowTable('), 'Tabela de Flows ausente da view');
 assert(!flowsView.includes('.innerHTML'), 'View de Flows não pode montar HTML sem parser');
 assert(
-  historyView.includes('export function installLegacyHistoryView'),
+  historyView.includes('export function createHistoryView'),
   'View de histórico não foi modularizada',
 );
 assert(historyView.includes('function renderHistHeatmap('), 'Tabela histórica ausente da view');
 assert(!historyView.includes('.innerHTML'), 'View de histórico não pode montar HTML sem parser');
 assert(
-  overviewView.includes('export function installLegacyOverviewView'),
+  overviewView.includes('export function createOverviewView'),
   'View da Visão Geral não foi modularizada',
 );
 assert(
@@ -278,7 +296,7 @@ assert(
 );
 assert(!overviewView.includes('.innerHTML'), 'View da Visão Geral não pode montar HTML sem parser');
 assert(
-  projectionView.includes('export function installLegacyProjectionView'),
+  projectionView.includes('export function createProjectionView'),
   'View de Tendência de Obra não foi modularizada',
 );
 assert(
@@ -290,7 +308,7 @@ assert(
   'View de Tendência de Obra não pode montar HTML sem parser',
 );
 assert(
-  projectionControlView.includes('export function installLegacyProjectionControlView'),
+  projectionControlView.includes('export function createProjectionControlView'),
   'View de controle de projeção não foi modularizada',
 );
 assert(

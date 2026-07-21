@@ -130,6 +130,18 @@ export function createDashboardRuntime({
     }
   }
 
+  function destroyApexChart(containerId) {
+    chartVersions.set(containerId, (chartVersions.get(containerId) || 0) + 1);
+    const chart = charts.get(containerId);
+    if (!chart) return;
+    try {
+      chart.destroy();
+    } catch (error) {
+      reportNonFatalError('ApexCharts/destruir', error);
+    }
+    charts.delete(containerId);
+  }
+
   function filterByActiveProject(rows, field = 'codigo_obra') {
     if (!Array.isArray(rows) || !state.obra.ativa) return rows;
     return rows.filter((row) => row[field] === state.obra.ativa);
@@ -243,6 +255,7 @@ export function createDashboardRuntime({
     createKpi,
     resolveColor,
     renderApexChart,
+    destroyApexChart,
     filterByActiveProject,
     getActiveHistory,
     getActiveProjection,

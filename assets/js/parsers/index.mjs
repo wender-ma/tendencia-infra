@@ -30,7 +30,7 @@ function persistTendencyEvolution(
   );
 }
 
-export function installLegacyImportParsers({
+export function createImportParserService({
   state,
   config,
   monitor,
@@ -38,73 +38,73 @@ export function installLegacyImportParsers({
   storage,
   saveDashboardKey = async () => {},
   reportError = () => {},
-  target = window,
 }) {
   const reports = { tendencia: null, flows: null, gestoes: null };
   const measured = (name, operation) =>
     monitor ? monitor.measure(`parse:${name}`, operation) : operation();
 
-  const service = Object.freeze({
-    parseNumber,
-    parseTendencia: (text, options = {}) =>
-      measured('tendencia', () =>
-        parseTendenciaFile(text, {
-          correctionIndex: options.correctionIndex ?? state.config.correcaoIndice,
-          groups: options.groups ?? config.grupos_map,
-        }),
-      ),
-    parseFlows: (text, options = {}) =>
-      measured('flows', () =>
-        parseFlowsFile(text, {
-          projects: options.projects ?? state.obra.obras,
-          descriptionLimit: options.descriptionLimit ?? config.max_descricao_flow,
-          justificationLimit: options.justificationLimit ?? config.max_justificativa_flow,
-        }),
-      ),
-    parseGestoes: (text) => measured('gestoes', () => parseGestoesFile(text)),
-  });
+  const parseTendency = (text, options = {}) =>
+    measured('tendencia', () =>
+      parseTendenciaFile(text, {
+        correctionIndex: options.correctionIndex ?? state.config.correcaoIndice,
+        groups: options.groups ?? config.grupos_map,
+      }),
+    );
+  const parseFlows = (text, options = {}) =>
+    measured('flows', () =>
+      parseFlowsFile(text, {
+        projects: options.projects ?? state.obra.obras,
+        descriptionLimit: options.descriptionLimit ?? config.max_descricao_flow,
+        justificationLimit: options.justificationLimit ?? config.max_justificativa_flow,
+      }),
+    );
+  const parseManagements = (text) => measured('gestoes', () => parseGestoesFile(text));
 
-  Object.assign(target, {
-    parseNumero: parseNumber,
-    parseCSVRows: parseDelimitedRows,
+  function applyTendency(text) {
+    const result = parseTendency(text);
+    state.config.gestaoLabel = result.managementLabel || state.config.gestaoLabel;
+    state.config.evolGlobal = result.evolution;
+    reports.tendencia = result.report;
+    persistTendencyEvolution(state, result.evolution, {
+      canEdit,
+      storage,
+      saveDashboardKey,
+      reportError,
+    });
+    return result.items;
+  }
+
+  function applyFlows(text) {
+    const result = parseFlows(text);
+    reports.flows = result.report;
+    if (result.unknownProjects.length) {
+      console.warn(`[FLOWS] obras não cadastradas: ${result.unknownProjects.join(', ')}`);
+    }
+    return result.items;
+  }
+
+  function applyManagements(text) {
+    const result = parseManagements(text);
+    state.dados.projRaw = result.projectionRows;
+    reports.gestoes = result.report;
+    return result.history;
+  }
+
+  return Object.freeze({
+    parseNumber,
+    parseDelimitedRows,
     normalizeImportHeader,
     validateImportHeaders,
-    normInsumo: normalizeInput,
+    normalizeInput,
     classifyFlow,
     toIsoDate,
     isoDateToBr,
-    parseTendencia(text) {
-      const result = service.parseTendencia(text);
-      state.config.gestaoLabel = result.managementLabel || state.config.gestaoLabel;
-      state.config.evolGlobal = result.evolution;
-      reports.tendencia = result.report;
-      persistTendencyEvolution(state, result.evolution, {
-        canEdit,
-        storage,
-        saveDashboardKey,
-        reportError,
-      });
-      return result.items;
-    },
-    parseFlowsValor(text) {
-      const result = service.parseFlows(text);
-      reports.flows = result.report;
-      if (result.unknownProjects.length) {
-        console.warn(`[FLOWS] obras não cadastradas: ${result.unknownProjects.join(', ')}`);
-      }
-      return result.items;
-    },
-    parseGestoes(text) {
-      const result = service.parseGestoes(text);
-      state.dados.projRaw = result.projectionRows;
-      reports.gestoes = result.report;
-      return result.history;
-    },
+    parseTendencia: parseTendency,
+    parseFlows,
+    parseGestoes: parseManagements,
+    applyTendency,
+    applyFlows,
+    applyManagements,
+    reports,
   });
-
-  Object.defineProperty(target, 'LAST_IMPORT_REPORTS', {
-    configurable: true,
-    get: () => reports,
-  });
-  return service;
 }

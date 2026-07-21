@@ -1,5 +1,5 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { escHtml } from '../formatters.mjs';
 import {
   formatCompactNumber as fmtR$k,
   formatNumber as fmtR$,
@@ -10,6 +10,7 @@ let reportNonFatalError;
 let runAsyncSafely;
 let resolveColor;
 let renderApexChart;
+let destroyApexChart;
 let getProjRawObraAtiva;
 let getFlowsObraAtiva;
 let SafeStorage;
@@ -17,6 +18,14 @@ let renderDashboardState;
 let supaSaveDashboardKey;
 let isAdminGeral;
 let APP_STATE;
+let refreshHeaderSubtitle;
+let verificarDadosDesatualizados;
+let calcularFlowsPendentesPorGrupo;
+let defaultDataCorte;
+let defaultDataFim;
+let projetarServico;
+let getProjectionControlState;
+let getAllMovimentacoes;
 
 // ============ VISÃO GERAL ============
 // APP_STATE.config.gestaoLabel, APP_STATE.config.evolGlobal, APP_STATE.config.card3Modo, APP_STATE.config.correcaoIndice
@@ -280,10 +289,8 @@ function renderVisao() {
     tendVsLicPct > 10 ? 'red' : tendVsLicPct > 5 ? 'amber' : tendVsLicPct > 0 ? 'amber' : 'green';
 
   // Reserva (Projeção de Gastos) - vem do saldo atual da aba Controle Projeção
-  const insumoControlado =
-    typeof PROJ_CTRL_STATE === 'object' && PROJ_CTRL_STATE && PROJ_CTRL_STATE.insumo
-      ? PROJ_CTRL_STATE.insumo
-      : 'I011890';
+  const projectionControlState = getProjectionControlState();
+  const insumoControlado = projectionControlState?.insumo || 'I011890';
   let reservaProj = 0;
   try {
     if (typeof getAllMovimentacoes === 'function') {
@@ -587,10 +594,7 @@ function renderDonut(tipoSum) {
   const total = aum + rem + eco + pen + sem;
 
   if (total <= 0) {
-    if (_apexCharts['donutChart']) {
-      _apexCharts['donutChart'].destroy();
-      delete _apexCharts['donutChart'];
-    }
+    destroyApexChart('donutChart');
     replaceWithParsedMarkup(
       document.getElementById('donutChart'),
       '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:13px;">Sem aditivos para exibir.</div>',
@@ -693,14 +697,22 @@ function renderDonut(tipoSum) {
   renderApexChart('donutChart', options);
 }
 
-export function installLegacyOverviewView(
-  { runtime, storage, viewStates, dashboardRepository, authService, state },
-  target = window,
-) {
+export function createOverviewView({
+  runtime,
+  storage,
+  viewStates,
+  dashboardRepository,
+  authService,
+  state,
+  shell,
+  projection,
+  projectionControl,
+}) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
+  destroyApexChart = runtime.destroyApexChart;
   getProjRawObraAtiva = runtime.getActiveProjection;
   getFlowsObraAtiva = runtime.getActiveFlows;
   SafeStorage = storage;
@@ -708,12 +720,21 @@ export function installLegacyOverviewView(
   supaSaveDashboardKey = dashboardRepository.saveDashboardKey;
   isAdminGeral = authService.isAdmin;
   APP_STATE = state;
-  Object.assign(target, {
+  refreshHeaderSubtitle = shell.refreshHeaderSubtitle;
+  verificarDadosDesatualizados = shell.verificarDadosDesatualizados;
+  calcularFlowsPendentesPorGrupo = projection.calcularFlowsPendentesPorGrupo;
+  defaultDataCorte = projection.defaultDataCorte;
+  defaultDataFim = projection.defaultDataFim;
+  projetarServico = projection.projetarServico;
+  getProjectionControlState = projectionControl.getState;
+  getAllMovimentacoes = projectionControl.getAllMovimentacoes;
+  return Object.freeze({
     renderAderenciaProj,
     irParaAba,
     obraTemTendencia,
     renderVisao,
     toggleDonutSlice,
+    setCard3Modo,
+    setCorrecaoIndice,
   });
-  return Object.freeze({ setCard3Modo, setCorrecaoIndice });
 }

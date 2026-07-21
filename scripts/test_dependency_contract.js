@@ -101,10 +101,9 @@ assert(
   'Cliente Supabase não deve ser publicado globalmente',
 );
 
-assert(dependencyService.includes('window.XLSX'), 'Compatibilidade global do SheetJS ausente');
 assert(
-  dependencyService.includes('window.ApexCharts'),
-  'Compatibilidade global do ApexCharts ausente',
+  !dependencyService.includes('window.XLSX') && !dependencyService.includes('window.ApexCharts'),
+  'Dependências sob demanda não devem publicar bibliotecas globais',
 );
 
 console.log('Contrato de dependencias: pacotes locais, fixos e sem scripts CDN OK');

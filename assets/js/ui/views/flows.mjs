@@ -1,7 +1,8 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { debounce, formatNumber as fmt, formatNumber as fmtR$ } from '../dashboard-runtime.mjs';
 import { STORAGE_KEYS } from '../../config.js';
+import { escAttr, escHtml, formatDate } from '../formatters.mjs';
+import { bindSortableHeaders, updateSortHeaderState } from '../table-interactions.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 
@@ -15,6 +16,17 @@ let supaPatchClassification;
 let isEditorDaObraAtiva;
 let requireEditor;
 let APP_STATE;
+let deleteManual;
+let msUpdateBtn;
+let msResetAll;
+let msMatches;
+let MS_EXCLUDED;
+let MASS_SELECTED;
+let renderInsumoSelect;
+let syncSelectAllHeader;
+let updateMassBar;
+let readClassificationMap;
+let syncAllViewsFromFlows;
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;
@@ -433,10 +445,17 @@ function onRefletidoChange(sel) {
   syncAllViewsFromFlows();
 }
 
-export function installLegacyFlowsView(
-  { runtime, pagination, storage, viewStates, dashboardRepository, authService, authUi, state },
-  target = window,
-) {
+export function createFlowsView({
+  runtime,
+  pagination,
+  storage,
+  viewStates,
+  dashboardRepository,
+  authService,
+  authUi,
+  state,
+  flowEditor,
+}) {
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
   paginateRows = pagination.paginate;
@@ -447,9 +466,16 @@ export function installLegacyFlowsView(
   isEditorDaObraAtiva = authService.canEditActiveProject;
   requireEditor = authUi.requireEditor;
   APP_STATE = state;
-  Object.assign(target, {
-    renderFlows,
-    renderFlowTable,
-  });
-  return Object.freeze({ clearFlowFilters, onRefletidoChange });
+  deleteManual = flowEditor.deleteManual;
+  msUpdateBtn = flowEditor.msUpdateBtn;
+  msResetAll = flowEditor.msResetAll;
+  msMatches = flowEditor.msMatches;
+  MS_EXCLUDED = flowEditor.getExcludedFilters();
+  MASS_SELECTED = flowEditor.getMassSelection();
+  renderInsumoSelect = flowEditor.renderInsumoSelect;
+  syncSelectAllHeader = flowEditor.syncSelectAllHeader;
+  updateMassBar = flowEditor.updateMassBar;
+  readClassificationMap = flowEditor.readClassificationMap;
+  syncAllViewsFromFlows = flowEditor.syncAllViewsFromFlows;
+  return Object.freeze({ renderFlows, renderFlowTable, clearFlowFilters, onRefletidoChange });
 }

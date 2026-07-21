@@ -15,7 +15,7 @@ const { pathToFileURL } = require('url');
     applyHistoryManagementFallback,
     createProjectController,
     findLatestManagement,
-    installLegacyProjectController,
+    createProjectActions,
     resolveInitialProject,
   } = await import(controllerUrl.href);
   const { createProjectRepository } = await import(repositoryUrl.href);
@@ -179,11 +179,8 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(stored.get('active'), 'OBRA-B');
   assert(events.some(([name]) => name === 'render'));
 
-  const target = {};
-  const actions = installLegacyProjectController(controller, target);
+  const actions = createProjectActions(controller);
   assert.strictEqual(actions.trocarObra, controller.trocarObra);
-  assert.strictEqual(target.trocarObra, undefined);
-  assert.strictEqual(target.recarregarDadosDaObra, controller.recarregarDadosDaObra);
 
   console.log('Controlador de obras: resolução, fallback, restauração e troca segura OK');
 })().catch((error) => {

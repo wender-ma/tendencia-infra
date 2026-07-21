@@ -1,6 +1,6 @@
-/* eslint-disable no-undef */
 import { DASHBOARD_CONFIG } from '../../config.js';
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { escAttr, escHtml } from '../formatters.mjs';
 import {
   debounce,
   formatCompactNumber as fmtR$k,
@@ -397,10 +397,7 @@ function renderHistHeatmap() {
   renderPaginationControls('historyPagination', 'history', historyPage, renderHistHeatmap);
 }
 
-export function installLegacyHistoryView(
-  { runtime, pagination, viewStates, state },
-  target = window,
-) {
+export function createHistoryView({ runtime, pagination, viewStates, state }) {
   uiCriarKpi = runtime.createKpi;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
@@ -409,5 +406,5 @@ export function installLegacyHistoryView(
   renderPaginationControls = pagination.renderControls;
   renderDashboardState = viewStates.render;
   APP_STATE = state;
-  target.renderHistorico = renderHistorico;
+  return Object.freeze({ renderHistorico });
 }

@@ -79,9 +79,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       .getEntriesByType('resource')
       .some((entry) => /\/apexcharts[^/]*\.js(?:$|\?)/.test(entry.name));
     const xlsxModule = await window.dashboardServices.dependencies.ensureXlsx();
-    const xlsxLoadedOnDemand = typeof xlsxModule.read === 'function' && window.XLSX === xlsxModule;
+    const xlsxLoadedOnDemand = typeof xlsxModule.read === 'function';
     const apexCharts = await window.dashboardServices.dependencies.ensureApexCharts();
-    const apexLoadedOnDemand = typeof apexCharts === 'function' && window.ApexCharts === apexCharts;
+    const apexLoadedOnDemand = typeof apexCharts === 'function';
     const workerWorkbook = xlsxModule.utils.book_new();
     xlsxModule.utils.book_append_sheet(
       workerWorkbook,
@@ -159,7 +159,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       !document.querySelector('#confirmModalContent :is(script, img, svg)');
     const escapedPayloadsStayText = maliciousPayloads.every((payload) => {
       const probe = document.createElement('div');
-      probe.innerHTML = `<span>${window.escHtml(payload)}</span>`;
+      probe.innerHTML = `<span>${window.dashboardServices.views.flowEditor.escHtml(payload)}</span>`;
       return probe.textContent === payload && !probe.querySelector('script, img, svg');
     });
     const dangerousStoragePathsRejected = [
@@ -176,7 +176,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const confirmResult = await confirmation;
 
     return {
-      sheetJsVersion: window.XLSX.version,
+      sheetJsVersion: xlsxModule.version,
       xlsxLoadedAtBoot,
       xlsxLoadedOnDemand,
       apexLoadedAtBoot,
@@ -188,7 +188,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasParserService:
         typeof parserService?.parseTendencia === 'function' &&
         parserService.parseNumber('1.234,56') === 1234.56 &&
-        window.parseNumero === parserService.parseNumber,
+        !Object.prototype.hasOwnProperty.call(window, 'parseNumero'),
       hasFeedbackService: toastUsesText && loadingShown && loadingHidden && escapedPayloadsStayText,
       hasModalService: confirmUsesText && confirmResult === false,
       storagePathSecurity: dangerousStoragePathsRejected && validStoragePathAccepted,
@@ -212,7 +212,10 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         authReadsActiveProject,
       },
       hasExternalConfig: window.dashboardServices.config.dashboard.table_page_size === 100,
-      hasApexCharts: typeof window.ApexCharts === 'function',
+      hasApexCharts: typeof apexCharts === 'function',
+      libraryGlobalsRemoved:
+        !Object.prototype.hasOwnProperty.call(window, 'XLSX') &&
+        !Object.prototype.hasOwnProperty.call(window, 'ApexCharts'),
       hasDashboardHandler:
         typeof window.dashboardServices.actions.resolve('handleAuthClick') === 'function',
       runtimeGlobalsRemoved: [
@@ -436,6 +439,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     },
     hasExternalConfig: true,
     hasApexCharts: true,
+    libraryGlobalsRemoved: true,
     hasDashboardHandler: true,
     runtimeGlobalsRemoved: true,
     utilityGlobalsRemoved: true,

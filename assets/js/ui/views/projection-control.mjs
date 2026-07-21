@@ -1,6 +1,7 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { DASHBOARD_CONFIG, STORAGE_KEYS } from '../../config.js';
+import { parseNumber } from '../../parsers/shared.mjs';
+import { escAttr, escHtml, formatDate } from '../formatters.mjs';
 import {
   debounce,
   formatCompactNumber as fmtR$k,
@@ -27,6 +28,8 @@ let SUPA;
 let isEditorDaObraAtiva;
 let requireEditor;
 let APP_STATE;
+let displayForValue;
+let valueFromDisplay;
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
@@ -175,14 +178,14 @@ function initProjCtrl() {
       if (elSaldo) {
         // Salvar enquanto digita (sem reformatar caractere a caractere, evita perder cursor)
         elSaldo.addEventListener('input', () => {
-          const parsed = parseNumero(elSaldo.value);
+          const parsed = parseNumber(elSaldo.value);
           PROJ_CTRL_STATE.saldo_inicial = parsed;
           saveProjCtrl();
           renderProjCtrl();
         });
         // Formatar ao sair do campo
         elSaldo.addEventListener('blur', () => {
-          const parsed = parseNumero(elSaldo.value);
+          const parsed = parseNumber(elSaldo.value);
           if (parsed != null) {
             elSaldo.value = fmt(parsed);
             PROJ_CTRL_STATE.saldo_inicial = parsed;
@@ -723,7 +726,7 @@ async function saveMovForm(editingId) {
   const destino = valueFromDisplay(get('mov_destino'));
   const desc = get('mov_desc');
   const resp = get('mov_resp');
-  const valor = parseNumero(get('mov_valor'));
+  const valor = parseNumber(get('mov_valor'));
   const just = get('mov_just');
 
   if (!desc) {
@@ -813,21 +816,19 @@ async function deleteMov(id) {
   renderProjCtrl();
 }
 
-export function installLegacyProjectionControlView(
-  {
-    runtime,
-    storage,
-    feedback,
-    modals,
-    viewStates,
-    dashboardRepository,
-    authService,
-    authUi,
-    supabaseClient,
-    state,
-  },
-  target = window,
-) {
+export function createProjectionControlView({
+  runtime,
+  storage,
+  feedback,
+  modals,
+  viewStates,
+  dashboardRepository,
+  authService,
+  authUi,
+  supabaseClient,
+  state,
+  flowEditor,
+}) {
   runAsyncSafely = runtime.runAsyncSafely;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
@@ -845,21 +846,25 @@ export function installLegacyProjectionControlView(
   isEditorDaObraAtiva = authService.canEditActiveProject;
   requireEditor = authUi.requireEditor;
   APP_STATE = state;
-  Object.defineProperty(target, 'PROJ_CTRL_STATE', {
-    configurable: true,
-    get: () => PROJ_CTRL_STATE,
-    set: (value) => {
-      PROJ_CTRL_STATE = value;
-    },
-  });
-  Object.assign(target, {
+  displayForValue = flowEditor.displayForValue;
+  valueFromDisplay = flowEditor.valueFromDisplay;
+  const api = {
     loadProjCtrl,
     applyLocksToUI,
     initProjCtrl,
     renderProjCtrl,
     editMov,
     deleteMov,
-  });
+    getState: () => PROJ_CTRL_STATE,
+    setState: (value) => {
+      PROJ_CTRL_STATE = value;
+    },
+    getAllMovimentacoes,
+    toggleLockCampo,
+    clearMovFilters,
+    openMovForm,
+    saveMovForm,
+  };
   document.getElementById('movTbody')?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
@@ -867,5 +872,5 @@ export function installLegacyProjectionControlView(
     if (button.dataset.action === 'edit-mov') editMov(button.dataset.id);
     if (button.dataset.action === 'delete-mov') deleteMov(button.dataset.id);
   });
-  return Object.freeze({ toggleLockCampo, clearMovFilters, openMovForm, saveMovForm });
+  return Object.freeze(api);
 }

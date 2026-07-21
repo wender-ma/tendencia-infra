@@ -1,5 +1,5 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { escAttr, escHtml } from '../formatters.mjs';
 
 let reportNonFatalError;
 let renderAll;
@@ -15,6 +15,10 @@ let SUPA;
 let AUTH;
 let isAdminGeral;
 let APP_STATE;
+let requireAdmin;
+let carregarObras;
+let renderObrasDropdown;
+let resetDadosObra;
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -791,20 +795,18 @@ async function rejeitarPendente(email) {
   }
 }
 
-export function installLegacyAdminView(
-  {
-    runtime,
-    storage,
-    projectController,
-    feedback,
-    modals,
-    uploadRepository,
-    authService,
-    supabaseClient,
-    state,
-  },
-  target = window,
-) {
+export function createAdminView({
+  runtime,
+  storage,
+  projectController,
+  feedback,
+  modals,
+  uploadRepository,
+  authService,
+  authUi,
+  supabaseClient,
+  state,
+}) {
   reportNonFatalError = runtime.reportNonFatalError;
   renderAll = runtime.renderAll;
   SafeStorage = storage;
@@ -818,12 +820,11 @@ export function installLegacyAdminView(
   SUPA = supabaseClient;
   AUTH = authService.state;
   isAdminGeral = authService.isAdmin;
+  requireAdmin = authUi.requireAdmin;
+  carregarObras = projectController.carregarObras;
+  renderObrasDropdown = projectController.renderObrasDropdown;
+  resetDadosObra = projectController.resetDadosObra;
   APP_STATE = state;
-  Object.assign(target, {
-    renderObrasAdmin,
-    renderEditoresAdmin,
-    renderPendentesAdmin,
-  });
 
   document.getElementById('obrasAdminTbody')?.addEventListener('click', handleObrasAdminClick);
   document

@@ -1,5 +1,10 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { escAttr, escHtml, formatDate } from '../formatters.mjs';
+import {
+  bindSortableHeaders,
+  isTableRowActivation,
+  updateSortHeaderState,
+} from '../table-interactions.mjs';
 import {
   debounce,
   formatNumber as fmt,
@@ -14,6 +19,7 @@ let renderPaginationControls;
 let renderDashboardState;
 let openModal;
 let APP_STATE;
+let obraTemTendencia;
 
 // ============ DETALHAMENTO ============
 let filtersBound = false;
@@ -32,40 +38,6 @@ function bindDetailFilters() {
       element.addEventListener('change', debouncedFilters);
     }
   });
-}
-
-function updateSortHeaderState(selector, dataAttribute, activeKey, direction) {
-  document.querySelectorAll(selector).forEach((header) => {
-    const key = header.getAttribute(dataAttribute);
-    const state = key === activeKey ? (direction > 0 ? 'ascending' : 'descending') : 'none';
-    const label = header.textContent.trim();
-    header.setAttribute('aria-sort', state);
-    header.setAttribute(
-      'aria-label',
-      state === 'none'
-        ? `${label}. Ativar ordenação`
-        : `${label}. Ordenação ${state === 'ascending' ? 'crescente' : 'decrescente'}`,
-    );
-  });
-}
-
-function bindSortableHeaders(selector, dataAttribute, getState, activateSort) {
-  document.querySelectorAll(selector).forEach((header) => {
-    header.tabIndex = 0;
-    const activate = () => activateSort(header.getAttribute(dataAttribute));
-    header.addEventListener('click', activate);
-    header.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      activate();
-    });
-  });
-  const state = getState();
-  updateSortHeaderState(selector, dataAttribute, state.key, state.direction);
-}
-
-function isTableRowActivation(event) {
-  return event.type === 'click' || event.key === 'Enter' || event.key === ' ';
 }
 
 function populateFilters() {
@@ -363,17 +335,15 @@ function renderFlowMini(f, isOrigem = false) {
     </div>`;
 }
 
-export function installLegacyDetailsView(
-  { runtime, pagination, viewStates, modals, state },
-  target = window,
-) {
+export function createDetailsView({ runtime, pagination, viewStates, modals, state, overview }) {
   reportNonFatalError = runtime.reportNonFatalError;
   paginateRows = pagination.paginate;
   renderPaginationControls = pagination.renderControls;
   renderDashboardState = viewStates.render;
   openModal = modals.open;
   APP_STATE = state;
-  Object.assign(target, {
+  obraTemTendencia = overview.hasTendency;
+  const api = Object.freeze({
     updateSortHeaderState,
     bindSortableHeaders,
     isTableRowActivation,
@@ -398,4 +368,5 @@ export function installLegacyDetailsView(
   );
   document.getElementById('tbody')?.addEventListener('click', activateDetailRow);
   document.getElementById('tbody')?.addEventListener('keydown', activateDetailRow);
+  return api;
 }

@@ -1,5 +1,5 @@
-/* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from './dom.mjs';
+import { escAttr, escHtml } from './formatters.mjs';
 
 let reportNonFatalError;
 let runAsyncSafely;
@@ -33,15 +33,20 @@ let isEditorDaObraAtiva;
 let isAdminGeral;
 let requireUploadPermission;
 let APP_STATE;
-
-const MANUAL_TEXT = {
-  tendencia:
-    '📈 ABA TENDÊNCIA (formato v0.55+)\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba TENDÊNCIA\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui usando o botão "📤 Carregar CSV"\n\nO arquivo deve manter as colunas de Código, Serviço, Insumo, Item, Licitação, IPCA, INCC, Gestão, Diferença e Evoluções nas posições documentadas.\n\n⚠️ O formato antigo de 17 colunas não é mais aceito.\nVeja a aba "ℹ️ Manual" para detalhes completos.',
-  flows:
-    '🔗 ABA FlowsValor\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba FlowsValor (layout Fabric v0.63)\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nO arquivo deve manter as 15 colunas na ordem oficial, de Cod_aditivo até Refletido.\n\n⚠️ As edições e aditivos manuais NÃO são apagados ao recarregar.\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
-  gestoes:
-    '📅 ABA Gestões\n\nExporte da planilha:\n1. Abra o arquivo .xlsm\n2. Vá na aba Gestões\n3. Arquivo → Salvar Como → CSV UTF-8 (.csv)\n4. Carregue aqui\n\nCabeçalhos obrigatórios: Descr_gestao, Descr_classificacaofinanceira, Key_planejamento, Val_totalliquido e Mes_pagamento.\n\nVeja a aba "ℹ️ Manual" para detalhes completos.',
-};
+let parseTendencia;
+let parseFlowsValor;
+let parseGestoes;
+let parseCSVRows;
+let validateImportHeaders;
+let aplicarFallbackGestaoDoHistorico;
+let atualizarGestaoLabelPelaHistoria;
+let buildInsumosList;
+let setInputOptions;
+let buildDatalist;
+let applyManuals;
+let loadClassifications;
+let updateEditCount;
+let requireAdmin;
 
 // ============================================================
 // v0.52 — Upload handler (refatorado pra usar Central de Uploads)
@@ -99,7 +104,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         aplicarFallbackGestaoDoHistorico();
         // rebuildar datalist de insumos após upload novo
         try {
-          INSUMOS_OPTIONS = buildInsumosList();
+          setInputOptions(buildInsumosList());
           buildDatalist();
         } catch (e) {
           reportNonFatalError('Upload/reconstruir lista de insumos', e);
@@ -429,7 +434,7 @@ async function _processExcelSheets(workbook, mapping, file) {
         APP_STATE.dados.tendencia = parsed;
         // rebuildar datalist de insumos após upload novo
         try {
-          INSUMOS_OPTIONS = buildInsumosList();
+          setInputOptions(buildInsumosList());
           buildDatalist();
         } catch (e) {
           reportNonFatalError('Excel/reconstruir lista de insumos', e);
@@ -1094,7 +1099,7 @@ function _parsearECarregar(kind, csv) {
     APP_STATE.dados.tendencia = parsed;
     // rebuildar datalist de insumos após upload novo
     try {
-      INSUMOS_OPTIONS = buildInsumosList();
+      setInputOptions(buildInsumosList());
       buildDatalist();
     } catch (e) {
       reportNonFatalError('Histórico/reconstruir lista de insumos', e);
@@ -1208,22 +1213,22 @@ function renderSourcesHeaders() {
   });
 }
 
-export function installLegacyUploadUI(
-  {
-    runtime,
-    excel,
-    validateUpload,
-    feedback,
-    modals,
-    uploadRepository,
-    uploadCoordinator,
-    authService,
-    authUi,
-    supabaseClient,
-    state,
-  },
-  target = window,
-) {
+export function createUploadView({
+  runtime,
+  excel,
+  validateUpload,
+  feedback,
+  modals,
+  uploadRepository,
+  uploadCoordinator,
+  authService,
+  authUi,
+  supabaseClient,
+  state,
+  parsers,
+  projectController,
+  flowEditor,
+}) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   debouncedRender = runtime.debouncedRender;
@@ -1255,13 +1260,24 @@ export function installLegacyUploadUI(
   isEditorDaObraAtiva = authService.canEditActiveProject;
   isAdminGeral = authService.isAdmin;
   requireUploadPermission = authUi.requireUploadPermission;
+  requireAdmin = authUi.requireAdmin;
   APP_STATE = state;
-  Object.assign(target, {
-    MANUAL_TEXT,
+  parseTendencia = parsers.applyTendency;
+  parseFlowsValor = parsers.applyFlows;
+  parseGestoes = parsers.applyManagements;
+  parseCSVRows = parsers.parseDelimitedRows;
+  validateImportHeaders = parsers.validateImportHeaders;
+  aplicarFallbackGestaoDoHistorico = projectController.aplicarFallbackGestaoDoHistorico;
+  atualizarGestaoLabelPelaHistoria = projectController.atualizarGestaoLabelPelaHistoria;
+  buildInsumosList = flowEditor.buildInsumosList;
+  setInputOptions = flowEditor.setInputOptions;
+  buildDatalist = flowEditor.buildDatalist;
+  applyManuals = flowEditor.applyManuals;
+  loadClassifications = flowEditor.loadClassifications;
+  updateEditCount = flowEditor.updateEditCount;
+  return Object.freeze({
     renderUploadsCentral,
     renderSourcesHeaders,
-  });
-  return Object.freeze({
     handleUpload,
     handleExcelUpload,
     toggleAdvancedUploads,

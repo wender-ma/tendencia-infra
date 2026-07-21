@@ -52,7 +52,7 @@ assert(
 
 const historyHeatmap = historyView.slice(
   historyView.indexOf('function renderHistHeatmap('),
-  historyView.indexOf('export function installLegacyHistoryView'),
+  historyView.indexOf('export function createHistoryView'),
 );
 assert(
   historyHeatmap.indexOf('const historyPage') < historyHeatmap.indexOf('historyPage.items'),

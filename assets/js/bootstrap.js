@@ -1,17 +1,14 @@
 import { createApplication } from './application.mjs';
 import { DASHBOARD_CONFIG, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
-import { installLegacyImportParsers } from './parsers/index.mjs';
+import { createImportParserService } from './parsers/index.mjs';
 import { createPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService } from './ui/feedback.mjs';
 import { createModalService } from './ui/modals.mjs';
 import { createActionRegistry, installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, createAuthUiActions, isGlobalUploadKind } from './ui/auth-ui.mjs';
-import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
+import { createDashboardShell, createDashboardShellActions } from './ui/shell.mjs';
 import { createDashboardRuntime, formatNumber } from './ui/dashboard-runtime.mjs';
-import {
-  createProjectController,
-  installLegacyProjectController,
-} from './ui/project-controller.mjs';
+import { createProjectController, createProjectActions } from './ui/project-controller.mjs';
 import { createUploadMaintenance } from './ui/upload-maintenance.mjs';
 import { createPaginationService } from './ui/pagination.mjs';
 import { createViewStateService } from './ui/view-states.mjs';
@@ -56,6 +53,7 @@ function showBootstrapError(error) {
 mountStaticViews();
 const logger = createLogger();
 const actionRegistry = createActionRegistry();
+const ui = {};
 actionRegistry.register({ print: () => window.print() });
 const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
   reportError: (context, error) => logger.warn(context, error),
@@ -104,12 +102,12 @@ const authUi = createAuthUi({
   requestConfirmation: (...args) => modalService.confirm(...args),
   getActiveProject: () => appState.obra.ativa,
   renderProtectedViews: () => {
-    window.renderFlows?.();
-    if (document.getElementById('projCtrlMovsList')) window.renderProjCtrl?.();
-    window.renderUploadsCentral?.();
+    ui.flows?.renderFlows();
+    if (document.getElementById('projCtrlMovsList')) ui.projectionControl?.renderProjCtrl();
+    ui.uploads?.renderUploadsCentral();
   },
-  clearMassSelection: () => window.clearMassSelection?.(),
-  applyProjectionLocks: () => window.applyLocksToUI?.(),
+  clearMassSelection: () => ui.flowEditor?.clearMassSelection(),
+  applyProjectionLocks: () => ui.projectionControl?.applyLocksToUI(),
   reportError: (context, error) => logger.warn(context, error),
 });
 authUiRef.current = authUi;
@@ -134,7 +132,7 @@ const dashboardExportService = createDashboardExportService({
   getState: () => ({
     tendency: appState.dados.tendencia,
     flows: dashboardRuntime.getActiveFlows(),
-    projectionControl: window.PROJ_CTRL_STATE || {},
+    projectionControl: ui.projectionControl?.getState() || {},
     activeProject: appState.obra.ativa || '',
     project: projectController?.getProjectInfo(appState.obra.ativa) || null,
     auth: authService.state,
@@ -161,20 +159,20 @@ const dashboardRuntime = createDashboardRuntime({
   ensureApexCharts,
   logger,
   toast: (...args) => feedbackService.toast(...args),
-  populateFilters: () => window.populateFilters?.(),
-  renderSourcesHeaders: () => window.renderSourcesHeaders?.(),
+  populateFilters: () => ui.details?.populateFilters(),
+  renderSourcesHeaders: () => ui.uploads?.renderSourcesHeaders(),
   renderers: {
-    overview: () => window.renderVisao?.(),
-    flows: () => window.renderFlows?.(),
-    details: () => window.renderTable?.(),
-    history: () => window.renderHistorico?.(),
-    projection: () => window.renderProjecao?.(),
-    initializeProjection: () => window.initProjecao?.(),
-    projectionControl: () => window.initProjCtrl?.(),
-    uploads: () => window.renderUploadsCentral?.(),
+    overview: () => ui.overview?.renderVisao(),
+    flows: () => ui.flows?.renderFlows(),
+    details: () => ui.details?.renderTable(),
+    history: () => ui.history?.renderHistorico(),
+    projection: () => ui.projection?.renderProjecao(),
+    initializeProjection: () => ui.projection?.initProjecao(),
+    projectionControl: () => ui.projectionControl?.initProjCtrl(),
+    uploads: () => ui.uploads?.renderUploadsCentral(),
   },
 });
-const parserService = installLegacyImportParsers({
+const parserService = createImportParserService({
   state: appState,
   config: DASHBOARD_CONFIG,
   monitor: performanceService,
@@ -209,20 +207,18 @@ const projectController = createProjectController({
   hideLoading: () => feedbackService.hideLoading(),
   toast: (...args) => feedbackService.toast(...args),
   renderAll: () => dashboardRuntime.renderAll(),
-  applyManuals: () => window.applyManuals?.(),
-  loadClassifications: () => window.loadClassifications?.(),
-  buildInputList: () => window.buildInsumosList?.() || [],
-  setInputOptions: (options) => {
-    window.INSUMOS_OPTIONS = options;
-  },
-  buildDatalist: () => window.buildDatalist?.(),
-  loadProjectionControl: () => window.loadProjCtrl?.(),
-  getProjectionControlState: () => window.PROJ_CTRL_STATE,
-  applyProjectionLocks: () => window.applyLocksToUI?.(),
+  applyManuals: () => ui.flowEditor?.applyManuals(),
+  loadClassifications: () => ui.flowEditor?.loadClassifications(),
+  buildInputList: () => ui.flowEditor?.buildInsumosList() || [],
+  setInputOptions: (options) => ui.flowEditor?.setInputOptions(options),
+  buildDatalist: () => ui.flowEditor?.buildDatalist(),
+  loadProjectionControl: () => ui.projectionControl?.loadProjCtrl(),
+  getProjectionControlState: () => ui.projectionControl?.getState(),
+  applyProjectionLocks: () => ui.projectionControl?.applyLocksToUI(),
   formatValue: (value) => formatNumber(value),
   reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
 });
-actionRegistry.register(installLegacyProjectController(projectController));
+actionRegistry.register(createProjectActions(projectController));
 const uploadCoordinator = createUploadCoordinator({
   getClient: () => supabaseService.client,
   getActiveProject: () => appState.obra.ativa,
@@ -243,10 +239,8 @@ const uploadCoordinator = createUploadCoordinator({
     appState.config.gestaoLabel = snapshot.managementLabel;
     appState.config.evolGlobal = snapshot.evolution;
   },
-  getInputOptions: () => window.INSUMOS_OPTIONS,
-  setInputOptions: (options) => {
-    window.INSUMOS_OPTIONS = options;
-  },
+  getInputOptions: () => ui.flowEditor?.getInputOptions() || [],
+  setInputOptions: (options) => ui.flowEditor?.setInputOptions(options),
   canEditActiveProject: () => authService.canEditActiveProject(),
   isAdmin: () => authService.isAdmin(),
   isGlobalKind: (kind) => isGlobalUploadKind(kind),
@@ -257,7 +251,7 @@ const uploadCoordinator = createUploadCoordinator({
     const selector = document.getElementById('obraSelector');
     if (selector) selector.disabled = disabled;
   },
-  rebuildInputList: () => window.buildDatalist?.(),
+  rebuildInputList: () => ui.flowEditor?.buildDatalist(),
   markSyncError: (error) => syncStatusService.markError(error),
   markSynced: () => syncStatusService.markSynced(),
   reportCleanupError: (context, error) => logger.warn(context, error),
@@ -272,9 +266,9 @@ const dashboardShell = createDashboardShell({
   isAdmin: () => authService.isAdmin(),
   renderTab: (tabName) => dashboardRuntime.renderTab(tabName),
   renderAdmin: () => {
-    window.renderPendentesAdmin?.();
-    window.renderObrasAdmin?.();
-    window.renderEditoresAdmin?.();
+    ui.admin?.renderPendentesAdmin();
+    ui.admin?.renderObrasAdmin();
+    ui.admin?.renderEditoresAdmin();
   },
   saveHeaderTitle: (title) => {
     void dashboardRuntime.runAsyncSafely(
@@ -285,20 +279,20 @@ const dashboardShell = createDashboardShell({
   },
   reportError: (context, error) => logger.warn(context, error),
 });
-actionRegistry.register(installLegacyDashboardShell(dashboardShell));
+actionRegistry.register(createDashboardShellActions(dashboardShell));
 
 Promise.resolve()
   .then(async () => {
     const [
-      { installLegacyFlowEditor },
-      { installLegacyUploadUI },
-      { installLegacyAdminView },
-      { installLegacyDetailsView },
-      { installLegacyFlowsView },
-      { installLegacyHistoryView },
-      { installLegacyOverviewView },
-      { installLegacyProjectionView },
-      { installLegacyProjectionControlView },
+      { createFlowEditor },
+      { createUploadView },
+      { createAdminView },
+      { createDetailsView },
+      { createFlowsView },
+      { createHistoryView },
+      { createOverviewView },
+      { createProjectionView },
+      { createProjectionControlView },
     ] = await Promise.all([
       import('./ui/flow-editor.mjs'),
       import('./ui/uploads.mjs'),
@@ -310,129 +304,140 @@ Promise.resolve()
       import('./ui/views/projection.mjs'),
       import('./ui/views/projection-control.mjs'),
     ]);
-    actionRegistry.register(
-      installLegacyFlowEditor({
-        runtime: dashboardRuntime,
-        storage: storageService,
-        feedback: feedbackService,
-        modals: modalService,
-        dashboardRepository,
-        authService,
-        authUi,
-        supabaseClient: supabaseService.client,
-        state: appState,
-      }),
-    );
-    actionRegistry.register(
-      installLegacyUploadUI({
-        runtime: dashboardRuntime,
-        excel: excelService,
-        validateUpload: validateUploadFile,
-        feedback: feedbackService,
-        modals: modalService,
-        uploadRepository,
-        uploadCoordinator,
-        authService,
-        authUi,
-        supabaseClient: supabaseService.client,
-        state: appState,
-      }),
-    );
-    actionRegistry.register(
-      installLegacyAdminView({
-        runtime: dashboardRuntime,
-        storage: storageService,
-        projectController,
-        feedback: feedbackService,
-        modals: modalService,
-        uploadRepository,
-        authService,
-        supabaseClient: supabaseService.client,
-        state: appState,
-      }),
-    );
-    installLegacyDetailsView({
+    ui.flowEditor = createFlowEditor({
+      runtime: dashboardRuntime,
+      storage: storageService,
+      feedback: feedbackService,
+      modals: modalService,
+      dashboardRepository,
+      authService,
+      authUi,
+      supabaseClient: supabaseService.client,
+      state: appState,
+      views: {
+        renderFlowTable: (...args) => ui.flows?.renderFlowTable(...args),
+        renderFlows: (...args) => ui.flows?.renderFlows(...args),
+      },
+    });
+    actionRegistry.register(ui.flowEditor);
+    ui.uploads = createUploadView({
+      runtime: dashboardRuntime,
+      excel: excelService,
+      validateUpload: validateUploadFile,
+      feedback: feedbackService,
+      modals: modalService,
+      uploadRepository,
+      uploadCoordinator,
+      authService,
+      authUi,
+      supabaseClient: supabaseService.client,
+      state: appState,
+      parsers: parserService,
+      projectController,
+      flowEditor: ui.flowEditor,
+    });
+    actionRegistry.register(ui.uploads);
+    ui.admin = createAdminView({
+      runtime: dashboardRuntime,
+      storage: storageService,
+      projectController,
+      feedback: feedbackService,
+      modals: modalService,
+      uploadRepository,
+      authService,
+      authUi,
+      supabaseClient: supabaseService.client,
+      state: appState,
+    });
+    actionRegistry.register(ui.admin);
+    ui.details = createDetailsView({
       runtime: dashboardRuntime,
       pagination: paginationService,
       viewStates: viewStateService,
       modals: modalService,
       state: appState,
+      overview: { hasTendency: (...args) => ui.overview?.obraTemTendencia(...args) },
     });
-    actionRegistry.register(
-      installLegacyFlowsView({
-        runtime: dashboardRuntime,
-        pagination: paginationService,
-        storage: storageService,
-        viewStates: viewStateService,
-        dashboardRepository,
-        authService,
-        authUi,
-        state: appState,
-      }),
-    );
-    installLegacyHistoryView({
+    actionRegistry.register(ui.details);
+    ui.flows = createFlowsView({
+      runtime: dashboardRuntime,
+      pagination: paginationService,
+      storage: storageService,
+      viewStates: viewStateService,
+      dashboardRepository,
+      authService,
+      authUi,
+      state: appState,
+      flowEditor: ui.flowEditor,
+    });
+    actionRegistry.register(ui.flows);
+    ui.history = createHistoryView({
       runtime: dashboardRuntime,
       pagination: paginationService,
       viewStates: viewStateService,
       state: appState,
     });
-    actionRegistry.register(
-      installLegacyOverviewView({
-        runtime: dashboardRuntime,
-        storage: storageService,
-        viewStates: viewStateService,
-        dashboardRepository,
-        authService,
-        state: appState,
-      }),
-    );
-    actionRegistry.register(
-      installLegacyProjectionView({
-        runtime: dashboardRuntime,
-        loadXlsx: ensureXlsx,
-        feedback: feedbackService,
-        modals: modalService,
-        viewStates: viewStateService,
-        state: appState,
-      }),
-    );
-    actionRegistry.register(
-      installLegacyProjectionControlView({
-        runtime: dashboardRuntime,
-        storage: storageService,
-        feedback: feedbackService,
-        modals: modalService,
-        viewStates: viewStateService,
-        dashboardRepository,
-        authService,
-        authUi,
-        supabaseClient: supabaseService.client,
-        state: appState,
-      }),
-    );
+    actionRegistry.register(ui.history);
+    ui.projectionControl = createProjectionControlView({
+      runtime: dashboardRuntime,
+      storage: storageService,
+      feedback: feedbackService,
+      modals: modalService,
+      viewStates: viewStateService,
+      dashboardRepository,
+      authService,
+      authUi,
+      supabaseClient: supabaseService.client,
+      state: appState,
+      flowEditor: ui.flowEditor,
+    });
+    actionRegistry.register(ui.projectionControl);
+    ui.projection = createProjectionView({
+      runtime: dashboardRuntime,
+      loadXlsx: ensureXlsx,
+      feedback: feedbackService,
+      modals: modalService,
+      viewStates: viewStateService,
+      state: appState,
+      overview: {
+        renderAderenciaProj: (...args) => ui.overview?.renderAderenciaProj(...args),
+        renderVisao: (...args) => ui.overview?.renderVisao(...args),
+      },
+      projectController,
+      projectionControl: ui.projectionControl,
+    });
+    actionRegistry.register(ui.projection);
+    ui.overview = createOverviewView({
+      runtime: dashboardRuntime,
+      storage: storageService,
+      viewStates: viewStateService,
+      dashboardRepository,
+      authService,
+      state: appState,
+      shell: dashboardShell,
+      projection: ui.projection,
+      projectionControl: ui.projectionControl,
+    });
+    actionRegistry.register(ui.overview);
 
     const uploadMaintenance = createUploadMaintenance({
       dashboardRepository,
       uploadRepository,
       getActiveProject: () => appState.obra.ativa,
-      getProjectInfo: (project) => window.getObraInfo?.(project),
+      getProjectInfo: (project) => projectController.getProjectInfo(project),
       requireEditor: (description) => authUi.requireEditor(description),
       requireAdmin: (description) => authUi.requireAdmin(description),
       isAdmin: () => authService.isAdmin(),
       requestConfirmation: (...args) => modalService.confirm(...args),
       toast: (...args) => feedbackService.toast(...args),
       clearLocalEvolution: () => {
-        try {
-          window.localStorage.removeItem('jzurique_evol_global');
-        } catch (error) {
-          logger.warn('Cache/remover evolução local', error);
-        }
+        storageService.remove(STORAGE_KEYS.evolution);
       },
       clearLatestUploads: () => {
         for (const kind of Object.keys(appState.uploads)) appState.uploads[kind] = null;
       },
-      renderUploads: () => window.renderUploadsCentral?.(),
-      renderSourceHeaders: () => window.renderSourcesHeaders?.(),
+      renderUploads: () => ui.uploads.renderUploadsCentral(),
+      renderSourceHeaders: () => ui.uploads.renderSourcesHeaders(),
       reload: () => window.location.reload(),
       reportError: (context, error) => logger.warn(context, error),
     });
@@ -453,15 +458,13 @@ Promise.resolve()
       syncStatus: syncStatusService,
       performanceMonitor: performanceService,
       hasBackend: () => Boolean(supabaseService.client),
-      buildInputList: () => window.buildInsumosList?.() || [],
-      setInputOptions: (options) => {
-        window.INSUMOS_OPTIONS = options;
-      },
-      buildDatalist: () => window.buildDatalist?.(),
-      applyManuals: () => window.applyManuals?.(),
-      loadClassifications: () => window.loadClassifications?.() || 0,
-      updateEditCount: () => window.updateEditCount?.(),
-      restoreFilters: () => window.restaurarFiltros?.(),
+      buildInputList: () => ui.flowEditor.buildInsumosList(),
+      setInputOptions: (options) => ui.flowEditor.setInputOptions(options),
+      buildDatalist: () => ui.flowEditor.buildDatalist(),
+      applyManuals: () => ui.flowEditor.applyManuals(),
+      loadClassifications: () => ui.flowEditor.loadClassifications(),
+      updateEditCount: () => ui.flowEditor.updateEditCount(),
+      restoreFilters: () => ui.details.restaurarFiltros(),
       toast: (...args) => feedbackService.toast(...args),
       reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
     });
@@ -482,6 +485,7 @@ Promise.resolve()
       modals: modalService,
       pagination: paginationService,
       viewStates: viewStateService,
+      views: Object.freeze({ ...ui }),
       performance: performanceService,
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
       excel: excelService,

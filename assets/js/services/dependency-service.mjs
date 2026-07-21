@@ -1,25 +1,13 @@
 let xlsxPromise;
 let apexChartsPromise;
 
-function loadOnce(currentPromise, importer, install) {
+function loadOnce(currentPromise, importer, resolveModule = (module) => module) {
   if (currentPromise) return currentPromise;
-
-  return importer().then((module) => {
-    install(module);
-    return module;
-  });
+  return importer().then(resolveModule);
 }
 
 export function ensureXlsx() {
-  if (window.XLSX?.read) return Promise.resolve(window.XLSX);
-
-  xlsxPromise = loadOnce(
-    xlsxPromise,
-    () => import('xlsx'),
-    (module) => {
-      window.XLSX = module;
-    },
-  ).catch((error) => {
+  xlsxPromise = loadOnce(xlsxPromise, () => import('xlsx')).catch((error) => {
     xlsxPromise = undefined;
     throw error;
   });
@@ -27,19 +15,13 @@ export function ensureXlsx() {
 }
 
 export function ensureApexCharts() {
-  if (typeof window.ApexCharts === 'function') return Promise.resolve(window.ApexCharts);
-
   apexChartsPromise = loadOnce(
     apexChartsPromise,
     () => import('apexcharts'),
-    (module) => {
-      window.ApexCharts = module.default;
-    },
-  )
-    .then(() => window.ApexCharts)
-    .catch((error) => {
-      apexChartsPromise = undefined;
-      throw error;
-    });
+    (module) => module.default,
+  ).catch((error) => {
+    apexChartsPromise = undefined;
+    throw error;
+  });
   return apexChartsPromise;
 }

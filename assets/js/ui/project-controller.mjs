@@ -379,21 +379,6 @@ export function createProjectController({
   });
 }
 
-export function installLegacyProjectController(controller, target = window) {
-  Object.assign(target, {
-    keyPorObra: controller.keyForProject,
-    getObraInfo: controller.getProjectInfo,
-    resolverObraInicial: controller.resolverObraInicial,
-    carregarObras: controller.carregarObras,
-    renderObrasDropdown: controller.renderObrasDropdown,
-    acharUltimaGestaoCronologica: controller.findLatestManagement,
-    atualizarGestaoLabelPelaHistoria: controller.atualizarGestaoLabelPelaHistoria,
-    aplicarFallbackGestaoDoHistorico: controller.aplicarFallbackGestaoDoHistorico,
-    recarregarDadosDaObra: controller.recarregarDadosDaObra,
-    resetDadosObra: controller.resetDadosObra,
-    aplicarCacheLocal: controller.aplicarCacheLocal,
-    aplicarDadosPersistidos: controller.aplicarDadosPersistidos,
-    posCarregarDados: controller.posCarregarDados,
-  });
+export function createProjectActions(controller) {
   return Object.freeze({ trocarObra: controller.trocarObra });
 }

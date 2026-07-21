@@ -69,13 +69,13 @@
     </div>
 
     <!-- Tabs Login / Signup -->
-    <div class="login-tabs">
-      <button id="loginTabLogin" class="login-tab" data-click-action="switchLoginTab" data-action-mode="arg" data-action-arg="login">Entrar</button>
-      <button id="loginTabSignup" class="login-tab" data-click-action="switchLoginTab" data-action-mode="arg" data-action-arg="signup">Criar conta</button>
+    <div class="login-tabs" role="tablist" aria-label="Forma de acesso">
+      <button id="loginTabLogin" class="login-tab active" type="button" role="tab" aria-selected="true" aria-controls="loginPanelLogin" data-click-action="switchLoginTab" data-action-mode="arg" data-action-arg="login">Entrar</button>
+      <button id="loginTabSignup" class="login-tab" type="button" role="tab" aria-selected="false" aria-controls="loginPanelSignup" tabindex="-1" data-click-action="switchLoginTab" data-action-mode="arg" data-action-arg="signup">Criar conta</button>
     </div>
 
     <!-- PAINEL LOGIN -->
-    <div id="loginPanelLogin">
+    <div id="loginPanelLogin" role="tabpanel" aria-labelledby="loginTabLogin">
       <button type="button" class="login-provider-button" data-click-action="doSignInGoogle">
         <span class="provider-icon">🔷</span> Entrar com Google
       </button>
@@ -97,7 +97,7 @@
     </div>
 
     <!-- PAINEL SIGNUP -->
-    <div id="loginPanelSignup" hidden>
+    <div id="loginPanelSignup" role="tabpanel" aria-labelledby="loginTabSignup" hidden>
       <p class="signup-intro">
         Sua conta será criada como <strong>"aguardando aprovação"</strong>. Um administrador precisa liberar seu acesso pra editar dados.
       </p>

@@ -6,6 +6,7 @@ import { createPerformanceMonitor, installPerformanceMonitor } from './performan
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
+import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { installLegacyFlowEditor } from './ui/flow-editor.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
@@ -185,9 +186,26 @@ Promise.resolve()
       reportError: (context, error) => logger.warn(context, error),
     });
     installLegacyAuthGlobals(authService);
+    const authUi = createAuthUi({
+      authService,
+      modalService,
+      toast: (...args) => feedbackService.toast(...args),
+      requestConfirmation: (...args) => modalService.confirm(...args),
+      getActiveProject: () => appState.obra.ativa,
+      renderProtectedViews: () => {
+        window.renderFlows?.();
+        if (document.getElementById('projCtrlMovsList')) window.renderProjCtrl?.();
+        window.renderUploadsCentral?.();
+      },
+      clearMassSelection: () => window.clearMassSelection?.(),
+      applyProjectionLocks: () => window.applyLocksToUI?.(),
+      reportError: (context, error) => logger.warn(context, error),
+    });
+    installLegacyAuthUi(authUi);
     window.dashboardServices = Object.freeze({
       supabase: supabaseService,
       auth: authService,
+      authUi,
       parsers: parserService,
       feedback: feedbackService,
       modals: modalService,

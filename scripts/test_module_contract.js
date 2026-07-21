@@ -14,6 +14,7 @@ const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.m
 const domUi = fs.readFileSync(path.join(root, 'assets/js/ui/dom.mjs'), 'utf8');
 const flowEditor = fs.readFileSync(path.join(root, 'assets/js/ui/flow-editor.mjs'), 'utf8');
 const dashboardShell = fs.readFileSync(path.join(root, 'assets/js/ui/shell.mjs'), 'utf8');
+const authUi = fs.readFileSync(path.join(root, 'assets/js/ui/auth-ui.mjs'), 'utf8');
 const dashboardExport = fs.readFileSync(
   path.join(root, 'assets/js/services/dashboard-export.mjs'),
   'utf8',
@@ -103,6 +104,11 @@ assert(
   'Adaptador temporário do shell ausente',
 );
 assert(!dashboardShell.includes('.innerHTML'), 'Shell não pode montar HTML sem parser');
+assert(
+  authUi.includes('export function createAuthUi'),
+  'Interface de autenticação não foi modularizada',
+);
+assert(!authUi.includes('.innerHTML'), 'Interface de autenticação não pode montar HTML inseguro');
 assert(
   dashboardExport.includes('export function createDashboardExportService'),
   'Serviço de exportação XLSX ausente',
@@ -303,6 +309,17 @@ for (const removedLegacyContract of [
   'function toggleHeaderEdit(',
   'function verificarDadosDesatualizados(',
   'function activateTab(',
+  'function syncEditingControls(',
+  'function updateAuthUI(',
+  'function requireEditorForActiveProject(',
+  'function requireAdmin(',
+  'function isGlobalUploadKind(',
+  'function requireUploadPermission(',
+  'function openLoginModal(',
+  'async function doSignInGoogle(',
+  'async function doSignInEmail(',
+  'async function doSignUpEmail(',
+  'async function handleAuthClick(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

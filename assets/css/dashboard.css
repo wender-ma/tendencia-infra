@@ -12,6 +12,13 @@
   .panel-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .header-project-row { gap: 10px; margin-top: 2px; }
   .header-title-text { font-size: 13px; font-weight: 500; opacity: 0.85; cursor: default; outline: none; }
+  .header-title-text.is-editing {
+    cursor: text;
+    background: rgba(255,255,255,0.15);
+    padding: 2px 8px;
+    border-radius: 4px;
+    outline: 2px solid rgba(255,255,255,0.5);
+  }
   .header-project-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0; }
   .header-edit-button {
     padding: 2px 6px;
@@ -221,6 +228,13 @@
     border-left: 4px solid var(--sem-alerta-vivid);
     padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; }
   .alert-banner strong { color: var(--sem-alerta-text); }
+  .alert-banner.is-critical {
+    background: linear-gradient(90deg, var(--sem-erro-bg) 0%, var(--sem-erro-border) 100%);
+    border-left-color: var(--sem-erro-vivid);
+  }
+  .alert-banner.is-critical strong { color: var(--sem-erro-vivid); }
+  .alert-banner-link { color: var(--sem-alerta-text); font-weight: 700; }
+  .alert-banner.is-critical .alert-banner-link { color: var(--sem-erro-vivid); }
 
   /* Modal */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);

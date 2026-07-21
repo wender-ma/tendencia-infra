@@ -13,6 +13,7 @@ const projectionCatalog = fs.readFileSync(
 const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.mjs'), 'utf8');
 const domUi = fs.readFileSync(path.join(root, 'assets/js/ui/dom.mjs'), 'utf8');
 const flowEditor = fs.readFileSync(path.join(root, 'assets/js/ui/flow-editor.mjs'), 'utf8');
+const dashboardShell = fs.readFileSync(path.join(root, 'assets/js/ui/shell.mjs'), 'utf8');
 const dashboardExport = fs.readFileSync(
   path.join(root, 'assets/js/services/dashboard-export.mjs'),
   'utf8',
@@ -93,6 +94,15 @@ assert(
   'Ações em massa ausentes do editor de Flows',
 );
 assert(!flowEditor.includes('.innerHTML'), 'Editor de Flows não pode montar HTML sem parser');
+assert(
+  dashboardShell.includes('export function createDashboardShell'),
+  'Controlador do shell do dashboard ausente',
+);
+assert(
+  dashboardShell.includes('export function installLegacyDashboardShell'),
+  'Adaptador temporário do shell ausente',
+);
+assert(!dashboardShell.includes('.innerHTML'), 'Shell não pode montar HTML sem parser');
 assert(
   dashboardExport.includes('export function createDashboardExportService'),
   'Serviço de exportação XLSX ausente',
@@ -289,6 +299,10 @@ for (const removedLegacyContract of [
   'async function supaDeleteMov(',
   'async function supaLoadDashboardConfig(',
   'async function supaSaveDashboardKey(',
+  'function toggleTheme(',
+  'function toggleHeaderEdit(',
+  'function verificarDadosDesatualizados(',
+  'function activateTab(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

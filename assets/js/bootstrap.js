@@ -8,6 +8,7 @@ import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { installLegacyFlowEditor } from './ui/flow-editor.mjs';
+import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
 import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
@@ -145,6 +146,31 @@ const dashboardRepository = createDashboardRepository({
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyDashboardRepository(dashboardRepository);
+const dashboardShell = createDashboardShell({
+  getManagementLabel: () => window.GESTAO_LABEL,
+  getHeaderEditable: () => window._headerEditable === true,
+  setHeaderEditable: (value) => {
+    window._headerEditable = value;
+  },
+  authorizeAdmin: () => window.requireAdmin?.('acessar esta função administrativa') === true,
+  isAdmin: () => window.isAdminGeral?.() === true,
+  renderTab: (tabName) => window.renderTab?.(tabName),
+  renderAdmin: () => {
+    window.renderPendentesAdmin?.();
+    window.renderObrasAdmin?.();
+    window.renderEditoresAdmin?.();
+  },
+  saveHeaderTitle: (title) => {
+    if (!window.supaSaveDashboardKey || !window.runAsyncSafely) return;
+    void window.runAsyncSafely(
+      window.supaSaveDashboardKey('header_title', title),
+      'Config/salvar título',
+      'O título foi salvo apenas neste navegador.',
+    );
+  },
+  reportError: (context, error) => logger.warn(context, error),
+});
+installLegacyDashboardShell(dashboardShell);
 
 Promise.resolve()
   .then(() => {
@@ -172,6 +198,7 @@ Promise.resolve()
       excel: excelService,
       exports: dashboardExportService,
       dashboardRepository,
+      shell: dashboardShell,
       logger,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
       uploadRepository,

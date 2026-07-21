@@ -32,6 +32,11 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const modalService = window.dashboardServices.modals;
     const performanceService = window.dashboardServices.performance;
     const loggerService = window.dashboardServices.logger;
+    const uploadPolicy = window.dashboardServices.uploadPolicy;
+    const uploadPolicyWorks = (
+      uploadPolicy.validate({ name: 'dados.csv', size: 100 }, 'csv').valid
+      && uploadPolicy.validate({ name: 'dados.exe', size: 100 }, 'excel').code === 'extension'
+    );
     loggerService.clear();
     loggerService.warn('Browser/user@example.com', new Error('token eyJabc.def.ghi'));
     const loggerSnapshot = loggerService.snapshot();
@@ -121,6 +126,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         && performanceService.snapshot().operations['render:visao']?.count >= 1
       ),
       hasLoggerService: loggerIsSanitized && window.dashboardLogger === loggerService,
+      hasUploadPolicy: uploadPolicyWorks,
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -154,6 +160,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasModalService: true,
     hasPerformanceService: true,
     hasLoggerService: true,
+    hasUploadPolicy: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {

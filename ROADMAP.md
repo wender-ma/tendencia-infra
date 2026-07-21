@@ -209,7 +209,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [ ] Paginar ou virtualizar tabelas grandes.
 - [x] Processar Excel em Web Worker.
-- [ ] Revisar o limite de upload de 50 MB com medições reais.
+- [ ] Revisar o limite de upload de 50 MB com arquivos reais representativos (política já centralizada e limites automatizados).
 - [x] Medir tempo de boot, tempo de parsing/renderização e quantidade de nós no DOM.
 - [x] Manter o descarte de instâncias ApexCharts antes de redesenhar.
 
@@ -305,3 +305,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Handlers inline removidos do HTML e dos templates; ações de interface centralizadas por delegação | `ui/actions.mjs` |
 | 21/07/2026 | CSP aplicada com scripts locais e conexões limitadas ao Supabase; exceção temporária mantida somente para estilos inline | `public/_headers` |
 | 21/07/2026 | Logger local limitado criado com contexto e redação automática de emails, tokens e query strings | `services/logger.mjs` |
+| 21/07/2026 | Política de upload centralizada; CSV e Excel compartilham validação e progresso percentual de leitura | `services/upload-policy.mjs` |

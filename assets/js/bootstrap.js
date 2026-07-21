@@ -18,6 +18,7 @@ import {
 } from './services/dependency-service.mjs';
 import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
 import { createLogger, installLogger } from './services/logger.mjs';
+import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
 
 function showBootstrapError(error) {
   window.dashboardLogger?.error('Boot/carregar dashboard', error);
@@ -51,6 +52,7 @@ installLegacyFeedbackGlobals(feedbackService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
 installLegacyDependencyGlobals();
+installLegacyUploadPolicy();
 installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
@@ -78,6 +80,7 @@ ensureApexCharts()
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
       excel: excelService,
       logger,
+      uploadPolicy: Object.freeze({ validate: validateUploadFile }),
     });
 
     const dashboardScript = document.createElement('script');

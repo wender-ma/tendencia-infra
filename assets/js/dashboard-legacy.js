@@ -4593,27 +4593,23 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
   const file = ev.target.files[0];
   if (!file) return;
   
-  // Validação de tamanho (máx 50MB)
-  const MAX_SIZE = 50 * 1024 * 1024;
-  if (file.size > MAX_SIZE) {
-    authToast('❌ Arquivo muito grande (máx 50MB). Tamanho: ' + (file.size / 1024 / 1024).toFixed(1) + 'MB', 'err', 5000);
-    ev.target.value = '';
-    return;
-  }
-  
-  // Validação de extensão
-  const name = file.name.toLowerCase();
-  if (!name.endsWith('.csv')) {
-    authToast('❌ Formato inválido. Envie um arquivo .csv', 'err', 4000);
+  const validation = validateUploadFile(file, 'csv');
+  if (!validation.valid) {
+    authToast('❌ ' + validation.message, 'err', 5000);
     ev.target.value = '';
     return;
   }
   
   const cardMeta = document.querySelector(`.upload-card[data-kind="${kind}"] .upload-card-meta`);
-  if (cardMeta) cardMeta.innerHTML = '⏳ <em>Lendo arquivo...</em>';
+  if (cardMeta) cardMeta.textContent = '⏳ Lendo arquivo: 0%';
   setUploadRuntimeState(kind, 'processing', 'Lendo e validando o arquivo');
 
   const reader = new FileReader();
+  reader.onprogress = e => {
+    if (cardMeta && e.lengthComputable) {
+      cardMeta.textContent = `⏳ Lendo arquivo: ${Math.round((e.loaded / e.total) * 100)}%`;
+    }
+  };
   reader.onload = async e => {
     const memorySnapshot = captureInMemoryUploadState();
     try {
@@ -4764,17 +4760,9 @@ async function handleExcelUpload(ev) {
   if (!file) return;
   ev.target.value = '';
   
-  // Validação de tamanho (máx 50MB)
-  const MAX_SIZE = 50 * 1024 * 1024;
-  if (file.size > MAX_SIZE) {
-    authToast('❌ Arquivo muito grande (máx 50MB). Tamanho: ' + (file.size / 1024 / 1024).toFixed(1) + 'MB', 'err', 5000);
-    return;
-  }
-  
-  // Validação de extensão
-  const name = file.name.toLowerCase();
-  if (!name.endsWith('.xlsx') && !name.endsWith('.xlsm') && !name.endsWith('.xls')) {
-    authToast('❌ Formato inválido. Envie um arquivo .xlsx ou .xlsm', 'err', 4000);
+  const validation = validateUploadFile(file, 'excel');
+  if (!validation.valid) {
+    authToast('❌ ' + validation.message, 'err', 5000);
     return;
   }
 

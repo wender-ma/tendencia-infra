@@ -6,6 +6,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const config = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
+const projectionCatalog = fs.readFileSync(path.join(root, 'assets/js/data/projection-catalog.mjs'), 'utf8');
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 
@@ -26,6 +27,16 @@ assert(config.includes("readEnvironment('VITE_SUPABASE_URL'"), 'URL do Supabase 
 assert(config.includes("readEnvironment('VITE_SUPABASE_ANON_KEY'"), 'Anon key nao aceita variavel de ambiente');
 assert(config.includes('Object.freeze({'), 'Configuracoes precisam ser imutaveis');
 
+for (const catalogContract of [
+  'export const PROJECTION_CATALOG',
+  'export function installLegacyProjectionCatalog',
+  'hierarchy: Object.freeze(hierarchy)',
+  'services: Object.freeze(services)',
+  'inputs: Object.freeze(inputs)',
+]) {
+  assert(projectionCatalog.includes(catalogContract), `Contrato do catalogo ausente: ${catalogContract}`);
+}
+
 assert(service.includes("from '@supabase/supabase-js'"), 'Servico nao importa o SDK local do Supabase');
 assert(service.includes('export function createSupabaseService'), 'Factory do servico Supabase ausente');
 assert(service.includes('export function installLegacySupabaseGlobals'), 'Adaptador temporario do legado ausente');
@@ -34,6 +45,10 @@ assert(/BASE_RETRY_DELAY_MS \* \(?2 \*\* attempt\)?/.test(service), 'Retry expon
 assert(
   bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('Promise.resolve()'),
   'Configuracao deve ser instalada antes das dependencias',
+);
+assert(
+  bootstrap.indexOf('installLegacyProjectionCatalog();') < bootstrap.indexOf('Promise.resolve()'),
+  'Catalogo de projecao deve ser instalado antes do legado',
 );
 assert(
   bootstrap.includes('createSupabaseService(SUPABASE_CONFIG, {')
@@ -49,8 +64,11 @@ for (const removedLegacyContract of [
   'let SUPA =',
   'function supaRetry(',
   'window.supabase.createClient',
+  'const HIERARQUIA =',
+  'const SERVICOS_META =',
+  'const INSUMOS_META =',
 ]) {
   assert(!legacy.includes(removedLegacyContract), `Responsabilidade ainda presente no legado: ${removedLegacyContract}`);
 }
 
-console.log('Contrato modular: configuracao, bootstrap e servico Supabase separados OK');
+console.log('Contrato modular: configuracao, catalogos, bootstrap e servico Supabase separados OK');

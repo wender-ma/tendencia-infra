@@ -184,7 +184,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Separar uploads em módulo próprio.
 - [ ] Separar tabelas em módulos de UI.
 - [ ] Separar cada aba em um módulo de visualização.
-- [ ] Remover aliases e variáveis globais gradualmente.
+- [ ] Remover aliases e variáveis globais gradualmente (catálogos estáticos de projeção já isolados em módulo próprio).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
 ### 10. Modernizar dependências e build

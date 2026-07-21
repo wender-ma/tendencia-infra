@@ -1,5 +1,6 @@
 import dashboardUrl from './dashboard-legacy.js?url';
 import { DASHBOARD_CONFIG, installLegacyConfig, SUPABASE_CONFIG } from './config.js';
+import { installLegacyProjectionCatalog } from './data/projection-catalog.mjs';
 import { installLegacyImportParsers } from './parsers/index.mjs';
 import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
@@ -42,6 +43,7 @@ function showBootstrapError(error) {
 }
 
 installLegacyConfig();
+installLegacyProjectionCatalog();
 const logger = createLogger();
 installLogger(logger);
 const appState = createAppState();

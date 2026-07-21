@@ -13,6 +13,7 @@ import { installLegacyUploadUI } from './ui/uploads.mjs';
 import { installLegacyDetailsView } from './ui/views/details.mjs';
 import { installLegacyFlowsView } from './ui/views/flows.mjs';
 import { installLegacyHistoryView } from './ui/views/history.mjs';
+import { installLegacyProjectionView } from './ui/views/projection.mjs';
 import { installLegacyProjectionControlView } from './ui/views/projection-control.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
@@ -98,6 +99,7 @@ installLegacyUploadUI();
 installLegacyDetailsView();
 installLegacyFlowsView();
 installLegacyHistoryView();
+installLegacyProjectionView();
 installLegacyProjectionControlView();
 installActionDelegation();
 const excelService = createExcelService();

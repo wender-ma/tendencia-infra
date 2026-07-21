@@ -25,6 +25,7 @@ function loadProjectSources() {
     readProjectFile('assets/js/ui/views/details.mjs'),
     readProjectFile('assets/js/ui/views/flows.mjs'),
     readProjectFile('assets/js/ui/views/history.mjs'),
+    readProjectFile('assets/js/ui/views/projection.mjs'),
     readProjectFile('assets/js/ui/views/projection-control.mjs'),
   ].join('\n');
   return {

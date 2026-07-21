@@ -20,6 +20,7 @@ const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'u
 const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.mjs'), 'utf8');
 const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
+const projectionView = fs.readFileSync(path.join(root, 'assets/js/ui/views/projection.mjs'), 'utf8');
 const projectionControlView = fs.readFileSync(
   path.join(root, 'assets/js/ui/views/projection-control.mjs'),
   'utf8',
@@ -107,6 +108,12 @@ assert(
 assert(historyView.includes('function renderHistHeatmap('), 'Tabela histórica ausente da view');
 assert(!historyView.includes('.innerHTML'), 'View de histórico não pode montar HTML sem parser');
 assert(
+  projectionView.includes('export function installLegacyProjectionView'),
+  'View de Tendência de Obra não foi modularizada',
+);
+assert(projectionView.includes('function renderProjTable('), 'Tabela de Tendência de Obra ausente da view');
+assert(!projectionView.includes('.innerHTML'), 'View de Tendência de Obra não pode montar HTML sem parser');
+assert(
   projectionControlView.includes('export function installLegacyProjectionControlView'),
   'View de controle de projeção não foi modularizada',
 );
@@ -193,6 +200,9 @@ for (const removedLegacyContract of [
   'function renderFlowTable(',
   'function onRefletidoChange(',
   'function renderHistorico(',
+  'function renderProjecao(',
+  'function renderProjTable(',
+  'function openProjDrill(',
   'function renderProjCtrl(',
   'function renderMovTable(',
 ]) {

@@ -1,5 +1,6 @@
 import dashboardUrl from './dashboard-legacy.js?url';
 import { installLegacyConfig, SUPABASE_CONFIG } from './config.js';
+import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
   installLegacySupabaseGlobals,
@@ -25,6 +26,8 @@ function showBootstrapError(error) {
 }
 
 installLegacyConfig();
+const appState = createAppState();
+installLegacyStateGlobals(appState);
 
 Promise.all([import('xlsx'), import('apexcharts')])
   .then(([xlsxModule, apexchartsModule]) => {
@@ -32,7 +35,7 @@ Promise.all([import('xlsx'), import('apexcharts')])
     installLegacySupabaseGlobals(supabaseService);
     const authService = createAuthService({
       supabaseClient: supabaseService.client,
-      getActiveProject: () => window.getActiveProjectCode?.() || null,
+      getActiveProject: () => appState.obra.ativa,
       onStateChange: details => window.handleAuthServiceStateChanged?.(details),
       reportError: (context, error) => window.reportNonFatalError?.(context, error),
     });

@@ -2080,10 +2080,6 @@ function updateAuthUI() {
   }
 }
 
-function getActiveProjectCode() {
-  return OBRA_ATIVA;
-}
-
 function handleAuthServiceStateChanged({ isFreshLogin = false } = {}) {
   if (isFreshLogin && AUTH.user) {
     if (!AUTH.isEditor) {
@@ -2140,77 +2136,6 @@ function requireUploadPermission(kind, actionDesc) {
     : requireEditorForActiveProject(actionDesc);
 }
 
-// ============================================================================
-// APP STATE — Estado global centralizado (namespace único)
-// ============================================================================
-// Acesso direto: AppState.obra.ativa, AppState.config.card3Modo, etc.
-// Aliases mantidos para compatibilidade (OBRA_ATIVA, CARD3_MODO, etc.)
-// ============================================================================
-
-const AppState = {
-  // Dados parseados (preenchidos pelo boot e uploads)
-  dados: {
-    tendencia: [],      // itens da Tendência
-    flows: [],          // aditivos/Flows
-    historico: { gestoes: [], items: [], totals: {} },
-    projRaw: [],        // dados brutos de projeção
-  },
-  // Ordenação das tabelas
-  sort: {
-    key: 'aditivo_total', dir: -1,
-    keyF: 'data', dirF: -1,
-  },
-  // Configurações de UI
-  config: {
-    gestaoLabel: 'Gestão Atual',
-    evolGlobal: (function() {
-      try { const raw = localStorage.getItem('jzurique_evol_global'); if (raw) { const p = JSON.parse(raw); if (p && (p.teorica != null || p.financeira != null)) return p; } } catch(e) { reportNonFatalError('Estado/evolução local', e); }
-      return { teorica: null, financeira: null };
-    })(),
-    card3Modo: (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_card3_modo')) || 'bruto',
-    correcaoIndice: (typeof localStorage !== 'undefined' && localStorage.getItem('jzurique_indice_correcao')) || 'incc',
-    headerEditable: false,
-  },
-  // Multi-obra
-  obra: {
-    obras: [],          // catálogo
-    ativa: null,        // código da obra ativa
-  },
-  // Ligações Flow ↔ Tendência (reconstruídas por buildLinks)
-  links: {
-    destino: {},        // insumo → [flows] (entrada)
-    origem: {},         // insumo → [flows] (saída)
-  },
-  // Uploads
-  uploads: { tendencia: null, flows: null, gestoes: null },
-  // Donut filtro
-  donut: { hidden: new Set(), lastTipoSum: null },
-};
-
-// -- Aliases para compatibilidade (209 referências existentes) --
-// Usar getters/setters para manter sincronia quando reatribuídos (ex: DATA_T = [])
-Object.defineProperties(window, {
-  DATA_T: { get: () => AppState.dados.tendencia, set: v => AppState.dados.tendencia = v },
-  DATA_F: { get: () => AppState.dados.flows, set: v => AppState.dados.flows = v },
-  HISTORICO: { get: () => AppState.dados.historico, set: v => AppState.dados.historico = v },
-  PROJ_RAW: { get: () => AppState.dados.projRaw, set: v => AppState.dados.projRaw = v },
-  sortKey: { get: () => AppState.sort.key, set: v => AppState.sort.key = v },
-  sortDir: { get: () => AppState.sort.dir, set: v => AppState.sort.dir = v },
-  sortKeyF: { get: () => AppState.sort.keyF, set: v => AppState.sort.keyF = v },
-  sortDirF: { get: () => AppState.sort.dirF, set: v => AppState.sort.dirF = v },
-  GESTAO_LABEL: { get: () => AppState.config.gestaoLabel, set: v => AppState.config.gestaoLabel = v },
-  EVOL_GLOBAL: { get: () => AppState.config.evolGlobal, set: v => AppState.config.evolGlobal = v },
-  CARD3_MODO: { get: () => AppState.config.card3Modo, set: v => AppState.config.card3Modo = v },
-  CORRECAO_INDICE: { get: () => AppState.config.correcaoIndice, set: v => AppState.config.correcaoIndice = v },
-  _headerEditable: { get: () => AppState.config.headerEditable, set: v => AppState.config.headerEditable = v },
-  OBRAS: { get: () => AppState.obra.obras, set: v => AppState.obra.obras = v },
-  OBRA_ATIVA: { get: () => AppState.obra.ativa, set: v => AppState.obra.ativa = v },
-  MAP_DESTINO: { get: () => AppState.links.destino, set: v => AppState.links.destino = v },
-  MAP_ORIGEM: { get: () => AppState.links.origem, set: v => AppState.links.origem = v },
-  donutHidden: { get: () => AppState.donut.hidden, set: v => AppState.donut.hidden = v },
-  _lastTipoSum: { get: () => AppState.donut.lastTipoSum, set: v => AppState.donut.lastTipoSum = v },
-});
-const LAST_UPLOADS = AppState.uploads;
 const LIC_LABEL = 'Orç. Licitação';
 
 // formato Excel #.##0,00;-#.##0,00;"-" — zero e null viram "-"; sem prefixo R$

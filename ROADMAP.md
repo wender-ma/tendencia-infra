@@ -234,7 +234,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes de autorização por papel e obra.
 - [x] Criar testes de XSS para campos importados.
 - [x] Criar testes de integração para upload, falhas por etapa e rollback parcial.
-- [ ] Criar testes E2E para login, troca de obra, edição e administração.
+- [x] Criar testes E2E para login, troca de obra, edição e administração com Supabase controlado no navegador.
+- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel.
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
 - [x] Executar Lighthouse no CI com orçamentos e relatório para download.
@@ -297,6 +298,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Feedback, loading e pilha de modais extraídos; confirmação dinâmica passou a usar APIs DOM seguras                                                       | `assets/js/ui/`                                             |
 | 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados                                                           | `public/_headers`                                           |
 | 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão                                           | `renderAll()`                                               |
+| 21/07/2026 | Smokes E2E de login, troca de obra, edição de Flow e catálogo administrativo adicionados com respostas controladas do Supabase                            | `scripts/browser/workflows.spec.js`                         |
 | 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba                                                                        | `assets/js/performance.mjs`                                 |
 | 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS                                            | `docs/innerhtml_inventory_2026-07-21.md`                    |
 | 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop                                                                         | `.github/workflows/ci.yml`                                  |

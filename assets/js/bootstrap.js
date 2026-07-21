@@ -8,19 +8,10 @@ import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
-import { installLegacyFlowEditor } from './ui/flow-editor.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
 import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
-import { installLegacyUploadUI } from './ui/uploads.mjs';
-import { installLegacyAdminView } from './ui/views/admin.mjs';
-import { installLegacyDetailsView } from './ui/views/details.mjs';
-import { installLegacyFlowsView } from './ui/views/flows.mjs';
-import { installLegacyHistoryView } from './ui/views/history.mjs';
-import { installLegacyOverviewView } from './ui/views/overview.mjs';
-import { installLegacyProjectionView } from './ui/views/projection.mjs';
-import { installLegacyProjectionControlView } from './ui/views/projection-control.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -120,16 +111,6 @@ const uploadRepository = createUploadRepository({
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyUploadRepository(uploadRepository);
-installLegacyFlowEditor();
-installLegacyUploadUI();
-installLegacyAdminView();
-installLegacyDetailsView();
-installLegacyFlowsView();
-installLegacyHistoryView();
-installLegacyOverviewView();
-installLegacyProjectionView();
-installLegacyProjectionControlView();
-installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
 const dashboardExportService = createDashboardExportService({
@@ -224,7 +205,39 @@ const dashboardShell = createDashboardShell({
 installLegacyDashboardShell(dashboardShell);
 
 Promise.resolve()
-  .then(() => {
+  .then(async () => {
+    const [
+      { installLegacyFlowEditor },
+      { installLegacyUploadUI },
+      { installLegacyAdminView },
+      { installLegacyDetailsView },
+      { installLegacyFlowsView },
+      { installLegacyHistoryView },
+      { installLegacyOverviewView },
+      { installLegacyProjectionView },
+      { installLegacyProjectionControlView },
+    ] = await Promise.all([
+      import('./ui/flow-editor.mjs'),
+      import('./ui/uploads.mjs'),
+      import('./ui/views/admin.mjs'),
+      import('./ui/views/details.mjs'),
+      import('./ui/views/flows.mjs'),
+      import('./ui/views/history.mjs'),
+      import('./ui/views/overview.mjs'),
+      import('./ui/views/projection.mjs'),
+      import('./ui/views/projection-control.mjs'),
+    ]);
+    installLegacyFlowEditor();
+    installLegacyUploadUI();
+    installLegacyAdminView();
+    installLegacyDetailsView();
+    installLegacyFlowsView();
+    installLegacyHistoryView();
+    installLegacyOverviewView();
+    installLegacyProjectionView();
+    installLegacyProjectionControlView();
+    installActionDelegation();
+
     const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
       reportError: (context, error) => logger.warn(context, error),
     });

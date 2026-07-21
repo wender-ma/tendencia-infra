@@ -207,6 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
 - [x] Carregar ApexCharts somente quando uma visualização possui gráfico para renderizar.
+- [x] Separar editor, uploads e visualizações em chunks próprios durante o boot.
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [x] Paginar Detalhamento, Flows e Histórico em blocos de 100 linhas.
 - [x] Processar Excel em Web Worker.

@@ -53,7 +53,7 @@ assert(fs.statSync(flowEditorPath).size > 40_000, 'Editor de Flows parece incomp
 for (const expectedImport of [
   "from './dashboard-legacy.js?url'",
   "from './config.js'",
-  "from './ui/flow-editor.mjs'",
+  "import('./ui/flow-editor.mjs')",
   "from './services/supabase-service.js'",
 ]) {
   assert(bootstrap.includes(expectedImport), `Import ausente no bootstrap: ${expectedImport}`);
@@ -69,6 +69,17 @@ assert(
   !bootstrap.includes("import('xlsx')"),
   'SheetJS voltou a ser solicitado diretamente durante o bootstrap',
 );
+for (const deferredModule of [
+  './ui/flow-editor.mjs',
+  './ui/uploads.mjs',
+  './ui/views/projection.mjs',
+  './ui/views/projection-control.mjs',
+]) {
+  assert(
+    bootstrap.includes(`import('${deferredModule}')`),
+    `Módulo pesado não foi separado do chunk principal: ${deferredModule}`,
+  );
+}
 
 assert(
   supabaseService.includes("from '@supabase/supabase-js'"),

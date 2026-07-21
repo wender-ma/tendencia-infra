@@ -432,6 +432,7 @@ export function createUploadRepository({
   return Object.freeze({
     bucket: UPLOADS_BUCKET,
     maxPerType,
+    sanitizeStoragePath,
     createRecord,
     activateRecord,
     rollbackActivation,
@@ -445,25 +446,5 @@ export function createUploadRepository({
     getDownloadUrl,
     enforceRollingBackup,
     loadLatest,
-  });
-}
-
-export function installLegacyUploadRepository(repository, target = window) {
-  Object.assign(target, {
-    UPLOADS_BUCKET: repository.bucket,
-    UPLOADS_MAX_PER_TYPE: repository.maxPerType,
-    sanitizeStoragePath,
-    supaCreateUploadRecord: repository.createRecord,
-    supaActivateUploadRecord: repository.activateRecord,
-    supaRollbackUploadActivation: repository.rollbackActivation,
-    supaDeleteUploadRecords: repository.deleteRecords,
-    supaMarkUploadRecordsFailed: repository.markRecordsFailed,
-    supaRemoveStoredUpload: repository.removeStoredUpload,
-    supaCleanupIncompleteUploads: repository.cleanupIncompleteUploads,
-    supaUploadFile: repository.uploadFile,
-    supaListUploadsByType: repository.listByType,
-    supaGetDownloadURL: repository.getDownloadUrl,
-    supaEnforceRollingBackup: repository.enforceRollingBackup,
-    supaLoadUploadsLatest: repository.loadLatest,
   });
 }

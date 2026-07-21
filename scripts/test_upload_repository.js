@@ -11,14 +11,14 @@ function assert(condition, message) {
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/services/upload-repository.mjs'),
   );
-  const {
-    buildUploadStoragePath,
-    installLegacyUploadRepository,
-    sanitizeStoragePath,
-    UPLOADS_BUCKET,
-  } = await import(moduleUrl.href);
+  const { buildUploadStoragePath, sanitizeStoragePath, UPLOADS_BUCKET } = await import(
+    moduleUrl.href
+  );
 
-  assert(sanitizeStoragePath('/OBRA/tendencia/file.csv') === 'OBRA/tendencia/file.csv', 'Caminho válido não foi normalizado');
+  assert(
+    sanitizeStoragePath('/OBRA/tendencia/file.csv') === 'OBRA/tendencia/file.csv',
+    'Caminho válido não foi normalizado',
+  );
   for (const unsafePath of [
     '',
     'https://host/file.csv',
@@ -41,29 +41,9 @@ function assert(condition, message) {
     `Caminho de upload inesperado: ${pathAtFixedDate}`,
   );
 
-  const target = {};
-  const repository = {
-    bucket: UPLOADS_BUCKET,
-    maxPerType: 12,
-    createRecord() {},
-    activateRecord() {},
-    rollbackActivation() {},
-    deleteRecords() {},
-    markRecordsFailed() {},
-    removeStoredUpload() {},
-    cleanupIncompleteUploads() {},
-    uploadFile() {},
-    listByType() {},
-    getDownloadUrl() {},
-    enforceRollingBackup() {},
-    loadLatest() {},
-  };
-  installLegacyUploadRepository(repository, target);
-  assert(target.UPLOADS_BUCKET === 'uploads-history', 'Bucket não foi exposto ao adaptador');
-  assert(target.supaUploadFile === repository.uploadFile, 'Adaptador de upload não foi instalado');
-  assert(target.supaLoadUploadsLatest === repository.loadLatest, 'Adaptador de leitura não foi instalado');
+  assert(UPLOADS_BUCKET === 'uploads-history', 'Bucket do serviço está incorreto');
 
-  console.log('Repositório de uploads: caminhos seguros e adaptadores legados OK');
+  console.log('Repositório de uploads: caminhos seguros e API encapsulada OK');
 })().catch((error) => {
   console.error(error);
   process.exit(1);

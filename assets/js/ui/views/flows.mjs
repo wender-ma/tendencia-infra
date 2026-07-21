@@ -8,6 +8,7 @@ let paginateRows;
 let renderPaginationControls;
 let SafeStorage;
 let renderDashboardState;
+let supaPatchClassification;
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;
@@ -416,7 +417,7 @@ function onRefletidoChange(sel) {
 }
 
 export function installLegacyFlowsView(
-  { runtime, pagination, storage, viewStates },
+  { runtime, pagination, storage, viewStates, dashboardRepository },
   target = window,
 ) {
   runAsyncSafely = runtime.runAsyncSafely;
@@ -425,6 +426,7 @@ export function installLegacyFlowsView(
   renderPaginationControls = pagination.renderControls;
   SafeStorage = storage;
   renderDashboardState = viewStates.render;
+  supaPatchClassification = dashboardRepository.patchClassification;
   Object.assign(target, {
     renderFlows,
     renderFlowTable,

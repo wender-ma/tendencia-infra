@@ -199,16 +199,3 @@ export function createUploadCoordinator({
     commitPreparedUpload,
   });
 }
-
-export function installLegacyUploadCoordinator(service, target = window) {
-  Object.assign(target, {
-    UPLOAD_RUNTIME_STATE: service.runtimeState,
-    supaCaptureDashboardRows: service.captureDashboardRows,
-    supaRestoreDashboardRows: service.restoreDashboardRows,
-    supaSaveAllData: service.saveAllData,
-    setUploadRuntimeState: service.setRuntimeState,
-    captureInMemoryUploadState: service.captureMemoryState,
-    restoreInMemoryUploadState: service.restoreMemoryState,
-    commitPreparedUpload: service.commitPreparedUpload,
-  });
-}

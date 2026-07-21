@@ -12,23 +12,21 @@ import {
   validateImportHeaders,
 } from './shared.mjs';
 
-function persistTendencyEvolution(target, state, evolution, reportError) {
-  if (!target.isEditorDaObraAtiva?.() || !state.obra.ativa) return;
+function persistTendencyEvolution(
+  state,
+  evolution,
+  { canEdit, storage, saveDashboardKey, reportError },
+) {
+  if (!canEdit() || !state.obra.ativa) return;
   const serialized = JSON.stringify(evolution);
-  try {
-    target.localStorage?.setItem('jzurique_evol_global', serialized);
-  } catch (error) {
-    reportError('Tendência/salvar evolução local', error);
-  }
+  storage.set('jzurique_evol_global', serialized);
 
-  if (typeof target.supaSaveDashboardKey !== 'function') return;
-  Promise.resolve(target.supaSaveDashboardKey(`${state.obra.ativa}:evol_global`, serialized)).catch(
-    (error) =>
-      reportError(
-        'Tendência/salvar evolução remota',
-        error,
-        'A evolução foi importada, mas não foi sincronizada.',
-      ),
+  Promise.resolve(saveDashboardKey(`${state.obra.ativa}:evol_global`, serialized)).catch((error) =>
+    reportError(
+      'Tendência/salvar evolução remota',
+      error,
+      'A evolução foi importada, mas não foi sincronizada.',
+    ),
   );
 }
 
@@ -36,6 +34,9 @@ export function installLegacyImportParsers({
   state,
   config,
   monitor,
+  canEdit = () => false,
+  storage,
+  saveDashboardKey = async () => {},
   reportError = () => {},
   target = window,
 }) {
@@ -77,7 +78,12 @@ export function installLegacyImportParsers({
       state.config.gestaoLabel = result.managementLabel || state.config.gestaoLabel;
       state.config.evolGlobal = result.evolution;
       reports.tendencia = result.report;
-      persistTendencyEvolution(target, state, result.evolution, reportError);
+      persistTendencyEvolution(state, result.evolution, {
+        canEdit,
+        storage,
+        saveDashboardKey,
+        reportError,
+      });
       return result.items;
     },
     parseFlowsValor(text) {

@@ -30,7 +30,6 @@ import {
 import {
   createDashboardRepository,
   DASHBOARD_DATA_KEYS,
-  installLegacyDashboardRepository,
 } from './services/dashboard-repository.mjs';
 import { ensureApexCharts, ensureXlsx } from './services/dependency-service.mjs';
 import { createExcelService } from './services/excel-service.mjs';
@@ -39,14 +38,8 @@ import { createProjectRepository } from './services/project-repository.mjs';
 import { createSafeStorage } from './services/storage-service.mjs';
 import { createSyncStatusService } from './services/sync-status.mjs';
 import { validateUploadFile } from './services/upload-policy.mjs';
-import {
-  createUploadCoordinator,
-  installLegacyUploadCoordinator,
-} from './services/upload-coordinator.mjs';
-import {
-  createUploadRepository,
-  installLegacyUploadRepository,
-} from './services/upload-repository.mjs';
+import { createUploadCoordinator } from './services/upload-coordinator.mjs';
+import { createUploadRepository } from './services/upload-repository.mjs';
 import { executeUploadTransaction } from './services/upload-transaction.mjs';
 
 function showBootstrapError(error) {
@@ -80,12 +73,6 @@ const syncStatusService = createSyncStatusService({
 const appState = createAppState();
 installLegacyStateGlobals(appState);
 const performanceService = createPerformanceMonitor();
-const parserService = installLegacyImportParsers({
-  state: appState,
-  config: DASHBOARD_CONFIG,
-  monitor: performanceService,
-  reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
-});
 const feedbackService = createFeedbackService();
 const storageService = createSafeStorage({
   storage: (() => {
@@ -128,7 +115,6 @@ const uploadRepository = createUploadRepository({
   onMutation: (error, context) => syncStatusService.recordMutation(error, context),
   warn: (context, error) => logger.warn(context, error),
 });
-installLegacyUploadRepository(uploadRepository);
 const excelService = createExcelService();
 const dashboardExportService = createDashboardExportService({
   ensureXlsx,
@@ -154,7 +140,6 @@ const dashboardRepository = createDashboardRepository({
   onMutation: (error) => syncStatusService.recordMutation(error, 'Dados'),
   warn: (context, error) => logger.warn(context, error),
 });
-installLegacyDashboardRepository(dashboardRepository);
 const dashboardRuntime = createDashboardRuntime({
   state: appState,
   config: DASHBOARD_CONFIG,
@@ -176,6 +161,15 @@ const dashboardRuntime = createDashboardRuntime({
     uploads: () => window.renderUploadsCentral?.(),
   },
 });
+const parserService = installLegacyImportParsers({
+  state: appState,
+  config: DASHBOARD_CONFIG,
+  monitor: performanceService,
+  canEdit: () => window.isEditorDaObraAtiva?.() === true,
+  storage: storageService,
+  saveDashboardKey: (...args) => dashboardRepository.saveDashboardKey(...args),
+  reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
+});
 const projectRepository = createProjectRepository({
   getClient: () => supabaseService.client,
   warn: (context, error) => logger.warn(context, error),
@@ -196,7 +190,7 @@ const projectController = createProjectController({
     cardMode: STORAGE_KEYS.cardMode,
   },
   hasBackend: () => Boolean(supabaseService.client),
-  getUploadRuntimeState: () => window.UPLOAD_RUNTIME_STATE || {},
+  getUploadRuntimeState: () => uploadCoordinator.runtimeState,
   updateAuthUi: () => window.updateAuthUI?.(),
   showLoading: () => feedbackService.showLoading(),
   hideLoading: () => feedbackService.hideLoading(),
@@ -255,7 +249,6 @@ const uploadCoordinator = createUploadCoordinator({
   markSynced: () => syncStatusService.markSynced(),
   reportCleanupError: (context, error) => logger.warn(context, error),
 });
-installLegacyUploadCoordinator(uploadCoordinator);
 const dashboardShell = createDashboardShell({
   getManagementLabel: () => window.GESTAO_LABEL,
   getHeaderEditable: () => window._headerEditable === true,
@@ -271,9 +264,8 @@ const dashboardShell = createDashboardShell({
     window.renderEditoresAdmin?.();
   },
   saveHeaderTitle: (title) => {
-    if (!window.supaSaveDashboardKey) return;
     void dashboardRuntime.runAsyncSafely(
-      window.supaSaveDashboardKey('header_title', title),
+      dashboardRepository.saveDashboardKey('header_title', title),
       'Config/salvar título',
       'O título foi salvo apenas neste navegador.',
     );
@@ -311,6 +303,7 @@ Promise.resolve()
         storage: storageService,
         feedback: feedbackService,
         modals: modalService,
+        dashboardRepository,
       }),
     );
     actionRegistry.register(
@@ -320,6 +313,8 @@ Promise.resolve()
         validateUpload: validateUploadFile,
         feedback: feedbackService,
         modals: modalService,
+        uploadRepository,
+        uploadCoordinator,
       }),
     );
     actionRegistry.register(
@@ -329,6 +324,7 @@ Promise.resolve()
         projectController,
         feedback: feedbackService,
         modals: modalService,
+        uploadRepository,
       }),
     );
     installLegacyDetailsView({
@@ -343,6 +339,7 @@ Promise.resolve()
         pagination: paginationService,
         storage: storageService,
         viewStates: viewStateService,
+        dashboardRepository,
       }),
     );
     installLegacyHistoryView({
@@ -355,6 +352,7 @@ Promise.resolve()
         runtime: dashboardRuntime,
         storage: storageService,
         viewStates: viewStateService,
+        dashboardRepository,
       }),
     );
     actionRegistry.register(
@@ -373,6 +371,7 @@ Promise.resolve()
         feedback: feedbackService,
         modals: modalService,
         viewStates: viewStateService,
+        dashboardRepository,
       }),
     );
 

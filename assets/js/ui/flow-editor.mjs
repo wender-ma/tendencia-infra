@@ -13,6 +13,9 @@ let openModal;
 let closeModal;
 let confirmModal;
 let massCallback;
+let supaPatchClassification;
+let supaUpsertManual;
+let supaDeleteManual;
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
@@ -1346,7 +1349,10 @@ async function deleteManual(id) {
 
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
-export function installLegacyFlowEditor({ runtime, storage, feedback, modals }, target = window) {
+export function installLegacyFlowEditor(
+  { runtime, storage, feedback, modals, dashboardRepository },
+  target = window,
+) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
@@ -1357,6 +1363,9 @@ export function installLegacyFlowEditor({ runtime, storage, feedback, modals }, 
   openModal = modals.open;
   closeModal = modals.close;
   confirmModal = modals.confirm;
+  supaPatchClassification = dashboardRepository.patchClassification;
+  supaUpsertManual = dashboardRepository.upsertManual;
+  supaDeleteManual = dashboardRepository.deleteManual;
   Object.assign(target, {
     loadClassifications,
     readClassificationMap,

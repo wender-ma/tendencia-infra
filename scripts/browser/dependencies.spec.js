@@ -31,6 +31,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const performanceService = window.dashboardServices.performance;
     const loggerService = window.dashboardServices.logger;
     const uploadPolicy = window.dashboardServices.uploadPolicy;
+    const uploadRepository = window.dashboardServices.uploadRepository;
     const pagination = window.dashboardServices.pagination;
     const viewStates = window.dashboardServices.viewStates;
     const paginationHost = document.createElement('div');
@@ -167,9 +168,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       '../fora.csv',
       'obra\\arquivo.csv',
       'obra\u0000arquivo.csv',
-    ].every((path) => window.sanitizeStoragePath(path) === '');
+    ].every((path) => uploadRepository.sanitizeStoragePath(path) === '');
     const validStoragePathAccepted =
-      window.sanitizeStoragePath('/OBRA-1/tendencia/arquivo.csv') ===
+      uploadRepository.sanitizeStoragePath('/OBRA-1/tendencia/arquivo.csv') ===
       'OBRA-1/tendencia/arquivo.csv';
     modalService.closeConfirm(false);
     const confirmResult = await confirmation;
@@ -324,6 +325,42 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'markDashboardSyncError',
         'markDashboardSynced',
         'updateSupaBadge',
+        'DATA_KEYS',
+        'supaLoadClassifications',
+        'supaPatchClassification',
+        'supaLoadManuals',
+        'supaUpsertManual',
+        'supaDeleteManual',
+        'supaLoadProjConfig',
+        'supaSaveProjConfig',
+        'supaLoadMovs',
+        'supaUpsertMov',
+        'supaDeleteMov',
+        'supaLoadDashboardConfig',
+        'supaSaveDashboardKey',
+        'UPLOADS_BUCKET',
+        'UPLOADS_MAX_PER_TYPE',
+        'sanitizeStoragePath',
+        'supaCreateUploadRecord',
+        'supaActivateUploadRecord',
+        'supaRollbackUploadActivation',
+        'supaDeleteUploadRecords',
+        'supaMarkUploadRecordsFailed',
+        'supaRemoveStoredUpload',
+        'supaCleanupIncompleteUploads',
+        'supaUploadFile',
+        'supaListUploadsByType',
+        'supaGetDownloadURL',
+        'supaEnforceRollingBackup',
+        'supaLoadUploadsLatest',
+        'UPLOAD_RUNTIME_STATE',
+        'supaCaptureDashboardRows',
+        'supaRestoreDashboardRows',
+        'supaSaveAllData',
+        'setUploadRuntimeState',
+        'captureInMemoryUploadState',
+        'restoreInMemoryUploadState',
+        'commitPreparedUpload',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };

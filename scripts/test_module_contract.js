@@ -150,8 +150,8 @@ assert(
   'Repositório de dados do dashboard ausente',
 );
 assert(
-  dashboardRepository.includes('export function installLegacyDashboardRepository'),
-  'Adaptador temporário do repositório de dados ausente',
+  !dashboardRepository.includes('installLegacyDashboardRepository'),
+  'Repositório de dados voltou a publicar adaptador global',
 );
 assert(
   syncStatus.includes('export function createSyncStatusService'),
@@ -166,13 +166,12 @@ assert(
   'Coordenador de uploads ausente',
 );
 assert(
-  uploadCoordinator.includes('export function installLegacyUploadCoordinator'),
-  'Adaptador temporário do coordenador de uploads ausente',
+  !uploadCoordinator.includes('installLegacyUploadCoordinator'),
+  'Coordenador de uploads voltou a publicar adaptador global',
 );
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
   'export function createUploadRepository',
-  'export function installLegacyUploadRepository',
   "from('upload_history')",
   'from(UPLOADS_BUCKET)',
   'enforceRollingBackup',
@@ -182,6 +181,10 @@ for (const repositoryContract of [
     `Contrato do repositório de uploads ausente: ${repositoryContract}`,
   );
 }
+assert(
+  !uploadRepository.includes('installLegacyUploadRepository'),
+  'Repositório de uploads voltou a publicar adaptador global',
+);
 for (const uploadUiContract of [
   'export function installLegacyUploadUI',
   'function handleUpload(',

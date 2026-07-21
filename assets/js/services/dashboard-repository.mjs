@@ -395,21 +395,3 @@ export function createDashboardRepository({
     deleteDashboardKeys,
   });
 }
-
-export function installLegacyDashboardRepository(repository, target = window) {
-  Object.assign(target, {
-    DATA_KEYS: DASHBOARD_DATA_KEYS,
-    supaLoadClassifications: repository.loadClassifications,
-    supaPatchClassification: repository.patchClassification,
-    supaLoadManuals: repository.loadManuals,
-    supaUpsertManual: repository.upsertManual,
-    supaDeleteManual: repository.deleteManual,
-    supaLoadProjConfig: repository.loadProjectionConfig,
-    supaSaveProjConfig: repository.saveProjectionConfig,
-    supaLoadMovs: repository.loadMovements,
-    supaUpsertMov: repository.upsertMovement,
-    supaDeleteMov: repository.deleteMovement,
-    supaLoadDashboardConfig: repository.loadDashboardConfig,
-    supaSaveDashboardKey: repository.saveDashboardKey,
-  });
-}

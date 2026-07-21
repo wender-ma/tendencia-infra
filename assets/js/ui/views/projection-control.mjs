@@ -17,6 +17,9 @@ let openModal;
 let closeModal;
 let confirmModal;
 let renderDashboardState;
+let supaSaveProjConfig;
+let supaUpsertMov;
+let supaDeleteMov;
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
@@ -805,7 +808,7 @@ async function deleteMov(id) {
 }
 
 export function installLegacyProjectionControlView(
-  { runtime, storage, feedback, modals, viewStates },
+  { runtime, storage, feedback, modals, viewStates, dashboardRepository },
   target = window,
 ) {
   runAsyncSafely = runtime.runAsyncSafely;
@@ -818,6 +821,9 @@ export function installLegacyProjectionControlView(
   closeModal = modals.close;
   confirmModal = modals.confirm;
   renderDashboardState = viewStates.render;
+  supaSaveProjConfig = dashboardRepository.saveProjectionConfig;
+  supaUpsertMov = dashboardRepository.upsertMovement;
+  supaDeleteMov = dashboardRepository.deleteMovement;
   Object.defineProperty(target, 'PROJ_CTRL_STATE', {
     configurable: true,
     get: () => PROJ_CTRL_STATE,

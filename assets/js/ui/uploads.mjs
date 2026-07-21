@@ -11,6 +11,22 @@ let authToast;
 let openModal;
 let closeModal;
 let confirmModal;
+let UPLOADS_BUCKET;
+let UPLOADS_MAX_PER_TYPE;
+let UPLOAD_RUNTIME_STATE;
+let sanitizeStoragePath;
+let supaActivateUploadRecord;
+let supaRollbackUploadActivation;
+let supaListUploadsByType;
+let supaGetDownloadURL;
+let supaEnforceRollingBackup;
+let supaCaptureDashboardRows;
+let supaRestoreDashboardRows;
+let supaSaveAllData;
+let setUploadRuntimeState;
+let captureInMemoryUploadState;
+let restoreInMemoryUploadState;
+let commitPreparedUpload;
 
 const MANUAL_TEXT = {
   tendencia:
@@ -1181,7 +1197,7 @@ function renderSourcesHeaders() {
 }
 
 export function installLegacyUploadUI(
-  { runtime, excel, validateUpload, feedback, modals },
+  { runtime, excel, validateUpload, feedback, modals, uploadRepository, uploadCoordinator },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -1194,6 +1210,22 @@ export function installLegacyUploadUI(
   openModal = modals.open;
   closeModal = modals.close;
   confirmModal = modals.confirm;
+  UPLOADS_BUCKET = uploadRepository.bucket;
+  UPLOADS_MAX_PER_TYPE = uploadRepository.maxPerType;
+  UPLOAD_RUNTIME_STATE = uploadCoordinator.runtimeState;
+  sanitizeStoragePath = uploadRepository.sanitizeStoragePath;
+  supaActivateUploadRecord = uploadRepository.activateRecord;
+  supaRollbackUploadActivation = uploadRepository.rollbackActivation;
+  supaListUploadsByType = uploadRepository.listByType;
+  supaGetDownloadURL = uploadRepository.getDownloadUrl;
+  supaEnforceRollingBackup = uploadRepository.enforceRollingBackup;
+  supaCaptureDashboardRows = uploadCoordinator.captureDashboardRows;
+  supaRestoreDashboardRows = uploadCoordinator.restoreDashboardRows;
+  supaSaveAllData = uploadCoordinator.saveAllData;
+  setUploadRuntimeState = uploadCoordinator.setRuntimeState;
+  captureInMemoryUploadState = uploadCoordinator.captureMemoryState;
+  restoreInMemoryUploadState = uploadCoordinator.restoreMemoryState;
+  commitPreparedUpload = uploadCoordinator.commitPreparedUpload;
   Object.assign(target, {
     MANUAL_TEXT,
     renderUploadsCentral,

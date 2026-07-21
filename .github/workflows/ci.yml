@@ -22,11 +22,11 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Lint, contracts and build
         run: npm run check
-      - name: Browser, axe and visual smoke
+      - name: Browser, axe, print and export smoke
         run: npm run test:browser
       - name: Lighthouse budgets
         run: npm run test:lighthouse

@@ -17,7 +17,6 @@
   body.dark input, body.dark select, body.dark textarea { background: var(--bg-card); color: var(--text-strong); border-color: var(--border-strong); }
   body.dark input:focus, body.dark select:focus, body.dark textarea:focus { border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
   body.dark tr.folha:hover { background: var(--bg-soft); }
-  body.dark .row-selected { background: var(--fgr-red-light) !important; }
 
   /* Modo Noturno — botão de toggle */
   .theme-toggle {
@@ -54,4 +53,3 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   }
   .page-body { padding: 0 20px 20px 20px; }
-

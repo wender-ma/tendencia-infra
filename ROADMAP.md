@@ -252,7 +252,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Adicionar `meta description`.
 - [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
 - [ ] Adicionar Open Graph somente se o produto for público.
-- [ ] Revisar impressão e exportação em diferentes navegadores.
+- [x] Revisar impressão e exportação em diferentes navegadores (Chromium, Firefox e WebKit no Playwright/CI).
 
 ## Sequência de entregas
 

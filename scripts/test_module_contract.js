@@ -13,6 +13,10 @@ const projectionCatalog = fs.readFileSync(
 const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.mjs'), 'utf8');
 const domUi = fs.readFileSync(path.join(root, 'assets/js/ui/dom.mjs'), 'utf8');
 const flowEditor = fs.readFileSync(path.join(root, 'assets/js/ui/flow-editor.mjs'), 'utf8');
+const dashboardExport = fs.readFileSync(
+  path.join(root, 'assets/js/services/dashboard-export.mjs'),
+  'utf8',
+);
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
@@ -23,7 +27,10 @@ const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.
 const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
 const overviewView = fs.readFileSync(path.join(root, 'assets/js/ui/views/overview.mjs'), 'utf8');
-const projectionView = fs.readFileSync(path.join(root, 'assets/js/ui/views/projection.mjs'), 'utf8');
+const projectionView = fs.readFileSync(
+  path.join(root, 'assets/js/ui/views/projection.mjs'),
+  'utf8',
+);
 const projectionControlView = fs.readFileSync(
   path.join(root, 'assets/js/ui/views/projection-control.mjs'),
   'utf8',
@@ -69,10 +76,27 @@ assert(
   'Montagem das abas estáticas ausente',
 );
 assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
-assert(domUi.includes('export function installLegacyDomGlobals'), 'Adaptador DOM do legado ausente');
-assert(flowEditor.includes('export function installLegacyFlowEditor'), 'Editor de Flows não foi modularizado');
-assert(flowEditor.includes('function massAplicarDestino('), 'Ações em massa ausentes do editor de Flows');
+assert(
+  domUi.includes('export function installLegacyDomGlobals'),
+  'Adaptador DOM do legado ausente',
+);
+assert(
+  flowEditor.includes('export function installLegacyFlowEditor'),
+  'Editor de Flows não foi modularizado',
+);
+assert(
+  flowEditor.includes('function massAplicarDestino('),
+  'Ações em massa ausentes do editor de Flows',
+);
 assert(!flowEditor.includes('.innerHTML'), 'Editor de Flows não pode montar HTML sem parser');
+assert(
+  dashboardExport.includes('export function createDashboardExportService'),
+  'Serviço de exportação XLSX ausente',
+);
+assert(
+  dashboardExport.includes('export function installLegacyDashboardExports'),
+  'Adaptador temporário das exportações XLSX ausente',
+);
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
   'export function createUploadRepository',
@@ -99,9 +123,18 @@ for (const uploadUiContract of [
   );
 }
 assert(!uploadUi.includes('.innerHTML'), 'Interface de uploads não pode montar HTML sem parser');
-assert(adminView.includes('export function installLegacyAdminView'), 'View administrativa não foi modularizada');
-assert(adminView.includes('async function renderObrasAdmin('), 'Tabela de obras ausente da view administrativa');
-assert(adminView.includes('async function renderEditoresAdmin('), 'Tabela de editores ausente da view administrativa');
+assert(
+  adminView.includes('export function installLegacyAdminView'),
+  'View administrativa não foi modularizada',
+);
+assert(
+  adminView.includes('async function renderObrasAdmin('),
+  'Tabela de obras ausente da view administrativa',
+);
+assert(
+  adminView.includes('async function renderEditoresAdmin('),
+  'Tabela de editores ausente da view administrativa',
+);
 assert(!adminView.includes('.innerHTML'), 'View administrativa não pode montar HTML sem parser');
 assert(
   detailsView.includes('export function installLegacyDetailsView'),
@@ -109,7 +142,10 @@ assert(
 );
 assert(detailsView.includes('function renderTable('), 'Tabela de detalhamento ausente da view');
 assert(!detailsView.includes('.innerHTML'), 'View de detalhamento não pode montar HTML sem parser');
-assert(flowsView.includes('export function installLegacyFlowsView'), 'View de Flows não foi modularizada');
+assert(
+  flowsView.includes('export function installLegacyFlowsView'),
+  'View de Flows não foi modularizada',
+);
 assert(flowsView.includes('function renderFlowTable('), 'Tabela de Flows ausente da view');
 assert(!flowsView.includes('.innerHTML'), 'View de Flows não pode montar HTML sem parser');
 assert(
@@ -122,14 +158,23 @@ assert(
   overviewView.includes('export function installLegacyOverviewView'),
   'View da Visão Geral não foi modularizada',
 );
-assert(overviewView.includes('function renderVisao('), 'Renderização da Visão Geral ausente da view');
+assert(
+  overviewView.includes('function renderVisao('),
+  'Renderização da Visão Geral ausente da view',
+);
 assert(!overviewView.includes('.innerHTML'), 'View da Visão Geral não pode montar HTML sem parser');
 assert(
   projectionView.includes('export function installLegacyProjectionView'),
   'View de Tendência de Obra não foi modularizada',
 );
-assert(projectionView.includes('function renderProjTable('), 'Tabela de Tendência de Obra ausente da view');
-assert(!projectionView.includes('.innerHTML'), 'View de Tendência de Obra não pode montar HTML sem parser');
+assert(
+  projectionView.includes('function renderProjTable('),
+  'Tabela de Tendência de Obra ausente da view',
+);
+assert(
+  !projectionView.includes('.innerHTML'),
+  'View de Tendência de Obra não pode montar HTML sem parser',
+);
 assert(
   projectionControlView.includes('export function installLegacyProjectionControlView'),
   'View de controle de projeção não foi modularizada',
@@ -216,6 +261,10 @@ for (const removedLegacyContract of [
   'function msRenderPanel(',
   'function massAplicarDestino(',
   'function openManualForm(',
+  'function _criarWorkbookXLSX(',
+  'async function exportarDetalhamentoXLSX(',
+  'async function exportarFlowsXLSX(',
+  'async function exportarControleProjXLSX(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

@@ -26,6 +26,10 @@ import {
 } from './services/supabase-service.js';
 import { createAuthService, installLegacyAuthGlobals } from './services/auth-service.js';
 import {
+  createDashboardExportService,
+  installLegacyDashboardExports,
+} from './services/dashboard-export.mjs';
+import {
   ensureApexCharts,
   ensureXlsx,
   installLegacyDependencyGlobals,
@@ -112,6 +116,20 @@ installLegacyProjectionControlView();
 installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
+const dashboardExportService = createDashboardExportService({
+  ensureXlsx,
+  getState: () => ({
+    tendency: window.DATA_T || [],
+    flows: window.getFlowsObraAtiva?.() || [],
+    projectionControl: window.PROJ_CTRL_STATE || {},
+    activeProject: window.OBRA_ATIVA || '',
+    project: window.getObraInfo?.(window.OBRA_ATIVA) || null,
+    auth: window.AUTH || {},
+  }),
+  toast: (...args) => window.authToast?.(...args),
+  reportError: (context, error) => logger.warn(context, error),
+});
+installLegacyDashboardExports(dashboardExportService);
 
 Promise.resolve()
   .then(() => {
@@ -137,6 +155,7 @@ Promise.resolve()
       performance: performanceService,
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
       excel: excelService,
+      exports: dashboardExportService,
       logger,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
       uploadRepository,

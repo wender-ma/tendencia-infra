@@ -10,6 +10,7 @@ import { createPaginationService, installLegacyPaginationGlobals } from './ui/pa
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
 import { installLegacyUploadUI } from './ui/uploads.mjs';
+import { installLegacyAdminView } from './ui/views/admin.mjs';
 import { installLegacyDetailsView } from './ui/views/details.mjs';
 import { installLegacyFlowsView } from './ui/views/flows.mjs';
 import { installLegacyHistoryView } from './ui/views/history.mjs';
@@ -97,6 +98,7 @@ const uploadRepository = createUploadRepository({
 });
 installLegacyUploadRepository(uploadRepository);
 installLegacyUploadUI();
+installLegacyAdminView();
 installLegacyDetailsView();
 installLegacyFlowsView();
 installLegacyHistoryView();

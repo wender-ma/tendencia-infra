@@ -17,6 +17,7 @@ const uploadRepository = fs.readFileSync(
   'utf8',
 );
 const uploadUi = fs.readFileSync(path.join(root, 'assets/js/ui/uploads.mjs'), 'utf8');
+const adminView = fs.readFileSync(path.join(root, 'assets/js/ui/views/admin.mjs'), 'utf8');
 const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.mjs'), 'utf8');
 const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
 const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
@@ -93,6 +94,10 @@ for (const uploadUiContract of [
   );
 }
 assert(!uploadUi.includes('.innerHTML'), 'Interface de uploads não pode montar HTML sem parser');
+assert(adminView.includes('export function installLegacyAdminView'), 'View administrativa não foi modularizada');
+assert(adminView.includes('async function renderObrasAdmin('), 'Tabela de obras ausente da view administrativa');
+assert(adminView.includes('async function renderEditoresAdmin('), 'Tabela de editores ausente da view administrativa');
+assert(!adminView.includes('.innerHTML'), 'View administrativa não pode montar HTML sem parser');
 assert(
   detailsView.includes('export function installLegacyDetailsView'),
   'View de detalhamento não foi modularizada',
@@ -201,6 +206,9 @@ for (const removedLegacyContract of [
   'function handleUpload(',
   'async function handleExcelUpload(',
   'function renderUploadsCentral(',
+  'async function renderObrasAdmin(',
+  'async function renderEditoresAdmin(',
+  'async function renderPendentesAdmin(',
   'function renderTable(',
   'function openItem(',
   'function renderFlows(',

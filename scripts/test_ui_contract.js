@@ -2,9 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { loadProjectSources } = require('./load_project_sources');
 
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const { html } = loadProjectSources();
 const css = [
   'assets/css/base.css',
   'assets/css/components.css',

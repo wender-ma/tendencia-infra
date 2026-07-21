@@ -170,7 +170,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 ### 9. Separar o arquivo monolítico
 
-- [ ] Manter no `index.html` apenas metadados, landmarks, containers e templates pequenos.
+- [x] Manter no `index.html` apenas metadados, landmarks e containers; abas e diálogos estáticos estão em `assets/views`.
 - [x] Criar `assets/css/tokens.css`.
 - [x] Criar `assets/css/base.css`.
 - [x] Criar `assets/css/components.css`.

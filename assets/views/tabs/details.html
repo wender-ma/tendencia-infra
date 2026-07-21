@@ -1,0 +1,52 @@
+<div class="sources-header" id="srcHeader_detalhe" data-sources="tendencia"></div>
+  <div class="card">
+    <h2>📋 Detalhamento por Item
+      <span class="panel-actions">
+        <button class="btn-sm" data-click-action="exportarDetalhamentoXLSX" style="font-size:11px;" title="Exporta a tabela completa em Excel">💾 Exportar Excel</button>
+      </span>
+    </h2>
+    <div class="toolbar">
+      <input type="search" id="search" aria-label="Buscar item, código ou insumo" placeholder="🔍 Buscar item, código ou insumo...">
+      <select id="filterGrupo" aria-label="Filtrar por grupo"><option value="">Todos os grupos</option></select>
+      <select id="filterStatus" aria-label="Filtrar por status">
+        <option value="">Todos os status</option>
+        <option value="red">🔴 Estouro &gt; 10%</option>
+        <option value="amber">🟡 Atenção 0-10%</option>
+        <option value="green">🟢 Dentro do orçamento</option>
+      </select>
+      <select id="filterAditivo" aria-label="Filtrar por vínculo com aditivos">
+        <option value="">Aditivos: todos</option>
+        <option value="com">Só com aditivos vinculados</option>
+        <option value="sem">Só sem aditivos</option>
+      </select>
+      <label class="checkbox-label">
+        <input type="checkbox" id="onlyFolhas" checked> Só itens
+      </label>
+      <span class="toolbar-count" id="count"></span>
+    </div>
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th data-sort="grupo" aria-sort="none">Grupo</th>
+            <th data-sort="item" aria-sort="none">Item</th>
+            <th data-sort="cod_insumo" aria-sort="none">Insumo</th>
+            <th class="num" data-sort="licitacao" aria-sort="none">Licitação</th>
+            <th class="num" data-sort="gestao" id="thGestao" aria-sort="none">Gestão</th>
+            <th class="num" data-sort="diferenca" aria-sort="none">Δ R$</th>
+            <th class="num" data-sort="pct" aria-sort="none">Δ %</th>
+            <th class="num" data-sort="aditivo_total" aria-sort="none">Aditivos R$</th>
+            <th class="num" data-sort="evolucao_teorica" aria-sort="none" title="Evolução Teórica (Prevision) — cronograma físico esperado">🎯 Teór.</th>
+            <th class="num" data-sort="evolucao_financeira" aria-sort="none" title="Evolução Financeira — valor efetivamente gasto">💰 Fin.</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination" id="detailPagination" hidden aria-label="Paginação do detalhamento"></div>
+    <div style="margin-top: 8px; font-size: 11px; color: var(--text-soft);">
+      💡 Clique em uma linha para ver os aditivos vinculados àquele item. Barra roxa à esquerda = item com aditivos.
+    </div>
+    <div class="table-pagination" id="flowPagination" hidden aria-label="Paginação de aditivos"></div>
+  </div>

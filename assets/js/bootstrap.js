@@ -8,6 +8,7 @@ import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
 import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
+import { mountStaticViews } from './ui/static-views.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -42,6 +43,7 @@ function showBootstrapError(error) {
   }
 }
 
+mountStaticViews();
 installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();

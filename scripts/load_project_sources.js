@@ -8,7 +8,13 @@ function readProjectFile(relativePath) {
 }
 
 function loadProjectSources() {
-  const html = readProjectFile('index.html');
+  const viewDirectory = path.join(root, 'assets/views/tabs');
+  const viewMarkup = fs
+    .readdirSync(viewDirectory)
+    .filter(file => file.endsWith('.html'))
+    .sort()
+    .map(file => fs.readFileSync(path.join(viewDirectory, file), 'utf8'));
+  const html = [readProjectFile('index.html'), readProjectFile('assets/views/dialogs.html'), ...viewMarkup].join('\n');
   const javascript = readProjectFile('assets/js/dashboard-legacy.js');
   return {
     root,

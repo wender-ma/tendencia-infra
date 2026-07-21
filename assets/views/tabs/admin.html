@@ -1,0 +1,201 @@
+<div class="card">
+    <h2>⚙️ Administração <span class="hint">só visível para admin geral</span></h2>
+    <p style="font-size:12.5px; color:var(--text-medium); margin: 8px 0 12px;">
+      Gerenciar o catálogo de obras e a lista de editores permitidos.
+      Todas as alterações são compartilhadas com toda a equipe em tempo real.
+    </p>
+  </div>
+
+  <!-- === PENDENTES DE APROVAÇÃO === -->
+  <div class="card">
+    <h2>🔔 Cadastros aguardando aprovação <span class="hint" id="pendentesCount"></span>
+      <span class="panel-actions">
+        <button class="btn-sm" data-click-action="renderPendentesAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
+      </span>
+    </h2>
+    <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
+      Usuários que criaram conta pelo botão "Criar conta" e ainda não têm permissão de edição.<br>
+      <strong>Aprovar</strong> = vira editor sem obras (defina depois em Editores via 🏗️). <strong>Rejeitar</strong> = nega acesso permanente.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nome</th>
+            <th>Observação</th>
+            <th style="width:150px;">Cadastrado em</th>
+            <th style="width:200px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="pendentesAdminTbody" aria-live="polite">
+          <tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- === OBRAS === -->
+  <div class="card">
+    <h2>🏗️ Obras
+      <span class="panel-actions">
+        <button class="btn-sm primary" data-click-action="openObraForm" style="font-size:12px;">➕ Nova obra</button>
+        <button class="btn-sm" data-click-action="renderObrasAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar obras">🔄</button>
+      </span>
+    </h2>
+    <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
+      Obras <strong>inativas</strong> ficam fora do dropdown do header (dados históricos preservados).<br>
+      Coluna <strong>Origem</strong>: <span class="badge purple">✍️ Manual</span> = criada aqui, pode ser deletada (🗑️).
+      <span class="badge gray">📥 Upload</span> = veio de arquivo de Gestões, só pode desativar.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:120px;">Código</th>
+            <th>Nome</th>
+            <th style="width:140px;">Key EmpObraTD</th>
+            <th style="width:100px;">Origem</th>
+            <th style="width:100px;">Ativa</th>
+            <th style="width:140px;">Criada em</th>
+            <th style="width:190px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="obrasAdminTbody" aria-live="polite">
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- === EDITORES === -->
+  <div class="card">
+    <h2>👥 Editores permitidos
+      <span class="panel-actions">
+        <button class="btn-sm primary" data-click-action="openEditorForm" style="font-size:12px;">➕ Adicionar editor</button>
+        <button class="btn-sm" data-click-action="renderEditoresAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar editores">🔄</button>
+      </span>
+    </h2>
+    <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
+      💡 <strong>Admin</strong> (👑) gerencia obras, aprova cadastros e edita dados de qualquer obra.<br>
+      <strong>Editor</strong> (✏️) edita só as obras marcadas na coluna "Obra". Editor sem obra atribuída não edita nada (⚠️).<br>
+      Use ⬆️/⬇️ para alternar admin↔editor · 🏗️ para escolher obras do editor (checkbox) · 🗑️ para remover totalmente.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nome</th>
+            <th style="width:100px;">Papel</th>
+            <th style="width:200px;">Obra</th>
+            <th>Observação</th>
+            <th style="width:140px;">Adicionado em</th>
+            <th style="width:110px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="editoresAdminTbody" aria-live="polite">
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- === FORM MODAL: NOVA/EDITAR OBRA === -->
+  <div id="obraFormBackdrop" class="standalone-modal-bg" aria-hidden="true" data-click-action="closeObraForm" data-backdrop-dismiss="true">
+    <div class="standalone-modal" role="dialog" aria-modal="true" aria-labelledby="obraFormTitle" tabindex="-1">
+      <form id="obraForm" data-submit-action="salvarObraForm">
+      <h2 id="obraFormTitle" class="modal-heading">Nova obra</h2>
+      <div class="form-stack">
+        <div>
+          <label for="obraFormCodigo" class="field-label">Código da obra <span class="required-mark">*</span></label>
+          <input type="text" id="obraFormCodigo" class="field-control field-control--mono" required placeholder="ex: 42-21O">
+          <div class="field-help">Formato Key_planejamento (ex: <code>42-21O</code>, sem zero à esquerda). Imutável após criar.</div>
+        </div>
+        <div>
+          <label for="obraFormNome" class="field-label">Nome da obra <span style="color:var(--sem-erro);">*</span></label>
+          <input type="text" id="obraFormNome" required placeholder="ex: Jardins Zurique" class="field-control">
+        </div>
+        <div>
+          <label for="obraFormKey" class="field-label">Key EmpObraTD (opcional)</label>
+          <input type="text" id="obraFormKey" class="field-control field-control--mono" placeholder="ex: 042-21O">
+          <div class="field-help">Formato alternativo com zero à esquerda. Usado em alguns exports.</div>
+        </div>
+        <div>
+          <label for="obraFormObs" class="field-label">Observação (opcional)</label>
+          <textarea id="obraFormObs" class="field-control" placeholder="notas internas"></textarea>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn-sm" data-click-action="closeObraForm">Cancelar</button>
+        <button type="submit" class="btn-sm primary">💾 Salvar</button>
+      </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- === MODAL UNIFICADO EDITOR (v0.62.2) === -->
+  <div id="editorFormBackdrop" class="standalone-modal-bg" aria-hidden="true" data-click-action="closeEditorForm" data-backdrop-dismiss="true">
+    <div class="standalone-modal standalone-modal--wide" role="dialog" aria-modal="true" aria-labelledby="editorFormTitle" tabindex="-1">
+      <form id="editorForm" data-submit-action="salvarEditorForm">
+      <div class="modal-heading-row">
+        <h2 id="editorFormTitle" class="modal-heading">✏️ Editar usuário</h2>
+        <button type="button" class="icon-close" data-click-action="closeEditorForm" aria-label="Fechar formulário de usuário" title="Fechar (Esc)">×</button>
+      </div>
+
+      <div class="form-stack">
+        <div>
+          <label for="editorFormEmail" class="field-label">Email <span style="color:var(--sem-erro);">*</span></label>
+          <input type="email" id="editorFormEmail" required placeholder="fulano@empresa.com" class="field-control">
+          <div class="field-help">Precisa ser o email do Google/cadastro que a pessoa usa pra logar.</div>
+        </div>
+        <div>
+          <label for="editorFormNome" class="field-label">Nome (opcional)</label>
+          <input type="text" id="editorFormNome" class="field-control">
+        </div>
+        <div>
+          <label for="editorFormObs" class="field-label">Observação (opcional)</label>
+          <textarea id="editorFormObs" class="field-control" placeholder="cargo, contato, etc."></textarea>
+        </div>
+
+        <div>
+          <div id="editorFormRoleLabel" class="field-label">Papel</div>
+          <div class="radio-group" role="radiogroup" aria-labelledby="editorFormRoleLabel">
+            <label class="radio-option">
+              <input type="radio" name="editorFormRole" value="editor" data-change-action="editorFormOnRoleChange" style="cursor:pointer;">
+              <span>✏️ <strong>Editor</strong></span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="editorFormRole" value="admin" data-change-action="editorFormOnRoleChange" style="cursor:pointer;">
+              <span>👑 <strong>Admin</strong></span>
+            </label>
+          </div>
+          <div style="font-size:11px; color:var(--text-soft); margin-top:6px;">
+            <strong>Admin</strong> gerencia obras, aprova cadastros e edita todas as obras.<br>
+            <strong>Editor</strong> edita só as obras marcadas abaixo.
+          </div>
+        </div>
+
+        <div id="editorFormObrasBlock">
+          <div id="editorFormObrasLabel" class="field-label">Obras que pode editar</div>
+          <div style="display:flex; gap:6px; margin:6px 0;">
+            <button type="button" class="btn-sm" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="true" style="font-size:11px;">✅ Todas</button>
+            <button type="button" class="btn-sm" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="false" style="font-size:11px;">◻️ Nenhuma</button>
+          </div>
+          <div id="editorObrasCheckboxes" class="editor-project-list" role="group" aria-labelledby="editorFormObrasLabel">
+            <!-- checkboxes populados dinamicamente -->
+          </div>
+          <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">Editor sem obra atribuída não consegue alterar nada (fica cadastrado no sistema).</div>
+        </div>
+      </div>
+
+      <div class="dialog-actions dialog-actions--split">
+        <button type="button" id="editorFormDeleteBtn" class="btn-sm" data-click-action="excluirUsuarioDoModal" style="font-size:12px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
+        <div class="action-group">
+          <button type="button" class="btn-sm" data-click-action="closeEditorForm">Cancelar</button>
+          <button type="submit" class="btn-sm primary">💾 Salvar</button>
+        </div>
+      </div>
+      </form>
+    </div>
+  </div>

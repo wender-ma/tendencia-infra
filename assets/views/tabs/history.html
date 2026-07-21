@@ -1,0 +1,44 @@
+<div class="sources-header" id="srcHeader_historico" data-sources="gestoes"></div>
+  <div class="kpis" id="histKpis"></div>
+
+  <div class="card">
+    <h2>📈 Evolução do total da obra <span class="hint">Orçamento Licitação → cada gestão</span></h2>
+    <div id="histChart" style="position: relative; height: 320px;"></div>
+    <div id="histLegend" style="margin-top: 12px; font-size: 12px; color: var(--text-soft); display: flex; gap: 16px; flex-wrap: wrap;"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>📈 Top 10 - Maiores aumentos <span class="hint">vs Orçamento Licitação</span></h2>
+      <div id="histTopUp"></div>
+    </div>
+    <div class="card">
+      <h2>📉 Top 10 - Maiores reduções <span class="hint">vs Orçamento Licitação</span></h2>
+      <div id="histTopDown"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🌡️ Mapa de variações por item <span class="hint">Orç. Licitação como base + heatmap por gestão</span></h2>
+    <div class="toolbar">
+      <input type="search" id="histSearch" aria-label="Buscar no histórico" placeholder="🔍 Buscar insumo ou item...">
+      <select id="histCompare" aria-label="Modo de comparação do histórico">
+        <option value="first" selected>Comparar tudo vs Orçamento Licitação (padrão)</option>
+        <option value="auto">Comparar: cada coluna vs anterior</option>
+      </select>
+      <label class="checkbox-label">
+        <input type="checkbox" id="histOnlyChanged" checked> Só itens que mudaram
+      </label>
+      <span class="toolbar-count" id="histCount"></span>
+    </div>
+    <div class="table-wrap" style="max-height:600px;">
+      <table id="histTbl">
+        <thead id="histThead"></thead>
+        <tbody id="histTbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination" id="historyPagination" hidden aria-label="Paginação do histórico"></div>
+    <div style="margin-top:8px; font-size:11px; color:var(--text-soft);">
+      💡 Coluna <strong>Licitação</strong> = orçamento original (ponto zero) · Verde = reduziu vs a referência · Vermelho = aumentou · Cinza = sem alteração. Passe o mouse na célula para ver o valor.
+    </div>
+  </div>

@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const config = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
 const projectionCatalog = fs.readFileSync(path.join(root, 'assets/js/data/projection-catalog.mjs'), 'utf8');
+const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.mjs'), 'utf8');
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 
@@ -26,6 +27,11 @@ for (const exportedContract of [
 assert(config.includes("readEnvironment('VITE_SUPABASE_URL'"), 'URL do Supabase nao aceita variavel de ambiente');
 assert(config.includes("readEnvironment('VITE_SUPABASE_ANON_KEY'"), 'Anon key nao aceita variavel de ambiente');
 assert(config.includes('Object.freeze({'), 'Configuracoes precisam ser imutaveis');
+assert(staticViews.includes("from '../../views/tabs/overview.html?raw'"), 'Aba de visão geral não foi externalizada');
+assert(staticViews.includes("from '../../views/dialogs.html?raw'"), 'Diálogos estáticos não foram externalizados');
+assert(staticViews.includes('export function mountStaticViews'), 'Montagem das abas estáticas ausente');
+assert(staticViews.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
+assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 
 for (const catalogContract of [
   'export const PROJECTION_CATALOG',
@@ -42,6 +48,10 @@ assert(service.includes('export function createSupabaseService'), 'Factory do se
 assert(service.includes('export function installLegacySupabaseGlobals'), 'Adaptador temporario do legado ausente');
 assert(/BASE_RETRY_DELAY_MS \* \(?2 \*\* attempt\)?/.test(service), 'Retry exponencial do Supabase ausente');
 
+assert(
+  bootstrap.indexOf('mountStaticViews();') < bootstrap.indexOf('installActionDelegation();'),
+  'Abas estáticas devem existir antes da delegação de eventos',
+);
 assert(
   bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('Promise.resolve()'),
   'Configuracao deve ser instalada antes das dependencias',

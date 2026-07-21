@@ -44,7 +44,7 @@ async function main() {
     'Descr_descricaoaditivo', 'Cod_obra', 'Valor Aprovado ou Solicitado',
     'Vlr_planejamento', 'Departamento', 'Ins. Planej.', 'Ins. Remanej.', 'Refletido',
   ];
-  const maliciousText = '<img src=x onerror=alert(1)>';
+  const maliciousText = '<script>alert(1)</script><img src=x onerror=alert(2)>" onmouseover="alert(3) javascript:alert(4)';
   const flows = parseFlowsFile(csv([
     flowHeaders,
     ['101', 'Aprovado', 'Engenharia', 'Obras', '20/07/2026', 'Escopo', maliciousText, 'Aditivo 101', '21O', '2.500,00', '2.450,00', '', 'I001', '-', 'Sim'],
@@ -75,7 +75,7 @@ async function main() {
   assert(managements.projectionRows[0].mes === '2026-08', 'Projeção mensal incorreta');
   assert(managements.report.accepted === 2 && managements.report.ignored === 1, 'Relatório de Gestões incorreto');
 
-  console.log('Parsers de importação: Tendência, Flows, Gestões e payload XSS OK');
+  console.log('Parsers de importação: Tendência, Flows, Gestões e payloads XSS preservados como texto OK');
 }
 
 main().catch(error => {

@@ -1514,7 +1514,12 @@ const UPLOADS_MAX_PER_TYPE = CONFIG.max_uploads_por_tipo; // rolling backup: man
 
 function sanitizeStoragePath(path) {
   const value = String(path || '').trim().replace(/^\/+/, '');
-  if (!value || value.includes('..') || /\/{2,}/.test(value)) return '';
+  if (
+    !value
+    || /^[a-z][a-z0-9+.-]*:/i.test(value)
+    || /[\u0000-\u001f\u007f\\]/.test(value)
+    || value.split('/').some(segment => !segment || segment === '.' || segment === '..')
+  ) return '';
   return value;
 }
 

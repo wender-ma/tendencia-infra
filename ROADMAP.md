@@ -97,7 +97,7 @@ Critério de conclusão: nenhum fluxo de escrita depende apenas de elementos esc
 - [x] Remover HTML dinâmico das mensagens de progresso do Excel (implementado em `1cb9096`).
 - [x] Remover dados importados de handlers JavaScript inline nos filtros e na árvore de projeção (implementado em `1cb9096`).
 - [ ] Avaliar Trusted Types depois da retirada dos handlers inline.
-- [ ] Criar testes com tags, atributos de evento e URLs maliciosas.
+- [x] Criar testes com tags, atributos de evento, esquemas de URL e caminhos maliciosos.
 
 Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido somente como texto e nunca executado.
 
@@ -309,3 +309,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Política de upload centralizada; CSV e Excel compartilham validação e progresso percentual de leitura | `services/upload-policy.mjs` |
 | 21/07/2026 | Lighthouse integrado ao CI; ApexCharts sob demanda elevou performance medida de 37 para 73 | `scripts/run_lighthouse.js` |
 | 21/07/2026 | Script clássico legado minificado após emissão, preservando fonte legível e nomes globais | `vite.config.mjs` |
+| 21/07/2026 | Testes XSS ampliados e caminhos de Storage endurecidos contra esquemas e travessia | `test_xss_contract.js` |

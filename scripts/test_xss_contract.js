@@ -47,5 +47,12 @@ assert(!/\.innerHTML\s*=\s*(?:error|message|msg|e\.message|err\.message)\b/.test
 assert(legacy.includes('function escHtml('), 'Codificador de texto HTML ausente');
 assert(legacy.includes('function escAttr('), 'Codificador de atributos ausente');
 assert(legacy.includes('function sanitizeStoragePath('), 'Sanitização de caminho de Storage ausente');
+for (const dangerousPathPattern of [
+  '/^[a-z][a-z0-9+.-]*:/i',
+  '/[\\u0000-\\u001f\\u007f\\\\]/',
+  "segment === '..'",
+]) {
+  assert(legacy.includes(dangerousPathPattern), `Bloqueio de caminho perigoso ausente: ${dangerousPathPattern}`);
+}
 
 console.log(`Contrato XSS: ${innerHtmlCount} templates legados inventariados; módulos novos sem innerHTML OK`);

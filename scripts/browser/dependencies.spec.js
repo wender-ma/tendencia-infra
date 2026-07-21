@@ -90,21 +90,43 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     window.AUTH.editaObras = ['STATE-OBRA'];
     window.OBRA_ATIVA = 'STATE-OBRA';
     const authReadsActiveProject = window.isEditorDaObraAtiva();
-    feedbackService.toast('<img src=x onerror=alert(1)>', 'info', 1000);
+    const maliciousPayloads = [
+      '<script>window.__xss=1</script>',
+      '<img src=x onerror=window.__xss=2>',
+      '\"><svg onload=window.__xss=3>',
+      'javascript:window.__xss=4',
+    ];
+    feedbackService.toast(maliciousPayloads.join('|'), 'info', 1000);
     const toastUsesText = (
-      document.getElementById('authToast')?.textContent === '<img src=x onerror=alert(1)>'
-      && !document.querySelector('#authToast img')
+      document.getElementById('authToast')?.textContent === maliciousPayloads.join('|')
+      && !document.querySelector('#authToast :is(script, img, svg)')
     );
     feedbackService.showLoading();
     const loadingShown = document.getElementById('loadingOverlay')?.classList.contains('show');
     feedbackService.hideLoading();
     const loadingHidden = !document.getElementById('loadingOverlay')?.classList.contains('show');
-    const confirmation = modalService.confirm('<img src=x>', '<img src=x onerror=alert(1)>', {
+    const confirmation = modalService.confirm(maliciousPayloads[0], maliciousPayloads.join('|'), {
       destructive: false,
     });
     const confirmUsesText = (
-      document.querySelector('#confirmModalContent h2')?.textContent === '<img src=x>'
-      && !document.querySelector('#confirmModalContent img')
+      document.querySelector('#confirmModalContent h2')?.textContent === maliciousPayloads[0]
+      && !document.querySelector('#confirmModalContent :is(script, img, svg)')
+    );
+    const escapedPayloadsStayText = maliciousPayloads.every(payload => {
+      const probe = document.createElement('div');
+      probe.innerHTML = `<span>${window.escHtml(payload)}</span>`;
+      return probe.textContent === payload && !probe.querySelector('script, img, svg');
+    });
+    const dangerousStoragePathsRejected = [
+      'javascript:alert(1)',
+      'data:text/html,<script>alert(1)</script>',
+      '../fora.csv',
+      'obra\\arquivo.csv',
+      'obra\u0000arquivo.csv',
+    ].every(path => window.sanitizeStoragePath(path) === '');
+    const validStoragePathAccepted = (
+      window.sanitizeStoragePath('/OBRA-1/tendencia/arquivo.csv')
+      === 'OBRA-1/tendencia/arquivo.csv'
     );
     modalService.closeConfirm(false);
     const confirmResult = await confirmation;
@@ -124,8 +146,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         && parserService.parseNumber('1.234,56') === 1234.56
         && window.parseNumero === parserService.parseNumber
       ),
-      hasFeedbackService: toastUsesText && loadingShown && loadingHidden,
+      hasFeedbackService: toastUsesText && loadingShown && loadingHidden && escapedPayloadsStayText,
       hasModalService: confirmUsesText && confirmResult === false,
+      storagePathSecurity: dangerousStoragePathsRejected && validStoragePathAccepted,
       hasPerformanceService: (
         performanceService === window.dashboardPerformance
         && performanceService.snapshot().boot.domNodes > 0
@@ -166,6 +189,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasParserService: true,
     hasFeedbackService: true,
     hasModalService: true,
+    storagePathSecurity: true,
     hasPerformanceService: true,
     hasLoggerService: true,
     hasUploadPolicy: true,

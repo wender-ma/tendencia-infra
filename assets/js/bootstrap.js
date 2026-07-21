@@ -17,9 +17,10 @@ import {
   installLegacyDependencyGlobals,
 } from './services/dependency-service.mjs';
 import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
+import { createLogger, installLogger } from './services/logger.mjs';
 
 function showBootstrapError(error) {
-  console.error('[BOOT] Falha ao carregar o dashboard:', error);
+  window.dashboardLogger?.error('Boot/carregar dashboard', error);
 
   const badge = document.getElementById('supaBadge');
   if (badge) {
@@ -34,6 +35,8 @@ function showBootstrapError(error) {
 }
 
 installLegacyConfig();
+const logger = createLogger();
+installLogger(logger);
 const appState = createAppState();
 installLegacyStateGlobals(appState);
 const performanceService = createPerformanceMonitor();
@@ -54,13 +57,15 @@ installLegacyExcelGlobals(excelService);
 
 ensureApexCharts()
   .then(() => {
-    const supabaseService = createSupabaseService(SUPABASE_CONFIG);
+    const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
+      reportError: (context, error) => logger.warn(context, error),
+    });
     installLegacySupabaseGlobals(supabaseService);
     const authService = createAuthService({
       supabaseClient: supabaseService.client,
       getActiveProject: () => appState.obra.ativa,
       onStateChange: (details) => window.handleAuthServiceStateChanged?.(details),
-      reportError: (context, error) => window.reportNonFatalError?.(context, error),
+      reportError: (context, error) => logger.warn(context, error),
     });
     installLegacyAuthGlobals(authService);
     window.dashboardServices = Object.freeze({
@@ -72,6 +77,7 @@ ensureApexCharts()
       performance: performanceService,
       dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
       excel: excelService,
+      logger,
     });
 
     const dashboardScript = document.createElement('script');

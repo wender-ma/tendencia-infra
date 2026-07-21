@@ -31,6 +31,16 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const feedbackService = window.dashboardServices.feedback;
     const modalService = window.dashboardServices.modals;
     const performanceService = window.dashboardServices.performance;
+    const loggerService = window.dashboardServices.logger;
+    loggerService.clear();
+    loggerService.warn('Browser/user@example.com', new Error('token eyJabc.def.ghi'));
+    const loggerSnapshot = loggerService.snapshot();
+    const loggerIsSanitized = (
+      loggerSnapshot.length === 1
+      && loggerSnapshot[0].context.includes('[email redacted]')
+      && loggerSnapshot[0].error.message.includes('[token redacted]')
+      && !JSON.stringify(loggerSnapshot).includes('user@example.com')
+    );
     const xlsxLoadedAtBoot = performance.getEntriesByType('resource')
       .some(entry => /\/xlsx-[^/]+\.js(?:$|\?)/.test(entry.name));
     const xlsxModule = await window.ensureXlsx();
@@ -110,6 +120,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         && performanceService.snapshot().boot.domNodes > 0
         && performanceService.snapshot().operations['render:visao']?.count >= 1
       ),
+      hasLoggerService: loggerIsSanitized && window.dashboardLogger === loggerService,
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -142,6 +153,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasFeedbackService: true,
     hasModalService: true,
     hasPerformanceService: true,
+    hasLoggerService: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {

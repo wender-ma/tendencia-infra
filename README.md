@@ -38,6 +38,7 @@ Dashboard de tendência orçamentária
 - `assets/js/services/supabase-service.js`: criação do cliente Supabase e política compartilhada de retry.
 - `assets/js/services/dependency-service.mjs`: carregamento sob demanda do SheetJS e cache das dependências pesadas.
 - `assets/js/services/excel-service.mjs`: leitura com progresso e processamento de planilhas em Web Worker.
+- `assets/js/services/logger.mjs`: buffer local de diagnóstico com contexto e redação de dados sensíveis.
 - `assets/js/ui/actions.mjs`: delegação central das ações declaradas pelo HTML e pelos templates.
 - `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
 - `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.

@@ -236,7 +236,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Executar axe no CI.
 - [ ] Executar Lighthouse no CI.
 - [x] Configurar lint e formatação automática para os módulos extraídos.
-- [ ] Adicionar logs de erro com contexto e sem dados sensíveis.
+- [x] Adicionar logs de erro com contexto, retenção limitada e redação de dados sensíveis.
 - [x] Documentar execução local, build, deploy e rollback.
 
 ## P3: UX, UI e metadados
@@ -304,3 +304,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Leitura de arquivos com percentual e parsing/conversão de Excel movidos para Web Worker | `excel-service.mjs` |
 | 21/07/2026 | Handlers inline removidos do HTML e dos templates; ações de interface centralizadas por delegação | `ui/actions.mjs` |
 | 21/07/2026 | CSP aplicada com scripts locais e conexões limitadas ao Supabase; exceção temporária mantida somente para estilos inline | `public/_headers` |
+| 21/07/2026 | Logger local limitado criado com contexto e redação automática de emails, tokens e query strings | `services/logger.mjs` |

@@ -89,12 +89,12 @@ export function createAuthService({
         .select('email, codigo_obra, role, status')
         .eq('email', email.toLowerCase());
       if (error) {
-        console.warn('[AUTH] erro checar whitelist:', error);
+        reportError('Auth/consultar permissões', error);
         return emptyPermissions();
       }
       return resolvePermissions(data);
     } catch (error) {
-      console.warn('[AUTH] excecao whitelist:', error);
+      reportError('Auth/consultar permissões', error);
       return emptyPermissions();
     }
   }
@@ -172,7 +172,7 @@ export function createAuthService({
       } = await supabaseClient.auth.getSession();
       await applySession(session);
     } catch (error) {
-      console.warn('[AUTH] getSession err:', error);
+      reportError('Auth/restaurar sessão', error);
       state.ready = true;
       await notifyStateChange();
     }

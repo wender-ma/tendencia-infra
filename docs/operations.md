@@ -72,3 +72,13 @@ O script cria snapshots em `backups/snapshots/`, mantém os 12 mais recentes e r
 ## Retenção de uploads
 
 O aplicativo mantém no Supabase os 12 uploads mais recentes por tipo. Ao registrar o 13º, remove o mais antigo. Um arquivo ativo não pode ser excluído antes da ativação de outro. A limpeza integral do histórico é uma operação administrativa e irreversível.
+
+## Diagnóstico local
+
+Erros não fatais recentes ficam somente na memória da aba, limitados a 100 entradas. O logger remove emails, tokens e parâmetros de URL antes de registrar. Para inspecionar o contexto técnico no console do navegador:
+
+```js
+dashboardServices.logger.snapshot()
+```
+
+O buffer não é persistido nem enviado a serviços externos e desaparece ao recarregar a página.

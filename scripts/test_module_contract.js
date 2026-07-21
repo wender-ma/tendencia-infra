@@ -35,7 +35,11 @@ assert(
   bootstrap.indexOf('installLegacyConfig();') < bootstrap.indexOf('ensureApexCharts()'),
   'Configuracao deve ser instalada antes das dependencias',
 );
-assert(bootstrap.includes('createSupabaseService(SUPABASE_CONFIG)'), 'Bootstrap nao cria o servico Supabase');
+assert(
+  bootstrap.includes('createSupabaseService(SUPABASE_CONFIG, {')
+    && bootstrap.includes('reportError: (context, error) => logger.warn(context, error)'),
+  'Bootstrap nao cria o servico Supabase com logger sanitizado',
+);
 assert(bootstrap.includes('installLegacySupabaseGlobals(supabaseService)'), 'Bootstrap nao instala o adaptador Supabase');
 
 for (const removedLegacyContract of [

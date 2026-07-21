@@ -12,7 +12,8 @@ function debounce(func, wait) {
 }
 
 function reportNonFatalError(context, error, userMessage) {
-  console.warn(`[${context}]`, error);
+  if (window.dashboardLogger) window.dashboardLogger.warn(context, error);
+  else console.warn(`[${context}]`, error?.message || error);
   if (userMessage && typeof authToast === 'function') {
     authToast(`⚠️ ${userMessage}`, 'warn', CONFIG.toast_duration_warn);
   }

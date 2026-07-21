@@ -247,7 +247,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Consolidar as cores em tokens oficiais.
 - [ ] Melhorar feedback de salvamento e sincronização.
 - [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.
-- [ ] Revisar estados vazios, loading e erro de cada aba.
+- [x] Revisar estados vazios, loading e erro de cada aba (componente seguro compartilhado e navegação offline coberta no navegador).
 - [x] Revisar textos e termos técnicos apresentados ao usuário.
 - [x] Adicionar `meta description`.
 - [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.

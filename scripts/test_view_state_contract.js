@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+const root = path.resolve(__dirname, '..');
+const moduleSource = fs.readFileSync(path.join(root, 'assets/js/ui/view-states.mjs'), 'utf8');
+const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
+const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+assert(moduleSource.includes('export function createViewStateService'), 'Factory de estados ausente');
+assert(moduleSource.includes('textContent = title'), 'Título do estado deve usar textContent');
+assert(moduleSource.includes('textContent = message'), 'Mensagem do estado deve usar textContent');
+assert(moduleSource.includes("kind === 'error' ? 'alert' : 'status'"), 'Semântica de status/erro ausente');
+assert(bootstrap.includes('installLegacyViewStateGlobals(viewStateService)'), 'Estado não instalado no bootstrap');
+assert(bootstrap.includes('viewStates: viewStateService'), 'Serviço de estado não publicado');
+assert(!legacy.includes('renderPlaceholderSemDados'), 'Placeholder HTML legado ainda está presente');
+
+const movementTable = legacy.slice(
+  legacy.indexOf('function renderMovTable('),
+  legacy.indexOf('// Event delegation para botões da tabela de movimentações'),
+);
+assert(!movementTable.includes('historyPage'), 'Tabela de movimentações contém paginação do histórico');
+assert(!movementTable.includes('compare'), 'Tabela de movimentações depende de filtro do histórico');
+
+const historyHeatmap = legacy.slice(
+  legacy.indexOf('function renderHistHeatmap('),
+  legacy.indexOf('// Debounce para filtros do heatmap histórico'),
+);
+assert(historyHeatmap.indexOf('const historyPage') < historyHeatmap.indexOf('historyPage.items'), 'Página do histórico deve ser criada antes do uso');
+
+console.log('Contrato de estados: componente seguro, integração e regressões de paginação OK');

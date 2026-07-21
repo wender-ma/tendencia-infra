@@ -34,6 +34,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const loggerService = window.dashboardServices.logger;
     const uploadPolicy = window.dashboardServices.uploadPolicy;
     const pagination = window.dashboardServices.pagination;
+    const viewStates = window.dashboardServices.viewStates;
     const paginationHost = document.createElement('div');
     paginationHost.id = 'paginationBrowserTest';
     document.body.appendChild(paginationHost);
@@ -48,6 +49,20 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       && paginationHost.textContent.includes('Página 1 de 3')
     );
     paginationHost.remove();
+    const stateHost = document.createElement('div');
+    stateHost.id = 'viewStateBrowserTest';
+    document.body.appendChild(stateHost);
+    viewStates.render(stateHost, {
+      kind: 'error',
+      title: '<img src=x onerror=window.__stateXss=1>',
+      message: '<script>window.__stateXss=2</script>',
+    });
+    const viewStateIsSafe = Boolean(
+      stateHost.textContent.includes('<img src=x')
+      && !stateHost.querySelector('img, script')
+      && stateHost.querySelector('[role="alert"]')
+    );
+    stateHost.remove();
     const uploadPolicyWorks = (
       uploadPolicy.validate({ name: 'dados.csv', size: 100 }, 'csv').valid
       && uploadPolicy.validate({ name: 'dados.exe', size: 100 }, 'excel').code === 'extension'
@@ -172,6 +187,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasLoggerService: loggerIsSanitized && window.dashboardLogger === loggerService,
       hasUploadPolicy: uploadPolicyWorks,
       hasPagination: paginationWorks,
+      hasViewStates: viewStateIsSafe,
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -210,6 +226,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasLoggerService: true,
     hasUploadPolicy: true,
     hasPagination: true,
+    hasViewStates: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {
@@ -245,6 +262,24 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await expect(page.locator('#tab-flows')).toHaveClass(/active/);
   await expect(page.locator('#tab-btn-flows')).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#flowTbody')).toBeAttached();
+
+  const emptyTabs = [
+    ['visao', 'Visão Geral sem dados'],
+    ['flows', 'Sem aditivos carregados'],
+    ['projecao', 'Projeção sem dados mensais'],
+    ['projecao_ctrl', 'Nenhuma movimentação registrada'],
+    ['detalhe', 'Detalhamento sem dados'],
+    ['historico', 'Sem histórico para esta obra'],
+  ];
+  for (const [tab, expectedText] of emptyTabs) {
+    await page.locator(`#tab-btn-${tab}`).click();
+    await expect(page.locator(`#tab-${tab}`)).toContainText(expectedText);
+    await expect(page.locator(`#tab-${tab} .view-state`).first()).toBeVisible();
+  }
+  await page.getByRole('tab', { name: /Uploads/ }).click();
+  await expect(page.locator('#tab-uploads')).toContainText('Nenhuma planilha Excel enviada ainda');
+  await page.getByRole('tab', { name: /Manual/ }).click();
+  await expect(page.locator('#tab-manual')).toContainText('Sobre a versão online');
 
   const accessibility = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

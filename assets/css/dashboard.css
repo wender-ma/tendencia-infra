@@ -84,6 +84,29 @@
   .pagination-button:disabled { opacity: 0.45; cursor: default; }
   .pagination-button:focus-visible { outline: 2px solid var(--fgr-red-vivid); outline-offset: 2px; }
   .pagination-status { min-width: 105px; text-align: center; font-size: 12px; color: var(--text-soft); }
+  .view-state {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 28px 20px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    background: var(--bg-page);
+    color: var(--text-soft);
+    text-align: center;
+  }
+  .view-state--compact { min-height: 96px; padding: 18px 14px; }
+  .view-state--error { border-color: var(--sem-erro); background: var(--fgr-red-light); }
+  .view-state h3 { margin: 0; color: var(--text-strong); font-size: 15px; }
+  .view-state p { max-width: 620px; margin: 0; font-size: 12.5px; line-height: 1.5; }
+  .view-state .btn-sm { margin-top: 6px; }
+  .view-state-row > td { padding: 12px; }
+  .view-state-row:hover { background: transparent; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th { background: var(--bg-page); color: var(--text-medium); text-align: left; padding: 8px 10px;
     border-bottom: 2px solid var(--border); position: sticky; top: 0;

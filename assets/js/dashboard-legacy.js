@@ -2426,23 +2426,6 @@ function irParaAba(nomeAba) {
   if (tab) tab.click();
 }
 
-// helpers de placeholder "sem dados"
-// Retorna HTML de CTA amigável quando obra não tem Tendência carregada
-function renderPlaceholderSemDados(icone, titulo, subtitulo) {
-  const obraInfo = (typeof getObraInfo === 'function') ? getObraInfo() : null;
-  const nomeObra = obraInfo ? obraInfo.nome : (OBRA_ATIVA || '—');
-  return `
-    <div style="text-align:center; padding:60px 24px; color:var(--text-soft); background:var(--bg-page); border:2px dashed var(--border-strong); border-radius:12px; margin:20px 0;">
-      <div style="font-size:48px; margin-bottom:12px;">${icone || '📭'}</div>
-      <h3 style="font-size:16px; color:#334155; margin:0 0 6px; font-weight:600;">${titulo || 'Sem dados para exibir'}</h3>
-      <p style="font-size:13px; margin:0 0 20px;">${subtitulo || ('Envie o Excel de Tendência de <strong>' + escHtml(nomeObra) + '</strong> na aba <strong>📤 Uploads</strong>.')}</p>
-      <button class="btn-sm primary" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="padding:8px 18px; font-size:13px;">
-        📤 Ir para Uploads
-      </button>
-    </div>
-  `;
-}
-
 // Verifica se a obra ativa tem dados de Tendência carregados
 function obraTemTendencia() {
   return Array.isArray(DATA_T) && DATA_T.some(d => d.is_folha && (d.licitacao != null || d.gestao != null));
@@ -2454,16 +2437,20 @@ function renderVisao() {
     const kpisEl = document.getElementById('kpis');
     const gruposEl = document.getElementById('grupos');
     const alertEl = document.getElementById('alertBanner');
-    if (kpisEl) kpisEl.innerHTML = renderPlaceholderSemDados('📈', 'Visão Geral sem dados', null);
+    if (kpisEl) renderDashboardState(kpisEl, {
+      title: 'Visão Geral sem dados',
+      message: 'Envie a planilha de Tendência desta obra para visualizar os indicadores.',
+      action: { label: 'Ir para Uploads', tab: 'uploads' },
+    });
     if (gruposEl) gruposEl.replaceChildren();
     if (alertEl) alertEl.replaceChildren();
     // Limpar donut e top 10 também
-    const donutEl = document.getElementById('donut');
-    const topUpEl = document.getElementById('topUp');
-    const topDownEl = document.getElementById('topDown');
-    if (donutEl) donutEl.innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:40px;">—</div>';
-    if (topUpEl) topUpEl.replaceChildren();
-    if (topDownEl) topDownEl.replaceChildren();
+    const donutEl = document.getElementById('donutChart');
+    const topUpEl = document.getElementById('top10Up');
+    const topDownEl = document.getElementById('top10Down');
+    if (donutEl) renderDashboardState(donutEl, { title: 'Sem composição disponível', compact: true });
+    if (topUpEl) renderDashboardState(topUpEl, { title: 'Sem aumentos para comparar', compact: true });
+    if (topDownEl) renderDashboardState(topDownEl, { title: 'Sem reduções para comparar', compact: true });
     refreshHeaderSubtitle();
     verificarDadosDesatualizados();
     return;
@@ -2945,9 +2932,14 @@ function renderTable() {
   // guard sem dados
   if (!obraTemTendencia()) {
     const tbody = document.getElementById('tbody');
-    const countEl = document.getElementById('count');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="11">' + renderPlaceholderSemDados('📋', 'Detalhamento sem dados', null) + '</td></tr>';
-    if (countEl) countEl.textContent = '';
+    if (tbody) renderDashboardState(tbody, {
+      title: 'Detalhamento sem dados',
+      message: 'Envie a planilha de Tendência desta obra para consultar os itens.',
+      action: { label: 'Ir para Uploads', tab: 'uploads' },
+      tableColspan: 11,
+    });
+    const count = document.getElementById('count');
+    if (count) count.textContent = '0 itens';
     const emptyPage = paginateRows('detail', [], 'empty');
     renderPaginationControls('detailPagination', 'detail', emptyPage, renderTable);
     return;
@@ -4253,10 +4245,24 @@ function renderFlows() {
   if (!Array.isArray(getFlowsObraAtiva()) || getFlowsObraAtiva().length === 0) {
     const flowSummary = document.getElementById('flowSummary');
     const flowsByTipo = document.getElementById('flowsByTipo');
-    const flowsTbody = document.getElementById('flowsTbody');
-    if (flowSummary) flowSummary.innerHTML = renderPlaceholderSemDados('🔗', 'Sem aditivos carregados', 'Envie o Excel <strong>Flows</strong> na aba <strong>📤 Uploads</strong>.');
+    const flowsTbody = document.getElementById('flowTbody');
+    if (flowSummary) renderDashboardState(flowSummary, {
+      title: 'Sem aditivos carregados',
+      message: 'Envie a planilha de Flows para consultar os aditivos desta obra.',
+      action: { label: 'Ir para Uploads', tab: 'uploads' },
+    });
     if (flowsByTipo) flowsByTipo.replaceChildren();
-    if (flowsTbody) flowsTbody.replaceChildren();
+    if (flowsTbody) renderDashboardState(flowsTbody, {
+      title: 'Sem aditivos para listar',
+      compact: true,
+      tableColspan: 10,
+    });
+    document.getElementById('flowsByMotivo')?.replaceChildren();
+    document.getElementById('flowsDescartados')?.replaceChildren();
+    const flowCount = document.getElementById('flowCount');
+    if (flowCount) flowCount.textContent = '0 aditivos';
+    const emptyPage = paginateRows('flows', [], 'empty');
+    renderPaginationControls('flowPagination', 'flows', emptyPage, renderFlowTable);
     return;
   }
   const total = getFlowsObraAtiva().length;
@@ -5586,9 +5592,18 @@ function initProjecao() {
   // v0.58b: verifica se há dados PARA A OBRA ATIVA
   const _proj = getProjRawObraAtiva();
   if (!_proj.length) {
-    document.getElementById('projChart').innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:14px;">⚠️ Recarregue o CSV da aba <strong>Gestões</strong> usando a barra acima.<br>Os dados mensais não foram pré-carregados.</div>';
+    renderDashboardState('projChart', {
+      title: 'Projeção sem dados mensais',
+      message: 'Envie a planilha de Gestões para calcular a tendência da obra.',
+      action: { label: 'Ir para Uploads', tab: 'uploads' },
+    });
     document.getElementById('projKpis').replaceChildren();
-    document.getElementById('projTbody').replaceChildren();
+    renderDashboardState('projTbody', {
+      title: 'Sem serviços para projetar',
+      compact: true,
+      tableColspan: 7,
+    });
+    document.getElementById('projCount').textContent = '0 serviços';
     return;
   }
   const ultimo = defaultDataFim();
@@ -7366,7 +7381,10 @@ function renderProjCtrl() {
 
 function renderProjCtrlChart(movs) {
   if (!movs.length) {
-    document.getElementById('projCtrlChart').innerHTML = '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:13px;">Nenhuma movimentação ainda.<br>Defina o saldo inicial ou clique em "➕ Nova movimentação" para começar.</div>';
+    renderDashboardState('projCtrlChart', {
+      title: 'Nenhuma movimentação registrada',
+      message: 'Defina o saldo inicial ou adicione uma movimentação para começar o controle.',
+    });
     return;
   }
 
@@ -7481,12 +7499,6 @@ function renderMovTable(movs, saldoFinal) {
     const db = b.data || b.data_br || '';
     return db.localeCompare(da);
   });
-  const historyPage = paginateRows(
-    'history',
-    filtered,
-    JSON.stringify([q, compare, onlyChanged, OBRA_ATIVA, gestoes]),
-  );
-
   const tipoBadge = {
     aditivo: '<span class="badge blue">🔵 Aditivo</span>',
     remanejamento: '<span class="badge purple">🟣 Remanejamento</span>',
@@ -7494,7 +7506,15 @@ function renderMovTable(movs, saldoFinal) {
     devolucao: '<span class="badge amber">🟠 Devolução</span>',
   };
 
-  document.getElementById('movTbody').innerHTML = filtered.map(m => {
+  const movTbody = document.getElementById('movTbody');
+  if (!filtered.length) {
+    renderDashboardState(movTbody, {
+      title: movs.length ? 'Nenhuma movimentação encontrada' : 'Nenhuma movimentação registrada',
+      message: movs.length ? 'Ajuste ou limpe os filtros para ver outros resultados.' : 'Use o botão Nova movimentação para iniciar o controle.',
+      compact: true,
+      tableColspan: 9,
+    });
+  } else movTbody.innerHTML = filtered.map(m => {
     const dirIcon = m.direcao === 'entrada' ? '<span style="color:var(--sem-ok); font-size:16px;" title="Entrada (recebeu verba)">⬅️</span>' : '<span style="color:var(--sem-erro); font-size:16px;" title="Saída (liberou verba)">➡️</span>';
     const valCls = m.direcao === 'entrada' ? 'pos' : 'neg';
     const valSign = m.direcao === 'entrada' ? '+' : '-';
@@ -7950,9 +7970,21 @@ function renderHistorico() {
     const kpisEl = document.getElementById('histKpis');
     const chartEl = document.getElementById('histChart');
     const heatEl = document.getElementById('histHeatmap');
-    if (kpisEl) kpisEl.innerHTML = renderPlaceholderSemDados('📅', 'Sem histórico para esta obra', 'Envie a aba <strong>Gestões</strong> na <strong>📤 Uploads</strong> (upload compartilhado — 1 arquivo cobre todas as obras).');
+    if (kpisEl) renderDashboardState(kpisEl, {
+      title: 'Sem histórico para esta obra',
+      message: 'Envie a planilha de Gestões para visualizar a evolução mensal.',
+      action: { label: 'Ir para Uploads', tab: 'uploads' },
+    });
     if (chartEl) chartEl.replaceChildren();
     if (heatEl) heatEl.replaceChildren();
+    document.getElementById('histLegend')?.replaceChildren();
+    document.getElementById('histTopUp')?.replaceChildren();
+    document.getElementById('histTopDown')?.replaceChildren();
+    document.getElementById('histThead')?.replaceChildren();
+    document.getElementById('histTbody')?.replaceChildren();
+    document.getElementById('historyPagination')?.replaceChildren();
+    const histCount = document.getElementById('histCount');
+    if (histCount) histCount.textContent = '0 itens';
     return;
   }
   // Construir cópias que incluam o Orçamento Licitação como ponto zero
@@ -8145,6 +8177,12 @@ function renderHistHeatmap() {
     const db = Math.abs((b[gestoes[gestoes.length-1]]||0) - (b[gestoes[0]]||0));
     return db - da;
   });
+
+  const historyPage = paginateRows(
+    'history',
+    filtered,
+    JSON.stringify([q, compare, onlyChanged, OBRA_ATIVA, gestoes]),
+  );
 
   // Header
   document.getElementById('histThead').innerHTML = `

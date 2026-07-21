@@ -16,6 +16,9 @@ let massCallback;
 let supaPatchClassification;
 let supaUpsertManual;
 let supaDeleteManual;
+let SUPA;
+let isEditorDaObraAtiva;
+let requireEditor;
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
@@ -1350,7 +1353,7 @@ async function deleteManual(id) {
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
 export function installLegacyFlowEditor(
-  { runtime, storage, feedback, modals, dashboardRepository },
+  { runtime, storage, feedback, modals, dashboardRepository, authService, authUi, supabaseClient },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -1366,6 +1369,9 @@ export function installLegacyFlowEditor(
   supaPatchClassification = dashboardRepository.patchClassification;
   supaUpsertManual = dashboardRepository.upsertManual;
   supaDeleteManual = dashboardRepository.deleteManual;
+  SUPA = supabaseClient;
+  isEditorDaObraAtiva = authService.canEditActiveProject;
+  requireEditor = authUi.requireEditor;
   Object.assign(target, {
     loadClassifications,
     readClassificationMap,

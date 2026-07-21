@@ -6,7 +6,7 @@ import { createPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService } from './ui/feedback.mjs';
 import { createModalService } from './ui/modals.mjs';
 import { createActionRegistry, installActionDelegation } from './ui/actions.mjs';
-import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
+import { createAuthUi, createAuthUiActions, isGlobalUploadKind } from './ui/auth-ui.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
 import { createDashboardRuntime, formatNumber } from './ui/dashboard-runtime.mjs';
 import {
@@ -18,11 +18,8 @@ import { createPaginationService } from './ui/pagination.mjs';
 import { createViewStateService } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
-import {
-  createSupabaseService,
-  installLegacySupabaseGlobals,
-} from './services/supabase-service.js';
-import { createAuthService, installLegacyAuthGlobals } from './services/auth-service.js';
+import { createSupabaseService } from './services/supabase-service.js';
+import { createAuthService } from './services/auth-service.js';
 import {
   createDashboardExportActions,
   createDashboardExportService,
@@ -66,7 +63,6 @@ actionRegistry.register({ print: () => window.print() });
 const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
   reportError: (context, error) => logger.warn(context, error),
 });
-installLegacySupabaseGlobals(supabaseService);
 const syncStatusService = createSyncStatusService({
   isOnline: () => Boolean(supabaseService.client),
 });
@@ -98,18 +94,39 @@ actionRegistry.register({
 });
 const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.table_page_size });
 const viewStateService = createViewStateService();
+const authUiRef = { current: null };
+const authService = createAuthService({
+  supabaseClient: supabaseService.client,
+  getActiveProject: () => appState.obra.ativa,
+  onStateChange: (details) => authUiRef.current?.handleAuthServiceStateChanged(details),
+  reportError: (context, error) => logger.warn(context, error),
+});
+const authUi = createAuthUi({
+  authService,
+  modalService,
+  toast: (...args) => feedbackService.toast(...args),
+  requestConfirmation: (...args) => modalService.confirm(...args),
+  getActiveProject: () => appState.obra.ativa,
+  renderProtectedViews: () => {
+    window.renderFlows?.();
+    if (document.getElementById('projCtrlMovsList')) window.renderProjCtrl?.();
+    window.renderUploadsCentral?.();
+  },
+  clearMassSelection: () => window.clearMassSelection?.(),
+  applyProjectionLocks: () => window.applyLocksToUI?.(),
+  reportError: (context, error) => logger.warn(context, error),
+});
+authUiRef.current = authUi;
+actionRegistry.register(createAuthUiActions(authUi));
 const uploadRepository = createUploadRepository({
   getClient: () => supabaseService.client,
   getActiveProject: () => window.OBRA_ATIVA,
-  getCurrentUser: () => window.AUTH?.user,
-  isEditor: () => window.isEditorDaObraAtiva?.() === true,
-  isAdmin: () => window.isAdminGeral?.() === true,
+  getCurrentUser: () => authService.state.user,
+  isEditor: () => authService.canEditActiveProject(),
+  isAdmin: () => authService.isAdmin(),
   canManageKind: (kind) =>
-    window.isGlobalUploadKind?.(kind)
-      ? window.isAdminGeral?.() === true
-      : window.isEditorDaObraAtiva?.() === true,
-  requirePermission: (kind, description) =>
-    window.requireUploadPermission?.(kind, description) === true,
+    isGlobalUploadKind(kind) ? authService.isAdmin() : authService.canEditActiveProject(),
+  requirePermission: (kind, description) => authUi.requireUploadPermission(kind, description),
   retry: (operation) => supabaseService.retry(operation),
   maxPerType: DASHBOARD_CONFIG.max_uploads_por_tipo,
   onMutation: (error, context) => syncStatusService.recordMutation(error, context),
@@ -124,7 +141,7 @@ const dashboardExportService = createDashboardExportService({
     projectionControl: window.PROJ_CTRL_STATE || {},
     activeProject: window.OBRA_ATIVA || '',
     project: window.getObraInfo?.(window.OBRA_ATIVA) || null,
-    auth: window.AUTH || {},
+    auth: authService.state,
   }),
   toast: (...args) => feedbackService.toast(...args),
   reportError: (context, error) => logger.warn(context, error),
@@ -133,9 +150,9 @@ actionRegistry.register(createDashboardExportActions(dashboardExportService));
 const dashboardRepository = createDashboardRepository({
   getClient: () => supabaseService.client,
   getActiveProject: () => window.OBRA_ATIVA,
-  getCurrentUser: () => window.AUTH?.user,
-  canEditActiveProject: () => window.isEditorDaObraAtiva?.() === true,
-  isAdmin: () => window.isAdminGeral?.() === true,
+  getCurrentUser: () => authService.state.user,
+  canEditActiveProject: () => authService.canEditActiveProject(),
+  isAdmin: () => authService.isAdmin(),
   retry: (operation) => supabaseService.retry(operation),
   onMutation: (error) => syncStatusService.recordMutation(error, 'Dados'),
   warn: (context, error) => logger.warn(context, error),
@@ -165,7 +182,7 @@ const parserService = installLegacyImportParsers({
   state: appState,
   config: DASHBOARD_CONFIG,
   monitor: performanceService,
-  canEdit: () => window.isEditorDaObraAtiva?.() === true,
+  canEdit: () => authService.canEditActiveProject(),
   storage: storageService,
   saveDashboardKey: (...args) => dashboardRepository.saveDashboardKey(...args),
   reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
@@ -191,7 +208,7 @@ const projectController = createProjectController({
   },
   hasBackend: () => Boolean(supabaseService.client),
   getUploadRuntimeState: () => uploadCoordinator.runtimeState,
-  updateAuthUi: () => window.updateAuthUI?.(),
+  updateAuthUi: () => authUi.updateAuthUI(),
   showLoading: () => feedbackService.showLoading(),
   hideLoading: () => feedbackService.hideLoading(),
   toast: (...args) => feedbackService.toast(...args),
@@ -234,9 +251,9 @@ const uploadCoordinator = createUploadCoordinator({
   setInputOptions: (options) => {
     window.INSUMOS_OPTIONS = options;
   },
-  canEditActiveProject: () => window.isEditorDaObraAtiva?.() === true,
-  isAdmin: () => window.isAdminGeral?.() === true,
-  isGlobalKind: (kind) => window.isGlobalUploadKind?.(kind) === true,
+  canEditActiveProject: () => authService.canEditActiveProject(),
+  isAdmin: () => authService.isAdmin(),
+  isGlobalKind: (kind) => isGlobalUploadKind(kind),
   dataKeys: DASHBOARD_DATA_KEYS,
   uploadRepository,
   executeTransaction: executeUploadTransaction,
@@ -255,8 +272,8 @@ const dashboardShell = createDashboardShell({
   setHeaderEditable: (value) => {
     window._headerEditable = value;
   },
-  authorizeAdmin: () => window.requireAdmin?.('acessar esta função administrativa') === true,
-  isAdmin: () => window.isAdminGeral?.() === true,
+  authorizeAdmin: () => authUi.requireAdmin('acessar esta função administrativa'),
+  isAdmin: () => authService.isAdmin(),
   renderTab: (tabName) => dashboardRuntime.renderTab(tabName),
   renderAdmin: () => {
     window.renderPendentesAdmin?.();
@@ -304,6 +321,9 @@ Promise.resolve()
         feedback: feedbackService,
         modals: modalService,
         dashboardRepository,
+        authService,
+        authUi,
+        supabaseClient: supabaseService.client,
       }),
     );
     actionRegistry.register(
@@ -315,6 +335,9 @@ Promise.resolve()
         modals: modalService,
         uploadRepository,
         uploadCoordinator,
+        authService,
+        authUi,
+        supabaseClient: supabaseService.client,
       }),
     );
     actionRegistry.register(
@@ -325,6 +348,8 @@ Promise.resolve()
         feedback: feedbackService,
         modals: modalService,
         uploadRepository,
+        authService,
+        supabaseClient: supabaseService.client,
       }),
     );
     installLegacyDetailsView({
@@ -340,6 +365,7 @@ Promise.resolve()
         storage: storageService,
         viewStates: viewStateService,
         dashboardRepository,
+        authService,
       }),
     );
     installLegacyHistoryView({
@@ -353,6 +379,7 @@ Promise.resolve()
         storage: storageService,
         viewStates: viewStateService,
         dashboardRepository,
+        authService,
       }),
     );
     actionRegistry.register(
@@ -372,40 +399,20 @@ Promise.resolve()
         modals: modalService,
         viewStates: viewStateService,
         dashboardRepository,
+        authService,
+        authUi,
+        supabaseClient: supabaseService.client,
       }),
     );
 
-    const authService = createAuthService({
-      supabaseClient: supabaseService.client,
-      getActiveProject: () => appState.obra.ativa,
-      onStateChange: (details) => window.handleAuthServiceStateChanged?.(details),
-      reportError: (context, error) => logger.warn(context, error),
-    });
-    installLegacyAuthGlobals(authService);
-    const authUi = createAuthUi({
-      authService,
-      modalService,
-      toast: (...args) => feedbackService.toast(...args),
-      requestConfirmation: (...args) => modalService.confirm(...args),
-      getActiveProject: () => appState.obra.ativa,
-      renderProtectedViews: () => {
-        window.renderFlows?.();
-        if (document.getElementById('projCtrlMovsList')) window.renderProjCtrl?.();
-        window.renderUploadsCentral?.();
-      },
-      clearMassSelection: () => window.clearMassSelection?.(),
-      applyProjectionLocks: () => window.applyLocksToUI?.(),
-      reportError: (context, error) => logger.warn(context, error),
-    });
-    actionRegistry.register(installLegacyAuthUi(authUi));
     const uploadMaintenance = createUploadMaintenance({
       dashboardRepository,
       uploadRepository,
       getActiveProject: () => appState.obra.ativa,
       getProjectInfo: (project) => window.getObraInfo?.(project),
-      requireEditor: (description) => window.requireEditor?.(description) === true,
-      requireAdmin: (description) => window.requireAdmin?.(description) === true,
-      isAdmin: () => window.isAdminGeral?.() === true,
+      requireEditor: (description) => authUi.requireEditor(description),
+      requireAdmin: (description) => authUi.requireAdmin(description),
+      isAdmin: () => authService.isAdmin(),
       requestConfirmation: (...args) => modalService.confirm(...args),
       toast: (...args) => feedbackService.toast(...args),
       clearLocalEvolution: () => {

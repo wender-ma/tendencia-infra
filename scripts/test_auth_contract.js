@@ -16,7 +16,6 @@ function assert(condition, message) {
 for (const contract of [
   'export function resolvePermissions(',
   'export function createAuthService(',
-  'export function installLegacyAuthGlobals(',
   ".from('editores_permitidos')",
   ".select('email, codigo_obra, role, status')",
   "row.status || 'active'",
@@ -62,19 +61,17 @@ for (const delegatedAction of [
 }
 assert(!authUi.includes('.innerHTML'), 'Interface de auth não pode interpretar HTML dinâmico');
 assert(
-  authUi.includes('export function installLegacyAuthUi'),
-  'Adaptador temporário da interface de auth ausente',
+  authUi.includes('export function createAuthUiActions'),
+  'Registro explícito da interface de auth ausente',
 );
+assert(
+  !authService.includes('installLegacyAuthGlobals'),
+  'Auth voltou a publicar adaptador global',
+);
+assert(!authUi.includes('installLegacyAuthUi'), 'Interface de auth voltou ao escopo global');
 
 assert(bootstrap.includes('createAuthService({'), 'Bootstrap nao cria o servico de autenticacao');
-assert(
-  bootstrap.includes('installLegacyAuthGlobals(authService)'),
-  'Bootstrap nao instala o adaptador temporario de auth',
-);
-assert(
-  bootstrap.includes('installLegacyAuthUi(authUi)'),
-  'Bootstrap não instala a interface de auth',
-);
+assert(bootstrap.includes('createAuthUiActions(authUi)'), 'Bootstrap não registra ações de auth');
 assert(bootstrap.includes('auth: authService'), 'Registro central de servicos nao expoe auth');
 
 console.log('Contrato de auth: sessao, whitelist e autorizacao separadas do legado OK');

@@ -259,9 +259,3 @@ export function createAuthService({
     signUp,
   });
 }
-
-export function installLegacyAuthGlobals(service, target = window) {
-  target.AUTH = service.state;
-  target.isEditorDaObraAtiva = service.canEditActiveProject;
-  target.isAdminGeral = service.isAdmin;
-}

@@ -324,10 +324,7 @@ assert(
   service.includes('export function createSupabaseService'),
   'Factory do servico Supabase ausente',
 );
-assert(
-  service.includes('export function installLegacySupabaseGlobals'),
-  'Adaptador temporario do legado ausente',
-);
+assert(!service.includes('installLegacySupabaseGlobals'), 'Supabase voltou ao escopo global');
 assert(
   /BASE_RETRY_DELAY_MS \* \(?2 \*\* attempt\)?/.test(service),
   'Retry exponencial do Supabase ausente',
@@ -351,8 +348,8 @@ assert(
   'Bootstrap nao cria o servico Supabase com logger sanitizado',
 );
 assert(
-  bootstrap.includes('installLegacySupabaseGlobals(supabaseService)'),
-  'Bootstrap nao instala o adaptador Supabase',
+  !bootstrap.includes('installLegacySupabaseGlobals'),
+  'Bootstrap voltou a instalar adaptador Supabase',
 );
 
 for (const removedLegacyContract of [

@@ -19,7 +19,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     () =>
       typeof window.dashboardServices?.actions?.resolve('handleAuthClick') === 'function' &&
       window.AppState === window.dashboardState &&
-      window.AUTH?.ready === true &&
+      window.dashboardServices?.auth.state.ready === true &&
       window.dashboardServices?.performance.snapshot().boot.completed === true,
   );
 
@@ -97,7 +97,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const excelWorkerParsed =
       workerResult.sheetNames.join(',') === 'Tendencia' &&
       workerResult.csvBySheet.Tendencia.includes('A-1;123');
-    const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
+    const authStartsReadOnly = !authService.isAdmin() && !authService.canEditActiveProject();
     let releaseSyncOperation;
     const pendingSyncOperation = window.dashboardServices.runtime.runAsyncSafely(
       new Promise((resolve) => {
@@ -132,11 +132,11 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     window.AppState.dados.tendencia = originalTendency;
     const stateWritesAlias = window.DATA_T === originalTendency;
 
-    window.AUTH.isEditor = true;
-    window.AUTH.isAdminGeral = false;
-    window.AUTH.editaObras = ['STATE-OBRA'];
+    authService.state.isEditor = true;
+    authService.state.isAdminGeral = false;
+    authService.state.editaObras = ['STATE-OBRA'];
     window.OBRA_ATIVA = 'STATE-OBRA';
-    const authReadsActiveProject = window.isEditorDaObraAtiva();
+    const authReadsActiveProject = authService.canEditActiveProject();
     const maliciousPayloads = [
       '<script>window.__xss=1</script>',
       '<img src=x onerror=window.__xss=2>',
@@ -183,8 +183,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       apexLoadedOnDemand,
       excelWorkerParsed,
       hasSupabase: Boolean(window.dashboardServices?.supabase?.client),
-      hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
-      hasAuthService: authService.state === window.AUTH,
+      hasSupabaseService: Boolean(window.dashboardServices?.supabase?.client),
+      hasAuthService: authService.state === window.dashboardServices.auth.state,
       hasParserService:
         typeof parserService?.parseTendencia === 'function' &&
         parserService.parseNumber('1.234,56') === 1234.56 &&
@@ -361,6 +361,19 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'captureInMemoryUploadState',
         'restoreInMemoryUploadState',
         'commitPreparedUpload',
+        'SUPA',
+        'AUTH',
+        'isEditorDaObraAtiva',
+        'isAdminGeral',
+        'handleAuthServiceStateChanged',
+        'isGlobalUploadKind',
+        'openLoginModal',
+        'requireAdmin',
+        'requireEditor',
+        'requireEditorForActiveProject',
+        'requireUploadPermission',
+        'syncEditingControls',
+        'updateAuthUI',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };

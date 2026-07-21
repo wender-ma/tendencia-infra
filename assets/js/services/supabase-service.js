@@ -42,7 +42,3 @@ export function createSupabaseService(
     url,
   });
 }
-
-export function installLegacySupabaseGlobals(service, target = window) {
-  target.SUPA = service.client;
-}

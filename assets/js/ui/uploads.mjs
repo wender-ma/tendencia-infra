@@ -27,6 +27,11 @@ let setUploadRuntimeState;
 let captureInMemoryUploadState;
 let restoreInMemoryUploadState;
 let commitPreparedUpload;
+let SUPA;
+let AUTH;
+let isEditorDaObraAtiva;
+let isAdminGeral;
+let requireUploadPermission;
 
 const MANUAL_TEXT = {
   tendencia:
@@ -1197,7 +1202,18 @@ function renderSourcesHeaders() {
 }
 
 export function installLegacyUploadUI(
-  { runtime, excel, validateUpload, feedback, modals, uploadRepository, uploadCoordinator },
+  {
+    runtime,
+    excel,
+    validateUpload,
+    feedback,
+    modals,
+    uploadRepository,
+    uploadCoordinator,
+    authService,
+    authUi,
+    supabaseClient,
+  },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -1226,6 +1242,11 @@ export function installLegacyUploadUI(
   captureInMemoryUploadState = uploadCoordinator.captureMemoryState;
   restoreInMemoryUploadState = uploadCoordinator.restoreMemoryState;
   commitPreparedUpload = uploadCoordinator.commitPreparedUpload;
+  SUPA = supabaseClient;
+  AUTH = authService.state;
+  isEditorDaObraAtiva = authService.canEditActiveProject;
+  isAdminGeral = authService.isAdmin;
+  requireUploadPermission = authUi.requireUploadPermission;
   Object.assign(target, {
     MANUAL_TEXT,
     renderUploadsCentral,

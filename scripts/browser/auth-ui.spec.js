@@ -21,7 +21,7 @@ test('modal de acesso valida formulários e monta identidade como texto', async 
   await expect(page.locator('#signupErro')).toHaveText('Email inválido.');
 
   await page.evaluate(() => {
-    window.SUPA.auth.signInWithPassword = async (credentials) => {
+    window.dashboardServices.supabase.client.auth.signInWithPassword = async (credentials) => {
       window.__signInCredentials = credentials;
       return { data: { user: { email: credentials.email } }, error: null };
     };
@@ -38,7 +38,7 @@ test('modal de acesso valida formulários e monta identidade como texto', async 
 
   const payload = '<img src=x onerror=window.__authXss=1>';
   await page.evaluate((email) => {
-    Object.assign(window.AUTH, {
+    Object.assign(window.dashboardServices.auth.state, {
       ready: true,
       user: { email },
       isAdminGeral: false,
@@ -46,7 +46,7 @@ test('modal de acesso valida formulários e monta identidade como texto', async 
       isPending: false,
       editaObras: [],
     });
-    window.updateAuthUI();
+    window.dashboardServices.authUi.updateAuthUI();
   }, payload);
   await expect(page.locator('#authBadge')).toContainText(payload.slice(0, 24));
   expect(await page.locator('#authBadge img').count()).toBe(0);

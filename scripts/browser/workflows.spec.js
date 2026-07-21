@@ -6,7 +6,7 @@ async function openOfflineDashboard(page) {
   await page.waitForFunction(
     () => window.dashboardServices?.performance.snapshot().boot.completed === true,
   );
-  await page.waitForFunction(() => window.AUTH?.ready === true);
+  await page.waitForFunction(() => window.dashboardServices?.auth.state.ready === true);
 }
 
 test('troca de obra atualiza estado, seletor e URL', async ({ page }) => {
@@ -31,7 +31,7 @@ test('troca de obra atualiza estado, seletor e URL', async ({ page }) => {
 test('editor altera status de Flow preservando a obra ativa', async ({ page }) => {
   await openOfflineDashboard(page);
   await page.evaluate(() => {
-    Object.assign(window.AUTH, {
+    Object.assign(window.dashboardServices.auth.state, {
       ready: true,
       user: { email: 'editor@example.com' },
       isAdminGeral: false,
@@ -57,7 +57,7 @@ test('editor altera status de Flow preservando a obra ativa', async ({ page }) =
         insumo_remanejamento: '',
       },
     ];
-    window.updateAuthUI();
+    window.dashboardServices.authUi.updateAuthUI();
   });
 
   await page.locator('#tab-btn-flows').click();
@@ -85,7 +85,7 @@ test('administrador abre catálogo com resposta Supabase controlada', async ({ p
       ],
       editores_permitidos: [],
     };
-    window.SUPA.from = (table) => {
+    window.dashboardServices.supabase.client.from = (table) => {
       const response = { data: fixtures[table] || [], error: null };
       const query = new Proxy(
         {},
@@ -100,7 +100,7 @@ test('administrador abre catálogo com resposta Supabase controlada', async ({ p
       );
       return query;
     };
-    Object.assign(window.AUTH, {
+    Object.assign(window.dashboardServices.auth.state, {
       ready: true,
       user: { email: 'admin@example.com' },
       isAdminGeral: true,
@@ -108,7 +108,7 @@ test('administrador abre catálogo com resposta Supabase controlada', async ({ p
       isPending: false,
       editaObras: [],
     });
-    window.updateAuthUI();
+    window.dashboardServices.authUi.updateAuthUI();
   });
 
   await page.locator('#tab-btn-admin').click();

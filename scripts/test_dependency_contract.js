@@ -96,7 +96,10 @@ assert(
   !supabaseService.includes('target.supabase'),
   'Fábrica do SDK Supabase não deve ser publicada globalmente',
 );
-assert(supabaseService.includes('target.SUPA'), 'Cliente Supabase compatível ausente');
+assert(
+  !supabaseService.includes('target.SUPA'),
+  'Cliente Supabase não deve ser publicado globalmente',
+);
 
 assert(dependencyService.includes('window.XLSX'), 'Compatibilidade global do SheetJS ausente');
 assert(

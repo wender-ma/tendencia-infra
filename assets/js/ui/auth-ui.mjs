@@ -325,6 +325,7 @@ export function createAuthUi({
     doSignUpEmail,
     handleAuthClick,
     handleAuthServiceStateChanged,
+    isGlobalUploadKind,
     openLoginModal,
     requireAdmin,
     requireEditor: requireEditorForActiveProject,
@@ -336,18 +337,7 @@ export function createAuthUi({
   });
 }
 
-export function installLegacyAuthUi(service, target = window) {
-  Object.assign(target, {
-    handleAuthServiceStateChanged: service.handleAuthServiceStateChanged,
-    isGlobalUploadKind,
-    openLoginModal: service.openLoginModal,
-    requireAdmin: service.requireAdmin,
-    requireEditor: service.requireEditor,
-    requireEditorForActiveProject: service.requireEditorForActiveProject,
-    requireUploadPermission: service.requireUploadPermission,
-    syncEditingControls: service.syncEditingControls,
-    updateAuthUI: service.updateAuthUI,
-  });
+export function createAuthUiActions(service) {
   return Object.freeze({
     closeLoginModal: service.closeLoginModal,
     doSignInEmail: service.doSignInEmail,

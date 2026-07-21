@@ -11,6 +11,9 @@ let openModalLayer;
 let closeModalLayer;
 let sanitizeStoragePath;
 let UPLOADS_BUCKET;
+let SUPA;
+let AUTH;
+let isAdminGeral;
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -788,7 +791,16 @@ async function rejeitarPendente(email) {
 }
 
 export function installLegacyAdminView(
-  { runtime, storage, projectController, feedback, modals, uploadRepository },
+  {
+    runtime,
+    storage,
+    projectController,
+    feedback,
+    modals,
+    uploadRepository,
+    authService,
+    supabaseClient,
+  },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -801,6 +813,9 @@ export function installLegacyAdminView(
   closeModalLayer = modals.closeLayer;
   sanitizeStoragePath = uploadRepository.sanitizeStoragePath;
   UPLOADS_BUCKET = uploadRepository.bucket;
+  SUPA = supabaseClient;
+  AUTH = authService.state;
+  isAdminGeral = authService.isAdmin;
   Object.assign(target, {
     renderObrasAdmin,
     renderEditoresAdmin,

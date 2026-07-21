@@ -15,6 +15,7 @@ let getFlowsObraAtiva;
 let SafeStorage;
 let renderDashboardState;
 let supaSaveDashboardKey;
+let isAdminGeral;
 
 // ============ VISÃO GERAL ============
 // GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
@@ -689,7 +690,7 @@ function renderDonut(tipoSum) {
 }
 
 export function installLegacyOverviewView(
-  { runtime, storage, viewStates, dashboardRepository },
+  { runtime, storage, viewStates, dashboardRepository, authService },
   target = window,
 ) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -701,6 +702,7 @@ export function installLegacyOverviewView(
   SafeStorage = storage;
   renderDashboardState = viewStates.render;
   supaSaveDashboardKey = dashboardRepository.saveDashboardKey;
+  isAdminGeral = authService.isAdmin;
   Object.assign(target, {
     renderAderenciaProj,
     irParaAba,

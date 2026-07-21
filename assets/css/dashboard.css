@@ -461,7 +461,9 @@
   }
   .mass-bar .btn-mass:hover { background: rgba(255,255,255,0.35); }
   .mass-bar .btn-mass.danger { background: rgba(239,68,68,0.35); }
-  .row-selected { background: var(--fgr-red-light) !important; }
+  .flow-status-sim { background: var(--sem-ok-soft); }
+  .flow-status-nao { background: var(--sem-erro-soft); }
+  .row-selected { background: var(--fgr-red-light); }
   .row-selected td { border-top: 1px solid var(--fgr-red-light); border-bottom: 1px solid var(--fgr-red-light); }
 
   /* Multi-select filtros (estilo Excel) */
@@ -780,6 +782,64 @@ body:not(.is-admin-geral) [data-admin-control],
 .apexcharts-menu-item:hover { background: var(--bg-soft) !important; }
 .apexcharts-toolbar { padding: 4px !important; }
 .apexcharts-toolbar svg { fill: var(--text-soft) !important; }
+
+/* Manual */
+.manual-heading {
+  margin: 18px 0 8px;
+  font-size: 14px;
+}
+.manual-heading:first-of-type { margin-top: 8px; }
+.manual-heading.red { color: var(--fgr-red-deep); }
+.manual-heading.green { color: var(--sem-ok); }
+.manual-heading.purple { color: var(--accent-purple-strong); }
+.manual-heading.amber { color: var(--sem-alerta); }
+.manual-heading.neutral { color: var(--text-medium); }
+.manual-heading.info { color: var(--accent-info); }
+.manual-heading.deep { color: var(--accent-purple-deep); }
+.manual-section {
+  padding-left: 12px;
+  border-left: 3px solid var(--text-medium);
+  color: var(--text-medium);
+  font-size: 12.5px;
+}
+.manual-section.red { border-left-color: var(--fgr-red-vivid); }
+.manual-section.green { border-left-color: var(--sem-ok); }
+.manual-section.purple { border-left-color: var(--accent-purple-border); }
+.manual-section.amber { border-left-color: var(--sem-alerta); }
+.manual-section p + p { margin-top: 8px; }
+.manual-spaced { margin-top: 8px; }
+.manual-list { margin: 6px 0 8px 24px; }
+.manual-link { color: var(--link-color); }
+.manual-note {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+.manual-note.red { background: var(--fgr-red-light); color: var(--fgr-red); }
+.manual-note.green { background: var(--sem-ok-subtle); color: var(--sem-ok); }
+.manual-note.amber { background: var(--sem-alerta-bg); color: var(--sem-alerta); }
+.manual-divider {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.manual-subtitle { margin: 0 0 10px; font-size: 18px; }
+.manual-intro { margin-bottom: 14px; color: var(--text-medium); font-size: 13px; }
+.manual-source-map {
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--bg-page);
+}
+.manual-source-map-title { font-size: 13px; }
+.manual-source-table { width: 100%; margin-top: 10px; font-size: 12.5px; }
+.manual-source-table th {
+  padding: 6px;
+  border-bottom: 2px solid var(--border);
+  text-align: left;
+}
+.manual-source-table td { padding: 6px; }
+.manual-tips { margin-left: 24px; color: var(--text-medium); font-size: 12.5px; }
 
 @media (max-width: 900px) {
   .header { flex-wrap: wrap; }

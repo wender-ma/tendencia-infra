@@ -47,6 +47,11 @@ for (const viewport of viewports) {
     expect(dialogLayout.bottom).toBeLessThanOrEqual(dialogLayout.viewportHeight);
     await page.getByRole('button', { name: 'Fechar acesso ao dashboard' }).click();
 
+    await page.locator('.tab[data-tab="manual"]').click();
+    await expect(page.locator('#tab-manual')).toHaveClass(/active/);
+    const manualWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(manualWidth).toBeLessThanOrEqual(viewport.width + 1);
+
     await testInfo.attach(`dashboard-${viewport.name}`, {
       body: await page.screenshot({ fullPage: true }),
       contentType: 'image/png',

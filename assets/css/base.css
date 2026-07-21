@@ -11,9 +11,7 @@
   body.dark .ms-opt:hover { background: var(--bg-soft); }
   body.dark .ms-footer button { background: var(--fgr-red-dark); }
 
-  /* Modo Noturno — overrides para inline styles (modais, formulários) */
-  body.dark [style*="background:white"] { background: var(--bg-card) !important; }
-  body.dark [style*="background: white"] { background: var(--bg-card) !important; }
+  /* Modo Noturno — formulários */
   body.dark input, body.dark select, body.dark textarea { background: var(--bg-card); color: var(--text-strong); border-color: var(--border-strong); }
   body.dark input:focus, body.dark select:focus, body.dark textarea:focus { border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
   body.dark tr.folha:hover { background: var(--bg-soft); }

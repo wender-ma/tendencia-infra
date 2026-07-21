@@ -2,11 +2,11 @@
     <h2>ℹ️ Manual</h2>
 
     <!-- ==== v0.52: Novas seções ==== -->
-    <h3 style="font-size:14px; margin:8px 0 8px; color:var(--fgr-red-deep);">🌐 Sobre a versão online</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--fgr-red-vivid);">
-      <p>Este dashboard vive em <a href="https://tendencia-infra.vercel.app/" target="_blank" style="color:var(--link-color);">tendencia-infra.vercel.app</a> e agora é <strong>compartilhado por toda a equipe</strong>. Todas as edições (classificações de aditivos, movimentações, aditivos manuais) são sincronizadas em tempo real com um banco na nuvem (<strong>Supabase</strong>).</p>
-      <p style="margin-top:8px;"><strong>Badges no header:</strong></p>
-      <ul style="margin:6px 0 8px 24px;">
+    <h3 class="manual-heading red">🌐 Sobre a versão online</h3>
+    <div class="manual-section red">
+      <p>Este dashboard vive em <a class="manual-link" href="https://tendencia-infra.vercel.app/" target="_blank">tendencia-infra.vercel.app</a> e agora é <strong>compartilhado por toda a equipe</strong>. Todas as edições (classificações de aditivos, movimentações, aditivos manuais) são sincronizadas em tempo real com um banco na nuvem (<strong>Supabase</strong>).</p>
+      <p class="manual-spaced"><strong>Badges no header:</strong></p>
+      <ul class="manual-list">
         <li><code>🔗 Conectando…</code> — SDK inicializando (primeiros 1-2 segundos após abrir)</li>
         <li><code>☁️ Sincronizado</code> — tudo em dia com a nuvem ✅</li>
         <li><code>⚠️ Erro ao sincronizar</code> — falha na última operação (passe o mouse pra ver detalhes)</li>
@@ -14,83 +14,83 @@
       </ul>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--sem-ok);">🔐 Login e permissões</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--sem-ok);">
+    <h3 class="manual-heading green">🔐 Login e permissões</h3>
+    <div class="manual-section green">
       <p>Modelo atual <strong>ver = qualquer pessoa com o link / editar = restrito por papel e obra</strong>:</p>
-      <ul style="margin:6px 0 8px 24px;">
+      <ul class="manual-list">
         <li><strong>Sem login</strong> — qualquer pessoa com o link consegue visualizar os dados de todas as obras. Botões de edição ficam escondidos ou desabilitados.</li>
         <li><strong>Editor ativo</strong> — pode editar somente as obras atribuídas ao seu email. Nas demais obras continua em modo de leitura.</li>
         <li><strong>Administrador</strong> — pode editar todas as obras, gerenciar usuários/obras e executar uploads globais de Gestões.</li>
         <li><strong>Conta pendente, rejeitada ou sem permissão</strong> — consegue visualizar, mas não editar.</li>
       </ul>
-      <p style="margin-top:8px;"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header e use Google ou email e senha. Contas novas por email ficam aguardando aprovação.</p>
-      <p style="margin-top:8px; padding:8px 12px; background:var(--fgr-red-light); border-radius:4px; color:var(--fgr-red);">
+      <p class="manual-spaced"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header e use Google ou email e senha. Contas novas por email ficam aguardando aprovação.</p>
+      <p class="manual-note red">
         📧 <strong>Para pedir permissão de edição:</strong> informe ao administrador o mesmo email usado no login e quais obras você precisa editar.
       </p>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--accent-purple-strong);">📤 Como atualizar os dados</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--accent-purple-border);">
+    <h3 class="manual-heading purple">📤 Como atualizar os dados</h3>
+    <div class="manual-section purple">
       <p>Todas as atualizações ficam na aba <strong>📤 Uploads</strong> (só editores). Dois modos disponíveis:</p>
-      <p style="margin-top:8px;"><strong>📊 Upload Completo (Excel) — recomendado:</strong></p>
-      <ul style="margin:6px 0 8px 24px;">
+      <p class="manual-spaced"><strong>📊 Upload Completo (Excel) — recomendado:</strong></p>
+      <ul class="manual-list">
         <li>Envie <strong>1 arquivo</strong> <code>.xlsx</code> ou <code>.xlsm</code> contendo as 3 abas (Tendência, FlowsValor, Gestões)</li>
         <li>O dashboard identifica as abas automaticamente pelos nomes</li>
         <li>Se algum nome for diferente, aparece um modal pra você mapear manualmente</li>
         <li>As 3 fontes de dados são atualizadas de uma vez só</li>
       </ul>
-      <p style="margin-top:8px;"><strong>⚙️ Modo avançado (CSV individual — uso legado):</strong></p>
-      <ul style="margin:6px 0 8px 24px;">
+      <p class="manual-spaced"><strong>⚙️ Modo avançado (CSV individual — uso legado):</strong></p>
+      <ul class="manual-list">
         <li>Clique no toggle <em>"Modo avançado"</em> pra expandir os 3 cards separados</li>
         <li>Envie cada CSV independentemente (útil se atualizou só uma parte dos dados)</li>
       </ul>
-      <p style="margin-top:8px;">Em ambos os modos, cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
-      <p style="margin-top:8px;">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
-      <p style="margin-top:8px; padding:8px 12px; background:var(--sem-ok-subtle); border-radius:4px; color:var(--sem-ok);">
+      <p class="manual-spaced">Em ambos os modos, cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
+      <p class="manual-spaced">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
+      <p class="manual-note green">
         📦 <strong>Retenção de uploads:</strong> cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém os <strong>12 arquivos mais recentes por tipo</strong>; ao entrar o 13º, o mais antigo é removido. Arquivos inativos podem ser excluídos por usuários autorizados. O arquivo ativo precisa ser substituído antes da exclusão. Administradores podem limpar todo o histórico. Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code>.
       </p>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--sem-alerta);">🔄 Fluxo mensal recomendado</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--sem-alerta);">
-      <ol style="margin:6px 0 8px 24px;">
+    <h3 class="manual-heading amber">🔄 Fluxo mensal recomendado</h3>
+    <div class="manual-section amber">
+      <ol class="manual-list">
         <li>No começo de cada mês, exporte os 3 CSVs da planilha (TENDÊNCIA, FlowsValor, Gestões)</li>
         <li>Faça login no dashboard</li>
         <li>Vá em <strong>📤 Uploads</strong> e substitua os 3 arquivos (não precisa ser tudo de uma vez)</li>
         <li>Confira nos cabeçalhos das outras abas se todas estão apontando pra data certa</li>
         <li>Reveja as novas classificações de aditivos que apareceram na aba <strong>🔗 Flows</strong></li>
       </ol>
-      <p style="margin-top:8px;">Os dados classificados anteriormente (aditivos manuais, movimentações, refletidos) <strong>continuam preservados</strong> mesmo depois de substituir os CSVs.</p>
+      <p class="manual-spaced">Os dados classificados anteriormente (aditivos manuais, movimentações, refletidos) <strong>continuam preservados</strong> mesmo depois de substituir os CSVs.</p>
     </div>
 
-    <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border);">
+    <hr class="manual-divider">
 
-    <h2 style="font-size:18px; margin: 0 0 10px;">📊 Formato dos arquivos CSV</h2>
-    <p style="font-size:13px; color:var(--text-medium); margin-bottom:14px;">
+    <h2 class="manual-subtitle">📊 Formato dos arquivos CSV</h2>
+    <p class="manual-intro">
       Referência técnica de cada CSV que o dashboard consome. Se algum arquivo for rejeitado no upload, confira aqui a estrutura esperada.
     </p>
-    <div style="background:var(--bg-page); padding:14px; border-radius:8px; margin-bottom:14px;">
-      <strong style="font-size:13px;">🗂️ Mapa de fontes</strong>
-      <table style="width:100%; margin-top:10px; font-size:12.5px;">
+    <div class="manual-source-map">
+      <strong class="manual-source-map-title">🗂️ Mapa de fontes</strong>
+      <table class="manual-source-table">
         <thead>
-          <tr><th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Aba do Dashboard</th>
-          <th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Fonte (aba da planilha)</th>
-          <th style="text-align:left; padding:6px; border-bottom:2px solid var(--border);">Atualiza</th></tr>
+          <tr><th>Aba do Dashboard</th>
+          <th>Fonte (aba da planilha)</th>
+          <th>Atualiza</th></tr>
         </thead>
         <tbody>
-          <tr><td style="padding:6px;">📈 Visão Geral</td><td style="padding:6px;"><code>TENDÊNCIA</code></td><td style="padding:6px;">KPIs, Grupos, Donut, Top 10</td></tr>
-          <tr><td style="padding:6px;">📋 Detalhamento</td><td style="padding:6px;"><code>TENDÊNCIA</code></td><td style="padding:6px;">Tabela completa de itens</td></tr>
-          <tr><td style="padding:6px;">🔗 Flows / Aditivos</td><td style="padding:6px;"><code>FlowsValor</code></td><td style="padding:6px;">Aditivos e suas classificações</td></tr>
-          <tr><td style="padding:6px;">📅 Histórico Mensal</td><td style="padding:6px;"><code>Gestões</code></td><td style="padding:6px;">Evolução das gestões + heatmap</td></tr>
+          <tr><td>📈 Visão Geral</td><td><code>TENDÊNCIA</code></td><td>KPIs, Grupos, Donut, Top 10</td></tr>
+          <tr><td>📋 Detalhamento</td><td><code>TENDÊNCIA</code></td><td>Tabela completa de itens</td></tr>
+          <tr><td>🔗 Flows / Aditivos</td><td><code>FlowsValor</code></td><td>Aditivos e suas classificações</td></tr>
+          <tr><td>📅 Histórico Mensal</td><td><code>Gestões</code></td><td>Evolução das gestões + heatmap</td></tr>
         </tbody>
       </table>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--fgr-red-deep);">📈 Aba TENDÊNCIA</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--fgr-red-vivid);">
+    <h3 class="manual-heading red">📈 Aba TENDÊNCIA</h3>
+    <div class="manual-section red">
       <p><strong>Como exportar:</strong> Abra a planilha .xlsm, vá na aba <code>TENDÊNCIA</code>, Arquivo → Salvar Como → CSV UTF-8 (.csv).</p>
-      <p style="margin-top:8px;"><strong>Estrutura esperada (v0.55+, 22 colunas):</strong></p>
-      <ul style="margin:6px 0 8px 24px;">
+      <p class="manual-spaced"><strong>Estrutura esperada (v0.55+, 22 colunas):</strong></p>
+      <ul class="manual-list">
         <li><code>A</code> — Chave (ex: <code>42-21O-1-31005-S05765-ADM5189-01.01.01.02</code>)</li>
         <li><code>B</code> — Código hierárquico (ex: <code>01.01.01.02</code>)</li>
         <li><code>C</code> — Código de serviço (ex: <code>S05765</code>) · <code>-1</code> quando vazio</li>
@@ -111,20 +111,20 @@
         <li><code>R</code> — <em>(vazia — separador visual)</em></li>
         <li><code>S</code> — Observações (manuais)</li>
       </ul>
-      <p style="margin-top:8px; padding:8px 12px; background:var(--sem-ok-subtle); border-radius:4px; color:var(--sem-ok);">
+      <p class="manual-note green">
         💡 <strong>Linha 2 é o subheader com totais globais</strong> (área vendável, valores totais e <strong>% globais de evolução</strong>). A linha 1 é o cabeçalho de nomes, dados começam na linha 3.
       </p>
       <p><strong>Linhas:</strong> linha 1 = cabeçalho. A partir da linha 2 são os dados.</p>
       <p><strong>Cabeçalho obrigatório:</strong> as colunas descritas acima são localizadas pelo nome e podem mudar de posição; espaços, acentos e maiúsculas são normalizados durante a validação.</p>
-      <p style="margin-top:8px; padding:8px 12px; background:var(--fgr-red-light); border-radius:4px; color:var(--fgr-red);">✨ <strong>Novidade v0.55:</strong> o arquivo agora tem 22 colunas (era 17). Foram adicionadas <code>EVOLUÇÃO TEÓRICA</code> e <code>EVOLUÇÃO FINANCEIRA</code> (integração com o Prevision) para calcular a <strong>Aderência Físico-Financeira</strong> da obra. Custos indiretos não entram nessa conta.</p>
-      <p style="margin-top:8px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:4px; color:var(--sem-alerta);">⚠️ Formato anterior (17 colunas, sem EVOLUÇÃO) <strong>não é mais aceito</strong> a partir da v0.55.</p>
+      <p class="manual-note red">✨ <strong>Novidade v0.55:</strong> o arquivo agora tem 22 colunas (era 17). Foram adicionadas <code>EVOLUÇÃO TEÓRICA</code> e <code>EVOLUÇÃO FINANCEIRA</code> (integração com o Prevision) para calcular a <strong>Aderência Físico-Financeira</strong> da obra. Custos indiretos não entram nessa conta.</p>
+      <p class="manual-note amber">⚠️ Formato anterior (17 colunas, sem EVOLUÇÃO) <strong>não é mais aceito</strong> a partir da v0.55.</p>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--text-medium);">🔗 Aba FlowsValor</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--text-medium);">
+    <h3 class="manual-heading neutral">🔗 Aba FlowsValor</h3>
+    <div class="manual-section">
       <p><strong>Como exportar:</strong> Vá na aba <code>FlowsValor</code> da planilha, Salvar Como → CSV UTF-8.</p>
-      <p style="margin-top:8px;"><strong>Estrutura esperada (Fabric v0.63, 15 colunas):</strong></p>
-      <ul style="margin:6px 0 8px 24px;">
+      <p class="manual-spaced"><strong>Estrutura esperada (Fabric v0.63, 15 colunas):</strong></p>
+      <ul class="manual-list">
         <li><code>A</code> — Cod_aditivo</li>
         <li><code>B–D</code> — Descr_status, Descr_areaatual e Descr_setorcriacao</li>
         <li><code>E</code> — Data_criacao</li>
@@ -137,14 +137,14 @@
       </ul>
       <p><strong>Linhas:</strong> linha 1 = cabeçalho; dados a partir da linha 2.</p>
       <p><strong>Cabeçalho obrigatório:</strong> as 15 colunas são localizadas pelo nome e podem mudar de ordem.</p>
-      <p style="margin-top:8px;"><strong>Importante:</strong> as edições e os aditivos manuais que você cria neste dashboard <strong>NÃO são apagados</strong> quando você sobe um novo CSV. Eles ficam preservados.</p>
+      <p class="manual-spaced"><strong>Importante:</strong> as edições e os aditivos manuais que você cria neste dashboard <strong>NÃO são apagados</strong> quando você sobe um novo CSV. Eles ficam preservados.</p>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--accent-info);">📅 Aba Gestões</h3>
-    <div style="font-size:12.5px; color:var(--text-medium); padding-left:12px; border-left:3px solid var(--text-medium);">
+    <h3 class="manual-heading info">📅 Aba Gestões</h3>
+    <div class="manual-section">
       <p><strong>Como exportar:</strong> Aba <code>Gestões</code> da planilha → Salvar Como → CSV UTF-8.</p>
-      <p style="margin-top:8px;"><strong>Estrutura esperada (27 colunas):</strong></p>
-      <ul style="margin:6px 0 8px 24px;">
+      <p class="manual-spaced"><strong>Estrutura esperada (27 colunas):</strong></p>
+      <ul class="manual-list">
         <li><code>B</code> — Empreendimento (informativo)</li>
         <li><code>D</code> — Nome da gestão (ex: <code>GESTÃO MM-AAAA</code>, <code>Atual</code>)</li>
         <li><code>H</code> — Classificação financeira (filtro: <code>Obra</code>)</li>
@@ -157,8 +157,8 @@
       <p><strong>Cabeçalhos obrigatórios:</strong> <code>Descr_gestao</code>, <code>Descr_classificacaofinanceira</code>, <code>Key_planejamento</code>, <code>Val_totalliquido</code> e <code>Mes_pagamento</code>. A ordem pode variar.</p>
     </div>
 
-    <h3 style="font-size:14px; margin:18px 0 8px; color:var(--accent-purple-deep);">💡 Dicas gerais</h3>
-    <ul style="font-size:12.5px; color:var(--text-medium); margin-left:24px;">
+    <h3 class="manual-heading deep">💡 Dicas gerais</h3>
+    <ul class="manual-tips">
       <li>Formato dos CSVs: <strong>UTF-8</strong>; os separadores <code>;</code>, vírgula e tabulação são detectados automaticamente.</li>
       <li>Valores em R$ podem vir com <code>.</code> de milhar e <code>,</code> de decimal — o dashboard converte automaticamente.</li>
       <li>Datas aceitas: <code>dd/mm/aaaa</code>, <code>mm/dd/aaaa</code> quando inequívoca, ou <code>aaaa-mm-dd</code>. Datas inválidas são rejeitadas.</li>

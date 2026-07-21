@@ -327,15 +327,11 @@ function renderFlowTable() {
           ? `<button class="btn-del-manual" data-editor-only data-action="delete-manual" data-n="${escAttr(f.n_alteracao)}" title="Excluir este aditivo manual" aria-label="Excluir aditivo manual ${escAttr(f.n_alteracao)}">🗑️</button>`
           : '';
         const status = f.refletido_status || 'pendente';
-        const trStyle =
-          status === 'sim'
-            ? 'background:var(--sem-ok-soft);'
-            : status === 'nao'
-              ? 'background:var(--sem-erro-soft);'
-              : '';
+        const statusClass =
+          status === 'sim' ? 'flow-status-sim' : status === 'nao' ? 'flow-status-nao' : '';
         const isSelected = MASS_SELECTED.has(f.n_alteracao);
         return `
-    <tr style="${trStyle}" class="${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
+    <tr class="${statusClass} ${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
       <td style="text-align:center; vertical-align:middle;">
         <input type="checkbox" ${isSelected ? 'checked' : ''} data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="toggleMassSelect" data-action-mode="self" style="cursor:pointer; transform:scale(1.15);">
       </td>
@@ -400,9 +396,11 @@ function onRefletidoChange(sel) {
   );
   // Atualizar visual: cor da linha e classe do select
   const tr = sel.closest('tr');
-  if (tr)
-    tr.style.background =
-      status === 'sim' ? 'var(--sem-ok-soft)' : status === 'nao' ? 'var(--sem-erro-soft)' : '';
+  if (tr) {
+    tr.classList.remove('flow-status-sim', 'flow-status-nao');
+    if (status === 'sim') tr.classList.add('flow-status-sim');
+    if (status === 'nao') tr.classList.add('flow-status-nao');
+  }
   sel.className = 'refletido-select status-' + status;
   renderFlowTable();
   // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)

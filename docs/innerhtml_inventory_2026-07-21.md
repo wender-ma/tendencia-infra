@@ -2,20 +2,21 @@
 
 ## Escopo
 
-Foram revisadas todas as atribuições de `innerHTML` em `assets/js/`. O inventário inicial tinha 105 ocorrências no script legado. Nesta revisão:
+Foram revisadas todas as atribuições de `innerHTML` em `assets/js/`. O inventário inicial tinha 105 ocorrências no script legado. Após a modularização das views:
 
 - 24 limpezas de conteúdo foram substituídas por `replaceChildren()`;
 - 5 atribuições de texto simples foram substituídas por `textContent`;
-- os módulos extraídos ficaram com zero atribuições de `innerHTML`;
-- 80 atribuições permanecem no legado por gerarem estrutura HTML.
+- todas as views extraídas ficaram com zero atribuições de `innerHTML`;
+- as 17 ocorrências finais do legado foram migradas para `replaceWithParsedMarkup()`;
+- não restam atribuições de `innerHTML` no JavaScript do projeto.
 
 ## Classificação
 
 | Classe | Exemplos | Origem dos valores | Regra atual |
 | --- | --- | --- | --- |
-| Templates constantes | estados vazios, cabeçalhos, badges e controles fixos | código interno | permitido temporariamente no legado |
-| Renderização de dados | obras, editores, Tendência, Flows, Gestões, projeção e uploads | Supabase ou arquivos importados | todo texto passa por `escHtml`; atributos passam por `escAttr` |
-| Composição controlada | cards, gráficos, tooltips e formulários dinâmicos | helpers internos que já escapam campos externos | permitido temporariamente, com teste de contrato |
+| Templates constantes | estados vazios, cabeçalhos, badges e controles fixos | código interno | montados pelo parser central |
+| Renderização de dados | obras, editores, Tendência, Flows, Gestões, projeção e uploads | Supabase ou arquivos importados | texto passa por `escHtml`; atributos passam por `escAttr`; montagem usa o parser central |
+| Composição controlada | cards, gráficos, tooltips e formulários dinâmicos | helpers internos que escapam campos externos | montada pelo parser central e protegida por contrato |
 
 ## Superfícies revisadas
 
@@ -26,7 +27,8 @@ Foram revisadas todas as atribuições de `innerHTML` em `assets/js/`. O invent�
 - Modais compartilhados: confirmação usa apenas APIs DOM e `textContent`.
 - Feedback: toast usa apenas `textContent`.
 
-## Restrições
+## Restrições e Trusted Types
 
-Novos módulos não podem usar `innerHTML`. As ocorrências remanescentes pertencem ao arquivo legado e devem desaparecer conforme tabelas e abas forem extraídas. Trusted Types só será habilitado depois da remoção dos handlers e estilos inline, para evitar uma política permissiva que apenas esconda o risco.
+Nenhum módulo pode usar `innerHTML` ou `insertAdjacentHTML`; o contrato XSS falha se uma atribuição reaparecer em qualquer arquivo JavaScript. Markup necessário passa por `replaceWithParsedMarkup()`, enquanto os valores externos continuam escapados antes da composição.
 
+Trusted Types foi avaliado e não será habilitado com uma política permissiva que apenas transforme strings em `TrustedHTML`. A proteção atual elimina os sinks diretos e cobre todos os navegadores suportados. Uma política obrigatória poderá ser adicionada quando houver sanitização estrita compatível com os templates interativos do dashboard.

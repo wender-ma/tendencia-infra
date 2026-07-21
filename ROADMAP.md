@@ -96,7 +96,7 @@ Critério de conclusão: nenhum fluxo de escrita depende apenas de elementos esc
 - [x] Escapar emails, nomes e mensagens retornadas pelo Supabase nos pontos auditados (implementado em `1cb9096`).
 - [x] Remover HTML dinâmico das mensagens de progresso do Excel (implementado em `1cb9096`).
 - [x] Remover dados importados de handlers JavaScript inline nos filtros e na árvore de projeção (implementado em `1cb9096`).
-- [ ] Avaliar Trusted Types depois da retirada dos handlers inline.
+- [x] Avaliar Trusted Types: adiado até haver uma política sanitizadora estrita; os sinks `innerHTML` foram eliminados e um contrato impede regressão.
 - [x] Criar testes com tags, atributos de evento, esquemas de URL e caminhos maliciosos.
 
 Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido somente como texto e nunca executado.

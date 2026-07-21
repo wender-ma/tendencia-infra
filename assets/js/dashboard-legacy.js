@@ -1090,28 +1090,28 @@ function updateAuthUI() {
     const shortEmail = email.length > 26 ? email.slice(0, 24) + '…' : email;
     if (AUTH.isAdminGeral) {
       badge.className = 'auth-badge editor two-line';
-      badge.innerHTML = `<span class="auth-email">👑 ${escHtml(shortEmail)}</span><span class="auth-role">Admin</span>`;
+      replaceWithParsedMarkup(badge, `<span class="auth-email">👑 ${escHtml(shortEmail)}</span><span class="auth-role">Admin</span>`);
       badge.title = `Logado como ${email}\nModo: Admin (edita tudo + gerencia obras/usuários)`;
     } else if (AUTH.isEditor) {
       const podeEditarAqui = isEditorDaObraAtiva();
       if (podeEditarAqui) {
         badge.className = 'auth-badge editor two-line';
-        badge.innerHTML = `<span class="auth-email">✏️ ${escHtml(shortEmail)}</span><span class="auth-role">Editor</span>`;
+        replaceWithParsedMarkup(badge, `<span class="auth-email">✏️ ${escHtml(shortEmail)}</span><span class="auth-role">Editor</span>`);
         badge.title = `Logado como ${email}\nModo: Editor (pode alterar esta obra)\nObras que edita: ${AUTH.editaObras.join(', ')||'—'}`;
       } else {
         // é editor mas não desta obra — mostra como somente leitura aqui
         badge.className = 'auth-badge viewer two-line';
-        badge.innerHTML = `<span class="auth-email">👁️ ${escHtml(shortEmail)}</span><span class="auth-role">Só leitura aqui</span>`;
+        replaceWithParsedMarkup(badge, `<span class="auth-email">👁️ ${escHtml(shortEmail)}</span><span class="auth-role">Só leitura aqui</span>`);
         const listaObras = AUTH.editaObras.length ? AUTH.editaObras.join(', ') : 'nenhuma';
         badge.title = `Logado como ${email}\nVocê é editor de: ${listaObras}\nMas NÃO desta obra (${OBRA_ATIVA||'—'})\nTroque no dropdown pra editar suas obras`;
       }
     } else if (AUTH.isPending) {
       badge.className = 'auth-badge viewer two-line';
-      badge.innerHTML = `<span class="auth-email">⏳ ${escHtml(shortEmail)}</span><span class="auth-role">Aguardando</span>`;
+      replaceWithParsedMarkup(badge, `<span class="auth-email">⏳ ${escHtml(shortEmail)}</span><span class="auth-role">Aguardando</span>`);
       badge.title = `Logado como ${email}\nAguardando aprovação do admin`;
     } else {
       badge.className = 'auth-badge viewer two-line';
-      badge.innerHTML = `<span class="auth-email">👁️ ${escHtml(shortEmail)}</span><span class="auth-role">Sem permissão</span>`;
+      replaceWithParsedMarkup(badge, `<span class="auth-email">👁️ ${escHtml(shortEmail)}</span><span class="auth-role">Sem permissão</span>`);
       badge.title = `Logado como ${email}\nModo: Somente leitura`;
     }
     btn.style.display = '';
@@ -1358,14 +1358,14 @@ function verificarDadosDesatualizados() {
   
   if (mesesAtras > 3) {
     // Mais de 3 meses: vermelho
-    bannerEl.innerHTML = '<div class="alert-banner" style="background:linear-gradient(90deg, var(--sem-erro-bg) 0%, var(--sem-erro-border) 100%); border-left-color:var(--sem-erro-vivid);">'
+    replaceWithParsedMarkup(bannerEl, '<div class="alert-banner" style="background:linear-gradient(90deg, var(--sem-erro-bg) 0%, var(--sem-erro-border) 100%); border-left-color:var(--sem-erro-vivid);">'
       + '🔴 <strong>Dados muito desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
-      + 'Atualize os dados na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:var(--sem-erro-vivid); font-weight:700;">📤 Uploads</a>.</div>';
+      + 'Atualize os dados na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:var(--sem-erro-vivid); font-weight:700;">📤 Uploads</a>.</div>');
   } else if (mesesAtras > 2) {
     // Mais de 2 meses: amarelo
-    bannerEl.innerHTML = '<div class="alert-banner">'
+    replaceWithParsedMarkup(bannerEl, '<div class="alert-banner">'
       + '⚠️ <strong>Dados desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
-      + 'Considere atualizar na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:var(--sem-alerta-text); font-weight:700;">📤 Uploads</a>.</div>';
+      + 'Considere atualizar na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:var(--sem-alerta-text); font-weight:700;">📤 Uploads</a>.</div>');
   } else {
     bannerEl.replaceChildren();
   }
@@ -1451,13 +1451,13 @@ document.querySelectorAll('.tab').forEach(tab => {
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
   if (!text) return;
-  document.getElementById('modalContent').innerHTML = `
+  replaceWithParsedMarkup(document.getElementById('modalContent'), `
     <h2>ℹ️ Como exportar</h2>
     <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: var(--text-medium); margin-top: 12px;">${escHtml(text)}</div>
     <div style="margin-top: 16px; text-align: right;">
       <button class="btn-sm" data-click-action="closeModal">Fechar</button>
     </div>
-  `;
+  `);
   openModal();
 }
 
@@ -1695,7 +1695,7 @@ function buildDatalist() {
   const insumos = INSUMOS_OPTIONS.map(([cod, nome]) =>
     `<option value="${escAttr(cod + ' — ' + nome)}">`
   ).join('');
-  dl.innerHTML = specials + insumos;
+  replaceWithParsedMarkup(dl, specials + insumos);
   // log discreto
   if (INSUMOS_OPTIONS.length > 0) {
     console.log(`[DATALIST] ${INSUMOS_OPTIONS.length} insumos disponíveis no dropdown de classificação (${OBRA_ATIVA||'—'})`);
@@ -1740,7 +1740,7 @@ function escAttr(s) { return escHtml(s); }
 function showTooltip(evt, html) {
   const tt = document.getElementById('chartTooltip');
   if (!tt) return;
-  tt.innerHTML = html;
+  replaceWithParsedMarkup(tt, html);
   tt.setAttribute('aria-hidden', 'false');
   tt.classList.add('show');
   positionTooltip(evt, tt);
@@ -1825,7 +1825,7 @@ function updateEditCount() {
   let parts = [];
   if (n > 0) parts.push(`<span class="badge purple">✏️ ${n} editado(s)</span>`);
   if (m > 0) parts.push(`<span class="badge-manual">✋ ${m} manual(is)</span>`);
-  el.innerHTML = parts.length ? parts.join(' ') + ' <span style="color:var(--text-soft);">— não esqueça de exportar</span>' : '';
+  replaceWithParsedMarkup(el, parts.length ? parts.join(' ') + ' <span style="color:var(--text-soft);">— não esqueça de exportar</span>' : '');
 }
 
 // Helper: re-renderiza só os agregados da aba flows (cards e gráficos), preservando a tabela
@@ -1856,33 +1856,33 @@ function renderFlowsAggregates() {
   }
   // Ainda mantemos "não refletir" à parte (é decisão separada, não é cancelamento)
   const descartados = getFlowsObraAtiva().filter(isNaoRefletir);
-  document.getElementById('flowSummary').innerHTML = `
+  replaceWithParsedMarkup(document.getElementById('flowSummary'), `
     <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva()))} flowmaster total</div></div>
     <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Finalizado')))}</div></div>
     <div class="flow-card amber"><div class="lbl">Em andamento</div><div class="v">${(byDep.Projeto||0)+(byDep.Planejamento||0)+(byDep.Orçamento||0)+(byDep.Obra||0)}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>!['Cancelado','Finalizado'].includes(f.dep))))}</div></div>
     <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado||0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter(f=>f.dep==='Cancelado')))} (descartado)</div></div>
     <div class="flow-card purple"><div class="lbl">Aumento Real</div><div class="v">${fmtR$(tipoSums.aumento_real.v)}</div><div class="sub">${tipoSums.aumento_real.n} aditivos</div></div>
-  `;
+  `);
   const colors = {aumento_real:'var(--fgr-red-vivid)', remanejamento:'var(--text-medium)', economia:'var(--sem-ok)', pendente:'var(--sem-alerta)', cancelado:'var(--text-medium)', sem_classificacao:'var(--text-lighter)'};
   const labels = {aumento_real:'🔴 Aumento real', remanejamento:'🔵 Remanejamento', economia:'🟢 Economia', pendente:'🟡 Pendente', cancelado:'🚫 Cancelado', sem_classificacao:'⚪ Sem classificação'};
   const maxV = Math.max(...Object.values(tipoSums).map(t => Math.abs(t.v)), 1);
-  document.getElementById('flowsByTipo').innerHTML = Object.entries(tipoSums).map(([t,v]) => `
+  replaceWithParsedMarkup(document.getElementById('flowsByTipo'), Object.entries(tipoSums).map(([t,v]) => `
     <div class="top-item">
       <div class="name">${labels[t]} <span style="color:var(--text-soft);font-size:11px;">(${v.n})</span></div>
       <div class="val">${fmtR$(v.v)}</div>
       <div class="top-bar"><div class="top-bar-fill" style="width:${Math.abs(v.v)/maxV*100}%;background:${colors[t]};"></div></div>
-    </div>`).join('');
+    </div>`).join(''));
   // caixinha só aparece se houver "não refletir" (cancelados já viraram linha na lista)
   const elDesc = document.getElementById('flowsDescartados');
   if (elDesc) {
     if (descartados.length) {
       const valDesc = sumFm(descartados);
-      elDesc.innerHTML = `
+      replaceWithParsedMarkup(elDesc, `
         <div style="background:var(--bg-soft); border-left:3px solid var(--text-lighter); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-medium);">
           <span>❌ <strong>Marcados como "Não refletir":</strong> ${descartados.length} aditivo(s)</span>
           <strong style="color:var(--text-soft);">${fmtR$(valDesc)}</strong>
         </div>
-      `;
+      `);
     } else {
       elDesc.replaceChildren();
     }
@@ -2014,7 +2014,7 @@ function msRenderPanel(key) {
       <button type="button" data-click-action="msClose" data-action-mode="arg" data-action-arg="${key}">Aplicar ✓</button>
     </div>
   `;
-  panel.innerHTML = html;
+  replaceWithParsedMarkup(panel, html);
   panel.querySelectorAll('input[data-ms-value]').forEach(input => {
     input.addEventListener('change', () => {
       msOnCheck(key, input.dataset.msValue, input.checked);
@@ -2174,7 +2174,7 @@ function updateMassBar() {
   const totVal = selFlows.reduce((s,f) => s + (f.custo_flowmaster||0), 0);
   bar.style.display = 'flex';
   bar.className = 'mass-bar';
-  bar.innerHTML = `
+  replaceWithParsedMarkup(bar, `
     <strong>☑️ ${n} aditivo${n>1?'s':''} selecionado${n>1?'s':''}</strong>
     <span style="opacity:0.85; font-size:12px;">· Σ ${fmtR$(totVal)}</span>
     <span style="margin-left:auto;"></span>
@@ -2182,7 +2182,7 @@ function updateMassBar() {
     <button class="btn-mass" data-click-action="massAplicarOrigem" title="Aplica o mesmo INSUMO REMANEJAMENTO em todos os selecionados">🔄 Aplicar Origem</button>
     <button class="btn-mass" data-click-action="massAplicarRefletido" title="Marca todos com o mesmo status de reflexo">✅ Marcar Refletido</button>
     <button class="btn-mass danger" data-click-action="clearMassSelection">🗑️ Limpar seleção</button>
-  `;
+  `);
 }
 
 // Modal genérico de aplicação em massa
@@ -2211,7 +2211,7 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
       syncAllViewsFromFlows();
     } catch (e) { authToast('❌ Erro: ' + e.message, 'err', 5000); }
   };
-  document.getElementById('modalContent').innerHTML = html;
+  replaceWithParsedMarkup(document.getElementById('modalContent'), html);
   openModal({ initialFocus: 'input, select, textarea' });
 }
 

@@ -17,16 +17,15 @@ const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
 );
-const modularSources = [
-  'assets/js/bootstrap.js',
-  'assets/js/config.js',
-  'assets/js/state.js',
-  'assets/js/performance.mjs',
-  ...fs.readdirSync(path.join(root, 'assets/js/parsers')).map(file => `assets/js/parsers/${file}`),
-  ...fs.readdirSync(path.join(root, 'assets/js/services')).map(file => `assets/js/services/${file}`),
-  ...listSourceFiles(path.join(root, 'assets/js/ui')).map(file => path.relative(root, file)),
-].map(file => [file, fs.readFileSync(path.join(root, file), 'utf8')]);
-const allJavaScript = [legacy, ...modularSources.map(([_file, source]) => source)].join('\n');
+const javascriptFiles = listSourceFiles(path.join(root, 'assets/js'))
+  .filter((file) => /\.m?js$/.test(file))
+  .map((file) => path.relative(root, file));
+const modularSources = javascriptFiles
+  .filter((file) => file !== 'assets/js/dashboard-legacy.js')
+  .map((file) => [file, fs.readFileSync(path.join(root, file), 'utf8')]);
+const allJavaScript = javascriptFiles
+  .map((file) => fs.readFileSync(path.join(root, file), 'utf8'))
+  .join('\n');
 const securitySurface = allJavaScript;
 
 function assert(condition, message) {
@@ -38,9 +37,9 @@ for (const [file, source] of modularSources) {
   assert(!source.includes('insertAdjacentHTML'), `Módulo novo não pode inserir HTML textual: ${file}`);
 }
 
-const innerHtmlCount = (legacy.match(/\.innerHTML\s*=/g) || []).length;
+const innerHtmlCount = (allJavaScript.match(/\.innerHTML\s*=/g) || []).length;
 const replaceChildrenCount = (allJavaScript.match(/\.replaceChildren\(/g) || []).length;
-assert(innerHtmlCount <= 80, `Baseline de innerHTML aumentou: ${innerHtmlCount}`);
+assert(innerHtmlCount === 0, `Atribuição de innerHTML reintroduzida: ${innerHtmlCount}`);
 assert(replaceChildrenCount >= 24, 'Limpezas de DOM voltaram a usar innerHTML');
 
 for (const escapedExternalValue of [
@@ -69,4 +68,4 @@ for (const dangerousPathPattern of [
   assert(uploadRepository.includes(dangerousPathPattern), `Bloqueio de caminho perigoso ausente: ${dangerousPathPattern}`);
 }
 
-console.log(`Contrato XSS: ${innerHtmlCount} templates legados inventariados; módulos novos sem innerHTML OK`);
+console.log('Contrato XSS: zero atribuições de innerHTML; dados externos escapados OK');

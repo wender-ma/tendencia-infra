@@ -68,6 +68,7 @@ assert(
   'Montagem das abas estáticas ausente',
 );
 assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
+assert(domUi.includes('export function installLegacyDomGlobals'), 'Adaptador DOM do legado ausente');
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
   'export function createUploadRepository',

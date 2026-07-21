@@ -6,6 +6,7 @@ import { createPerformanceMonitor, installPerformanceMonitor } from './performan
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
 import { installActionDelegation } from './ui/actions.mjs';
+import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
@@ -56,6 +57,7 @@ function showBootstrapError(error) {
 }
 
 mountStaticViews();
+installLegacyDomGlobals();
 installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();

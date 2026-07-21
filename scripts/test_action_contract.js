@@ -24,6 +24,7 @@ assert(actions.includes("input: 'data-input-action'"), 'Delegação de input aus
 assert(actions.includes("submit: 'data-submit-action'"), 'Delegação de submit ausente');
 assert(actions.includes('createActionRegistry'), 'Registro explícito de ações ausente');
 assert(actions.includes('actions.resolve(actionName)'), 'Ações ainda são resolvidas no global');
+assert(!actions.includes('fallback'), 'Registro de ações não pode recorrer ao escopo global');
 assert(
   actions.includes("element.tagName === 'FORM'"),
   'Submit de formulário não previne navegação',

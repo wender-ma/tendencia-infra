@@ -20,7 +20,7 @@ function actionArguments(element, event) {
   return [];
 }
 
-export function createActionRegistry({ fallback } = {}) {
+export function createActionRegistry() {
   const handlers = new Map();
 
   function register(entries) {
@@ -31,7 +31,7 @@ export function createActionRegistry({ fallback } = {}) {
   }
 
   function resolve(name) {
-    return handlers.get(name) || fallback?.(name);
+    return handlers.get(name);
   }
 
   return Object.freeze({ register, resolve });

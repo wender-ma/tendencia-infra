@@ -71,7 +71,7 @@ installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();
 installLogger(logger);
-const actionRegistry = createActionRegistry({ fallback: (name) => window[name] });
+const actionRegistry = createActionRegistry();
 actionRegistry.register({ print: () => window.print() });
 const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
   reportError: (context, error) => logger.warn(context, error),
@@ -112,6 +112,10 @@ const storageService = createSafeStorage({
 });
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
+actionRegistry.register({
+  closeModal: modalService.close,
+  closeConfirmModal: modalService.closeConfirm,
+});
 const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.table_page_size });
 const viewStateService = createViewStateService();
 installLegacyViewStateGlobals(viewStateService);

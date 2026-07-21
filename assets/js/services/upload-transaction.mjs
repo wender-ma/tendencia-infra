@@ -89,7 +89,3 @@ export async function executeUploadTransaction(
     });
   }
 }
-
-export function installLegacyUploadTransaction(target = window) {
-  target.executeUploadTransaction = executeUploadTransaction;
-}

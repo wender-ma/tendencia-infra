@@ -11,6 +11,7 @@ let runAsyncSafely;
 let resolveColor;
 let renderApexChart;
 let getFlowsObraAtiva;
+let SafeStorage;
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)
@@ -798,11 +799,12 @@ async function deleteMov(id) {
   renderProjCtrl();
 }
 
-export function installLegacyProjectionControlView(runtime, target = window) {
+export function installLegacyProjectionControlView({ runtime, storage }, target = window) {
   runAsyncSafely = runtime.runAsyncSafely;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
   getFlowsObraAtiva = runtime.getActiveFlows;
+  SafeStorage = storage;
   Object.defineProperty(target, 'PROJ_CTRL_STATE', {
     configurable: true,
     get: () => PROJ_CTRL_STATE,

@@ -8,7 +8,7 @@ const { pathToFileURL } = require('url');
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/services/storage-service.mjs'),
   );
-  const { createSafeStorage, installLegacySafeStorage } = await import(moduleUrl.href);
+  const { createSafeStorage } = await import(moduleUrl.href);
   const data = new Map();
   const service = createSafeStorage({
     storage: {
@@ -40,10 +40,6 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(quotaService.set('key', 'value'), false);
   assert.strictEqual(quotaNotifications, 1);
   assert.strictEqual(warnings.length, 1);
-
-  const target = {};
-  installLegacySafeStorage(service, target);
-  assert.strictEqual(target.SafeStorage, service);
 
   console.log('Storage seguro: fallback, remoção e limite de quota OK');
 })().catch((error) => {

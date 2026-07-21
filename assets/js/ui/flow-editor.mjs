@@ -7,6 +7,7 @@ let runAsyncSafely;
 let getFlowsObraAtiva;
 let buildLinks;
 let debouncedRender;
+let SafeStorage;
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];
@@ -1339,12 +1340,13 @@ async function deleteManual(id) {
 
 // Visualização de Flows fornecida por ui/views/flows.mjs.
 
-export function installLegacyFlowEditor(runtime, target = window) {
+export function installLegacyFlowEditor({ runtime, storage }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
   buildLinks = runtime.buildLinks;
   debouncedRender = runtime.debouncedRender;
+  SafeStorage = storage;
   Object.assign(target, {
     showManualText,
     loadClassifications,

@@ -67,8 +67,3 @@ export function createPaginationService({ pageSize = 100, documentRef = document
 
   return Object.freeze({ paginate, setPage, renderControls });
 }
-
-export function installLegacyPaginationGlobals(service, target = window) {
-  target.paginateRows = service.paginate;
-  target.renderPaginationControls = service.renderControls;
-}

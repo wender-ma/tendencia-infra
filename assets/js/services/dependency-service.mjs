@@ -43,8 +43,3 @@ export function ensureApexCharts() {
     });
   return apexChartsPromise;
 }
-
-export function installLegacyDependencyGlobals(target = window) {
-  target.ensureXlsx = ensureXlsx;
-  target.ensureApexCharts = ensureApexCharts;
-}

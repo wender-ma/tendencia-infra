@@ -9,6 +9,8 @@ import {
 } from '../dashboard-runtime.mjs';
 
 let reportNonFatalError;
+let paginateRows;
+let renderPaginationControls;
 
 // ============ DETALHAMENTO ============
 let filtersBound = false;
@@ -346,8 +348,10 @@ function renderFlowMini(f, isOrigem = false) {
     </div>`;
 }
 
-export function installLegacyDetailsView(runtime, target = window) {
+export function installLegacyDetailsView({ runtime, pagination }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
+  paginateRows = pagination.paginate;
+  renderPaginationControls = pagination.renderControls;
   Object.assign(target, {
     updateSortHeaderState,
     bindSortableHeaders,

@@ -52,8 +52,3 @@ export async function parseExcelFile(file, options = {}) {
 export function createExcelService() {
   return Object.freeze({ parseBuffer: parseExcelBuffer, parseFile: parseExcelFile });
 }
-
-export function installLegacyExcelGlobals(service, target = window) {
-  target.readExcelBuffer = service.parseBuffer;
-  target.readExcelFile = service.parseFile;
-}

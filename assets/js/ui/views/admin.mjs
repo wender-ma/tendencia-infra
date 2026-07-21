@@ -3,6 +3,7 @@ import { replaceWithParsedMarkup } from '../dom.mjs';
 
 let reportNonFatalError;
 let renderAll;
+let SafeStorage;
 
 // ============================================================================
 // v0.62 — UI ADMIN v2 (roles + pendentes + hard delete)
@@ -779,9 +780,10 @@ async function rejeitarPendente(email) {
   }
 }
 
-export function installLegacyAdminView(runtime, target = window) {
+export function installLegacyAdminView({ runtime, storage }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
   renderAll = runtime.renderAll;
+  SafeStorage = storage;
   Object.assign(target, {
     renderObrasAdmin,
     openObraForm,

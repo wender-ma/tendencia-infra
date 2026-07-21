@@ -5,25 +5,24 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   const pageErrors = [];
   const failedLocalAssets = [];
 
-  page.on('pageerror', error => pageErrors.push(error.message));
-  page.on('response', response => {
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('response', (response) => {
     const url = new URL(response.url());
     if (url.hostname === '127.0.0.1' && response.status() >= 400) {
       failedLocalAssets.push(`${response.status()} ${url.pathname}`);
     }
   });
 
-  await page.route('https://*.supabase.co/**', route => route.abort());
+  await page.route('https://*.supabase.co/**', (route) => route.abort());
   await page.goto('/');
-  await page.waitForFunction(() => (
-    typeof window.supabase?.createClient === 'function'
-    && typeof window.ensureXlsx === 'function'
-    && typeof window.ensureApexCharts === 'function'
-    && typeof window.handleAuthClick === 'function'
-    && window.AppState === window.dashboardState
-    && window.AUTH?.ready === true
-    && window.dashboardPerformance?.snapshot().boot.completed === true
-  ));
+  await page.waitForFunction(
+    () =>
+      typeof window.supabase?.createClient === 'function' &&
+      typeof window.handleAuthClick === 'function' &&
+      window.AppState === window.dashboardState &&
+      window.AUTH?.ready === true &&
+      window.dashboardPerformance?.snapshot().boot.completed === true,
+  );
 
   const runtime = await page.evaluate(async () => {
     const authService = window.dashboardServices.auth;
@@ -43,11 +42,10 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     pagination.renderControls('paginationBrowserTest', 'browser-test', paginationResult, () => {});
     paginationHost.querySelector('[aria-label="Próxima página"]').click();
     paginationResult = pagination.paginate('browser-test', paginationRows, 'all');
-    const paginationWorks = (
-      paginationResult.page === 2
-      && paginationResult.items[0] === 101
-      && paginationHost.textContent.includes('Página 1 de 3')
-    );
+    const paginationWorks =
+      paginationResult.page === 2 &&
+      paginationResult.items[0] === 101 &&
+      paginationHost.textContent.includes('Página 1 de 3');
     paginationHost.remove();
     const stateHost = document.createElement('div');
     stateHost.id = 'viewStateBrowserTest';
@@ -58,63 +56,65 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       message: '<script>window.__stateXss=2</script>',
     });
     const viewStateIsSafe = Boolean(
-      stateHost.textContent.includes('<img src=x')
-      && !stateHost.querySelector('img, script')
-      && stateHost.querySelector('[role="alert"]')
+      stateHost.textContent.includes('<img src=x') &&
+      !stateHost.querySelector('img, script') &&
+      stateHost.querySelector('[role="alert"]'),
     );
     stateHost.remove();
-    const uploadPolicyWorks = (
-      uploadPolicy.validate({ name: 'dados.csv', size: 100 }, 'csv').valid
-      && uploadPolicy.validate({ name: 'dados.exe', size: 100 }, 'excel').code === 'extension'
-    );
+    const uploadPolicyWorks =
+      uploadPolicy.validate({ name: 'dados.csv', size: 100 }, 'csv').valid &&
+      uploadPolicy.validate({ name: 'dados.exe', size: 100 }, 'excel').code === 'extension';
     loggerService.clear();
     loggerService.warn('Browser/user@example.com', new Error('token eyJabc.def.ghi'));
     const loggerSnapshot = loggerService.snapshot();
-    const loggerIsSanitized = (
-      loggerSnapshot.length === 1
-      && loggerSnapshot[0].context.includes('[email redacted]')
-      && loggerSnapshot[0].error.message.includes('[token redacted]')
-      && !JSON.stringify(loggerSnapshot).includes('user@example.com')
-    );
-    const xlsxLoadedAtBoot = performance.getEntriesByType('resource')
-      .some(entry => /\/xlsx-[^/]+\.js(?:$|\?)/.test(entry.name));
-    const apexLoadedAtBoot = performance.getEntriesByType('resource')
-      .some(entry => /\/apexcharts[^/]*\.js(?:$|\?)/.test(entry.name));
-    const xlsxModule = await window.ensureXlsx();
+    const loggerIsSanitized =
+      loggerSnapshot.length === 1 &&
+      loggerSnapshot[0].context.includes('[email redacted]') &&
+      loggerSnapshot[0].error.message.includes('[token redacted]') &&
+      !JSON.stringify(loggerSnapshot).includes('user@example.com');
+    const xlsxLoadedAtBoot = performance
+      .getEntriesByType('resource')
+      .some((entry) => /\/xlsx-[^/]+\.js(?:$|\?)/.test(entry.name));
+    const apexLoadedAtBoot = performance
+      .getEntriesByType('resource')
+      .some((entry) => /\/apexcharts[^/]*\.js(?:$|\?)/.test(entry.name));
+    const xlsxModule = await window.dashboardServices.dependencies.ensureXlsx();
     const xlsxLoadedOnDemand = typeof xlsxModule.read === 'function' && window.XLSX === xlsxModule;
     const apexCharts = await window.dashboardServices.dependencies.ensureApexCharts();
     const apexLoadedOnDemand = typeof apexCharts === 'function' && window.ApexCharts === apexCharts;
     const workerWorkbook = xlsxModule.utils.book_new();
     xlsxModule.utils.book_append_sheet(
       workerWorkbook,
-      xlsxModule.utils.aoa_to_sheet([['codigo', 'valor'], ['A-1', 123]]),
+      xlsxModule.utils.aoa_to_sheet([
+        ['codigo', 'valor'],
+        ['A-1', 123],
+      ]),
       'Tendencia',
     );
     const workerResult = await window.dashboardServices.excel.parseBuffer(
       xlsxModule.write(workerWorkbook, { bookType: 'xlsx', type: 'array' }),
     );
-    const excelWorkerParsed = (
-      workerResult.sheetNames.join(',') === 'Tendencia'
-      && workerResult.csvBySheet.Tendencia.includes('A-1;123')
-    );
+    const excelWorkerParsed =
+      workerResult.sheetNames.join(',') === 'Tendencia' &&
+      workerResult.csvBySheet.Tendencia.includes('A-1;123');
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
     let releaseSyncOperation;
     const pendingSyncOperation = window.dashboardServices.runtime.runAsyncSafely(
-      new Promise(resolve => { releaseSyncOperation = resolve; }),
+      new Promise((resolve) => {
+        releaseSyncOperation = resolve;
+      }),
       'Teste/sincronização',
     );
-    await new Promise(resolve => requestAnimationFrame(resolve));
-    const syncSaving = (
-      document.getElementById('supaBadge')?.dataset.syncState === 'saving'
-      && window.getDashboardSyncStatus().pending === 1
-    );
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const syncSaving =
+      document.getElementById('supaBadge')?.dataset.syncState === 'saving' &&
+      window.getDashboardSyncStatus().pending === 1;
     releaseSyncOperation('ok');
     await pendingSyncOperation;
-    const syncCompleted = (
-      document.getElementById('supaBadge')?.dataset.syncState === 'synced'
-      && window.getDashboardSyncStatus().pending === 0
-      && window.getDashboardSyncStatus().lastSync
-    );
+    const syncCompleted =
+      document.getElementById('supaBadge')?.dataset.syncState === 'synced' &&
+      window.getDashboardSyncStatus().pending === 0 &&
+      window.getDashboardSyncStatus().lastSync;
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
     ]);
@@ -144,10 +144,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       'javascript:window.__xss=4',
     ];
     feedbackService.toast(maliciousPayloads.join('|'), 'info', 1000);
-    const toastUsesText = (
-      document.getElementById('authToast')?.textContent === maliciousPayloads.join('|')
-      && !document.querySelector('#authToast :is(script, img, svg)')
-    );
+    const toastUsesText =
+      document.getElementById('authToast')?.textContent === maliciousPayloads.join('|') &&
+      !document.querySelector('#authToast :is(script, img, svg)');
     feedbackService.showLoading();
     const loadingShown = document.getElementById('loadingOverlay')?.classList.contains('show');
     feedbackService.hideLoading();
@@ -155,11 +154,10 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const confirmation = modalService.confirm(maliciousPayloads[0], maliciousPayloads.join('|'), {
       destructive: false,
     });
-    const confirmUsesText = (
-      document.querySelector('#confirmModalContent h2')?.textContent === maliciousPayloads[0]
-      && !document.querySelector('#confirmModalContent :is(script, img, svg)')
-    );
-    const escapedPayloadsStayText = maliciousPayloads.every(payload => {
+    const confirmUsesText =
+      document.querySelector('#confirmModalContent h2')?.textContent === maliciousPayloads[0] &&
+      !document.querySelector('#confirmModalContent :is(script, img, svg)');
+    const escapedPayloadsStayText = maliciousPayloads.every((payload) => {
       const probe = document.createElement('div');
       probe.innerHTML = `<span>${window.escHtml(payload)}</span>`;
       return probe.textContent === payload && !probe.querySelector('script, img, svg');
@@ -170,11 +168,10 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       '../fora.csv',
       'obra\\arquivo.csv',
       'obra\u0000arquivo.csv',
-    ].every(path => window.sanitizeStoragePath(path) === '');
-    const validStoragePathAccepted = (
-      window.sanitizeStoragePath('/OBRA-1/tendencia/arquivo.csv')
-      === 'OBRA-1/tendencia/arquivo.csv'
-    );
+    ].every((path) => window.sanitizeStoragePath(path) === '');
+    const validStoragePathAccepted =
+      window.sanitizeStoragePath('/OBRA-1/tendencia/arquivo.csv') ===
+      'OBRA-1/tendencia/arquivo.csv';
     modalService.closeConfirm(false);
     const confirmResult = await confirmation;
 
@@ -188,19 +185,17 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasSupabase: typeof window.supabase.createClient === 'function',
       hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
       hasAuthService: authService.state === window.AUTH,
-      hasParserService: (
-        typeof parserService?.parseTendencia === 'function'
-        && parserService.parseNumber('1.234,56') === 1234.56
-        && window.parseNumero === parserService.parseNumber
-      ),
+      hasParserService:
+        typeof parserService?.parseTendencia === 'function' &&
+        parserService.parseNumber('1.234,56') === 1234.56 &&
+        window.parseNumero === parserService.parseNumber,
       hasFeedbackService: toastUsesText && loadingShown && loadingHidden && escapedPayloadsStayText,
       hasModalService: confirmUsesText && confirmResult === false,
       storagePathSecurity: dangerousStoragePathsRejected && validStoragePathAccepted,
-      hasPerformanceService: (
-        performanceService === window.dashboardPerformance
-        && performanceService.snapshot().boot.domNodes > 0
-        && performanceService.snapshot().operations['render:visao']?.count >= 1
-      ),
+      hasPerformanceService:
+        performanceService === window.dashboardPerformance &&
+        performanceService.snapshot().boot.domNodes > 0 &&
+        performanceService.snapshot().operations['render:visao']?.count >= 1,
       hasLoggerService: loggerIsSanitized && window.dashboardLogger === loggerService,
       hasUploadPolicy: uploadPolicyWorks,
       hasPagination: paginationWorks,
@@ -236,6 +231,17 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'renderTab',
         'debouncedRender',
         'renderAll',
+      ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
+      utilityGlobalsRemoved: [
+        'SafeStorage',
+        'paginateRows',
+        'renderPaginationControls',
+        'readExcelBuffer',
+        'readExcelFile',
+        'validateUploadFile',
+        'executeUploadTransaction',
+        'ensureXlsx',
+        'ensureApexCharts',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };
@@ -274,19 +280,20 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasApexCharts: true,
     hasDashboardHandler: true,
     runtimeGlobalsRemoved: true,
+    utilityGlobalsRemoved: true,
   });
   expect(runtime.status).not.toBe('Falha ao iniciar');
   expect(pageErrors).toEqual([]);
   expect(failedLocalAssets).toEqual([]);
 
-  const initialTheme = await page.locator('body').evaluate(body => ({
+  const initialTheme = await page.locator('body').evaluate((body) => ({
     dark: body.classList.contains('dark'),
     background: getComputedStyle(body).backgroundColor,
     accent: getComputedStyle(body).getPropertyValue('--accent-purple').trim(),
   }));
   await page.getByRole('button', { name: /modo claro|modo escuro/i }).click();
   await expect(page.locator('body')).toHaveClass(initialTheme.dark ? /^(?!.*dark)/ : /dark/);
-  const toggledTheme = await page.locator('body').evaluate(body => ({
+  const toggledTheme = await page.locator('body').evaluate((body) => ({
     background: getComputedStyle(body).backgroundColor,
     accent: getComputedStyle(body).getPropertyValue('--accent-purple').trim(),
   }));
@@ -318,10 +325,14 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     return calls;
   });
   expect(delegatedSubmits).toEqual([
-    'salvarObraForm', 'obraForm:prevenido',
-    'salvarEditorForm', 'editorForm:prevenido',
-    'doSignInEmail', 'loginEmailForm:prevenido',
-    'doSignUpEmail', 'signupEmailForm:prevenido',
+    'salvarObraForm',
+    'obraForm:prevenido',
+    'salvarEditorForm',
+    'editorForm:prevenido',
+    'doSignInEmail',
+    'loginEmailForm:prevenido',
+    'doSignUpEmail',
+    'signupEmailForm:prevenido',
   ]);
 
   await page.getByRole('tab', { name: /Uploads/ }).click();
@@ -354,11 +365,11 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   const accessibility = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();
-  const blockingViolations = accessibility.violations.filter(violation =>
+  const blockingViolations = accessibility.violations.filter((violation) =>
     ['serious', 'critical'].includes(violation.impact),
   );
   expect(
     blockingViolations,
-    blockingViolations.map(violation => `${violation.id}: ${violation.help}`).join('\n'),
+    blockingViolations.map((violation) => `${violation.id}: ${violation.help}`).join('\n'),
   ).toEqual([]);
 });

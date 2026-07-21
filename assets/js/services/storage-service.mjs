@@ -36,7 +36,3 @@ export function createSafeStorage({
 
   return Object.freeze({ set, get, remove });
 }
-
-export function installLegacySafeStorage(service, target = window) {
-  target.SafeStorage = service;
-}

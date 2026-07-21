@@ -4,6 +4,9 @@ import { replaceWithParsedMarkup } from './dom.mjs';
 let reportNonFatalError;
 let runAsyncSafely;
 let debouncedRender;
+let readExcelBuffer;
+let readExcelFile;
+let validateUploadFile;
 
 const MANUAL_TEXT = {
   tendencia:
@@ -1173,10 +1176,13 @@ function renderSourcesHeaders() {
   });
 }
 
-export function installLegacyUploadUI(runtime, target = window) {
+export function installLegacyUploadUI({ runtime, excel, validateUpload }, target = window) {
   reportNonFatalError = runtime.reportNonFatalError;
   runAsyncSafely = runtime.runAsyncSafely;
   debouncedRender = runtime.debouncedRender;
+  readExcelBuffer = excel.parseBuffer;
+  readExcelFile = excel.parseFile;
+  validateUploadFile = validateUpload;
   Object.assign(target, {
     MANUAL_TEXT,
     handleUpload,

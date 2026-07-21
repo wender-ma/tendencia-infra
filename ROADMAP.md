@@ -185,7 +185,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar tabelas em módulos de UI.
 - [x] Separar cada aba dinâmica em um módulo de visualização (a aba Manual permanece estática).
 - [x] Remover o coordenador monolítico e iniciar toda a aplicação por módulos ES (adaptadores globais temporários permanecem para compatibilidade entre módulos já extraídos).
-- [ ] Remover aliases e adaptadores globais gradualmente até os módulos consumirem serviços e estado por importação ou injeção direta (formatadores usam imports; as views recebem o runtime por injeção e nenhum método do runtime é publicado no `window`).
+- [ ] Remover aliases e adaptadores globais gradualmente até os módulos consumirem serviços e estado por importação ou injeção direta (runtime, storage, paginação, Excel, validação e transações já usam importação/injeção e não são publicados no `window`).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
 ### 10. Modernizar dependências e build
@@ -299,6 +299,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados                                                           | `public/_headers`                                           |
 | 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão                                           | `renderAll()`                                               |
 | 21/07/2026 | Smokes E2E de login, troca de obra, edição de Flow e catálogo administrativo adicionados com respostas controladas do Supabase                            | `scripts/browser/workflows.spec.js`                         |
+| 21/07/2026 | Storage, paginação, Excel, validação de upload, transações e loaders deixaram de publicar adaptadores globais e passaram a ser injetados nas views       | `assets/js/bootstrap.js`                                    |
 | 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba                                                                        | `assets/js/performance.mjs`                                 |
 | 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS                                            | `docs/innerhtml_inventory_2026-07-21.md`                    |
 | 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop                                                                         | `.github/workflows/ci.yml`                                  |

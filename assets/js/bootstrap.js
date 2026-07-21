@@ -18,7 +18,7 @@ import {
   createUploadMaintenance,
   installLegacyUploadMaintenance,
 } from './ui/upload-maintenance.mjs';
-import { createPaginationService, installLegacyPaginationGlobals } from './ui/pagination.mjs';
+import { createPaginationService } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
@@ -36,17 +36,13 @@ import {
   DASHBOARD_DATA_KEYS,
   installLegacyDashboardRepository,
 } from './services/dashboard-repository.mjs';
-import {
-  ensureApexCharts,
-  ensureXlsx,
-  installLegacyDependencyGlobals,
-} from './services/dependency-service.mjs';
-import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
+import { ensureApexCharts, ensureXlsx } from './services/dependency-service.mjs';
+import { createExcelService } from './services/excel-service.mjs';
 import { createLogger, installLogger } from './services/logger.mjs';
 import { createProjectRepository } from './services/project-repository.mjs';
-import { createSafeStorage, installLegacySafeStorage } from './services/storage-service.mjs';
+import { createSafeStorage } from './services/storage-service.mjs';
 import { createSyncStatusService, installLegacySyncStatus } from './services/sync-status.mjs';
-import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
+import { validateUploadFile } from './services/upload-policy.mjs';
 import {
   createUploadCoordinator,
   installLegacyUploadCoordinator,
@@ -55,10 +51,7 @@ import {
   createUploadRepository,
   installLegacyUploadRepository,
 } from './services/upload-repository.mjs';
-import {
-  executeUploadTransaction,
-  installLegacyUploadTransaction,
-} from './services/upload-transaction.mjs';
+import { executeUploadTransaction } from './services/upload-transaction.mjs';
 
 function showBootstrapError(error) {
   window.dashboardLogger?.error('Boot/carregar dashboard', error);
@@ -114,16 +107,11 @@ const storageService = createSafeStorage({
       5000,
     ),
 });
-installLegacySafeStorage(storageService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
 const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.table_page_size });
-installLegacyPaginationGlobals(paginationService);
 const viewStateService = createViewStateService();
 installLegacyViewStateGlobals(viewStateService);
-installLegacyDependencyGlobals();
-installLegacyUploadPolicy();
-installLegacyUploadTransaction();
 const uploadRepository = createUploadRepository({
   getClient: () => window.SUPA,
   getActiveProject: () => window.OBRA_ATIVA,
@@ -143,7 +131,6 @@ const uploadRepository = createUploadRepository({
 });
 installLegacyUploadRepository(uploadRepository);
 const excelService = createExcelService();
-installLegacyExcelGlobals(excelService);
 const dashboardExportService = createDashboardExportService({
   ensureXlsx,
   getState: () => ({
@@ -319,15 +306,23 @@ Promise.resolve()
       import('./ui/views/projection.mjs'),
       import('./ui/views/projection-control.mjs'),
     ]);
-    installLegacyFlowEditor(dashboardRuntime);
-    installLegacyUploadUI(dashboardRuntime);
-    installLegacyAdminView(dashboardRuntime);
-    installLegacyDetailsView(dashboardRuntime);
-    installLegacyFlowsView(dashboardRuntime);
-    installLegacyHistoryView(dashboardRuntime);
-    installLegacyOverviewView(dashboardRuntime);
-    installLegacyProjectionView(dashboardRuntime);
-    installLegacyProjectionControlView(dashboardRuntime);
+    installLegacyFlowEditor({ runtime: dashboardRuntime, storage: storageService });
+    installLegacyUploadUI({
+      runtime: dashboardRuntime,
+      excel: excelService,
+      validateUpload: validateUploadFile,
+    });
+    installLegacyAdminView({ runtime: dashboardRuntime, storage: storageService });
+    installLegacyDetailsView({ runtime: dashboardRuntime, pagination: paginationService });
+    installLegacyFlowsView({
+      runtime: dashboardRuntime,
+      pagination: paginationService,
+      storage: storageService,
+    });
+    installLegacyHistoryView({ runtime: dashboardRuntime, pagination: paginationService });
+    installLegacyOverviewView({ runtime: dashboardRuntime, storage: storageService });
+    installLegacyProjectionView({ runtime: dashboardRuntime, loadXlsx: ensureXlsx });
+    installLegacyProjectionControlView({ runtime: dashboardRuntime, storage: storageService });
 
     const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
       reportError: (context, error) => logger.warn(context, error),

@@ -49,7 +49,3 @@ export function validateUploadFile(file, policyName) {
   }
   return { valid: true, code: 'ok', message: '', sizeLabel: formatFileSize(file.size) };
 }
-
-export function installLegacyUploadPolicy(target = window) {
-  target.validateUploadFile = validateUploadFile;
-}

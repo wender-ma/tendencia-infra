@@ -4,6 +4,9 @@ import { debounce, formatNumber as fmt, formatNumber as fmtR$ } from '../dashboa
 
 let runAsyncSafely;
 let getFlowsObraAtiva;
+let paginateRows;
+let renderPaginationControls;
+let SafeStorage;
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;
@@ -411,9 +414,12 @@ function onRefletidoChange(sel) {
   syncAllViewsFromFlows();
 }
 
-export function installLegacyFlowsView(runtime, target = window) {
+export function installLegacyFlowsView({ runtime, pagination, storage }, target = window) {
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
+  paginateRows = pagination.paginate;
+  renderPaginationControls = pagination.renderControls;
+  SafeStorage = storage;
   Object.assign(target, {
     renderFlows,
     clearFlowFilters,

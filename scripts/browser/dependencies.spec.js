@@ -98,6 +98,23 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       && workerResult.csvBySheet.Tendencia.includes('A-1;123')
     );
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
+    let releaseSyncOperation;
+    const pendingSyncOperation = window.runAsyncSafely(
+      new Promise(resolve => { releaseSyncOperation = resolve; }),
+      'Teste/sincronização',
+    );
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    const syncSaving = (
+      document.getElementById('supaBadge')?.dataset.syncState === 'saving'
+      && window.getDashboardSyncStatus().pending === 1
+    );
+    releaseSyncOperation('ok');
+    await pendingSyncOperation;
+    const syncCompleted = (
+      document.getElementById('supaBadge')?.dataset.syncState === 'synced'
+      && window.getDashboardSyncStatus().pending === 0
+      && window.getDashboardSyncStatus().lastSync
+    );
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
     ]);
@@ -188,6 +205,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       hasUploadPolicy: uploadPolicyWorks,
       hasPagination: paginationWorks,
       hasViewStates: viewStateIsSafe,
+      hasSyncFeedback: Boolean(syncSaving && syncCompleted),
       authStartsReadOnly,
       authorizationMatrix: {
         admin: admin.isAdminGeral && admin.isEditor && admin.role === 'admin',
@@ -227,6 +245,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     hasUploadPolicy: true,
     hasPagination: true,
     hasViewStates: true,
+    hasSyncFeedback: true,
     authStartsReadOnly: true,
     authorizationMatrix: { admin: true, editor: true, rejected: true },
     stateContract: {

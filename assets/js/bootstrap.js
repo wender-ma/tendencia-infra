@@ -4,6 +4,7 @@ import { installLegacyImportParsers } from './parsers/index.mjs';
 import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
+import { installActionDelegation } from './ui/actions.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -47,6 +48,7 @@ installLegacyFeedbackGlobals(feedbackService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
 installLegacyDependencyGlobals();
+installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
 

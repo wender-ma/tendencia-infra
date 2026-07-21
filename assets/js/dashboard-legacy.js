@@ -2263,12 +2263,12 @@ function verificarDadosDesatualizados() {
     // Mais de 3 meses: vermelho
     bannerEl.innerHTML = '<div class="alert-banner" style="background:linear-gradient(90deg, #FEE2E2 0%, #FECACA 100%); border-left-color:#DC2626;">'
       + '🔴 <strong>Dados muito desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
-      + 'Atualize os dados na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#DC2626; font-weight:700;">📤 Uploads</a>.</div>';
+      + 'Atualize os dados na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:#DC2626; font-weight:700;">📤 Uploads</a>.</div>';
   } else if (mesesAtras > 2) {
     // Mais de 2 meses: amarelo
     bannerEl.innerHTML = '<div class="alert-banner">'
       + '⚠️ <strong>Dados desatualizados:</strong> último mês de gestão é <strong>' + m[1] + '/' + m[2] + '</strong> (' + mesesAtras + ' meses atrás). '
-      + 'Considere atualizar na aba <a href="#" onclick="irParaAba(\'uploads\')" style="color:#92400E; font-weight:700;">📤 Uploads</a>.</div>';
+      + 'Considere atualizar na aba <a href="#" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="color:#92400E; font-weight:700;">📤 Uploads</a>.</div>';
   } else {
     bannerEl.replaceChildren();
   }
@@ -2473,7 +2473,7 @@ function renderPlaceholderSemDados(icone, titulo, subtitulo) {
       <div style="font-size:48px; margin-bottom:12px;">${icone || '📭'}</div>
       <h3 style="font-size:16px; color:#334155; margin:0 0 6px; font-weight:600;">${titulo || 'Sem dados para exibir'}</h3>
       <p style="font-size:13px; margin:0 0 20px;">${subtitulo || ('Envie o Excel de Tendência de <strong>' + escHtml(nomeObra) + '</strong> na aba <strong>📤 Uploads</strong>.')}</p>
-      <button class="btn-sm primary" onclick="irParaAba('uploads')" style="padding:8px 18px; font-size:13px;">
+      <button class="btn-sm primary" data-click-action="irParaAba" data-action-mode="arg" data-action-arg="uploads" style="padding:8px 18px; font-size:13px;">
         📤 Ir para Uploads
       </button>
     </div>
@@ -2606,8 +2606,8 @@ function renderVisao() {
   // Toggle INCC/IPCA
   const toggleHtml = `
     <div class="toggle-group" style="margin-top:8px;">
-      <button type="button" onclick="setCorrecaoIndice('incc')" class="toggle-btn ${CORRECAO_INDICE==='incc'?'active':''}">INCC</button>
-      <button type="button" onclick="setCorrecaoIndice('ipca')" class="toggle-btn ${CORRECAO_INDICE==='ipca'?'active':''}">IPCA</button>
+      <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="incc" class="toggle-btn ${CORRECAO_INDICE==='incc'?'active':''}">INCC</button>
+      <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="ipca" class="toggle-btn ${CORRECAO_INDICE==='ipca'?'active':''}">IPCA</button>
     </div>
   `;
 
@@ -2666,8 +2666,8 @@ function renderVisao() {
           <div style="font-size:12px; color:var(--text-soft);">${CARD3_MODO==='liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
         </div>
         <div class="toggle-group">
-          <button type="button" onclick="setCard3Modo('bruto')" class="toggle-btn ${CARD3_MODO==='bruto'?'active':''}">Bruto</button>
-          <button type="button" onclick="setCard3Modo('liquido')" class="toggle-btn ${CARD3_MODO==='liquido'?'active':''}">Líquido</button>
+          <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="bruto" class="toggle-btn ${CARD3_MODO==='bruto'?'active':''}">Bruto</button>
+          <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${CARD3_MODO==='liquido'?'active':''}">Líquido</button>
         </div>
       </div>
       ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto>=0?'+':'') + fmtR$(desvioBruto), desvioBruto>0?'var(--sem-erro)':desvioBruto<0?'var(--sem-ok)':'var(--text-soft)', 'gestão atual vs licitação')}
@@ -3185,7 +3185,7 @@ function showManualText(key) {
     <h2>ℹ️ Como exportar</h2>
     <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: var(--text-medium); margin-top: 12px;">${escHtml(text)}</div>
     <div style="margin-top: 16px; text-align: right;">
-      <button class="btn-sm" onclick="closeModal()">Fechar</button>
+      <button class="btn-sm" data-click-action="closeModal">Fechar</button>
     </div>
   `;
   openModal();
@@ -3373,8 +3373,8 @@ function renderInsumoSelect(f, field) {
     value="${escAttr(displayValue)}"
     data-n="${escAttr(f.n_alteracao)}" data-field="${field}"
     data-rawvalue="${escAttr(value)}"
-    onchange="onClassifChange(this)"
-    onfocus="this.select()"
+    data-change-action="onClassifChange" data-action-mode="self"
+    data-select-on-focus
     title="${escAttr(value)}"
     placeholder="digite p/ buscar...">`;
 }
@@ -3721,11 +3721,11 @@ function msRenderPanel(key) {
   }
 
   const html = `
-    <input type="text" class="ms-search" placeholder="🔍 buscar..." oninput="msFilterOpts('${key}', this.value)">
+    <input type="text" class="ms-search" placeholder="🔍 buscar..." data-input-action="msFilterOpts" data-action-mode="arg-value" data-action-arg="${key}">
     <div class="ms-actions">
-      <button type="button" onclick="msSelectAll('${key}', true)">Marcar todos</button>
-      <button type="button" onclick="msSelectAll('${key}', false)">Desmarcar todos</button>
-      <button type="button" onclick="msInvert('${key}')">Inverter</button>
+      <button type="button" data-click-action="msSelectAll" data-action-mode="arg-bool" data-action-arg="${key}" data-action-value="true">Marcar todos</button>
+      <button type="button" data-click-action="msSelectAll" data-action-mode="arg-bool" data-action-arg="${key}" data-action-value="false">Desmarcar todos</button>
+      <button type="button" data-click-action="msInvert" data-action-mode="arg" data-action-arg="${key}">Inverter</button>
     </div>
     <div class="ms-list" id="ms_${key}_list">
       ${allValues.map(v => {
@@ -3741,7 +3741,7 @@ function msRenderPanel(key) {
     </div>
     <div class="ms-footer">
       <span><span id="ms_${key}_status"></span></span>
-      <button type="button" onclick="msClose('${key}')">Aplicar ✓</button>
+      <button type="button" data-click-action="msClose" data-action-mode="arg" data-action-arg="${key}">Aplicar ✓</button>
     </div>
   `;
   panel.innerHTML = html;
@@ -3908,10 +3908,10 @@ function updateMassBar() {
     <strong>☑️ ${n} aditivo${n>1?'s':''} selecionado${n>1?'s':''}</strong>
     <span style="opacity:0.85; font-size:12px;">· Σ ${fmtR$(totVal)}</span>
     <span style="margin-left:auto;"></span>
-    <button class="btn-mass" onclick="massAplicarDestino()" title="Aplica o mesmo INSUMO PLANEJAMENTO em todos os selecionados">🎯 Aplicar Destino</button>
-    <button class="btn-mass" onclick="massAplicarOrigem()" title="Aplica o mesmo INSUMO REMANEJAMENTO em todos os selecionados">🔄 Aplicar Origem</button>
-    <button class="btn-mass" onclick="massAplicarRefletido()" title="Marca todos com o mesmo status de reflexo">✅ Marcar Refletido</button>
-    <button class="btn-mass danger" onclick="clearMassSelection()">🗑️ Limpar seleção</button>
+    <button class="btn-mass" data-click-action="massAplicarDestino" title="Aplica o mesmo INSUMO PLANEJAMENTO em todos os selecionados">🎯 Aplicar Destino</button>
+    <button class="btn-mass" data-click-action="massAplicarOrigem" title="Aplica o mesmo INSUMO REMANEJAMENTO em todos os selecionados">🔄 Aplicar Origem</button>
+    <button class="btn-mass" data-click-action="massAplicarRefletido" title="Marca todos com o mesmo status de reflexo">✅ Marcar Refletido</button>
+    <button class="btn-mass danger" data-click-action="clearMassSelection">🗑️ Limpar seleção</button>
   `;
 }
 
@@ -3925,7 +3925,7 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
       ${opcoesHtml}
     </div>
     <div class="form-actions">
-      <button type="button" class="btn-sm" onclick="closeModal()">Cancelar</button>
+      <button type="button" class="btn-sm" data-click-action="closeModal">Cancelar</button>
       <button type="submit" class="btn-sm primary" data-action="mass-confirm">✓ Aplicar a ${MASS_SELECTED.size} aditivo(s)</button>
     </div>
     </form>
@@ -4462,10 +4462,10 @@ function renderFlowTable() {
     return `
     <tr style="${trStyle}" class="${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
       <td style="text-align:center; vertical-align:middle;">
-        <input type="checkbox" ${isSelected ? 'checked' : ''} data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" onchange="toggleMassSelect(this)" style="cursor:pointer; transform:scale(1.15);">
+        <input type="checkbox" ${isSelected ? 'checked' : ''} data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="toggleMassSelect" data-action-mode="self" style="cursor:pointer; transform:scale(1.15);">
       </td>
       <td style="vertical-align:middle; padding:6px;">
-        <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" onchange="onRefletidoChange(this)" title="Status de reflexo no planejamento">
+        <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="onRefletidoChange" data-action-mode="self" title="Status de reflexo no planejamento">
           <option value="pendente" ${(f.refletido_status||'pendente')==='pendente'?'selected':''}>⏳ Pendente</option>
           <option value="sim" ${f.refletido_status==='sim'?'selected':''}>✅ Sim</option>
           <option value="nao" ${f.refletido_status==='nao'?'selected':''}>❌ Não</option>
@@ -4479,7 +4479,7 @@ function renderFlowTable() {
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_remanejamento')}</td>
       <td class="classif-cell"><input type="text" class="valor-input ${valCls}${valEdited}" data-edit-control${editDisabled}
         value="${escAttr(valStr)}" data-n="${escAttr(f.n_alteracao)}"
-        onchange="onValorChange(this)" onfocus="this.select()"
+        data-change-action="onValorChange" data-action-mode="self" data-select-on-focus
         title="Aceita valores como 1234,56 ou -1.234,56" placeholder="0,00"></td>
       <td style="font-size:11px;"><strong>${escHtml(f.motivo||'')}</strong><br><span style="color:var(--text-soft);">${escHtml((f.descricao||'').length>110?(f.descricao||'').slice(0,107)+'...':(f.descricao||''))}</span></td>
     </tr>`;
@@ -4868,8 +4868,8 @@ function _promptSheetMapping(sheetNames, autoDetected) {
       </div>
     `;
     const finish = (result) => closeModal(result);
-    document.getElementById('mapSheetsCancel').onclick = () => finish(null);
-    document.getElementById('mapSheetsOk').onclick = () => {
+    document.getElementById('mapSheetsCancel').addEventListener('click', () => finish(null));
+    document.getElementById('mapSheetsOk').addEventListener('click', () => {
       const r = {
         tendencia: document.getElementById('mapSheet_tendencia').value || null,
         flows:     document.getElementById('mapSheet_flows').value || null,
@@ -4880,7 +4880,7 @@ function _promptSheetMapping(sheetNames, autoDetected) {
         return;
       }
       finish(r);
-    };
+    });
     openModal({
       onClose: result => resolve(result || null),
       initialFocus: '#mapSheet_tendencia',
@@ -5169,11 +5169,11 @@ function renderUploadsCentral() {
       ${excelMeta}
       <div class="upload-progress" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" style="display:none;"></div>
       <div class="upload-card-actions">
-        <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() && !excelProcessing ? '' : 'disabled'} onclick="document.getElementById('fileInput_excel').click()">
+        <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() && !excelProcessing ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_excel">
           📊 ${lastExcel ? 'Substituir planilha' : 'Escolher planilha Excel'}
         </button>
-        <button class="btn-sm" onclick="openUploadsHistory('tendencia')" title="Ver todos os uploads">📜 Histórico</button>
-        <input type="file" id="fileInput_excel" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar planilha Excel" style="display:none" onchange="handleExcelUpload(event)">
+        <button class="btn-sm" data-click-action="openUploadsHistory" data-action-mode="arg" data-action-arg="tendencia" title="Ver todos os uploads">📜 Histórico</button>
+        <input type="file" id="fileInput_excel" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar planilha Excel" style="display:none" data-change-action="handleExcelUpload" data-action-mode="event">
       </div>
     </div>`;
 
@@ -5216,19 +5216,19 @@ function renderUploadsCentral() {
         ${runtimeBlock}
         ${metaBlock}
         <div class="upload-card-actions">
-          <button class="btn-sm primary" data-editor-only ${permissionAttr} ${isProcessing ? 'disabled' : ''} onclick="document.getElementById('fileInput_${k}').click()">
+          <button class="btn-sm primary" data-editor-only ${permissionAttr} ${isProcessing ? 'disabled' : ''} data-click-action="" data-file-target="fileInput_${k}">
             📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
           </button>
-          <button class="btn-sm" onclick="openUploadsHistory('${k}')" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
-          <button class="btn-sm" onclick="showManualText('${meta.manualKey}')">ℹ️ Como exportar?</button>
-          <input type="file" id="fileInput_${k}" accept=".csv" aria-label="Selecionar arquivo CSV de ${escAttr(meta.label)}" style="display:none" onchange="handleUpload(event, '${k}')">
+          <button class="btn-sm" data-click-action="openUploadsHistory" data-action-mode="arg" data-action-arg="${k}" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
+          <button class="btn-sm" data-click-action="showManualText" data-action-mode="arg" data-action-arg="${meta.manualKey}">ℹ️ Como exportar?</button>
+          <input type="file" id="fileInput_${k}" accept=".csv" aria-label="Selecionar arquivo CSV de ${escAttr(meta.label)}" style="display:none" data-change-action="handleUpload" data-action-mode="event-arg" data-action-arg="${k}">
         </div>
       </div>`;
   }).join('');
 
   root.innerHTML = `
     ${excelCard}
-    <div id="uploadsAdvancedToggle" class="uploads-advanced-toggle" onclick="toggleAdvancedUploads()">
+    <div id="uploadsAdvancedToggle" class="uploads-advanced-toggle" data-click-action="toggleAdvancedUploads">
       ▶ <strong>Modo avançado</strong> — enviar cada CSV individualmente (uso legado)
     </div>
     <div id="uploadsAdvancedBody" class="uploads-advanced-body">
@@ -7648,7 +7648,7 @@ function openMovForm(editingId) {
       </div>
     </div>
     <div class="form-actions">
-      <button type="button" class="btn-sm" onclick="closeModal()">Cancelar</button>
+      <button type="button" class="btn-sm" data-click-action="closeModal">Cancelar</button>
       <button type="submit" class="btn-sm primary" data-action="save-mov" data-id="${escAttr(editingId||'')}">💾 Salvar</button>
     </div>
     <div style="margin-top:10px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:6px; font-size:11px; color:var(--sem-alerta);">

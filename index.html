@@ -25,12 +25,12 @@
   <div style="flex:1; min-width:0;">
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
       <span id="headerTitle" style="font-size:13px; font-weight:500; opacity:0.85; cursor:default; outline:none;">Tendência Orçamentária</span>
-      <button id="headerLockBtn" type="button" onclick="toggleHeaderEdit()" data-requires-edit data-admin-control title="Editar título" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">🔒 Editar</button>
+      <button id="headerLockBtn" type="button" data-click-action="toggleHeaderEdit" data-requires-edit data-admin-control title="Editar título" style="background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:white; padding:2px 6px; border-radius:4px; cursor:pointer; font-size:10px;">🔒 Editar</button>
     </div>
     <!-- v0.58a: nome grande da obra + dropdown -->
     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:2px;">
       <h1 id="obraNomeGrande" style="font-size:22px; font-weight:700; letter-spacing:0; margin:0;">📊 —</h1>
-      <select id="obraSelector" onchange="trocarObra(this.value)" title="Trocar de obra" aria-label="Obra ativa" style="padding:5px 10px; font-size:12.5px; font-weight:600; border-radius:6px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.15); color:white; cursor:pointer; backdrop-filter:blur(3px);">
+      <select id="obraSelector" data-change-action="trocarObra" data-action-mode="value" title="Trocar de obra" aria-label="Obra ativa" style="padding:5px 10px; font-size:12.5px; font-weight:600; border-radius:6px; border:1px solid rgba(255,255,255,0.35); background:rgba(255,255,255,0.15); color:white; cursor:pointer; backdrop-filter:blur(3px);">
         <option value="">Carregando obras...</option>
       </select>
     </div>
@@ -39,9 +39,9 @@
   <div class="header-actions">
     <span id="supaBadge" role="status" aria-live="polite" aria-atomic="true" style="padding:5px 12px; border-radius:12px; font-size:11px; font-weight:600; align-self:center; white-space:nowrap;">🔗 Conectando...</span>
     <span id="authBadge" class="auth-badge pending" role="status" aria-live="polite" aria-atomic="true" title="Verificando autenticação...">⏳ ...</span>
-    <button id="authBtn" class="auth-btn" onclick="handleAuthClick()" title="Entrar para editar">🔑 Entrar</button>
-    <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Alternar modo claro/escuro" aria-label="Alternar modo claro ou escuro">🌙</button>
-    <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
+    <button id="authBtn" class="auth-btn" data-click-action="handleAuthClick" title="Entrar para editar">🔑 Entrar</button>
+    <button id="themeToggle" class="theme-toggle" data-click-action="toggleTheme" title="Alternar modo claro/escuro" aria-label="Alternar modo claro ou escuro">🌙</button>
+    <button class="btn" data-click-action="print">🖨️ Imprimir</button>
   </div>
 </div>
 
@@ -102,7 +102,7 @@
   <div class="card">
     <h2>📋 Detalhamento por Item
       <span style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-sm" onclick="exportarDetalhamentoXLSX()" style="font-size:11px;" title="Exporta a tabela completa em Excel">💾 Exportar Excel</button>
+        <button class="btn-sm" data-click-action="exportarDetalhamentoXLSX" style="font-size:11px;" title="Exporta a tabela completa em Excel">💾 Exportar Excel</button>
       </span>
     </h2>
     <div class="toolbar">
@@ -177,16 +177,16 @@
     <h2>📋 Aditivos detalhados</h2>
     <div class="toolbar">
       <input type="search" id="flowSearch" aria-label="Buscar aditivos" placeholder="🔍 Buscar descrição, justificativa, motivo, insumo...">
-      <div class="ms-wrap" id="ms_dep_wrap"><button type="button" class="ms-btn" id="ms_dep_btn" onclick="msToggle('dep')">Todos departamentos</button><div class="ms-panel" id="ms_dep_panel"></div></div>
-      <div class="ms-wrap" id="ms_tipo_wrap"><button type="button" class="ms-btn" id="ms_tipo_btn" onclick="msToggle('tipo')">Todos tipos</button><div class="ms-panel" id="ms_tipo_panel"></div></div>
-      <div class="ms-wrap" id="ms_motivo_wrap"><button type="button" class="ms-btn" id="ms_motivo_btn" onclick="msToggle('motivo')">Todos motivos</button><div class="ms-panel" id="ms_motivo_panel"></div></div>
+      <div class="ms-wrap" id="ms_dep_wrap"><button type="button" class="ms-btn" id="ms_dep_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="dep">Todos departamentos</button><div class="ms-panel" id="ms_dep_panel"></div></div>
+      <div class="ms-wrap" id="ms_tipo_wrap"><button type="button" class="ms-btn" id="ms_tipo_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="tipo">Todos tipos</button><div class="ms-panel" id="ms_tipo_panel"></div></div>
+      <div class="ms-wrap" id="ms_motivo_wrap"><button type="button" class="ms-btn" id="ms_motivo_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="motivo">Todos motivos</button><div class="ms-panel" id="ms_motivo_panel"></div></div>
       <span style="margin-left:auto; color:var(--text-soft); font-size:12px;" id="flowCount"></span>
     </div>
     <div class="toolbar" style="background:var(--bg-page); padding:8px 10px; border-radius:6px; margin-bottom:8px;">
       <span style="font-size:11px; color:var(--text-soft); font-weight:600;">FILTROS AVANÇADOS:</span>
-      <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" onclick="msToggle('refletido')">Refletido: todos</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
-      <div class="ms-wrap" id="ms_solicitante_wrap"><button type="button" class="ms-btn" id="ms_solicitante_btn" onclick="msToggle('solicitante')">Todos solicitantes</button><div class="ms-panel" id="ms_solicitante_panel"></div></div>
-      <div class="ms-wrap" id="ms_destino_wrap"><button type="button" class="ms-btn" id="ms_destino_btn" onclick="msToggle('destino')">Destino/Origem: todos</button><div class="ms-panel" id="ms_destino_panel"></div></div>
+      <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="refletido">Refletido: todos</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
+      <div class="ms-wrap" id="ms_solicitante_wrap"><button type="button" class="ms-btn" id="ms_solicitante_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="solicitante">Todos solicitantes</button><div class="ms-panel" id="ms_solicitante_panel"></div></div>
+      <div class="ms-wrap" id="ms_destino_wrap"><button type="button" class="ms-btn" id="ms_destino_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="destino">Destino/Origem: todos</button><div class="ms-panel" id="ms_destino_panel"></div></div>
       <label style="font-size:11.5px; color:var(--text-medium); display:flex; align-items:center; gap:4px;">
         📅 De:
         <input type="month" id="flowFilterDataIni" style="padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
@@ -200,25 +200,25 @@
         <input type="number" id="flowFilterValMin" aria-label="Valor mínimo" placeholder="mín" step="100" style="width:80px; padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
         <input type="number" id="flowFilterValMax" aria-label="Valor máximo" placeholder="máx" step="100" style="width:80px; padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
       </label>
-      <button class="btn-sm" onclick="clearFlowFilters()" style="font-size:11px;">🧹 Limpar filtros</button>
+      <button class="btn-sm" data-click-action="clearFlowFilters" style="font-size:11px;">🧹 Limpar filtros</button>
     </div>
     <div class="classif-bar">
       <div class="info">
         ✏️ <strong>Modo edição:</strong> clique nas células <em>Destino</em> ou <em>Origem</em> para reclassificar. As alterações ficam salvas no navegador.
         <span id="editCount" style="margin-left:8px;"></span>
       </div>
-      <button class="btn-sm primary" data-editor-only onclick="openManualForm()" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo manual</button>
-      <button class="btn-sm primary" onclick="exportarFlowsXLSX()" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
-      <button class="btn-sm" onclick="exportClassifications()" title="Baixa CSV apenas com as alterações manuais feitas (edições de INSUMO_*)">📤 Exportar só alterações (CSV)</button>
-      <button class="btn-sm" onclick="reloadClassifications()" title="Recarrega do navegador">⤴️ Recarregar salvas</button>
-      <button class="btn-sm danger" data-editor-only onclick="clearClassifications()" title="Apaga edições deste navegador">🗑️ Limpar alterações</button>
+      <button class="btn-sm primary" data-editor-only data-click-action="openManualForm" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo manual</button>
+      <button class="btn-sm primary" data-click-action="exportarFlowsXLSX" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
+      <button class="btn-sm" data-click-action="exportClassifications" title="Baixa CSV apenas com as alterações manuais feitas (edições de INSUMO_*)">📤 Exportar só alterações (CSV)</button>
+      <button class="btn-sm" data-click-action="reloadClassifications" title="Recarrega do navegador">⤴️ Recarregar salvas</button>
+      <button class="btn-sm danger" data-editor-only data-click-action="clearClassifications" title="Apaga edições deste navegador">🗑️ Limpar alterações</button>
     </div>
     <div id="massBar" style="display:none;"></div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th style="width:30px;"><input type="checkbox" id="flowSelectAll" data-edit-control onchange="toggleSelectAllVisible(this)" title="Selecionar/desmarcar todos os visíveis" aria-label="Selecionar ou desmarcar todos os aditivos visíveis" style="cursor:pointer; transform:scale(1.15);"></th>
+            <th style="width:30px;"><input type="checkbox" id="flowSelectAll" data-edit-control data-change-action="toggleSelectAllVisible" data-action-mode="self" title="Selecionar/desmarcar todos os visíveis" aria-label="Selecionar ou desmarcar todos os aditivos visíveis" style="cursor:pointer; transform:scale(1.15);"></th>
             <th style="width:110px;" title="Status de reflexo no planejamento da obra">Refletido?</th>
             <th data-sort-flow="n_alteracao" aria-sort="none" style="width:55px;">Nº</th>
             <th data-sort-flow="data" aria-sort="none" style="width:90px;">Data</th>
@@ -340,9 +340,9 @@
   <div class="card">
     <h2>🔍 Projeção Detalhada
       <span style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-sm" onclick="projExpandAll()" style="font-size:11px;">📂 Expandir tudo</button>
-        <button class="btn-sm" onclick="projCollapseAll()" style="font-size:11px;">📁 Recolher tudo</button>
-        <button class="btn-sm" onclick="exportarProjecaoDetalhada()" style="font-size:11px;" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
+        <button class="btn-sm" data-click-action="projExpandAll" style="font-size:11px;">📂 Expandir tudo</button>
+        <button class="btn-sm" data-click-action="projCollapseAll" style="font-size:11px;">📁 Recolher tudo</button>
+        <button class="btn-sm" data-click-action="exportarProjecaoDetalhada" style="font-size:11px;" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
         <span class="hint" style="margin-left:8px;">clique em uma linha para ver a curva individual</span>
       </span>
     </h2>
@@ -398,7 +398,7 @@
         <label for="projCtrlSaldoInicial" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">💰 Saldo inicial</label>
         <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
           <input type="text" id="projCtrlSaldoInicial" data-edit-control placeholder="ex: 4.541.431,52" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px; font-variant-numeric:tabular-nums; text-align:right;">
-          <button type="button" id="lockBtnSaldo" data-editor-only onclick="toggleLockCampo('saldo')" title="Travar / destravar edição" aria-label="Travar ou destravar edição do saldo inicial" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
+          <button type="button" id="lockBtnSaldo" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="saldo" title="Travar / destravar edição" aria-label="Travar ou destravar edição do saldo inicial" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
         </div>
         <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Verba inicial da Projeção de Gastos</div>
       </div>
@@ -406,7 +406,7 @@
         <label for="projCtrlDataRef" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">📅 Data de referência</label>
         <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
           <input type="month" id="projCtrlDataRef" data-edit-control style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
-          <button type="button" id="lockBtnData" data-editor-only onclick="toggleLockCampo('data')" title="Travar / destravar edição" aria-label="Travar ou destravar edição da data de referência" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
+          <button type="button" id="lockBtnData" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="data" title="Travar / destravar edição" aria-label="Travar ou destravar edição da data de referência" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
         </div>
         <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Mês em que o saldo inicial foi aportado</div>
       </div>
@@ -414,7 +414,7 @@
         <label for="projCtrlInsumo" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">📌 Insumo controlado</label>
         <div style="display:flex; gap:6px; align-items:stretch; margin-top:4px;">
           <input type="text" id="projCtrlInsumo" data-edit-control value="I011890" style="flex:1; min-width:0; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
-          <button type="button" id="lockBtnInsumo" data-editor-only onclick="toggleLockCampo('insumo')" title="Travar / destravar edição" aria-label="Travar ou destravar edição do insumo controlado" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
+          <button type="button" id="lockBtnInsumo" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="insumo" title="Travar / destravar edição" aria-label="Travar ou destravar edição do insumo controlado" style="padding:0 10px; border:1px solid var(--border-strong); border-radius:6px; background:white; cursor:pointer; font-size:14px;">🔓</button>
         </div>
         <div style="font-size:11px; color:var(--text-soft); margin-top:3px;">Padrão: I011890 (Verba Viabilidade)</div>
       </div>
@@ -432,8 +432,8 @@
   <div class="card">
     <h2>📋 Movimentações
       <span style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-sm primary" data-editor-only onclick="openMovForm()" style="font-size:12px;">➕ Nova movimentação</button>
-        <button class="btn-sm" onclick="exportarControleProjXLSX()" style="font-size:12px;" title="Exporta movimentações + saldo acumulado em Excel">💾 Exportar Excel</button>
+        <button class="btn-sm primary" data-editor-only data-click-action="openMovForm" style="font-size:12px;">➕ Nova movimentação</button>
+        <button class="btn-sm" data-click-action="exportarControleProjXLSX" style="font-size:12px;" title="Exporta movimentações + saldo acumulado em Excel">💾 Exportar Excel</button>
       </span>
     </h2>
 
@@ -451,7 +451,7 @@
         <option value="entrada">⬅️ Só entradas</option>
         <option value="saida">➡️ Só saídas</option>
       </select>
-      <button class="btn-sm" onclick="clearMovFilters()" style="font-size:11px;">🧹 Limpar</button>
+      <button class="btn-sm" data-click-action="clearMovFilters" style="font-size:11px;">🧹 Limpar</button>
       <span style="margin-left:auto; color:var(--text-soft); font-size:12px;" id="movCount"></span>
     </div>
 
@@ -503,8 +503,8 @@
         Use se os dados estiverem inconsistentes ou você quiser forçar um reset do que está persistido na nuvem.
       </p>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn-sm" data-editor-only style="background:var(--sem-alerta-bg); border:1px solid var(--sem-alerta); color:var(--sem-alerta);" onclick="resetCacheDados()" title="Apaga os dados parseados salvos no Supabase. Próximo upload vai reconstruir do zero.">🧹 Resetar cache de dados</button>
-        <button class="btn-sm" data-editor-only style="background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" onclick="apagarHistoricoUploads()" title="Apaga todo o histórico de uploads (metadados + arquivos no Storage). Ação irreversível.">🗑️ Limpar histórico de uploads</button>
+        <button class="btn-sm" data-editor-only style="background:var(--sem-alerta-bg); border:1px solid var(--sem-alerta); color:var(--sem-alerta);" data-click-action="resetCacheDados" title="Apaga os dados parseados salvos no Supabase. Próximo upload vai reconstruir do zero.">🧹 Resetar cache de dados</button>
+        <button class="btn-sm" data-editor-only style="background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" data-click-action="apagarHistoricoUploads" title="Apaga todo o histórico de uploads (metadados + arquivos no Storage). Ação irreversível.">🗑️ Limpar histórico de uploads</button>
       </div>
     </div>
   </div>
@@ -524,7 +524,7 @@
   <div class="card">
     <h2>🔔 Cadastros aguardando aprovação <span class="hint" id="pendentesCount"></span>
       <span style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-sm" onclick="renderPendentesAdmin()" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
+        <button class="btn-sm" data-click-action="renderPendentesAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
       </span>
     </h2>
     <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
@@ -553,8 +553,8 @@
   <div class="card">
     <h2>🏗️ Obras
       <span style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-sm primary" onclick="openObraForm()" style="font-size:12px;">➕ Nova obra</button>
-        <button class="btn-sm" onclick="renderObrasAdmin()" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar obras">🔄</button>
+        <button class="btn-sm primary" data-click-action="openObraForm" style="font-size:12px;">➕ Nova obra</button>
+        <button class="btn-sm" data-click-action="renderObrasAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar obras">🔄</button>
       </span>
     </h2>
     <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
@@ -586,8 +586,8 @@
   <div class="card">
     <h2>👥 Editores permitidos
       <span style="display:flex; gap:6px; align-items:center;">
-        <button class="btn-sm primary" onclick="openEditorForm()" style="font-size:12px;">➕ Adicionar editor</button>
-        <button class="btn-sm" onclick="renderEditoresAdmin()" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar editores">🔄</button>
+        <button class="btn-sm primary" data-click-action="openEditorForm" style="font-size:12px;">➕ Adicionar editor</button>
+        <button class="btn-sm" data-click-action="renderEditoresAdmin" style="font-size:12px;" title="Recarregar do Supabase" aria-label="Recarregar editores">🔄</button>
       </span>
     </h2>
     <p style="font-size:12px; color:var(--text-soft); margin-bottom:8px;">
@@ -616,7 +616,7 @@
   </div>
 
   <!-- === FORM MODAL: NOVA/EDITAR OBRA === -->
-  <div id="obraFormBackdrop" aria-hidden="true" onclick="if(event.target===this)closeObraForm()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+  <div id="obraFormBackdrop" aria-hidden="true" data-click-action="closeObraForm" data-backdrop-dismiss="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div role="dialog" aria-modal="true" aria-labelledby="obraFormTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:520px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
       <form id="obraForm" onsubmit="event.preventDefault(); salvarObraForm()">
       <h2 id="obraFormTitle" style="margin:0 0 16px; color:var(--fgr-red-deep); font-size:18px;">Nova obra</h2>
@@ -641,7 +641,7 @@
         </div>
       </div>
       <div class="dialog-actions" style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
-        <button type="button" class="btn-sm" onclick="closeObraForm()">Cancelar</button>
+        <button type="button" class="btn-sm" data-click-action="closeObraForm">Cancelar</button>
         <button type="submit" class="btn-sm primary">💾 Salvar</button>
       </div>
       </form>
@@ -649,12 +649,12 @@
   </div>
 
   <!-- === MODAL UNIFICADO EDITOR (v0.62.2) === -->
-  <div id="editorFormBackdrop" aria-hidden="true" onclick="if(event.target===this)closeEditorForm()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
+  <div id="editorFormBackdrop" aria-hidden="true" data-click-action="closeEditorForm" data-backdrop-dismiss="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5); z-index:1000; align-items:center; justify-content:center;">
     <div role="dialog" aria-modal="true" aria-labelledby="editorFormTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:560px; width:90%; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
       <form id="editorForm" onsubmit="event.preventDefault(); salvarEditorForm()">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <h2 id="editorFormTitle" style="margin:0; color:var(--fgr-red-deep); font-size:18px;">✏️ Editar usuário</h2>
-        <button type="button" onclick="closeEditorForm()" aria-label="Fechar formulário de usuário" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-soft);" title="Fechar (Esc)">×</button>
+        <button type="button" data-click-action="closeEditorForm" aria-label="Fechar formulário de usuário" style="background:none; border:none; font-size:22px; cursor:pointer; color:var(--text-soft);" title="Fechar (Esc)">×</button>
       </div>
 
       <div style="display:grid; gap:12px;">
@@ -676,11 +676,11 @@
           <div id="editorFormRoleLabel" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Papel</div>
           <div role="radiogroup" aria-labelledby="editorFormRoleLabel" style="display:flex; gap:16px; margin-top:6px;">
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-              <input type="radio" name="editorFormRole" value="editor" onchange="editorFormOnRoleChange()" style="cursor:pointer;">
+              <input type="radio" name="editorFormRole" value="editor" data-change-action="editorFormOnRoleChange" style="cursor:pointer;">
               <span>✏️ <strong>Editor</strong></span>
             </label>
             <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-              <input type="radio" name="editorFormRole" value="admin" onchange="editorFormOnRoleChange()" style="cursor:pointer;">
+              <input type="radio" name="editorFormRole" value="admin" data-change-action="editorFormOnRoleChange" style="cursor:pointer;">
               <span>👑 <strong>Admin</strong></span>
             </label>
           </div>
@@ -693,8 +693,8 @@
         <div id="editorFormObrasBlock">
           <div id="editorFormObrasLabel" style="font-size:11px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Obras que pode editar</div>
           <div style="display:flex; gap:6px; margin:6px 0;">
-            <button type="button" class="btn-sm" onclick="editorObrasMarcarTodas(true)" style="font-size:11px;">✅ Todas</button>
-            <button type="button" class="btn-sm" onclick="editorObrasMarcarTodas(false)" style="font-size:11px;">◻️ Nenhuma</button>
+            <button type="button" class="btn-sm" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="true" style="font-size:11px;">✅ Todas</button>
+            <button type="button" class="btn-sm" data-click-action="editorObrasMarcarTodas" data-action-mode="bool" data-action-arg="false" style="font-size:11px;">◻️ Nenhuma</button>
           </div>
           <div id="editorObrasCheckboxes" role="group" aria-labelledby="editorFormObrasLabel" style="display:grid; gap:4px; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--bg-page); max-height:260px; overflow-y:auto;">
             <!-- checkboxes populados dinamicamente -->
@@ -704,9 +704,9 @@
       </div>
 
       <div class="dialog-actions" style="display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
-        <button type="button" id="editorFormDeleteBtn" class="btn-sm" onclick="excluirUsuarioDoModal()" style="font-size:12px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
+        <button type="button" id="editorFormDeleteBtn" class="btn-sm" data-click-action="excluirUsuarioDoModal" style="font-size:12px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Remover TODAS as permissões deste usuário">🗑️ Excluir usuário</button>
         <div style="display:flex; gap:8px;">
-          <button type="button" class="btn-sm" onclick="closeEditorForm()">Cancelar</button>
+          <button type="button" class="btn-sm" data-click-action="closeEditorForm">Cancelar</button>
           <button type="submit" class="btn-sm primary">💾 Salvar</button>
         </div>
       </div>
@@ -933,22 +933,22 @@
     </div>
   </div>
   <div class="form-actions">
-    <button type="button" class="btn-sm" onclick="closeModal()">Cancelar</button>
+    <button type="button" class="btn-sm" data-click-action="closeModal">Cancelar</button>
     <button type="submit" class="btn-sm primary" data-action="save-manual" data-n="">💾 Salvar aditivo manual</button>
   </div>
   </form>
 </template>
 
-<div class="modal-bg" id="modalBg" aria-hidden="true" onclick="if(event.target===this)closeModal()">
+<div class="modal-bg" id="modalBg" aria-hidden="true" data-click-action="closeModal" data-backdrop-dismiss="true">
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Janela do dashboard" tabindex="-1">
-    <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fechar janela">×</button>
+    <button type="button" class="modal-close" data-click-action="closeModal" aria-label="Fechar janela">×</button>
     <div id="modalContent"></div>
   </div>
 </div>
 
-<div class="modal-bg" id="confirmModalBg" aria-hidden="true" onclick="if(event.target===this)closeConfirmModal(false)">
+<div class="modal-bg" id="confirmModalBg" aria-hidden="true" data-click-action="closeConfirmModal" data-action-mode="bool" data-action-arg="false" data-backdrop-dismiss="true">
   <div class="modal" id="confirmModalDialog" role="dialog" aria-modal="true" aria-label="Confirmação" tabindex="-1" style="max-width:520px;">
-    <button type="button" class="modal-close" onclick="closeConfirmModal(false)" aria-label="Fechar confirmação">×</button>
+    <button type="button" class="modal-close" data-click-action="closeConfirmModal" data-action-mode="bool" data-action-arg="false" aria-label="Fechar confirmação">×</button>
     <div id="confirmModalContent"></div>
   </div>
 </div>
@@ -961,22 +961,22 @@
 
 
 <!-- v0.62: Modal de login/cadastro -->
-<div id="loginModalBackdrop" aria-hidden="true" onclick="if(event.target===this)closeLoginModal()" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:2000; align-items:center; justify-content:center;">
+<div id="loginModalBackdrop" aria-hidden="true" data-click-action="closeLoginModal" data-backdrop-dismiss="true" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:2000; align-items:center; justify-content:center;">
   <div role="dialog" aria-modal="true" aria-labelledby="loginModalTitle" tabindex="-1" style="background:white; border-radius:12px; padding:24px; max-width:420px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
       <h2 id="loginModalTitle" style="margin:0; color:var(--fgr-red-deep); font-size:18px;">🔐 Acesso ao Dashboard</h2>
-      <button type="button" onclick="closeLoginModal()" aria-label="Fechar acesso ao dashboard" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-soft);" title="Fechar">×</button>
+      <button type="button" data-click-action="closeLoginModal" aria-label="Fechar acesso ao dashboard" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-soft);" title="Fechar">×</button>
     </div>
 
     <!-- Tabs Login / Signup -->
     <div style="display:flex; gap:4px; border-bottom:2px solid var(--border); margin-bottom:16px;">
-      <button id="loginTabLogin" onclick="switchLoginTab('login')" style="flex:1; padding:8px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-soft);">Entrar</button>
-      <button id="loginTabSignup" onclick="switchLoginTab('signup')" style="flex:1; padding:8px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-soft);">Criar conta</button>
+      <button id="loginTabLogin" data-click-action="switchLoginTab" data-action-mode="arg" data-action-arg="login" style="flex:1; padding:8px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-soft);">Entrar</button>
+      <button id="loginTabSignup" data-click-action="switchLoginTab" data-action-mode="arg" data-action-arg="signup" style="flex:1; padding:8px; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-soft);">Criar conta</button>
     </div>
 
     <!-- PAINEL LOGIN -->
     <div id="loginPanelLogin">
-      <button type="button" onclick="doSignInGoogle()" style="width:100%; padding:10px; border:1px solid var(--border-strong); border-radius:8px; background:white; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+      <button type="button" data-click-action="doSignInGoogle" style="width:100%; padding:10px; border:1px solid var(--border-strong); border-radius:8px; background:white; cursor:pointer; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
         <span style="font-size:16px;">🔷</span> Entrar com Google
       </button>
       <div style="display:flex; align-items:center; gap:10px; margin:12px 0; color:var(--text-lighter); font-size:11px;">

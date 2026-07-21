@@ -185,7 +185,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Separar tabelas em módulos de UI.
 - [ ] Separar cada aba em um módulo de visualização.
 - [ ] Remover aliases e variáveis globais gradualmente.
-- [ ] Remover handlers `onclick`, `onchange` e `oninput` inline.
+- [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
 ### 10. Modernizar dependências e build
 
@@ -302,3 +302,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Leituras de classificações e configurações limitadas à obra ativa e às chaves globais necessárias | `supaLoadDashboardConfig()` |
 | 21/07/2026 | SheetJS retirado do boot e carregado sob demanda, mantendo gráficos com descarte antes do redesenho | `dependency-service.mjs` |
 | 21/07/2026 | Leitura de arquivos com percentual e parsing/conversão de Excel movidos para Web Worker | `excel-service.mjs` |
+| 21/07/2026 | Handlers inline removidos do HTML e dos templates; ações de interface centralizadas por delegação | `ui/actions.mjs` |

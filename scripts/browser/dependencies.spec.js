@@ -159,6 +159,20 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   expect(pageErrors).toEqual([]);
   expect(failedLocalAssets).toEqual([]);
 
+  const initialDarkMode = await page.locator('body').evaluate(body => body.classList.contains('dark'));
+  await page.getByRole('button', { name: /modo claro|modo escuro/i }).click();
+  await expect(page.locator('body')).toHaveClass(initialDarkMode ? /^(?!.*dark)/ : /dark/);
+  await page.getByRole('button', { name: /modo claro|modo escuro/i }).click();
+
+  await page.locator('#authBtn').click();
+  await expect(page.locator('#loginModalBackdrop')).toHaveClass(/show/);
+  await page.getByRole('button', { name: 'Fechar acesso ao dashboard' }).click();
+  await expect(page.locator('#loginModalBackdrop')).not.toHaveClass(/show/);
+
+  await page.getByRole('tab', { name: /Uploads/ }).click();
+  await page.locator('#uploadsAdvancedToggle').click();
+  await expect(page.locator('#uploadsAdvancedBody')).toHaveClass(/open/);
+
   await page.getByRole('tab', { name: /Flows \/ Aditivos/ }).click();
   await expect(page.locator('#tab-flows')).toHaveClass(/active/);
   await expect(page.locator('#tab-btn-flows')).toHaveAttribute('aria-selected', 'true');

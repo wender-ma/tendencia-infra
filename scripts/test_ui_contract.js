@@ -37,6 +37,10 @@ assert(importantCount <= 15, `Orçamento de !important excedido: ${importantCoun
 assert(css.includes('.header-title-text.is-editing'), 'Edição do título precisa usar classe CSS');
 assert(css.includes('.alert-banner.is-critical'), 'Alerta crítico precisa usar classe CSS');
 assert(
+  css.includes('.sync-badge[data-sync-state="saving"]'),
+  'Badge de sincronização precisa usar estado CSS',
+);
+assert(
   (html.match(/class="standalone-modal-bg/g) || []).length === 3,
   'Três diálogos estáticos devem usar o mesmo backdrop',
 );

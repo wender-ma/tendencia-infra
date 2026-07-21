@@ -144,62 +144,7 @@ function getFlowsObraAtiva() {
 // (Supabase = fonte da verdade compartilhada + localStorage como cache/fallback)
 // ============================================================================
 
-// Status global de conexão (pra UI mostrar "salvo" / "offline")
-const SUPA_STATUS = {
-  online: !!SUPA,
-  lastSync: null,
-  lastError: null,
-  pending: 0,
-  batchError: null,
-};
-
-function beginSupaOperation() {
-  if (SUPA_STATUS.pending === 0) SUPA_STATUS.batchError = null;
-  SUPA_STATUS.pending += 1;
-  updateSupaBadge();
-}
-
-function finishSupaOperation(error = null) {
-  if (error) SUPA_STATUS.batchError = error;
-  SUPA_STATUS.pending = Math.max(0, SUPA_STATUS.pending - 1);
-  if (SUPA_STATUS.pending === 0) {
-    if (SUPA_STATUS.batchError) {
-      SUPA_STATUS.lastError = SUPA_STATUS.batchError.message || String(SUPA_STATUS.batchError);
-    } else {
-      SUPA_STATUS.lastError = null;
-      SUPA_STATUS.lastSync = new Date();
-    }
-    SUPA_STATUS.batchError = null;
-  }
-  updateSupaBadge();
-}
-
-function handleUploadRepositoryMutation(error = null, context = '') {
-  if (error) {
-    SUPA_STATUS.lastError = `${context ? context + ': ' : ''}${error.message || error}`;
-  } else {
-    SUPA_STATUS.lastError = null;
-    SUPA_STATUS.lastSync = new Date();
-  }
-  updateSupaBadge();
-}
-
-function getDashboardSyncStatus() {
-  return Object.freeze({
-    state: !SUPA
-      ? 'offline'
-      : SUPA_STATUS.pending > 0
-        ? 'saving'
-        : SUPA_STATUS.lastError
-          ? 'error'
-          : SUPA_STATUS.lastSync
-            ? 'synced'
-            : 'connected',
-    pending: SUPA_STATUS.pending,
-    lastSync: SUPA_STATUS.lastSync?.toISOString() || null,
-    hasError: Boolean(SUPA_STATUS.lastError),
-  });
-}
+// Estado de sincronização fornecido por services/sync-status.mjs.
 
 // ============================================================
 // v0.58a — MULTI-OBRA (multi-tenant)
@@ -555,13 +500,10 @@ async function supaSaveAllData(kinds) {
   const rows = buildUploadDashboardRows(kinds);
   const { error } = await SUPA.from('dashboard_config').upsert(rows, { onConflict: 'chave' });
   if (error) {
-    SUPA_STATUS.lastError = error.message;
-    updateSupaBadge();
+    markDashboardSyncError(error);
     throw error;
   }
-  SUPA_STATUS.lastError = null;
-  SUPA_STATUS.lastSync = new Date();
-  updateSupaBadge();
+  markDashboardSynced();
   console.log(`[SUPA] ${rows.length} dataset(s) persistido(s) para obra ${OBRA_ATIVA}`);
   return rows;
 }
@@ -719,53 +661,7 @@ async function commitPreparedUpload({ file, storageType, items, groupId = null, 
 // Persistência do histórico e Storage é fornecida por services/upload-repository.mjs.
 
 // LAST_UPLOADS declarado na seção ESTADO GLOBAL acima
-// ---------- Badge visual de sincronização ----------
-function updateSupaBadge() {
-  // badges translúcidos brancos no header escuro (só ícone muda o "tom" de mensagem)
-  const el = document.getElementById('supaBadge');
-  if (!el) return;
-  const baseBg = 'rgba(255,255,255,0.15)';
-  const baseBorder = 'rgba(255,255,255,0.3)';
-  el.style.color = 'var(--text-on-dark)';
-  el.style.border = '1px solid ' + baseBorder;
-  el.style.background = baseBg;
-  el.setAttribute('aria-busy', SUPA_STATUS.pending > 0 ? 'true' : 'false');
-  if (!SUPA) {
-    el.dataset.syncState = 'offline';
-    el.textContent = '🔴 Offline';
-    el.style.background = 'rgba(220,38,38,0.35)';
-    el.style.borderColor = 'rgba(255,150,150,0.4)';
-    el.title = 'Não conectado ao Supabase - dados só ficam salvos aqui';
-    return;
-  }
-  if (SUPA_STATUS.pending > 0) {
-    el.dataset.syncState = 'saving';
-    el.textContent = SUPA_STATUS.pending > 1
-      ? `↻ Salvando ${SUPA_STATUS.pending} alterações...`
-      : '↻ Salvando...';
-    el.style.background = 'rgba(3,105,161,0.4)';
-    el.style.borderColor = 'rgba(125,211,252,0.55)';
-    el.title = 'Sincronização em andamento. Aguarde antes de fechar a página.';
-    return;
-  }
-  if (SUPA_STATUS.lastError) {
-    el.dataset.syncState = 'error';
-    el.textContent = '⚠️ Falha ao salvar';
-    el.style.background = 'rgba(180,83,9,0.35)';
-    el.style.borderColor = 'rgba(255,200,100,0.4)';
-    el.title = 'A última sincronização falhou. Tente novamente ou confira a conexão.';
-    return;
-  }
-  if (SUPA_STATUS.lastSync) {
-    el.dataset.syncState = 'synced';
-    el.textContent = '☁️ Sincronizado';
-    el.title = 'Última sincronização: ' + SUPA_STATUS.lastSync.toLocaleTimeString('pt-BR');
-    return;
-  }
-  el.dataset.syncState = 'connected';
-  el.textContent = '🔗 Conectado';
-  el.title = 'Conectado ao Supabase (ainda sem sincronização recente)';
-}
+// Badge de sincronização fornecido por services/sync-status.mjs.
 
 // Interface e autorização de autenticação fornecidas por ui/auth-ui.mjs.
 
@@ -945,13 +841,11 @@ updateSupaBadge();
       const el = document.getElementById('headerTitle');
       const savedTitle = localStorage.getItem(HEADER_KEY);
       if (el && savedTitle) el.textContent = savedTitle;
-      SUPA_STATUS.lastSync = new Date();
-      updateSupaBadge();
+      markDashboardSynced();
     }
   } catch (e) {
     console.warn('[SUPA] boot err:', e);
-    SUPA_STATUS.lastError = e.message;
-    updateSupaBadge();
+    markDashboardSyncError(e);
   }
   // Aplica manuais + classificações carregadas
   applyManuals();

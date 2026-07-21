@@ -42,6 +42,7 @@ import {
 } from './services/dependency-service.mjs';
 import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
 import { createLogger, installLogger } from './services/logger.mjs';
+import { createSyncStatusService, installLegacySyncStatus } from './services/sync-status.mjs';
 import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
 import {
   createUploadRepository,
@@ -73,6 +74,10 @@ installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();
 installLogger(logger);
+const syncStatusService = createSyncStatusService({
+  isOnline: () => Boolean(window.SUPA),
+});
+installLegacySyncStatus(syncStatusService);
 const appState = createAppState();
 installLegacyStateGlobals(appState);
 const performanceService = createPerformanceMonitor();
@@ -218,6 +223,7 @@ Promise.resolve()
       dashboardRepository,
       shell: dashboardShell,
       logger,
+      syncStatus: syncStatusService,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
       uploadRepository,
       uploadTransactions: Object.freeze({ execute: executeUploadTransaction }),

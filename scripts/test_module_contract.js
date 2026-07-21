@@ -23,6 +23,7 @@ const dashboardRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/dashboard-repository.mjs'),
   'utf8',
 );
+const syncStatus = fs.readFileSync(path.join(root, 'assets/js/services/sync-status.mjs'), 'utf8');
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
   'utf8',
@@ -124,6 +125,14 @@ assert(
 assert(
   dashboardRepository.includes('export function installLegacyDashboardRepository'),
   'Adaptador temporário do repositório de dados ausente',
+);
+assert(
+  syncStatus.includes('export function createSyncStatusService'),
+  'Serviço de status de sincronização ausente',
+);
+assert(
+  !syncStatus.includes('.style.'),
+  'Status de sincronização deve usar classes ou atributos CSS',
 );
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
 for (const repositoryContract of [
@@ -320,6 +329,11 @@ for (const removedLegacyContract of [
   'async function doSignInEmail(',
   'async function doSignUpEmail(',
   'async function handleAuthClick(',
+  'const SUPA_STATUS =',
+  'function beginSupaOperation(',
+  'function finishSupaOperation(',
+  'function getDashboardSyncStatus(',
+  'function updateSupaBadge(',
   'async function renderObrasAdmin(',
   'async function renderEditoresAdmin(',
   'async function renderPendentesAdmin(',

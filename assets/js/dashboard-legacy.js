@@ -1561,82 +1561,34 @@ function restoreInMemoryUploadState(snapshot) {
 }
 
 async function commitPreparedUpload({ file, storageType, items, groupId = null, memorySnapshot }) {
-  const kinds = items.map(item => item.kind);
-  const transaction = {
-    stage: 'preparação',
-    storagePath: null,
-    records: [],
-    activations: [],
-    dashboardSnapshot: null,
-    dashboardPersisted: false,
-  };
-
-  try {
-    transaction.stage = 'leitura do estado anterior';
-    transaction.dashboardSnapshot = await supaCaptureDashboardRows(kinds);
-
-    transaction.stage = 'armazenamento do arquivo';
-    transaction.storagePath = await supaUploadFile(storageType, file);
-
-    transaction.stage = 'registro do histórico';
-    for (const item of items) {
-      const record = await supaCreateUploadRecord(
+  return executeUploadTransaction(
+    { file, storageType, items, groupId, memorySnapshot },
+    {
+      captureDashboardRows: supaCaptureDashboardRows,
+      uploadFile: supaUploadFile,
+      createRecord: item => supaCreateUploadRecord(
         item.kind,
-        file.name,
-        file.size,
-        item.linhas,
-        transaction.storagePath,
-        groupId
-      );
-      transaction.records.push(record);
-    }
-
-    transaction.stage = 'persistência dos dados';
-    await supaSaveAllData(kinds);
-    transaction.dashboardPersisted = true;
-
-    transaction.stage = 'ativação do novo dataset';
-    for (const record of transaction.records) {
-      transaction.activations.push(await supaActivateUploadRecord(record));
-    }
-
-    transaction.activations.forEach(({ active }) => {
-      LAST_UPLOADS[active.tipo] = active;
-    });
-    setUploadRuntimeState(kinds, 'active');
-    return {
-      storagePath: transaction.storagePath,
-      records: transaction.activations.map(item => item.active),
-    };
-  } catch (error) {
-    const cleanupErrors = [];
-    const attemptCleanup = async (label, operation) => {
-      try { await operation(); }
-      catch (cleanupError) {
-        cleanupErrors.push(`${label}: ${cleanupError.message || cleanupError}`);
-        console.error(`[UPLOAD] rollback ${label}:`, cleanupError);
-      }
-    };
-
-    for (const activation of [...transaction.activations].reverse()) {
-      await attemptCleanup('restaurar arquivo ativo', () => supaRollbackUploadActivation(activation));
-    }
-    if (transaction.dashboardPersisted) {
-      await attemptCleanup('restaurar dados anteriores', () => supaRestoreDashboardRows(transaction.dashboardSnapshot));
-    }
-    await attemptCleanup('marcar tentativa como falha', () => supaMarkUploadRecordsFailed(transaction.records));
-    if (transaction.storagePath) {
-      await attemptCleanup('remover arquivo incompleto', () => supaRemoveStoredUpload(transaction.storagePath));
-    }
-    await attemptCleanup('remover metadata incompleta', () => supaDeleteUploadRecords(transaction.records));
-    restoreInMemoryUploadState(memorySnapshot);
-    setUploadRuntimeState(kinds, 'failed', error.message || String(error));
-
-    const cleanupMessage = cleanupErrors.length
-      ? ` Rollback parcial: ${cleanupErrors.join('; ')}`
-      : ' Alterações parciais foram desfeitas.';
-    throw new Error(`Falha em ${transaction.stage}: ${error.message || error}.${cleanupMessage}`);
-  }
+        item.fileName,
+        item.fileSize,
+        item.rows,
+        item.storagePath,
+        item.groupId,
+      ),
+      saveAllData: supaSaveAllData,
+      activateRecord: supaActivateUploadRecord,
+      rollbackActivation: supaRollbackUploadActivation,
+      restoreDashboardRows: supaRestoreDashboardRows,
+      markRecordsFailed: supaMarkUploadRecordsFailed,
+      removeStoredUpload: supaRemoveStoredUpload,
+      deleteRecords: supaDeleteUploadRecords,
+      restoreMemoryState: restoreInMemoryUploadState,
+      setRuntimeState: setUploadRuntimeState,
+      onActive: activeRecords => activeRecords.forEach(record => {
+        LAST_UPLOADS[record.tipo] = record;
+      }),
+      reportCleanupError: reportNonFatalError,
+    },
+  );
 }
 
 async function supaCreateUploadRecord(tipo, nomeArquivo, tamanhoBytes, linhas, storagePath, uploadGroupId) {

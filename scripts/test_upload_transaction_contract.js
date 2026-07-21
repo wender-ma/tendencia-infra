@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
+const path = require('path');
 const { loadProjectSources } = require('./load_project_sources');
 
 const { javascript } = loadProjectSources();
+const transaction = fs.readFileSync(
+  path.resolve(__dirname, '../assets/js/services/upload-transaction.mjs'),
+  'utf8',
+);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -21,18 +27,19 @@ assert(!persistence.includes('Promise.all('), 'Persistência não pode usar writ
 assert(persistence.includes('throw error;'), 'Falha de persistência precisa interromper o upload');
 
 const commit = extract('async function commitPreparedUpload(', 'async function supaCreateUploadRecord(');
-const createIndex = commit.indexOf('supaCreateUploadRecord(');
-const persistIndex = commit.indexOf('supaSaveAllData(');
-const activateIndex = commit.indexOf('supaActivateUploadRecord(');
+assert(commit.includes('return executeUploadTransaction('), 'Legado não usa o coordenador extraído');
+const createIndex = transaction.indexOf('operations.createRecord(');
+const persistIndex = transaction.indexOf('operations.saveAllData(');
+const activateIndex = transaction.indexOf('operations.activateRecord(');
 assert(createIndex >= 0 && createIndex < persistIndex && persistIndex < activateIndex, 'Ordem obrigatória: metadata inativa, dados, ativação');
 [
-  'supaRollbackUploadActivation(',
-  'supaRestoreDashboardRows(',
-  'supaMarkUploadRecordsFailed(',
-  'supaDeleteUploadRecords(',
-  'supaRemoveStoredUpload(',
-  'restoreInMemoryUploadState(',
-].forEach(call => assert(commit.includes(call), `Rollback incompleto: ${call}`));
+  'operations.rollbackActivation(',
+  'operations.restoreDashboardRows(',
+  'operations.markRecordsFailed(',
+  'operations.deleteRecords(',
+  'operations.removeStoredUpload(',
+  'operations.restoreMemoryState?.(',
+].forEach(call => assert(transaction.includes(call), `Rollback incompleto: ${call}`));
 
 const metadata = extract('async function supaCreateUploadRecord(', 'async function supaActivateUploadRecord(');
 assert(metadata.includes("observacao: 'upload_state:processing'"), 'Metadata nova precisa começar em processing');

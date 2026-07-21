@@ -231,7 +231,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes unitários para os três parsers.
 - [x] Criar testes de autorização por papel e obra.
 - [x] Criar testes de XSS para campos importados.
-- [ ] Criar testes de integração para upload e rollback.
+- [x] Criar testes de integração para upload, falhas por etapa e rollback parcial.
 - [ ] Criar testes E2E para login, troca de obra, edição e administração.
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
@@ -310,3 +310,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Lighthouse integrado ao CI; ApexCharts sob demanda elevou performance medida de 37 para 73 | `scripts/run_lighthouse.js` |
 | 21/07/2026 | Script clássico legado minificado após emissão, preservando fonte legível e nomes globais | `vite.config.mjs` |
 | 21/07/2026 | Testes XSS ampliados e caminhos de Storage endurecidos contra esquemas e travessia | `test_xss_contract.js` |
+| 21/07/2026 | Coordenador de upload extraído e testado com commit, falha de ativação e rollback parcial | `upload-transaction.mjs` |

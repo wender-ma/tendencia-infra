@@ -19,6 +19,10 @@ import {
 import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
 import { createLogger, installLogger } from './services/logger.mjs';
 import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
+import {
+  executeUploadTransaction,
+  installLegacyUploadTransaction,
+} from './services/upload-transaction.mjs';
 
 function showBootstrapError(error) {
   window.dashboardLogger?.error('Boot/carregar dashboard', error);
@@ -53,6 +57,7 @@ const modalService = createModalService();
 installLegacyModalGlobals(modalService);
 installLegacyDependencyGlobals();
 installLegacyUploadPolicy();
+installLegacyUploadTransaction();
 installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
@@ -81,6 +86,7 @@ Promise.resolve()
       excel: excelService,
       logger,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
+      uploadTransactions: Object.freeze({ execute: executeUploadTransaction }),
     });
 
     const dashboardScript = document.createElement('script');

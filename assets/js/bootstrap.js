@@ -24,6 +24,10 @@ import { createExcelService, installLegacyExcelGlobals } from './services/excel-
 import { createLogger, installLogger } from './services/logger.mjs';
 import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
 import {
+  createUploadRepository,
+  installLegacyUploadRepository,
+} from './services/upload-repository.mjs';
+import {
   executeUploadTransaction,
   installLegacyUploadTransaction,
 } from './services/upload-transaction.mjs';
@@ -68,6 +72,23 @@ installLegacyViewStateGlobals(viewStateService);
 installLegacyDependencyGlobals();
 installLegacyUploadPolicy();
 installLegacyUploadTransaction();
+const uploadRepository = createUploadRepository({
+  getClient: () => window.SUPA,
+  getActiveProject: () => window.OBRA_ATIVA,
+  getCurrentUser: () => window.AUTH?.user,
+  isEditor: () => window.isEditorDaObraAtiva?.() === true,
+  canManageKind: (kind) =>
+    window.isGlobalUploadKind?.(kind)
+      ? window.isAdminGeral?.() === true
+      : window.isEditorDaObraAtiva?.() === true,
+  requirePermission: (kind, description) =>
+    window.requireUploadPermission?.(kind, description) === true,
+  retry: (operation) => window.supaRetry(operation),
+  maxPerType: DASHBOARD_CONFIG.max_uploads_por_tipo,
+  onMutation: (error, context) => window.handleUploadRepositoryMutation?.(error, context),
+  warn: (context, error) => logger.warn(context, error),
+});
+installLegacyUploadRepository(uploadRepository);
 installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);
@@ -98,6 +119,7 @@ Promise.resolve()
       excel: excelService,
       logger,
       uploadPolicy: Object.freeze({ validate: validateUploadFile }),
+      uploadRepository,
       uploadTransactions: Object.freeze({ execute: executeUploadTransaction }),
     });
 

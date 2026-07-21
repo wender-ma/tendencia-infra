@@ -181,7 +181,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar módulo único de estado.
 - [x] Separar parsers de Tendência, Flows e Gestões.
 - [x] Separar modais, toasts e loading em módulos de UI.
-- [ ] Separar uploads em módulo próprio.
+- [ ] Separar uploads em módulo próprio (política, transação e repositório de histórico/Storage já extraídos; handlers de tela pendentes).
 - [ ] Separar tabelas em módulos de UI.
 - [ ] Separar cada aba em um módulo de visualização.
 - [ ] Remover aliases e variáveis globais gradualmente (catálogos estáticos de projeção já isolados em módulo próprio).

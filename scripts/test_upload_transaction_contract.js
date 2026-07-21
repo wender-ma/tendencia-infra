@@ -9,24 +9,33 @@ const transaction = fs.readFileSync(
   path.resolve(__dirname, '../assets/js/services/upload-transaction.mjs'),
   'utf8',
 );
+const repository = fs.readFileSync(
+  path.resolve(__dirname, '../assets/js/services/upload-repository.mjs'),
+  'utf8',
+);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function extract(start, end) {
-  const from = javascript.indexOf(start);
-  const to = javascript.indexOf(end, from + start.length);
+function extractFrom(contents, start, end) {
+  const from = contents.indexOf(start);
+  const to = contents.indexOf(end, from + start.length);
   assert(from >= 0 && to > from, `Bloco ausente: ${start}`);
-  return javascript.slice(from, to);
+  return contents.slice(from, to);
 }
+
+const extract = (start, end) => extractFrom(javascript, start, end);
 
 const persistence = extract('async function supaSaveAllData(', '// v0.58b: reset dos dados');
 assert(persistence.includes(".upsert(rows, { onConflict: 'chave' })"), 'Datasets precisam ser persistidos em um único upsert');
 assert(!persistence.includes('Promise.all('), 'Persistência não pode usar writes independentes em paralelo');
 assert(persistence.includes('throw error;'), 'Falha de persistência precisa interromper o upload');
 
-const commit = extract('async function commitPreparedUpload(', 'async function supaCreateUploadRecord(');
+const commit = extract(
+  'async function commitPreparedUpload(',
+  '// Persistência do histórico e Storage é fornecida',
+);
 assert(commit.includes('return executeUploadTransaction('), 'Legado não usa o coordenador extraído');
 const createIndex = transaction.indexOf('operations.createRecord(');
 const persistIndex = transaction.indexOf('operations.saveAllData(');
@@ -41,11 +50,11 @@ assert(createIndex >= 0 && createIndex < persistIndex && persistIndex < activate
   'operations.restoreMemoryState?.(',
 ].forEach(call => assert(transaction.includes(call), `Rollback incompleto: ${call}`));
 
-const metadata = extract('async function supaCreateUploadRecord(', 'async function supaActivateUploadRecord(');
+const metadata = extractFrom(repository, 'async function createRecord(', 'async function activateRecord(');
 assert(metadata.includes("observacao: 'upload_state:processing'"), 'Metadata nova precisa começar em processing');
 assert(metadata.includes('is_active: false'), 'Metadata nova não pode começar ativa');
 
-const activation = extract('async function supaActivateUploadRecord(', 'async function supaRollbackUploadActivation(');
+const activation = extractFrom(repository, 'async function activateRecord(', 'async function rollbackActivation(');
 assert(activation.includes("observacao: 'upload_state:active'"), 'Ativação precisa persistir o estado active');
 assert(activation.includes('previousIds'), 'Ativação precisa preservar referência ao ativo anterior');
 
@@ -62,10 +71,10 @@ assert(historyActivation.includes('supaCaptureDashboardRows('), 'Reativação pr
 assert(historyActivation.indexOf('supaSaveAllData(') < historyActivation.indexOf('supaActivateUploadRecord('), 'Reativação só pode ativar após persistir');
 assert(historyActivation.includes('supaRestoreDashboardRows('), 'Reativação precisa restaurar dados em caso de falha');
 
-assert(javascript.includes(".in('observacao', ['upload_state:processing', 'upload_state:failed'])"), 'Limpeza de uploads interrompidos ausente');
+assert(repository.includes(".in('observacao', ['upload_state:processing', 'upload_state:failed'])"), 'Limpeza de uploads interrompidos ausente');
 assert(javascript.includes('await supaCleanupIncompleteUploads()'), 'Recuperação de uploads incompletos não roda no boot');
 assert(javascript.includes("state.status === 'processing'"), 'Troca de obra precisa ser bloqueada durante uploads');
-assert(javascript.includes("observacao: 'upload_state:failed'"), 'Tentativas incompletas precisam ser marcadas como failed');
+assert(repository.includes("observacao: 'upload_state:failed'"), 'Tentativas incompletas precisam ser marcadas como failed');
 assert(!javascript.includes('supaLogUpload('), 'Fluxo antigo de ativação antecipada ainda existe');
 
 console.log('Contrato de uploads: commit tardio e rollback compensatório OK');

@@ -8,6 +8,10 @@ const config = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
 const projectionCatalog = fs.readFileSync(path.join(root, 'assets/js/data/projection-catalog.mjs'), 'utf8');
 const staticViews = fs.readFileSync(path.join(root, 'assets/js/ui/static-views.mjs'), 'utf8');
+const uploadRepository = fs.readFileSync(
+  path.join(root, 'assets/js/services/upload-repository.mjs'),
+  'utf8',
+);
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 
@@ -32,6 +36,15 @@ assert(staticViews.includes("from '../../views/dialogs.html?raw'"), 'Diálogos e
 assert(staticViews.includes('export function mountStaticViews'), 'Montagem das abas estáticas ausente');
 assert(staticViews.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
 assert(!staticViews.includes('.innerHTML'), 'Montagem das abas não deve depender de innerHTML');
+for (const repositoryContract of [
+  'export function createUploadRepository',
+  'export function installLegacyUploadRepository',
+  "from('upload_history')",
+  "from(UPLOADS_BUCKET)",
+  'enforceRollingBackup',
+]) {
+  assert(uploadRepository.includes(repositoryContract), `Contrato do repositório de uploads ausente: ${repositoryContract}`);
+}
 
 for (const catalogContract of [
   'export const PROJECTION_CATALOG',
@@ -77,6 +90,9 @@ for (const removedLegacyContract of [
   'const HIERARQUIA =',
   'const SERVICOS_META =',
   'const INSUMOS_META =',
+  'async function supaCreateUploadRecord(',
+  'async function supaUploadFile(',
+  'async function supaLoadUploadsLatest(',
 ]) {
   assert(!legacy.includes(removedLegacyContract), `Responsabilidade ainda presente no legado: ${removedLegacyContract}`);
 }

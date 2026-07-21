@@ -1074,11 +1074,12 @@ function posCarregarDados() {
 // no Supabase: 1 linha por n_alteracao com colunas
 async function supaLoadClassifications() {
   if (!SUPA) return null;
-  // DATA_F é global (multi-obra), então carregar classificações de TODAS as obras
-  // Chave do map agora é "codigo_obra:n_alteracao" pra evitar colisão de n_alteracao entre obras
+  if (!OBRA_ATIVA) return null;
   try {
     const { data, error } = await supaRetry(function() {
-      return SUPA.from('flow_classifications').select('*');
+      return SUPA.from('flow_classifications')
+        .select('codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status')
+        .eq('codigo_obra', OBRA_ATIVA);
     });
     if (error) { console.warn('[SUPA] loadClass err:', error); SUPA_STATUS.lastError = error.message; return null; }
     const map = {};
@@ -1285,11 +1286,25 @@ async function supaDeleteMov(id) {
 // ---------- DASHBOARD CONFIG (chave/valor genérico) ----------
 async function supaLoadDashboardConfig() {
   if (!SUPA) return {};
-  // Carrega todas as chaves de uma vez (globais + prefixadas por obra).
-  // Retorno: { 'header_title': '...', '42-21O:dados_tendencia': '...', ... }
+  if (!OBRA_ATIVA) return {};
+  const prefix = `${OBRA_ATIVA}:`;
+  const requiredKeys = [
+    'header_title',
+    'indice_correcao',
+    'card3_modo',
+    DATA_KEYS.DATA_F,
+    DATA_KEYS.HISTORICO,
+    DATA_KEYS.PROJ_RAW,
+    prefix + 'evol_global',
+    prefix + DATA_KEYS.GESTAO_LABEL,
+    prefix + DATA_KEYS.DATA_T,
+    prefix + DATA_KEYS.DATA_F,
+  ];
   try {
     const { data, error } = await supaRetry(function() {
-      return SUPA.from('dashboard_config').select('*');
+      return SUPA.from('dashboard_config')
+        .select('chave,valor')
+        .in('chave', requiredKeys);
     });
     if (error) { console.warn('[SUPA] loadCfg err:', error); return {}; }
     const map = {};

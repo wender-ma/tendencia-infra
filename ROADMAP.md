@@ -200,8 +200,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 ### 11. Melhorar performance
 
-- [ ] Consultar somente configurações necessárias para a obra ativa.
-- [ ] Evitar carregar todas as classificações de todas as obras no boot.
+- [x] Consultar somente configurações necessárias para a obra ativa.
+- [x] Evitar carregar todas as classificações de todas as obras no boot.
 - [ ] Retirar datasets grandes de `dashboard_config`.
 - [ ] Avaliar tabelas normalizadas ou JSON versionado no Storage.
 - [x] Renderizar somente a aba ativa.
@@ -298,3 +298,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop | `.github/workflows/ci.yml` |
 | 21/07/2026 | Manual alinhado às permissões por obra, falhas offline, retenção e parsers atuais | `index.html` |
 | 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados | `docs/operations.md` |
+| 21/07/2026 | Leituras de classificações e configurações limitadas à obra ativa e às chaves globais necessárias | `supaLoadDashboardConfig()` |

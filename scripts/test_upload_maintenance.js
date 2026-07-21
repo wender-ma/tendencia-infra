@@ -8,8 +8,7 @@ const { pathToFileURL } = require('url');
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/ui/upload-maintenance.mjs'),
   );
-  const { buildResetCacheKeys, createUploadMaintenance, installLegacyUploadMaintenance } =
-    await import(moduleUrl.href);
+  const { buildResetCacheKeys, createUploadMaintenance } = await import(moduleUrl.href);
 
   assert.deepStrictEqual(buildResetCacheKeys(' OBRA-A '), [
     'OBRA-A:dados_tendencia',
@@ -67,12 +66,7 @@ const { pathToFileURL } = require('url');
   assert(events.some(([name]) => name === 'render-uploads'));
   assert(events.some(([name]) => name === 'render-headers'));
 
-  const target = {};
-  installLegacyUploadMaintenance(service, target);
-  assert.strictEqual(target.resetCacheDados, service.resetCacheDados);
-  assert.strictEqual(target.apagarHistoricoUploads, service.apagarHistoricoUploads);
-
-  console.log('Manutenção de uploads: chaves, confirmações e adaptador legado OK');
+  console.log('Manutenção de uploads: chaves e confirmações OK');
 })().catch((error) => {
   console.error(error);
   process.exit(1);

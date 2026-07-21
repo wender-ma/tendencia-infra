@@ -102,10 +102,3 @@ export function createUploadMaintenance({
 
   return Object.freeze({ resetCacheDados, apagarHistoricoUploads });
 }
-
-export function installLegacyUploadMaintenance(service, target = window) {
-  Object.assign(target, {
-    resetCacheDados: service.resetCacheDados,
-    apagarHistoricoUploads: service.apagarHistoricoUploads,
-  });
-}

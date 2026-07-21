@@ -251,9 +251,11 @@ export function installLegacyDashboardShell(shell, target = window) {
     refreshHeaderSubtitle: shell.refreshHeaderSubtitle,
     restaurarAbaAtiva: shell.restaurarAbaAtiva,
     salvarAbaAtiva: shell.salvarAbaAtiva,
-    toggleHeaderEdit: shell.toggleHeaderEdit,
-    toggleTheme: shell.toggleTheme,
     verificarDadosDesatualizados: shell.verificarDadosDesatualizados,
   });
   shell.install();
+  return Object.freeze({
+    toggleHeaderEdit: shell.toggleHeaderEdit,
+    toggleTheme: shell.toggleTheme,
+  });
 }

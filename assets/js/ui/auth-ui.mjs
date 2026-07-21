@@ -338,11 +338,6 @@ export function createAuthUi({
 
 export function installLegacyAuthUi(service, target = window) {
   Object.assign(target, {
-    closeLoginModal: service.closeLoginModal,
-    doSignInEmail: service.doSignInEmail,
-    doSignInGoogle: service.doSignInGoogle,
-    doSignUpEmail: service.doSignUpEmail,
-    handleAuthClick: service.handleAuthClick,
     handleAuthServiceStateChanged: service.handleAuthServiceStateChanged,
     isGlobalUploadKind,
     openLoginModal: service.openLoginModal,
@@ -350,8 +345,15 @@ export function installLegacyAuthUi(service, target = window) {
     requireEditor: service.requireEditor,
     requireEditorForActiveProject: service.requireEditorForActiveProject,
     requireUploadPermission: service.requireUploadPermission,
-    switchLoginTab: service.switchLoginTab,
     syncEditingControls: service.syncEditingControls,
     updateAuthUI: service.updateAuthUI,
+  });
+  return Object.freeze({
+    closeLoginModal: service.closeLoginModal,
+    doSignInEmail: service.doSignInEmail,
+    doSignInGoogle: service.doSignInGoogle,
+    doSignUpEmail: service.doSignUpEmail,
+    handleAuthClick: service.handleAuthClick,
+    switchLoginTab: service.switchLoginTab,
   });
 }

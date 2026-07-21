@@ -141,8 +141,12 @@ assert(
   'Serviço de exportação XLSX ausente',
 );
 assert(
-  dashboardExport.includes('export function installLegacyDashboardExports'),
-  'Adaptador temporário das exportações XLSX ausente',
+  dashboardExport.includes('export function createDashboardExportActions'),
+  'Ações explícitas das exportações XLSX ausentes',
+);
+assert(
+  !dashboardExport.includes('installLegacyDashboardExports'),
+  'Exportações XLSX voltaram a publicar adaptador global',
 );
 assert(
   dashboardRepository.includes('export function createDashboardRepository'),
@@ -199,8 +203,8 @@ assert(
   'Manutenção de uploads não foi modularizada',
 );
 assert(
-  uploadMaintenance.includes('export function installLegacyUploadMaintenance'),
-  'Adaptador temporário da manutenção de uploads ausente',
+  !uploadMaintenance.includes('installLegacyUploadMaintenance'),
+  'Manutenção de uploads voltou a publicar adaptador global',
 );
 assert(
   !coordinatorSources.includes('async function resetCacheDados(') &&

@@ -20,19 +20,36 @@ function actionArguments(element, event) {
   return [];
 }
 
-function dispatchAction(element, event, attribute, target, reportError) {
+export function createActionRegistry({ fallback } = {}) {
+  const handlers = new Map();
+
+  function register(entries) {
+    for (const [name, handler] of Object.entries(entries || {})) {
+      if (typeof handler !== 'function') throw new TypeError(`Ação inválida: ${name}`);
+      handlers.set(name, handler);
+    }
+  }
+
+  function resolve(name) {
+    return handlers.get(name) || fallback?.(name);
+  }
+
+  return Object.freeze({ register, resolve });
+}
+
+function dispatchAction(element, event, attribute, actions, root, reportError) {
   if (element.matches(':disabled,[aria-disabled="true"]')) return;
   if (element.dataset.backdropDismiss === 'true' && event.target !== element) return;
   if (element.tagName === 'A' || element.tagName === 'FORM') event.preventDefault();
 
   const fileTarget = element.dataset.fileTarget;
   if (fileTarget) {
-    target.document.getElementById(fileTarget)?.click();
+    root.getElementById(fileTarget)?.click();
     return;
   }
 
   const actionName = element.getAttribute(attribute);
-  const action = target[actionName];
+  const action = actions.resolve(actionName);
   if (typeof action !== 'function') {
     reportError(
       `Interface/ação ausente/${actionName}`,
@@ -53,14 +70,14 @@ function dispatchAction(element, event, attribute, target, reportError) {
 
 export function installActionDelegation({
   root = document,
-  target = window,
+  actions = createActionRegistry(),
   reportError = () => {},
 } = {}) {
   for (const [eventName, attribute] of Object.entries(EVENT_ATTRIBUTES)) {
     root.addEventListener(eventName, (event) => {
       const element = event.target.closest?.(`[${attribute}]`);
       if (!element) return;
-      dispatchAction(element, event, attribute, target, reportError);
+      dispatchAction(element, event, attribute, actions, root, reportError);
     });
   }
 

@@ -17,7 +17,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(
     () =>
-      typeof window.handleAuthClick === 'function' &&
+      typeof window.dashboardServices?.actions?.resolve('handleAuthClick') === 'function' &&
       window.AppState === window.dashboardState &&
       window.AUTH?.ready === true &&
       window.dashboardPerformance?.snapshot().boot.completed === true,
@@ -215,7 +215,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       },
       hasExternalConfig: window.dashboardConfig?.dashboard === window.CONFIG,
       hasApexCharts: typeof window.ApexCharts === 'function',
-      hasDashboardHandler: typeof window.handleAuthClick === 'function',
+      hasDashboardHandler:
+        typeof window.dashboardServices.actions.resolve('handleAuthClick') === 'function',
       runtimeGlobalsRemoved: [
         'reportNonFatalError',
         'runAsyncSafely',
@@ -247,6 +248,19 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
         'checkEditorPermission',
         'applySession',
         'initAuth',
+        'exportarDetalhamentoXLSX',
+        'exportarFlowsXLSX',
+        'exportarControleProjXLSX',
+        'handleAuthClick',
+        'doSignInEmail',
+        'doSignInGoogle',
+        'doSignUpEmail',
+        'closeLoginModal',
+        'switchLoginTab',
+        'toggleTheme',
+        'toggleHeaderEdit',
+        'resetCacheDados',
+        'apagarHistoricoUploads',
       ].every((name) => !Object.prototype.hasOwnProperty.call(window, name)),
       status: document.getElementById('supaBadge')?.textContent,
     };
@@ -313,6 +327,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
 
   const delegatedSubmits = await page.evaluate(() => {
     const calls = [];
+    const actions = window.dashboardServices.actions;
     const handlers = {
       obraForm: 'salvarObraForm',
       editorForm: 'salvarEditorForm',
@@ -320,12 +335,12 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
       signupEmailForm: 'doSignUpEmail',
     };
     for (const [formId, handlerName] of Object.entries(handlers)) {
-      const original = window[handlerName];
-      window[handlerName] = () => calls.push(handlerName);
+      const original = actions.resolve(handlerName);
+      actions.register({ [handlerName]: () => calls.push(handlerName) });
       const event = new Event('submit', { bubbles: true, cancelable: true });
       const accepted = document.getElementById(formId).dispatchEvent(event);
       calls.push(`${formId}:${accepted ? 'navegou' : 'prevenido'}`);
-      window[handlerName] = original;
+      actions.register({ [handlerName]: original });
     }
     return calls;
   });

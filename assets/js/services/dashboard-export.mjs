@@ -333,8 +333,8 @@ export function createDashboardExportService({
   return Object.freeze({ exportDetails, exportFlows, exportProjectionControl });
 }
 
-export function installLegacyDashboardExports(service, target = window) {
-  Object.assign(target, {
+export function createDashboardExportActions(service) {
+  return Object.freeze({
     exportarDetalhamentoXLSX: service.exportDetails,
     exportarFlowsXLSX: service.exportFlows,
     exportarControleProjXLSX: service.exportProjectionControl,

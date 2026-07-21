@@ -5,7 +5,7 @@ import { installLegacyImportParsers } from './parsers/index.mjs';
 import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService, installLegacyFeedbackGlobals } from './ui/feedback.mjs';
 import { createModalService, installLegacyModalGlobals } from './ui/modals.mjs';
-import { installActionDelegation } from './ui/actions.mjs';
+import { createActionRegistry, installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
@@ -14,10 +14,7 @@ import {
   createProjectController,
   installLegacyProjectController,
 } from './ui/project-controller.mjs';
-import {
-  createUploadMaintenance,
-  installLegacyUploadMaintenance,
-} from './ui/upload-maintenance.mjs';
+import { createUploadMaintenance } from './ui/upload-maintenance.mjs';
 import { createPaginationService } from './ui/pagination.mjs';
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
@@ -28,8 +25,8 @@ import {
 } from './services/supabase-service.js';
 import { createAuthService, installLegacyAuthGlobals } from './services/auth-service.js';
 import {
+  createDashboardExportActions,
   createDashboardExportService,
-  installLegacyDashboardExports,
 } from './services/dashboard-export.mjs';
 import {
   createDashboardRepository,
@@ -74,6 +71,8 @@ installLegacyConfig();
 installLegacyProjectionCatalog();
 const logger = createLogger();
 installLogger(logger);
+const actionRegistry = createActionRegistry({ fallback: (name) => window[name] });
+actionRegistry.register({ print: () => window.print() });
 const supabaseService = createSupabaseService(SUPABASE_CONFIG, {
   reportError: (context, error) => logger.warn(context, error),
 });
@@ -148,7 +147,7 @@ const dashboardExportService = createDashboardExportService({
   toast: (...args) => window.authToast?.(...args),
   reportError: (context, error) => logger.warn(context, error),
 });
-installLegacyDashboardExports(dashboardExportService);
+actionRegistry.register(createDashboardExportActions(dashboardExportService));
 const dashboardRepository = createDashboardRepository({
   getClient: () => supabaseService.client,
   getActiveProject: () => window.OBRA_ATIVA,
@@ -285,7 +284,7 @@ const dashboardShell = createDashboardShell({
   },
   reportError: (context, error) => logger.warn(context, error),
 });
-installLegacyDashboardShell(dashboardShell);
+actionRegistry.register(installLegacyDashboardShell(dashboardShell));
 
 Promise.resolve()
   .then(async () => {
@@ -350,7 +349,7 @@ Promise.resolve()
       applyProjectionLocks: () => window.applyLocksToUI?.(),
       reportError: (context, error) => logger.warn(context, error),
     });
-    installLegacyAuthUi(authUi);
+    actionRegistry.register(installLegacyAuthUi(authUi));
     const uploadMaintenance = createUploadMaintenance({
       dashboardRepository,
       uploadRepository,
@@ -376,8 +375,9 @@ Promise.resolve()
       reload: () => window.location.reload(),
       reportError: (context, error) => logger.warn(context, error),
     });
-    installLegacyUploadMaintenance(uploadMaintenance);
+    actionRegistry.register(uploadMaintenance);
     installActionDelegation({
+      actions: actionRegistry,
       reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
     });
     const application = createApplication({
@@ -406,6 +406,7 @@ Promise.resolve()
     });
     window.dashboardServices = Object.freeze({
       application,
+      actions: actionRegistry,
       supabase: supabaseService,
       auth: authService,
       authUi,

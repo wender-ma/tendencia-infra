@@ -194,9 +194,9 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Configurar Vite ou ferramenta equivalente.
 - [ ] Gerar assets minificados e com hash (CSS e bootstrap concluídos; script legado externo recebe hash, mas ainda não é minificado).
 - [x] Remover scripts bloqueantes do `head`.
-- [ ] Externalizar favicon e logo em arquivos otimizados.
+- [x] Externalizar favicon e logo em arquivos otimizados.
 - [ ] Configurar Content Security Policy sem `unsafe-inline`.
-- [ ] Configurar headers de segurança adequados ao ambiente de hospedagem.
+- [x] Configurar headers de segurança adequados ao ambiente de hospedagem.
 
 ### 11. Melhorar performance
 
@@ -246,8 +246,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Mostrar progresso real em uploads grandes.
 - [ ] Revisar estados vazios, loading e erro de cada aba.
 - [ ] Revisar textos e termos técnicos apresentados ao usuário.
-- [ ] Adicionar `meta description`.
-- [ ] Adicionar `robots noindex, nofollow` se o dashboard for interno.
+- [x] Adicionar `meta description`.
+- [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
 - [ ] Adicionar Open Graph somente se o produto for público.
 - [ ] Revisar impressão e exportação em diferentes navegadores.
 
@@ -290,3 +290,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Estado compartilhado e aliases temporários extraídos do legado; autenticação ligada diretamente à obra ativa central | `assets/js/state.js` |
 | 21/07/2026 | Parsers de Tendência, Flows e Gestões extraídos; layouts por cabeçalho, CSV robusto, relatórios e testes unitários adicionados | `assets/js/parsers/` |
 | 21/07/2026 | Feedback, loading e pilha de modais extraídos; confirmação dinâmica passou a usar APIs DOM seguras | `assets/js/ui/` |
+| 21/07/2026 | Favicon e logo externalizados; metadados de dashboard interno e headers defensivos adicionados | `public/_headers` |

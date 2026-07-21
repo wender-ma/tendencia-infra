@@ -11,6 +11,7 @@ const expectedStylesheets = [
   'assets/css/components.css',
   'assets/css/dashboard.css',
 ];
+const expectedImages = ['assets/images/favicon.png', 'assets/images/logo-fgr.png'];
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -24,6 +25,7 @@ assert(
   `Ordem de estilos inesperada: ${linkedStylesheets.join(', ')}`,
 );
 assert(!/<style\b/i.test(html), 'index.html voltou a conter CSS embutido');
+assert(!html.includes('data:image/'), 'index.html voltou a conter imagens Base64');
 
 for (const stylesheet of expectedStylesheets) {
   const absolutePath = path.join(root, stylesheet);
@@ -37,4 +39,10 @@ for (const stylesheet of expectedStylesheets) {
   assert(openingBraces === closingBraces, `Chaves CSS desbalanceadas em ${stylesheet}`);
 }
 
-console.log('Contrato de assets: quatro folhas CSS externas, ordenadas e íntegras OK');
+for (const image of expectedImages) {
+  const contents = fs.readFileSync(path.join(root, image));
+  assert(contents.subarray(1, 4).toString() === 'PNG', `Imagem PNG inválida: ${image}`);
+  assert(html.includes(`src="${image}"`) || html.includes(`href="${image}"`), `Imagem não referenciada: ${image}`);
+}
+
+console.log('Contrato de assets: CSS e imagens externas, ordenadas e íntegras OK');

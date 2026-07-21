@@ -4,6 +4,14 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
+
+function listSourceFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const absolutePath = path.join(directory, entry.name);
+    return entry.isDirectory() ? listSourceFiles(absolutePath) : [absolutePath];
+  });
+}
+
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 const uploadRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-repository.mjs'),
@@ -18,8 +26,9 @@ const modularSources = [
   'assets/js/performance.mjs',
   ...fs.readdirSync(path.join(root, 'assets/js/parsers')).map(file => `assets/js/parsers/${file}`),
   ...fs.readdirSync(path.join(root, 'assets/js/services')).map(file => `assets/js/services/${file}`),
-  ...fs.readdirSync(path.join(root, 'assets/js/ui')).map(file => `assets/js/ui/${file}`),
+  ...listSourceFiles(path.join(root, 'assets/js/ui')).map(file => path.relative(root, file)),
 ].map(file => [file, fs.readFileSync(path.join(root, file), 'utf8')]);
+const allJavaScript = [legacy, ...modularSources.map(([_file, source]) => source)].join('\n');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -31,7 +40,7 @@ for (const [file, source] of modularSources) {
 }
 
 const innerHtmlCount = (legacy.match(/\.innerHTML\s*=/g) || []).length;
-const replaceChildrenCount = (legacy.match(/\.replaceChildren\(/g) || []).length;
+const replaceChildrenCount = (allJavaScript.match(/\.replaceChildren\(/g) || []).length;
 assert(innerHtmlCount <= 80, `Baseline de innerHTML aumentou: ${innerHtmlCount}`);
 assert(replaceChildrenCount >= 24, 'Limpezas de DOM voltaram a usar innerHTML');
 

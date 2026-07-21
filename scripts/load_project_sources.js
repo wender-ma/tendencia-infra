@@ -18,6 +18,7 @@ function loadProjectSources() {
   const javascript = [
     readProjectFile('assets/js/dashboard-legacy.js'),
     readProjectFile('assets/js/ui/uploads.mjs'),
+    readProjectFile('assets/js/ui/views/history.mjs'),
   ].join('\n');
   return {
     root,

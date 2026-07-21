@@ -10,6 +10,7 @@ import { createPaginationService, installLegacyPaginationGlobals } from './ui/pa
 import { createViewStateService, installLegacyViewStateGlobals } from './ui/view-states.mjs';
 import { mountStaticViews } from './ui/static-views.mjs';
 import { installLegacyUploadUI } from './ui/uploads.mjs';
+import { installLegacyHistoryView } from './ui/views/history.mjs';
 import { createAppState, installLegacyStateGlobals } from './state.js';
 import {
   createSupabaseService,
@@ -91,6 +92,7 @@ const uploadRepository = createUploadRepository({
 });
 installLegacyUploadRepository(uploadRepository);
 installLegacyUploadUI();
+installLegacyHistoryView();
 installActionDelegation();
 const excelService = createExcelService();
 installLegacyExcelGlobals(excelService);

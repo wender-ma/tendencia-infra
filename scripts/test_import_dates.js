@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { loadProjectSources } = require('./load_project_sources');
 
-const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
-const start = html.indexOf('function normalizeDateYear');
-const end = html.indexOf('// v0.58b: parseGestoes', start);
-if (start < 0 || end < 0) throw new Error('Bloco de datas não encontrado no index.html');
+const { javascript } = loadProjectSources();
+const start = javascript.indexOf('function normalizeDateYear');
+const end = javascript.indexOf('// v0.58b: parseGestoes', start);
+if (start < 0 || end < 0) throw new Error('Bloco de datas não encontrado no JavaScript principal');
 
 const context = { Date };
-vm.runInNewContext(html.slice(start, end), context);
+vm.runInNewContext(javascript.slice(start, end), context);
 
 const cases = [
   ['2026-07-20', 'br', '2026-07-20'],

@@ -1,19 +1,17 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
+const { loadProjectSources } = require('./load_project_sources');
 
-const projectRoot = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
+const { javascript } = loadProjectSources();
 
 function extractSource(startMarker, endMarker) {
-  const start = html.indexOf(startMarker);
-  const end = html.indexOf(endMarker, start);
+  const start = javascript.indexOf(startMarker);
+  const end = javascript.indexOf(endMarker, start);
   if (start < 0 || end < 0) {
     throw new Error(`Bloco não encontrado: ${startMarker}`);
   }
-  return html.slice(start, end);
+  return javascript.slice(start, end);
 }
 
 const validationSource = extractSource('const IMPORT_HEADER_RULES =', '// parseNum agora');

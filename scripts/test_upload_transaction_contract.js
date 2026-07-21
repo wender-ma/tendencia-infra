@@ -1,19 +1,18 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const { loadProjectSources } = require('./load_project_sources');
 
-const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
+const { javascript } = loadProjectSources();
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
 function extract(start, end) {
-  const from = html.indexOf(start);
-  const to = html.indexOf(end, from + start.length);
+  const from = javascript.indexOf(start);
+  const to = javascript.indexOf(end, from + start.length);
   assert(from >= 0 && to > from, `Bloco ausente: ${start}`);
-  return html.slice(from, to);
+  return javascript.slice(from, to);
 }
 
 const persistence = extract('async function supaSaveAllData(', '// v0.58b: reset dos dados');
@@ -56,10 +55,10 @@ assert(historyActivation.includes('supaCaptureDashboardRows('), 'Reativação pr
 assert(historyActivation.indexOf('supaSaveAllData(') < historyActivation.indexOf('supaActivateUploadRecord('), 'Reativação só pode ativar após persistir');
 assert(historyActivation.includes('supaRestoreDashboardRows('), 'Reativação precisa restaurar dados em caso de falha');
 
-assert(html.includes(".in('observacao', ['upload_state:processing', 'upload_state:failed'])"), 'Limpeza de uploads interrompidos ausente');
-assert(html.includes('await supaCleanupIncompleteUploads()'), 'Recuperação de uploads incompletos não roda no boot');
-assert(html.includes("state.status === 'processing'"), 'Troca de obra precisa ser bloqueada durante uploads');
-assert(html.includes("observacao: 'upload_state:failed'"), 'Tentativas incompletas precisam ser marcadas como failed');
-assert(!html.includes('supaLogUpload('), 'Fluxo antigo de ativação antecipada ainda existe');
+assert(javascript.includes(".in('observacao', ['upload_state:processing', 'upload_state:failed'])"), 'Limpeza de uploads interrompidos ausente');
+assert(javascript.includes('await supaCleanupIncompleteUploads()'), 'Recuperação de uploads incompletos não roda no boot');
+assert(javascript.includes("state.status === 'processing'"), 'Troca de obra precisa ser bloqueada durante uploads');
+assert(javascript.includes("observacao: 'upload_state:failed'"), 'Tentativas incompletas precisam ser marcadas como failed');
+assert(!javascript.includes('supaLogUpload('), 'Fluxo antigo de ativação antecipada ainda existe');
 
 console.log('Contrato de uploads: commit tardio e rollback compensatório OK');

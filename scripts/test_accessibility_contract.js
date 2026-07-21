@@ -2,9 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { loadProjectSources } = require('./load_project_sources');
 
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const { html, javascript, source } = loadProjectSources();
 const css = ['tokens.css', 'base.css', 'components.css', 'dashboard.css']
   .map(file => fs.readFileSync(path.join(root, 'assets', 'css', file), 'utf8'))
   .join('\n');
@@ -70,14 +71,14 @@ assert(/:where\([^}]+\):focus-visible\s*{/.test(css), 'Estilo global de foco vis
 assert(css.includes('--text-lighter:   #6B7280'), 'Contraste de texto secundário no tema claro não foi corrigido');
 assert(css.includes('--text-lighter:   #94A3B8'), 'Contraste de texto secundário no tema escuro não foi corrigido');
 assert(/id="loadingOverlay"[^>]*role="status"[^>]*aria-live="polite"/.test(html), 'Loading não é anunciado');
-assert(/function authToast[\s\S]*?setAttribute\('aria-live'/.test(html), 'Toasts não configuram aria-live');
+assert(/function authToast[\s\S]*?setAttribute\('aria-live'/.test(javascript), 'Toasts não configuram aria-live');
 assert(/id="loginErro"[^>]*role="alert"/.test(html) && /id="signupErro"[^>]*role="alert"/.test(html), 'Erros de autenticação não são anunciados');
 
 ['obraForm', 'editorForm', 'loginEmailForm', 'signupEmailForm'].forEach(id => {
   assert(new RegExp(`<form\\b[^>]*id="${id}"[^>]*onsubmit=`).test(html), `Formulário #${id} sem evento submit`);
 });
-assert(html.includes('data-modal-form="manual"'), 'Aditivo manual precisa usar formulário semântico');
-assert(html.includes('data-modal-form="movement"'), 'Movimentação precisa usar formulário semântico');
+assert(source.includes('data-modal-form="manual"'), 'Aditivo manual precisa usar formulário semântico');
+assert(source.includes('data-modal-form="movement"'), 'Movimentação precisa usar formulário semântico');
 assert(!/id="(?:loginSenha|signupSenha2)"[^>]*onkeydown=/.test(html), 'Login não deve simular submit no keydown');
 
 const sortableHeaders = [...html.matchAll(/<th\b[^>]*data-sort(?:-flow|-proj)?="[^"]+"[^>]*>/gi)];
@@ -85,10 +86,10 @@ assert(sortableHeaders.length >= 20, 'Cabeçalhos ordenáveis esperados não for
 sortableHeaders.forEach(header => {
   assert(/aria-sort="none"/.test(header[0]), `Cabeçalho ordenável sem aria-sort na linha ${lineAt(header.index)}`);
 });
-assert(html.includes('function bindSortableHeaders('), 'Runtime de ordenação acessível ausente');
-assert(html.includes("event.key !== 'Enter' && event.key !== ' '"), 'Ordenação por Enter/Espaço ausente');
-assert(/data-idx="\$\{origIdx\}" tabindex="0"/.test(html), 'Linhas de detalhamento não entram na ordem de foco');
-assert(html.includes("addEventListener('keydown', activateDetailRow)"), 'Detalhamento sem ativação por teclado');
-assert(html.includes("addEventListener('keydown', activateProjectionRow)"), 'Projeção sem ativação por teclado');
+assert(javascript.includes('function bindSortableHeaders('), 'Runtime de ordenação acessível ausente');
+assert(javascript.includes("event.key !== 'Enter' && event.key !== ' '"), 'Ordenação por Enter/Espaço ausente');
+assert(/data-idx="\$\{origIdx\}" tabindex="0"/.test(javascript), 'Linhas de detalhamento não entram na ordem de foco');
+assert(javascript.includes("addEventListener('keydown', activateDetailRow)"), 'Detalhamento sem ativação por teclado');
+assert(javascript.includes("addEventListener('keydown', activateProjectionRow)"), 'Projeção sem ativação por teclado');
 
 console.log('Contrato de acessibilidade: landmarks, formulários, ordenação, foco e anúncios OK');

@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 20/07/2026
+Última atualização: 21/07/2026
 
 ## Como acompanhar
 
@@ -188,10 +188,10 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 ### 10. Modernizar dependências e build
 
 - [x] Criar `package.json` e lockfile.
-- [ ] Fixar versões exatas de Supabase, SheetJS e ApexCharts.
+- [x] Fixar versões exatas de Supabase, SheetJS e ApexCharts.
 - [x] Configurar Vite ou ferramenta equivalente.
-- [ ] Gerar assets minificados e com hash (CSS concluído; JavaScript ainda inline).
-- [ ] Remover scripts bloqueantes do `head`.
+- [ ] Gerar assets minificados e com hash (CSS e bootstrap concluídos; script legado externo recebe hash, mas ainda não é minificado).
+- [x] Remover scripts bloqueantes do `head`.
 - [ ] Externalizar favicon e logo em arquivos otimizados.
 - [ ] Configurar Content Security Policy sem `unsafe-inline`.
 - [ ] Configurar headers de segurança adequados ao ambiente de hospedagem.
@@ -282,3 +282,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Vite configurado com lockfile, suíte centralizada em `npm test` e build de produção validado | `package.json` |
 | 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |
 | 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports | `scripts/test_accessibility_contract.js` |
+| 21/07/2026 | Dependências de navegador fixadas e carregadas localmente pelo Vite; CDNs removidos, JavaScript principal externalizado e smoke test de navegador criado | `assets/js/bootstrap.js` |

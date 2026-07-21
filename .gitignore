@@ -6,3 +6,5 @@ backups/snapshots/
 backups/backup.log
 node_modules/
 dist/
+playwright-report/
+test-results/

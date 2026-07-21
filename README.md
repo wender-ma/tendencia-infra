@@ -10,6 +10,7 @@ Dashboard de tendência orçamentária
 ├── package-lock.json       # Versões exatas das dependências instaladas
 ├── assets/
 │   ├── css/                # Tokens, base, componentes e estilos do dashboard
+│   ├── js/                 # Bootstrap do Vite e JavaScript principal externo
 │   └── images/             # Imagens e capturas de tela
 ├── backups/                # Cópias antigas do index.html
 │   └── snapshots/           # Backups automáticos compactados
@@ -26,6 +27,8 @@ Dashboard de tendência orçamentária
 - `index.html`: arquivo principal do dashboard.
 - `package.json`: scripts do Vite e suíte de contratos do projeto.
 - `assets/css/`: folhas de estilo externas carregadas na ordem `tokens`, `base`, `components` e `dashboard`.
+- `assets/js/bootstrap.js`: carrega Supabase, SheetJS e ApexCharts pelos pacotes locais antes de iniciar o dashboard.
+- `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
@@ -82,9 +85,10 @@ Os testes podem também ser executados individualmente:
 ./scripts/test_responsive_contract.js
 ./scripts/test_upload_transaction_contract.js
 ./scripts/test_admin_transaction_contract.js
+./scripts/test_dependency_contract.js
 ```
 
-Os testes cobrem cabeçalhos, datas, contrato dos diálogos e ausência de blocos de erro silenciosos.
+Os testes cobrem cabeçalhos, datas, diálogos, dependências locais e ausência de blocos de erro silenciosos.
 
 ## Desenvolvimento e build
 
@@ -99,6 +103,8 @@ npm run dev
 
 O Vite disponibiliza a aplicação em `http://localhost:5173/` por padrão.
 
+As bibliotecas do navegador são instaladas pelo gerenciador de pacotes e empacotadas pelo Vite. O SheetJS usa o pacote oficial `0.20.3`, distribuído pelo CDN oficial do projeto porque o registro npm parou na versão vulnerável `0.18.5`.
+
 Para gerar e validar o pacote de produção:
 
 ```bash
@@ -107,6 +113,13 @@ npm run preview
 ```
 
 O build é criado em `dist/`, que não deve ser versionado.
+
+Para executar o smoke test no Chromium, incluindo o build e o servidor de preview:
+
+```bash
+npx playwright install chromium
+npm run test:browser
+```
 
 ## Backup frequente
 

@@ -6,12 +6,19 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/run_contract_tests.js"
+    "test": "node scripts/run_contract_tests.js",
+    "test:browser": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "vite": "8.1.5"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.100.0",
+    "apexcharts": "4.7.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

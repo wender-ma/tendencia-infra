@@ -2,9 +2,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { loadProjectSources } = require('./load_project_sources');
 
 const root = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const { javascript } = loadProjectSources();
 const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260720203000_admin_transactions.sql'),
   'utf8'
@@ -21,7 +22,7 @@ function extract(source, start, end) {
   return source.slice(from, to);
 }
 
-const deleteObra = extract(html, 'async function deletarObra(', '// -------------- EDITORES');
+const deleteObra = extract(javascript, 'async function deletarObra(', '// -------------- EDITORES');
 assert(deleteObra.includes("SUPA.rpc('admin_delete_obra'"), 'Exclusão de obra precisa usar a RPC transacional');
 [
   "from('projecao_movimentacoes').delete()",
@@ -31,12 +32,12 @@ assert(deleteObra.includes("SUPA.rpc('admin_delete_obra'"), 'Exclusão de obra p
 ].forEach(call => assert(!deleteObra.includes(call), `Exclusão parcial ainda presente: ${call}`));
 assert(deleteObra.includes('cleanupDeletedObraStorage('), 'Arquivos da obra precisam ser limpos após o commit');
 
-const saveUser = extract(html, 'async function salvarEditorForm(', '// Excluir usuário direto do modal');
+const saveUser = extract(javascript, 'async function salvarEditorForm(', '// Excluir usuário direto do modal');
 assert(saveUser.includes("SUPA.rpc('admin_replace_user_permissions'"), 'Permissões precisam ser substituídas via RPC');
 assert(!saveUser.includes("from('editores_permitidos').delete()"), 'Permissões não podem ser apagadas antes do novo escopo');
 assert(!saveUser.includes("from('editores_permitidos').insert("), 'Permissões não podem ser inseridas em chamada separada');
 
-const deleteUser = extract(html, 'async function excluirUsuarioDoModal(', '// -------------- PENDENTES');
+const deleteUser = extract(javascript, 'async function excluirUsuarioDoModal(', '// -------------- PENDENTES');
 assert(deleteUser.includes("SUPA.rpc('admin_delete_user_permissions'"), 'Exclusão de usuário precisa usar a RPC protegida');
 
 [

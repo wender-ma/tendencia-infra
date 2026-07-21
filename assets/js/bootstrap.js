@@ -10,6 +10,11 @@ import {
   installLegacySupabaseGlobals,
 } from './services/supabase-service.js';
 import { createAuthService, installLegacyAuthGlobals } from './services/auth-service.js';
+import {
+  ensureApexCharts,
+  ensureXlsx,
+  installLegacyDependencyGlobals,
+} from './services/dependency-service.mjs';
 
 function showBootstrapError(error) {
   console.error('[BOOT] Falha ao carregar o dashboard:', error);
@@ -40,9 +45,10 @@ const feedbackService = createFeedbackService();
 installLegacyFeedbackGlobals(feedbackService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
+installLegacyDependencyGlobals();
 
-Promise.all([import('xlsx'), import('apexcharts')])
-  .then(([xlsxModule, apexchartsModule]) => {
+ensureApexCharts()
+  .then(() => {
     const supabaseService = createSupabaseService(SUPABASE_CONFIG);
     installLegacySupabaseGlobals(supabaseService);
     const authService = createAuthService({
@@ -59,9 +65,8 @@ Promise.all([import('xlsx'), import('apexcharts')])
       feedback: feedbackService,
       modals: modalService,
       performance: performanceService,
+      dependencies: Object.freeze({ ensureXlsx, ensureApexCharts }),
     });
-    window.XLSX = xlsxModule;
-    window.ApexCharts = apexchartsModule.default;
 
     const dashboardScript = document.createElement('script');
     dashboardScript.src = dashboardUrl;

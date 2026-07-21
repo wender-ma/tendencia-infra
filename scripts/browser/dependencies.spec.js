@@ -17,7 +17,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.goto('/');
   await page.waitForFunction(() => (
     typeof window.supabase?.createClient === 'function'
-    && typeof window.XLSX?.read === 'function'
+    && typeof window.ensureXlsx === 'function'
     && typeof window.ApexCharts === 'function'
     && typeof window.handleAuthClick === 'function'
     && window.AppState === window.dashboardState
@@ -31,6 +31,10 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     const feedbackService = window.dashboardServices.feedback;
     const modalService = window.dashboardServices.modals;
     const performanceService = window.dashboardServices.performance;
+    const xlsxLoadedAtBoot = performance.getEntriesByType('resource')
+      .some(entry => /\/xlsx-[^/]+\.js(?:$|\?)/.test(entry.name));
+    const xlsxModule = await window.ensureXlsx();
+    const xlsxLoadedOnDemand = typeof xlsxModule.read === 'function' && window.XLSX === xlsxModule;
     const authStartsReadOnly = !window.isAdminGeral() && !window.isEditorDaObraAtiva();
     const admin = authService.resolvePermissions([
       { role: 'admin', status: 'active', codigo_obra: null },
@@ -75,6 +79,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
 
     return {
       sheetJsVersion: window.XLSX.version,
+      xlsxLoadedAtBoot,
+      xlsxLoadedOnDemand,
       hasSupabase: typeof window.supabase.createClient === 'function',
       hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
       hasAuthService: authService.state === window.AUTH,
@@ -112,6 +118,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
 
   expect(runtime).toMatchObject({
     sheetJsVersion: '0.20.3',
+    xlsxLoadedAtBoot: false,
+    xlsxLoadedOnDemand: true,
     hasSupabase: true,
     hasSupabaseService: true,
     hasAuthService: true,

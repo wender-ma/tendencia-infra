@@ -205,12 +205,13 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [ ] Retirar datasets grandes de `dashboard_config`.
 - [ ] Avaliar tabelas normalizadas ou JSON versionado no Storage.
 - [x] Renderizar somente a aba ativa.
+- [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [ ] Paginar ou virtualizar tabelas grandes.
 - [ ] Processar Excel em Web Worker.
 - [ ] Revisar o limite de upload de 50 MB com medições reais.
 - [x] Medir tempo de boot, tempo de parsing/renderização e quantidade de nós no DOM.
-- [ ] Manter o descarte de instâncias ApexCharts antes de redesenhar.
+- [x] Manter o descarte de instâncias ApexCharts antes de redesenhar.
 
 ### 12. Fortalecer os parsers
 
@@ -299,3 +300,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Manual alinhado às permissões por obra, falhas offline, retenção e parsers atuais | `index.html` |
 | 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados | `docs/operations.md` |
 | 21/07/2026 | Leituras de classificações e configurações limitadas à obra ativa e às chaves globais necessárias | `supaLoadDashboardConfig()` |
+| 21/07/2026 | SheetJS retirado do boot e carregado sob demanda, mantendo gráficos com descarte antes do redesenho | `dependency-service.mjs` |

@@ -7,6 +7,10 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
+const dependencyService = fs.readFileSync(
+  path.join(root, 'assets/js/services/dependency-service.mjs'),
+  'utf8',
+);
 const supabaseService = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const dashboardPath = path.join(root, 'assets/js/dashboard-legacy.js');
 
@@ -35,8 +39,6 @@ assert(fs.existsSync(dashboardPath), 'Script principal externo ausente');
 assert(fs.statSync(dashboardPath).size > 100_000, 'Script principal externo parece incompleto');
 
 for (const expectedImport of [
-  "import('xlsx')",
-  "import('apexcharts')",
   "from './dashboard-legacy.js?url'",
   "from './config.js'",
   "from './services/supabase-service.js'",
@@ -44,11 +46,21 @@ for (const expectedImport of [
   assert(bootstrap.includes(expectedImport), `Import ausente no bootstrap: ${expectedImport}`);
 }
 
+for (const expectedImport of ["import('xlsx')", "import('apexcharts')"]) {
+  assert(
+    dependencyService.includes(expectedImport),
+    `Import sob demanda ausente: ${expectedImport}`,
+  );
+}
+assert(
+  !bootstrap.includes("import('xlsx')"),
+  'SheetJS voltou a ser solicitado diretamente durante o bootstrap',
+);
+
 assert(supabaseService.includes("from '@supabase/supabase-js'"), 'SDK do Supabase ausente no servico local');
 assert(supabaseService.includes('target.supabase'), 'Compatibilidade global do Supabase ausente');
 
-for (const expectedGlobal of ['window.XLSX', 'window.ApexCharts']) {
-  assert(bootstrap.includes(expectedGlobal), `Compatibilidade global ausente: ${expectedGlobal}`);
-}
+assert(dependencyService.includes('window.XLSX'), 'Compatibilidade global do SheetJS ausente');
+assert(dependencyService.includes('window.ApexCharts'), 'Compatibilidade global do ApexCharts ausente');
 
 console.log('Contrato de dependencias: pacotes locais, fixos e sem scripts CDN OK');

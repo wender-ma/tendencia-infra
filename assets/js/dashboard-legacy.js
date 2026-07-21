@@ -4786,8 +4786,13 @@ async function handleExcelUpload(ev) {
     return;
   }
 
-  if (typeof XLSX === 'undefined') {
-    authToast('❌ Biblioteca XLSX não carregou. Recarregue a página e tente de novo.', 'err', 5000);
+  try {
+    _renderExcelProgress('⏳ Carregando leitor de planilhas...');
+    await ensureXlsx();
+  } catch (error) {
+    reportNonFatalError('Excel/carregar biblioteca', error);
+    authToast('❌ Não foi possível carregar o leitor de planilhas. Tente novamente.', 'err', 5000);
+    _renderExcelProgress(null);
     return;
   }
 
@@ -5456,8 +5461,8 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     const isExcel = /\.xlsx?$|\.xlsm$/i.test(alvo.nome_arquivo);
     // 3) Re-parseia
     if (isExcel) {
+      await ensureXlsx();
       const buf = await resp.arrayBuffer();
-      if (typeof XLSX === 'undefined') throw new Error('Biblioteca XLSX não carregou');
       const wb = XLSX.read(buf, { type: 'array', cellDates: true });
       const sheetNames = wb.SheetNames || [];
       const mapping = _autoDetectSheets(sheetNames);
@@ -6474,13 +6479,14 @@ function projCollapseAll() {
 }
 
 // Exporta a Projeção Detalhada COMPLETA (hierarquia toda expandida, sem filtros) em Excel
-function exportarProjecaoDetalhada() {
+async function exportarProjecaoDetalhada() {
   try {
     const _proj = (typeof getProjRawObraAtiva === 'function') ? getProjRawObraAtiva() : PROJ_RAW;
     if (!_proj || !_proj.length) {
       authToast('⚠️ Não há dados de Projeção para exportar. Carregue o CSV de Gestões primeiro.', 'warn', 5000);
       return;
     }
+    await ensureXlsx();
     const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
     const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
     const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
@@ -7797,12 +7803,13 @@ function _metaBase(fonteAba) {
 // ============================================================================
 // EXPORT 1 — DETALHAMENTO
 // ============================================================================
-function exportarDetalhamentoXLSX() {
+async function exportarDetalhamentoXLSX() {
   try {
     if (!Array.isArray(DATA_T) || !DATA_T.length) {
       authToast('⚠️ Sem dados de Tendência carregados para esta obra. Suba o arquivo primeiro.', 'warn', 5000);
       return;
     }
+    await ensureXlsx();
     // Ignora filtros — exporta TUDO da obra ativa (DATA_T já é por obra)
     const linhas = DATA_T.map(d => ({
       'Grupo': d.grupo || '',
@@ -7842,13 +7849,14 @@ function exportarDetalhamentoXLSX() {
 // ============================================================================
 // EXPORT 2 — FLOWS / ADITIVOS
 // ============================================================================
-function exportarFlowsXLSX() {
+async function exportarFlowsXLSX() {
   try {
     const flows = (typeof getFlowsObraAtiva === 'function') ? getFlowsObraAtiva() : [];
     if (!flows.length) {
       authToast('⚠️ Sem aditivos carregados para esta obra. Suba o CSV do Flows primeiro.', 'warn', 5000);
       return;
     }
+    await ensureXlsx();
     const refletidoLabel = { sim: 'Sim', nao: 'Não', pendente: 'Pendente' };
     const tipoLabel = {
       aumento_real: 'Aumento real',
@@ -7894,13 +7902,14 @@ function exportarFlowsXLSX() {
 // ============================================================================
 // EXPORT 3 — CONTROLE DE PROJEÇÃO (substitui exportMovs CSV)
 // ============================================================================
-function exportarControleProjXLSX() {
+async function exportarControleProjXLSX() {
   try {
     const movs = (PROJ_CTRL_STATE?.movimentacoes) || [];
     if (!movs.length) {
       authToast('⚠️ Sem movimentações cadastradas para esta obra.', 'warn', 5000);
       return;
     }
+    await ensureXlsx();
     // Ordenar por data (mais antiga primeiro)
     const movsOrd = [...movs].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
 

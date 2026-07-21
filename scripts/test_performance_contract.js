@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
@@ -8,6 +9,10 @@ function assert(condition, message) {
 }
 
 async function main() {
+  const legacy = fs.readFileSync(
+    path.resolve(__dirname, '../assets/js/dashboard-legacy.js'),
+    'utf8',
+  );
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/performance.mjs'),
   ).href;
@@ -31,6 +36,11 @@ async function main() {
   assert(snapshot.operations.sync.count === 1, 'Operação síncrona não contabilizada');
   assert(snapshot.operations.async.count === 1, 'Operação assíncrona não contabilizada');
   assert(snapshot.operations.failed.count === 1, 'Operação com erro não contabilizada');
+  assert(
+    (legacy.match(/new ApexCharts\(/g) || []).length === 1
+      && legacy.includes('_apexCharts[containerId].destroy()'),
+    'Gráficos devem passar pelo helper que descarta a instância anterior',
+  );
   console.log('Contrato de performance: boot, DOM, parser/render e erros mensuráveis OK');
 }
 

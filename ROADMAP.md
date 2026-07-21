@@ -175,9 +175,9 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar `assets/css/base.css`.
 - [x] Criar `assets/css/components.css`.
 - [x] Criar `assets/css/dashboard.css`.
-- [ ] Criar módulo de configuração e inicialização.
+- [x] Criar módulo de configuração e inicialização.
 - [ ] Criar módulo de autenticação e autorização.
-- [ ] Criar serviço de acesso ao Supabase.
+- [x] Criar serviço de acesso ao Supabase.
 - [ ] Criar módulo único de estado.
 - [ ] Separar parsers de Tendência, Flows e Gestões.
 - [ ] Separar uploads, modais, toasts e tabelas em módulos de UI.
@@ -283,3 +283,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas | `supabase/migrations/20260720203000_admin_transactions.sql` |
 | 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports | `scripts/test_accessibility_contract.js` |
 | 21/07/2026 | Dependências de navegador fixadas e carregadas localmente pelo Vite; CDNs removidos, JavaScript principal externalizado e smoke test de navegador criado | `assets/js/bootstrap.js` |
+| 21/07/2026 | Configuração e credenciais públicas extraídas do legado; cliente e retry centralizados em serviço Supabase com suporte a variáveis de ambiente | `assets/js/services/supabase-service.js` |

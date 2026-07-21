@@ -10,7 +10,7 @@ Dashboard de tendência orçamentária
 ├── package-lock.json       # Versões exatas das dependências instaladas
 ├── assets/
 │   ├── css/                # Tokens, base, componentes e estilos do dashboard
-│   ├── js/                 # Bootstrap do Vite e JavaScript principal externo
+│   ├── js/                 # Configuração, serviços, bootstrap e código legado
 │   └── images/             # Imagens e capturas de tela
 ├── backups/                # Cópias antigas do index.html
 │   └── snapshots/           # Backups automáticos compactados
@@ -28,6 +28,8 @@ Dashboard de tendência orçamentária
 - `package.json`: scripts do Vite e suíte de contratos do projeto.
 - `assets/css/`: folhas de estilo externas carregadas na ordem `tokens`, `base`, `components` e `dashboard`.
 - `assets/js/bootstrap.js`: carrega Supabase, SheetJS e ApexCharts pelos pacotes locais antes de iniciar o dashboard.
+- `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
+- `assets/js/services/supabase-service.js`: criação do cliente Supabase e política compartilhada de retry.
 - `assets/js/dashboard-legacy.js`: JavaScript principal preservado como script clássico durante a modularização gradual.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
@@ -104,6 +106,15 @@ npm run dev
 O Vite disponibiliza a aplicação em `http://localhost:5173/` por padrão.
 
 As bibliotecas do navegador são instaladas pelo gerenciador de pacotes e empacotadas pelo Vite. O SheetJS usa o pacote oficial `0.20.3`, distribuído pelo CDN oficial do projeto porque o registro npm parou na versão vulnerável `0.18.5`.
+
+O projeto mantém valores padrão para a configuração pública do Supabase. Para usar outro ambiente sem editar o código, crie um arquivo `.env.local` baseado em `.env.example`:
+
+```bash
+VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
+VITE_SUPABASE_ANON_KEY="sua-chave-anon-public"
+```
+
+A chave `anon public` é exposta ao navegador por definição. A proteção dos dados continua dependendo das políticas RLS e da autorização no Supabase.
 
 Para gerar e validar o pacote de produção:
 

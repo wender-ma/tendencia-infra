@@ -1,4 +1,9 @@
 import dashboardUrl from './dashboard-legacy.js?url';
+import { installLegacyConfig, SUPABASE_CONFIG } from './config.js';
+import {
+  createSupabaseService,
+  installLegacySupabaseGlobals,
+} from './services/supabase-service.js';
 
 function showBootstrapError(error) {
   console.error('[BOOT] Falha ao carregar o dashboard:', error);
@@ -15,13 +20,12 @@ function showBootstrapError(error) {
   }
 }
 
-Promise.all([
-  import('@supabase/supabase-js'),
-  import('xlsx'),
-  import('apexcharts'),
-])
-  .then(([supabaseModule, xlsxModule, apexchartsModule]) => {
-    window.supabase = Object.freeze({ createClient: supabaseModule.createClient });
+installLegacyConfig();
+
+Promise.all([import('xlsx'), import('apexcharts')])
+  .then(([xlsxModule, apexchartsModule]) => {
+    const supabaseService = createSupabaseService(SUPABASE_CONFIG);
+    installLegacySupabaseGlobals(supabaseService);
     window.XLSX = xlsxModule;
     window.ApexCharts = apexchartsModule.default;
 

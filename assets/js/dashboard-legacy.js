@@ -1,61 +1,4 @@
 // ============================================================================
-// CONFIG — Constantes centralizadas do dashboard
-// ============================================================================
-
-// -- Supabase (chave anon; RLS é a camada de segurança real) --
-// ATENÇÃO: esta chave é pública por design (anon key). A segurança NÃO depende
-// da ofuscação desta chave, mas sim das políticas Row Level Security (RLS) no
-// Supabase. Todas as tabelas DEVEM ter RLS habilitado com políticas que validam
-// auth.uid() contra editores_permitidos. Operações destrutivas (DELETE, UPDATE)
-// exigem JWT de autenticação. Sem RLS, qualquer pessoa com esta chave pode
-// ler/escrever dados.
-const SUPA_URL = 'https://jmfgegnfctlyuevqadba.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
-
-// -- Chaves de localStorage (namespace 'jzurique_' por razões históricas) --
-const HEADER_KEY     = 'jzurique_header_title';
-const STORAGE_KEY    = 'jzurique_flow_classifications_v1';
-const MANUAL_KEY     = 'jzurique_flow_manuals_v1';
-const PROJ_CTRL_KEY  = 'jzurique_proj_ctrl_v1';
-
-// -- Objeto CONFIG centralizado (tolerâncias, limites, configurações) --
-const CONFIG = {
-  // Tolerâncias
-  tolerancia_centavos: 1,           // R$ 1,00 - variações abaixo são consideradas zero
-  tolerancia_conferencia: 1.00,     // R$ 1,00 - tolerância para conferência de saldo
-  tolerancia_projecao: 10000,       // R$ 10.000 - tolerância padrão para projeção
-  
-  // Limites
-  max_uploads_por_tipo: 12,         // rolling backup: mantém os N mais recentes por tipo
-  max_linhas_tabela: 1000,          // máximo de linhas renderizadas nas tabelas
-  max_descricao_flow: 300,          // máximo de caracteres na descrição de flows
-  max_justificativa_flow: 400,      // máximo de caracteres na justificativa de flows
-  
-  // Timeouts
-  debounce_render: 200,             // ms de debounce para renderizações (evita reflows em digitação rápida)
-  toast_duration_info: 3500,        // duração padrão do toast informativo
-  toast_duration_ok: 2500,          // duração do toast de sucesso
-  toast_duration_warn: 5000,        // duração do toast de aviso
-  toast_duration_err: 5000,         // duração do toast de erro
-  
-  // Defaults
-  obra_default: '42-21O',           // obra padrão (Jardins Zurique)
-  insumo_controlado: 'I011890',     // insumo controlado padrão (Verba Viabilidade)
-  janela_ritmo_historico: 6,        // meses para cálculo do ritmo histórico
-  
-  // Metadados de serviço e insumos (carregados do Supabase ou hardcoded)
-  grupos_map: {
-    '01.01': 'Custos Indiretos',
-    '01.02': 'Custos Diretos / Infraestrutura',
-    '01.03': 'Obras Civis',
-    '01.04': 'Projeção de Gastos',
-    '01.09': 'Serviços Iniciais',
-    '09.01': 'Serviços Iniciais Adicionais',
-    '09.02': 'Serviços Iniciais Adicionais',
-  },
-};
-
-// ============================================================================
 // FUNÇÕES UTILITÁRIAS UNIFICADAS
 // ============================================================================
 
@@ -233,31 +176,8 @@ function getFlowsObraAtiva() {
 // (Supabase = fonte da verdade compartilhada + localStorage como cache/fallback)
 // ============================================================================
 
-let SUPA = null;
-try {
-  if (window.supabase && window.supabase.createClient) {
-    SUPA = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-    console.log('[SUPA] cliente inicializado ✅');
-  }
-} catch (e) { console.warn('[SUPA] falha ao inicializar:', e); }
-
 // Status global de conexão (pra UI mostrar "salvo" / "offline")
 const SUPA_STATUS = { online: !!SUPA, lastSync: null, lastError: null };
-
-// Helper de retry para chamadas ao Supabase
-// Tenta executar a função até maxTentativas vezes com delay exponencial
-async function supaRetry(fn, maxTentativas) {
-  maxTentativas = maxTentativas || 3;
-  for (let i = 0; i < maxTentativas; i++) {
-    try {
-      return await fn();
-    } catch(e) {
-      if (i === maxTentativas - 1) throw e;
-      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
-      console.warn('[SUPA] retry ' + (i + 1) + '/' + maxTentativas + ' após erro:', e.message || e);
-    }
-  }
-}
 
 // ============================================================
 // v0.58a — MULTI-OBRA (multi-tenant)

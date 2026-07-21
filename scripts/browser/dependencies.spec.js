@@ -24,6 +24,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   const runtime = await page.evaluate(() => ({
     sheetJsVersion: window.XLSX.version,
     hasSupabase: typeof window.supabase.createClient === 'function',
+    hasSupabaseService: window.dashboardServices?.supabase?.client === window.SUPA,
+    hasExternalConfig: window.dashboardConfig?.dashboard === window.CONFIG,
     hasApexCharts: typeof window.ApexCharts === 'function',
     hasDashboardHandler: typeof window.handleAuthClick === 'function',
     status: document.getElementById('supaBadge')?.textContent,
@@ -32,6 +34,8 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   expect(runtime).toMatchObject({
     sheetJsVersion: '0.20.3',
     hasSupabase: true,
+    hasSupabaseService: true,
+    hasExternalConfig: true,
     hasApexCharts: true,
     hasDashboardHandler: true,
   });

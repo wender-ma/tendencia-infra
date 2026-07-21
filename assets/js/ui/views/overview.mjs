@@ -1,8 +1,13 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import {
+  formatCompactNumber as fmtR$k,
+  formatNumber as fmtR$,
+  formatPercentage as fmtPct,
+} from '../dashboard-runtime.mjs';
 
 // ============ VISÃO GERAL ============
-// LIC_LABEL, GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
+// GESTAO_LABEL, EVOL_GLOBAL, CARD3_MODO, CORRECAO_INDICE
 // declarados na seção ESTADO GLOBAL acima
 
 function setCard3Modo(v) {

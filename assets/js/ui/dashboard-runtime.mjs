@@ -1,4 +1,4 @@
-const LICENSE_LABEL = 'Orç. Licitação';
+export const LICENSE_LABEL = 'Orç. Licitação';
 
 function escapeText(value) {
   return String(value ?? '')
@@ -257,7 +257,6 @@ export function createDashboardRuntime({
 
 export function installLegacyDashboardRuntime(runtime, target = window) {
   Object.assign(target, {
-    debounce: runtime.debounce,
     reportNonFatalError: runtime.reportNonFatalError,
     runAsyncSafely: runtime.runAsyncSafely,
     uiCriarKpi: runtime.createKpi,
@@ -267,12 +266,6 @@ export function installLegacyDashboardRuntime(runtime, target = window) {
     getHistoricoObraAtiva: runtime.getActiveHistory,
     getProjRawObraAtiva: runtime.getActiveProjection,
     getFlowsObraAtiva: runtime.getActiveFlows,
-    LIC_LABEL: LICENSE_LABEL,
-    fmt: formatNumber,
-    fmtR$: formatNumber,
-    fmtR$k: formatCompactNumber,
-    fmtPct: formatPercentage,
-    statusOf: tendencyStatus,
     buildLinks: runtime.buildLinks,
     renderTab: runtime.renderTab,
     debouncedRender: runtime.debouncedRender,

@@ -1,5 +1,12 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import {
+  debounce,
+  formatNumber as fmt,
+  formatNumber as fmtR$,
+  formatPercentage as fmtPct,
+  tendencyStatus as statusOf,
+} from '../dashboard-runtime.mjs';
 
 // ============ DETALHAMENTO ============
 let filtersBound = false;

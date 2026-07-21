@@ -110,7 +110,21 @@ const { pathToFileURL } = require('url');
   installLegacyDashboardRuntime(runtime, target);
   assert.strictEqual(target.renderAll, runtime.renderAll);
   assert.strictEqual(target.getFlowsObraAtiva, runtime.getActiveFlows);
-  assert.strictEqual(target['fmtR$'](10), '10,00');
+  for (const removedGlobal of [
+    'debounce',
+    'fmt',
+    'fmtR$',
+    'fmtR$k',
+    'fmtPct',
+    'statusOf',
+    'LIC_LABEL',
+  ]) {
+    assert.strictEqual(
+      target[removedGlobal],
+      undefined,
+      `${removedGlobal} não deve voltar ao escopo global`,
+    );
+  }
 
   console.log('Runtime do dashboard: formatos, vínculos, render e falhas assíncronas OK');
 })().catch((error) => {

@@ -9,7 +9,11 @@ import { installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
-import { createDashboardRuntime, installLegacyDashboardRuntime } from './ui/dashboard-runtime.mjs';
+import {
+  createDashboardRuntime,
+  formatNumber,
+  installLegacyDashboardRuntime,
+} from './ui/dashboard-runtime.mjs';
 import {
   createProjectController,
   installLegacyProjectController,
@@ -226,7 +230,7 @@ const projectController = createProjectController({
   loadProjectionControl: () => window.loadProjCtrl?.(),
   getProjectionControlState: () => window.PROJ_CTRL_STATE,
   applyProjectionLocks: () => window.applyLocksToUI?.(),
-  formatValue: (value) => window.fmt(value),
+  formatValue: (value) => formatNumber(value),
   reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
 });
 installLegacyProjectController(projectController);

@@ -1,5 +1,10 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import {
+  formatCompactNumber as fmtR$k,
+  formatNumber as fmt,
+  formatNumber as fmtR$,
+} from '../dashboard-runtime.mjs';
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 

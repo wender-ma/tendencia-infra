@@ -1,6 +1,13 @@
 /* eslint-disable no-undef */
 import { DASHBOARD_CONFIG } from '../../config.js';
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import {
+  debounce,
+  formatCompactNumber as fmtR$k,
+  formatNumber as fmt,
+  formatNumber as fmtR$,
+  LICENSE_LABEL as LIC_LABEL,
+} from '../dashboard-runtime.mjs';
 
 const CENT_TOLERANCE = DASHBOARD_CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;

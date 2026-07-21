@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from './dom.mjs';
+import { formatNumber as fmt, formatNumber as fmtR$ } from './dashboard-runtime.mjs';
 
 function showManualText(key) {
   const text = MANUAL_TEXT[key];

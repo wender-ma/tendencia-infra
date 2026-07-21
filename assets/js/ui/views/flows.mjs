@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import { debounce, formatNumber as fmt, formatNumber as fmtR$ } from '../dashboard-runtime.mjs';
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;

@@ -1,5 +1,11 @@
 /* eslint-disable no-undef */
 import { replaceWithParsedMarkup } from '../dom.mjs';
+import {
+  debounce,
+  formatCompactNumber as fmtR$k,
+  formatNumber as fmt,
+  formatNumber as fmtR$,
+} from '../dashboard-runtime.mjs';
 
 // ============ CONTROLE PROJEÇÃO ============
 // (declarado em CONFIG no topo)

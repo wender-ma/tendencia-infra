@@ -2,7 +2,7 @@
 
   <div class="card">
     <h2>⚙️ Parâmetros da Projeção</h2>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 10px;">
+    <div class="projection-settings-grid">
       <div>
         <label for="projDataFim" class="field-label">📅 Data prevista de término</label>
         <input type="month" id="projDataFim" class="field-control">
@@ -28,9 +28,9 @@
         <div class="field-help">Abaixo dessa diferença = "no esperado"</div>
       </div>
     </div>
-    <div style="margin-top:12px; padding:10px 12px; background:var(--fgr-red-light); border-left:3px solid var(--fgr-red); border-radius:6px; font-size:11.5px; color:var(--accent-purple-dark);">
+    <div class="projection-note">
       💡 <strong>Como funciona a projeção:</strong> Mantemos o seu planejado já feito como referência. Se a obra terminar <strong>depois</strong> do último mês planejado de um serviço, extrapolamos:
-      <ul style="margin:4px 0 0 18px;">
+      <ul>
         <li><strong>Custos Indiretos</strong> → extrapola com o ritmo histórico (obra ativa = custos fixos contínuos)</li>
         <li><strong>Custos Diretos / Obras Civis / Outros</strong> → não extrapola (contratos fechados; empreiteiro absorve atrasos)</li>
       </ul>
@@ -41,22 +41,22 @@
 
   <div class="card">
     <h2>📈 Curva S - Visão Geral <span class="hint">Planejado × Tendência projetada</span></h2>
-    <div id="projChart" style="height: 380px;"></div>
-    <div style="margin-top:10px; font-size:11.5px; color:var(--text-soft); display:flex; gap:18px; flex-wrap:wrap;">
-      <span><span style="display:inline-block;width:14px;height:3px;background:var(--fgr-red-deep);vertical-align:middle;margin-right:4px;"></span> Planejado acumulado (CSV)</span>
-      <span><span style="display:inline-block;width:14px;height:3px;background:var(--sem-alerta);border-top:2px dashed var(--sem-alerta);vertical-align:middle;margin-right:4px;"></span> Tendência projetada</span>
-      <span><span style="display:inline-block;width:2px;height:14px;background:var(--fgr-red-vivid);vertical-align:middle;margin-right:4px;"></span> Data de corte</span>
-      <span><span style="display:inline-block;width:14px;height:10px;background:var(--fgr-red-light);vertical-align:middle;margin-right:4px;"></span> Realizado (passado)</span>
+    <div id="projChart" class="projection-chart"></div>
+    <div class="projection-legend">
+      <span><span class="projection-legend-mark plan"></span> Planejado acumulado (CSV)</span>
+      <span><span class="projection-legend-mark trend"></span> Tendência projetada</span>
+      <span><span class="projection-legend-mark cutoff"></span> Data de corte</span>
+      <span><span class="projection-legend-mark actual"></span> Realizado (passado)</span>
     </div>
   </div>
 
   <div class="card">
     <h2>🔍 Projeção Detalhada
       <span class="panel-actions">
-        <button class="btn-sm" data-click-action="projExpandAll" style="font-size:11px;">📂 Expandir tudo</button>
-        <button class="btn-sm" data-click-action="projCollapseAll" style="font-size:11px;">📁 Recolher tudo</button>
-        <button class="btn-sm" data-click-action="exportarProjecaoDetalhada" style="font-size:11px;" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
-        <span class="hint" style="margin-left:8px;">clique em uma linha para ver a curva individual</span>
+        <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
+        <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
+        <button class="btn-sm compact" data-click-action="exportarProjecaoDetalhada" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
+        <span class="hint edit-count">clique em uma linha para ver a curva individual</span>
       </span>
     </h2>
     <div class="toolbar">
@@ -74,23 +74,23 @@
       </select>
       <span class="toolbar-count" id="projCount"></span>
     </div>
-    <div class="table-wrap" style="max-height:700px;">
+    <div class="table-wrap projection-table">
       <table>
         <thead>
           <tr>
-            <th style="width:24px;"></th>
-            <th data-sort-proj="label" aria-sort="none" style="min-width:240px;">Grupo / Serviço / Insumo</th>
-            <th class="num" data-sort-proj="valor_gestao" aria-sort="none" style="width:130px;" title="Total da última gestão fechada (do HISTORICO)">Valor Gestão</th>
-            <th class="num" data-sort-proj="realizado" aria-sort="none" style="width:120px;">Realizado</th>
-            <th class="num" data-sort-proj="extrapolacao" aria-sort="none" style="width:120px;">Extrapolação</th>
-            <th class="num" data-sort-proj="tendencia" aria-sort="none" style="width:130px;">Tendência</th>
-            <th style="width:170px;">Status / Ação</th>
+            <th class="table-col-24"></th>
+            <th class="table-col-min-240" data-sort-proj="label" aria-sort="none">Grupo / Serviço / Insumo</th>
+            <th class="num table-col-130" data-sort-proj="valor_gestao" aria-sort="none" title="Total da última gestão fechada (do HISTORICO)">Valor Gestão</th>
+            <th class="num table-col-120" data-sort-proj="realizado" aria-sort="none">Realizado</th>
+            <th class="num table-col-120" data-sort-proj="extrapolacao" aria-sort="none">Extrapolação</th>
+            <th class="num table-col-130" data-sort-proj="tendencia" aria-sort="none">Tendência</th>
+            <th class="table-col-170">Status / Ação</th>
           </tr>
         </thead>
         <tbody id="projTbody"></tbody>
       </table>
     </div>
-    <div style="margin-top:8px; font-size:11px; color:var(--text-soft);">
+    <div class="table-note">
       💡 <strong>Valor Gestão</strong>: total da última gestão fechada (HISTORICO) · <strong>Realizado</strong>: soma até a data de corte · <strong>Extrapolação</strong>: valor adicional projetado quando obra ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos) · <strong>Tendência</strong>: Valor Gestão + Extrapolação · clique em qualquer linha para ver a curva individual
     </div>
   </div>

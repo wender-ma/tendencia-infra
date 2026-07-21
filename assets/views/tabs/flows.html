@@ -5,7 +5,7 @@
     <div class="card">
       <h2>🥧 Classificação dos Aditivos <span class="hint">por tipo de impacto na obra</span></h2>
       <div id="flowsByTipo"></div>
-      <div id="flowsDescartados" style="margin-top: 10px;"></div>
+      <div id="flowsDescartados" class="flows-discarded"></div>
       <div class="legend-tipos">
         <span>🔴 Aumento real = custo novo na obra</span>
         <span>🔵 Remanejamento = transferência entre itens</span>
@@ -29,29 +29,29 @@
       <span class="toolbar-count" id="flowCount"></span>
     </div>
     <div class="toolbar toolbar--secondary">
-      <span style="font-size:11px; color:var(--text-soft); font-weight:600;">FILTROS AVANÇADOS:</span>
+      <span class="advanced-filter-title">FILTROS AVANÇADOS:</span>
       <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="refletido">Refletido: todos</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
       <div class="ms-wrap" id="ms_solicitante_wrap"><button type="button" class="ms-btn" id="ms_solicitante_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="solicitante">Todos solicitantes</button><div class="ms-panel" id="ms_solicitante_panel"></div></div>
       <div class="ms-wrap" id="ms_destino_wrap"><button type="button" class="ms-btn" id="ms_destino_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="destino">Destino/Origem: todos</button><div class="ms-panel" id="ms_destino_panel"></div></div>
-      <label style="font-size:11.5px; color:var(--text-medium); display:flex; align-items:center; gap:4px;">
+      <label class="advanced-filter-field">
         📅 De:
-        <input type="month" id="flowFilterDataIni" style="padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
+        <input type="month" id="flowFilterDataIni" class="flow-filter-control">
       </label>
-      <label style="font-size:11.5px; color:var(--text-medium); display:flex; align-items:center; gap:4px;">
+      <label class="advanced-filter-field">
         até:
-        <input type="month" id="flowFilterDataFim" style="padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
+        <input type="month" id="flowFilterDataFim" class="flow-filter-control">
       </label>
-      <label style="font-size:11.5px; color:var(--text-medium); display:flex; align-items:center; gap:4px;">
+      <label class="advanced-filter-field">
         💰 R$:
-        <input type="number" id="flowFilterValMin" aria-label="Valor mínimo" placeholder="mín" step="100" style="width:80px; padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
-        <input type="number" id="flowFilterValMax" aria-label="Valor máximo" placeholder="máx" step="100" style="width:80px; padding:5px 8px; border:1px solid var(--border-strong); border-radius:5px; font-size:12px;">
+        <input type="number" id="flowFilterValMin" class="flow-filter-control flow-filter-number" aria-label="Valor mínimo" placeholder="mín" step="100">
+        <input type="number" id="flowFilterValMax" class="flow-filter-control flow-filter-number" aria-label="Valor máximo" placeholder="máx" step="100">
       </label>
-      <button class="btn-sm" data-click-action="clearFlowFilters" style="font-size:11px;">🧹 Limpar filtros</button>
+      <button class="btn-sm compact" data-click-action="clearFlowFilters">🧹 Limpar filtros</button>
     </div>
     <div class="classif-bar">
       <div class="info">
         ✏️ <strong>Modo edição:</strong> clique nas células <em>Destino</em> ou <em>Origem</em> para reclassificar. As alterações ficam salvas no navegador.
-        <span id="editCount" style="margin-left:8px;"></span>
+        <span id="editCount" class="edit-count"></span>
       </div>
       <button class="btn-sm primary" data-editor-only data-click-action="openManualForm" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo manual</button>
       <button class="btn-sm primary" data-click-action="exportarFlowsXLSX" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
@@ -59,20 +59,20 @@
       <button class="btn-sm" data-click-action="reloadClassifications" title="Recarrega do navegador">⤴️ Recarregar salvas</button>
       <button class="btn-sm danger" data-editor-only data-click-action="clearClassifications" title="Apaga edições deste navegador">🗑️ Limpar alterações</button>
     </div>
-    <div id="massBar" style="display:none;"></div>
+    <div id="massBar" class="is-hidden"></div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th style="width:30px;"><input type="checkbox" id="flowSelectAll" data-edit-control data-change-action="toggleSelectAllVisible" data-action-mode="self" title="Selecionar/desmarcar todos os visíveis" aria-label="Selecionar ou desmarcar todos os aditivos visíveis" style="cursor:pointer; transform:scale(1.15);"></th>
-            <th style="width:110px;" title="Status de reflexo no planejamento da obra">Refletido?</th>
-            <th data-sort-flow="n_alteracao" aria-sort="none" style="width:55px;">Nº</th>
-            <th data-sort-flow="data" aria-sort="none" style="width:90px;">Data</th>
-            <th data-sort-flow="dep" aria-sort="none" style="width:110px;">Departamento</th>
-            <th data-sort-flow="tipo" aria-sort="none" style="width:120px;">Tipo</th>
-            <th data-sort-flow="insumo_planejamento" aria-sort="none" style="width:180px;">→ Destino</th>
-            <th data-sort-flow="insumo_remanejamento" aria-sort="none" style="width:180px;">← Origem</th>
-            <th class="num" data-sort-flow="custo_flowmaster" aria-sort="none" style="width:130px;">Fluxo Planejamento</th>
+            <th class="table-col-30"><input type="checkbox" id="flowSelectAll" data-edit-control data-change-action="toggleSelectAllVisible" data-action-mode="self" title="Selecionar/desmarcar todos os visíveis" aria-label="Selecionar ou desmarcar todos os aditivos visíveis" class="selection-checkbox"></th>
+            <th class="table-col-110" title="Status de reflexo no planejamento da obra">Refletido?</th>
+            <th class="table-col-55" data-sort-flow="n_alteracao" aria-sort="none">Nº</th>
+            <th class="table-col-90" data-sort-flow="data" aria-sort="none">Data</th>
+            <th class="table-col-110" data-sort-flow="dep" aria-sort="none">Departamento</th>
+            <th class="table-col-120" data-sort-flow="tipo" aria-sort="none">Tipo</th>
+            <th class="table-col-180" data-sort-flow="insumo_planejamento" aria-sort="none">→ Destino</th>
+            <th class="table-col-180" data-sort-flow="insumo_remanejamento" aria-sort="none">← Origem</th>
+            <th class="num table-col-130" data-sort-flow="custo_flowmaster" aria-sort="none">Fluxo Planejamento</th>
             <th data-sort-flow="motivo" aria-sort="none">Motivo / Descrição</th>
           </tr>
         </thead>

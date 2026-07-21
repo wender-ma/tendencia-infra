@@ -243,7 +243,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 ## P3: UX, UI e metadados
 
 - [x] Padronizar botões, formulários, toolbars e modais (classes compartilhadas nos controles e diálogos principais).
-- [ ] Reduzir estilos inline e regras com `!important` (HTML estático reduzido de 298 para 84 estilos inline; `!important` reduzido de 18 para 15; remoção gradual continua nos templates dinâmicos).
+- [ ] Reduzir estilos inline e regras com `!important` (HTML estático reduzido de 298 para 40 estilos inline; `!important` reduzido de 18 para 15; remoção gradual continua nos templates dinâmicos).
 - [x] Consolidar as cores em tokens oficiais (paleta funcional e variantes claro/escuro; sem hex disperso no CSS ou runtime).
 - [x] Melhorar feedback de salvamento e sincronização (badge transacional acessível, concorrência e erro sanitizado).
 - [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.

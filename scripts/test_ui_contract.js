@@ -31,7 +31,7 @@ for (const className of [
 
 const inlineStyleCount = (html.match(/\bstyle="/g) || []).length;
 const importantCount = (css.match(/!important/g) || []).length;
-assert(inlineStyleCount <= 84, `Orçamento de estilos inline excedido: ${inlineStyleCount}`);
+assert(inlineStyleCount <= 40, `Orçamento de estilos inline excedido: ${inlineStyleCount}`);
 assert(importantCount <= 15, `Orçamento de !important excedido: ${importantCount}`);
 assert((html.match(/class="standalone-modal-bg/g) || []).length === 3, 'Três diálogos estáticos devem usar o mesmo backdrop');
 assert(!/<form\b[^>]*\sonsubmit=/i.test(html), 'Formulário com submit inline voltou ao HTML');

@@ -1,8 +1,4 @@
-const STORAGE_KEYS = Object.freeze({
-  evolution: 'jzurique_evol_global',
-  cardMode: 'jzurique_card3_modo',
-  correctionIndex: 'jzurique_indice_correcao',
-});
+import { STORAGE_KEYS } from './config.js';
 
 function getBrowserStorage() {
   try {

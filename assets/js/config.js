@@ -3,7 +3,7 @@ const DEFAULT_SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
 
 function readEnvironment(name, fallback) {
-  const value = import.meta.env[name];
+  const value = import.meta.env?.[name];
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
@@ -17,6 +17,10 @@ export const STORAGE_KEYS = Object.freeze({
   classifications: 'jzurique_flow_classifications_v1',
   manuals: 'jzurique_flow_manuals_v1',
   projectionControl: 'jzurique_proj_ctrl_v1',
+  activeProject: 'jzurique_obra_ativa',
+  evolution: 'jzurique_evol_global',
+  cardMode: 'jzurique_card3_modo',
+  correctionIndex: 'jzurique_indice_correcao',
 });
 
 export const DASHBOARD_CONFIG = Object.freeze({

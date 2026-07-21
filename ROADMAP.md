@@ -184,7 +184,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Separar uploads em módulos próprios de política, transação, repositório, coordenação e interface.
 - [x] Separar tabelas em módulos de UI.
 - [x] Separar cada aba dinâmica em um módulo de visualização (a aba Manual permanece estática).
-- [ ] Remover aliases e variáveis globais gradualmente (catálogos, uploads, manutenção destrutiva, persistência, exportações, autenticação, shell e editor de Flows isolados; adaptadores temporários permanecem enquanto o coordenador legado é reduzido).
+- [ ] Remover aliases e variáveis globais gradualmente (catálogo e ciclo de obras, armazenamento, uploads, manutenção destrutiva, persistência, exportações, autenticação, shell e editor de Flows isolados; adaptadores temporários permanecem enquanto o coordenador legado é reduzido).
 - [x] Remover handlers `onclick`, `onchange`, `oninput` e `onfocus` inline.
 
 ### 10. Modernizar dependências e build

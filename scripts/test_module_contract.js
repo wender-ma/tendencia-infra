@@ -37,6 +37,18 @@ const uploadMaintenance = fs.readFileSync(
   path.join(root, 'assets/js/ui/upload-maintenance.mjs'),
   'utf8',
 );
+const projectController = fs.readFileSync(
+  path.join(root, 'assets/js/ui/project-controller.mjs'),
+  'utf8',
+);
+const projectRepository = fs.readFileSync(
+  path.join(root, 'assets/js/services/project-repository.mjs'),
+  'utf8',
+);
+const storageService = fs.readFileSync(
+  path.join(root, 'assets/js/services/storage-service.mjs'),
+  'utf8',
+);
 const adminView = fs.readFileSync(path.join(root, 'assets/js/ui/views/admin.mjs'), 'utf8');
 const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.mjs'), 'utf8');
 const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
@@ -189,6 +201,33 @@ assert(
     !legacy.includes('async function apagarHistoricoUploads('),
   'Ações destrutivas de upload não podem permanecer no legado',
 );
+assert(
+  projectController.includes('export function createProjectController'),
+  'Controlador de obras não foi modularizado',
+);
+assert(
+  projectController.includes('export function installLegacyProjectController'),
+  'Adaptador temporário do controlador de obras ausente',
+);
+assert(
+  projectRepository.includes('export function createProjectRepository'),
+  'Repositório do catálogo de obras ausente',
+);
+assert(
+  storageService.includes('export function createSafeStorage'),
+  'Serviço de armazenamento resiliente ausente',
+);
+for (const removedProjectFunction of [
+  'function carregarObras(',
+  'function trocarObra(',
+  'function recarregarDadosDaObra(',
+  'function aplicarDadosPersistidos(',
+]) {
+  assert(
+    !legacy.includes(removedProjectFunction),
+    `Ciclo de obras ainda duplicado no legado: ${removedProjectFunction}`,
+  );
+}
 assert(
   adminView.includes('export function installLegacyAdminView'),
   'View administrativa não foi modularizada',

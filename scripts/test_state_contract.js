@@ -2,9 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 const root = path.resolve(__dirname, '..');
 const stateModule = fs.readFileSync(path.join(root, 'assets/js/state.js'), 'utf8');
+const configModule = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
 const legacy = fs.readFileSync(path.join(root, 'assets/js/dashboard-legacy.js'), 'utf8');
 
@@ -13,10 +15,26 @@ function assert(condition, message) {
 }
 
 assert(stateModule.includes('export function createAppState('), 'Factory do estado ausente');
-assert(stateModule.includes('export function installLegacyStateGlobals('), 'Adaptador de estado ausente');
-assert(stateModule.includes("evolution: 'jzurique_evol_global'"), 'Persistencia da evolucao ausente');
-assert(stateModule.includes("cardMode: 'jzurique_card3_modo'"), 'Persistencia do modo do card ausente');
-assert(stateModule.includes("correctionIndex: 'jzurique_indice_correcao'"), 'Persistencia do indice ausente');
+assert(
+  stateModule.includes('export function installLegacyStateGlobals('),
+  'Adaptador de estado ausente',
+);
+assert(
+  stateModule.includes("import { STORAGE_KEYS } from './config.js'"),
+  'Estado não usa as chaves centralizadas',
+);
+assert(
+  configModule.includes("evolution: 'jzurique_evol_global'"),
+  'Persistencia da evolucao ausente',
+);
+assert(
+  configModule.includes("cardMode: 'jzurique_card3_modo'"),
+  'Persistencia do modo do card ausente',
+);
+assert(
+  configModule.includes("correctionIndex: 'jzurique_indice_correcao'"),
+  'Persistencia do indice ausente',
+);
 
 const aliases = [
   'DATA_T',
@@ -44,16 +62,26 @@ for (const alias of aliases) {
   assert(new RegExp(`\\b${alias}: \\['`).test(stateModule), `Alias de estado ausente: ${alias}`);
 }
 assert(stateModule.includes('descriptors.LAST_UPLOADS'), 'Alias de uploads ausente');
-assert(stateModule.includes('target.dashboardState = state'), 'Referencia publica do estado ausente');
+assert(
+  stateModule.includes('target.dashboardState = state'),
+  'Referencia publica do estado ausente',
+);
 
 assert(bootstrap.includes("from './state.js'"), 'Bootstrap nao importa o modulo de estado');
 assert(bootstrap.includes('const appState = createAppState();'), 'Bootstrap nao cria o estado');
-assert(bootstrap.includes('installLegacyStateGlobals(appState);'), 'Bootstrap nao instala os aliases');
 assert(
-  bootstrap.indexOf('installLegacyStateGlobals(appState);') < bootstrap.indexOf('Promise.resolve()'),
+  bootstrap.includes('installLegacyStateGlobals(appState);'),
+  'Bootstrap nao instala os aliases',
+);
+assert(
+  bootstrap.indexOf('installLegacyStateGlobals(appState);') <
+    bootstrap.indexOf('Promise.resolve()'),
   'Estado deve existir antes do carregamento do legado',
 );
-assert(bootstrap.includes('getActiveProject: () => appState.obra.ativa'), 'Auth nao consulta a obra no estado central');
+assert(
+  bootstrap.includes('getActiveProject: () => appState.obra.ativa'),
+  'Auth nao consulta a obra no estado central',
+);
 
 for (const removedLegacyContract of [
   'const AppState =',
@@ -61,19 +89,22 @@ for (const removedLegacyContract of [
   'const LAST_UPLOADS =',
   'function getActiveProjectCode(',
 ]) {
-  assert(!legacy.includes(removedLegacyContract), `Estado ainda declarado no legado: ${removedLegacyContract}`);
+  assert(
+    !legacy.includes(removedLegacyContract),
+    `Estado ainda declarado no legado: ${removedLegacyContract}`,
+  );
 }
 
 async function verifyStateFactory() {
-  const moduleUrl = `data:text/javascript;base64,${Buffer.from(stateModule).toString('base64')}`;
-  const { createAppState } = await import(moduleUrl);
+  const moduleUrl = pathToFileURL(path.join(root, 'assets/js/state.js'));
+  const { createAppState } = await import(moduleUrl.href);
   const preferences = new Map([
     ['jzurique_card3_modo', 'liquido'],
     ['jzurique_indice_correcao', 'ipca'],
     ['jzurique_evol_global', JSON.stringify({ teorica: 12, financeira: 8 })],
   ]);
   const state = createAppState({
-    storage: { getItem: key => preferences.get(key) ?? null },
+    storage: { getItem: (key) => preferences.get(key) ?? null },
   });
 
   assert(state.config.card3Modo === 'liquido', 'Modo do card nao foi restaurado');
@@ -84,9 +115,11 @@ async function verifyStateFactory() {
 
 verifyStateFactory()
   .then(() => {
-    console.log(`Contrato de estado: modulo externo e ${aliases.length + 1} aliases sincronizados OK`);
+    console.log(
+      `Contrato de estado: modulo externo e ${aliases.length + 1} aliases sincronizados OK`,
+    );
   })
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exitCode = 1;
   });

@@ -1,5 +1,5 @@
 import dashboardUrl from './dashboard-legacy.js?url';
-import { DASHBOARD_CONFIG, installLegacyConfig, SUPABASE_CONFIG } from './config.js';
+import { DASHBOARD_CONFIG, installLegacyConfig, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
 import { installLegacyProjectionCatalog } from './data/projection-catalog.mjs';
 import { installLegacyImportParsers } from './parsers/index.mjs';
 import { createPerformanceMonitor, installPerformanceMonitor } from './performance.mjs';
@@ -9,6 +9,10 @@ import { installActionDelegation } from './ui/actions.mjs';
 import { createAuthUi, installLegacyAuthUi } from './ui/auth-ui.mjs';
 import { installLegacyDomGlobals } from './ui/dom.mjs';
 import { createDashboardShell, installLegacyDashboardShell } from './ui/shell.mjs';
+import {
+  createProjectController,
+  installLegacyProjectController,
+} from './ui/project-controller.mjs';
 import {
   createUploadMaintenance,
   installLegacyUploadMaintenance,
@@ -38,6 +42,8 @@ import {
 } from './services/dependency-service.mjs';
 import { createExcelService, installLegacyExcelGlobals } from './services/excel-service.mjs';
 import { createLogger, installLogger } from './services/logger.mjs';
+import { createProjectRepository } from './services/project-repository.mjs';
+import { createSafeStorage, installLegacySafeStorage } from './services/storage-service.mjs';
 import { createSyncStatusService, installLegacySyncStatus } from './services/sync-status.mjs';
 import { installLegacyUploadPolicy, validateUploadFile } from './services/upload-policy.mjs';
 import {
@@ -89,6 +95,24 @@ const parserService = installLegacyImportParsers({
 });
 const feedbackService = createFeedbackService();
 installLegacyFeedbackGlobals(feedbackService);
+const storageService = createSafeStorage({
+  storage: (() => {
+    try {
+      return window.localStorage;
+    } catch (error) {
+      logger.warn('Storage/inicializar', error);
+      return null;
+    }
+  })(),
+  warn: (context, error) => logger.warn(context, error),
+  notifyQuotaExceeded: () =>
+    feedbackService.toast(
+      'Armazenamento local cheio. Algumas configurações não serão salvas.',
+      'warn',
+      5000,
+    ),
+});
+installLegacySafeStorage(storageService);
 const modalService = createModalService();
 installLegacyModalGlobals(modalService);
 const paginationService = createPaginationService({ pageSize: DASHBOARD_CONFIG.table_page_size });
@@ -143,6 +167,53 @@ const dashboardRepository = createDashboardRepository({
   warn: (context, error) => logger.warn(context, error),
 });
 installLegacyDashboardRepository(dashboardRepository);
+const projectRepository = createProjectRepository({
+  getClient: () => window.SUPA,
+  warn: (context, error) => logger.warn(context, error),
+});
+const projectController = createProjectController({
+  state: appState,
+  projectRepository,
+  dashboardRepository,
+  uploadRepository,
+  storage: storageService,
+  storageKeys: {
+    activeProject: STORAGE_KEYS.activeProject,
+    classifications: STORAGE_KEYS.classifications,
+    manuals: STORAGE_KEYS.manuals,
+    projectionControl: STORAGE_KEYS.projectionControl,
+    header: STORAGE_KEYS.header,
+    correctionIndex: STORAGE_KEYS.correctionIndex,
+    cardMode: STORAGE_KEYS.cardMode,
+  },
+  hasBackend: () => Boolean(window.SUPA),
+  getUploadRuntimeState: () => window.UPLOAD_RUNTIME_STATE || {},
+  updateAuthUi: () => window.updateAuthUI?.(),
+  showLoading: () => feedbackService.showLoading(),
+  hideLoading: () => feedbackService.hideLoading(),
+  toast: (...args) => feedbackService.toast(...args),
+  renderAll: () => window.renderAll?.(),
+  applyManuals: () => window.applyManuals?.(),
+  loadClassifications: () => window.loadClassifications?.(),
+  buildInputList: () => window.buildInsumosList?.() || [],
+  setInputOptions: (options) => {
+    window.INSUMOS_OPTIONS = options;
+  },
+  buildDatalist: () => window.buildDatalist?.(),
+  loadProjectionControl: () => window.loadProjCtrl?.(),
+  getProjectionControlState: () => window.PROJ_CTRL_STATE,
+  applyProjectionLocks: () => window.applyLocksToUI?.(),
+  formatValue: (value) =>
+    Number(value).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  reportError: (context, error, userMessage) => {
+    if (window.reportNonFatalError) window.reportNonFatalError(context, error, userMessage);
+    else logger.warn(context, error);
+  },
+});
+installLegacyProjectController(projectController);
 const uploadCoordinator = createUploadCoordinator({
   getClient: () => window.SUPA,
   getActiveProject: () => appState.obra.ativa,
@@ -310,6 +381,9 @@ Promise.resolve()
       excel: excelService,
       exports: dashboardExportService,
       dashboardRepository,
+      projectRepository,
+      projectController,
+      storage: storageService,
       shell: dashboardShell,
       logger,
       syncStatus: syncStatusService,

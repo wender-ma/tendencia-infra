@@ -16,6 +16,7 @@ const supabaseService = fs.readFileSync(
   'utf8',
 );
 const dashboardPath = path.join(root, 'assets/js/dashboard-legacy.js');
+const dashboardLegacy = fs.readFileSync(dashboardPath, 'utf8');
 const flowEditorPath = path.join(root, 'assets/js/ui/flow-editor.mjs');
 
 function assert(condition, message) {
@@ -47,7 +48,14 @@ assert(
 );
 assert(fs.existsSync(dashboardPath), 'Script principal externo ausente');
 assert(fs.existsSync(flowEditorPath), 'Módulo do editor de Flows ausente');
-assert(fs.statSync(dashboardPath).size > 15_000, 'Coordenador legado parece incompleto');
+assert(
+  fs.statSync(dashboardPath).size < 15_000,
+  'Coordenador legado voltou a concentrar responsabilidades extraídas',
+);
+assert(
+  dashboardLegacy.includes('function renderAll(') && dashboardLegacy.includes('await initAuth()'),
+  'Coordenador legado perdeu o render ou a inicialização temporária',
+);
 assert(fs.statSync(flowEditorPath).size > 40_000, 'Editor de Flows parece incompleto');
 
 for (const expectedImport of [

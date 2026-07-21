@@ -231,8 +231,9 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes de XSS para campos importados.
 - [ ] Criar testes de integração para upload e rollback.
 - [ ] Criar testes E2E para login, troca de obra, edição e administração.
-- [ ] Criar testes visuais para mobile e desktop.
-- [ ] Executar Lighthouse e axe no CI.
+- [x] Criar testes visuais para mobile e desktop.
+- [x] Executar axe no CI.
+- [ ] Executar Lighthouse no CI.
 - [x] Configurar lint e formatação automática para os módulos extraídos.
 - [ ] Adicionar logs de erro com contexto e sem dados sensíveis.
 - [ ] Documentar execução local, build, deploy e rollback.
@@ -294,3 +295,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Renderização passou a atualizar estruturas compartilhadas e somente a aba ativa, inclusive nas trocas de visão | `renderAll()` |
 | 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba | `assets/js/performance.mjs` |
 | 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS | `docs/innerhtml_inventory_2026-07-21.md` |
+| 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop | `.github/workflows/ci.yml` |

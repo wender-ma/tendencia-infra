@@ -87,6 +87,12 @@ Para validar lint, formatação, contratos e build em sequência:
 npm run check
 ```
 
+O smoke de navegador inclui axe e inspeções visuais responsivas:
+
+```bash
+npm run test:browser
+```
+
 Os testes podem também ser executados individualmente:
 
 ```bash

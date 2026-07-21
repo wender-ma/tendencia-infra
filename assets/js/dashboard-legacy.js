@@ -3456,12 +3456,16 @@ function showTooltip(evt, html) {
   const tt = document.getElementById('chartTooltip');
   if (!tt) return;
   tt.innerHTML = html;
+  tt.setAttribute('aria-hidden', 'false');
   tt.classList.add('show');
   positionTooltip(evt, tt);
 }
 function hideTooltip() {
   const tt = document.getElementById('chartTooltip');
-  if (tt) tt.classList.remove('show');
+  if (tt) {
+    tt.classList.remove('show');
+    tt.setAttribute('aria-hidden', 'true');
+  }
 }
 function positionTooltip(evt, tt) {
   if (!tt) tt = document.getElementById('chartTooltip');

@@ -1,4 +1,5 @@
 const { expect, test } = require('@playwright/test');
+const AxeBuilder = require('@axe-core/playwright').default;
 
 test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   const pageErrors = [];
@@ -139,4 +140,15 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await expect(page.locator('#tab-flows')).toHaveClass(/active/);
   await expect(page.locator('#tab-btn-flows')).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#flowTbody')).toBeAttached();
+
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  const blockingViolations = accessibility.violations.filter(violation =>
+    ['serious', 'critical'].includes(violation.impact),
+  );
+  expect(
+    blockingViolations,
+    blockingViolations.map(violation => `${violation.id}: ${violation.help}`).join('\n'),
+  ).toEqual([]);
 });

@@ -53,13 +53,14 @@ function populateFilters() {
 
 // cor da célula de Evolução Financeira baseada no descolamento vs Teórica
 function _evolClass(d) {
-  if (d.evolucao_teorica == null || d.evolucao_financeira == null) return 'var(--sem-alerta)';
-  if (d.evolucao_teorica === 0) return 'var(--sem-alerta)';
+  if (d.evolucao_teorica == null || d.evolucao_financeira == null)
+    return 'detail-evolution--warning';
+  if (d.evolucao_teorica === 0) return 'detail-evolution--warning';
   // Ratio: quanto o financeiro adiantou/atrasou em relação ao teórico
   const ratio = d.evolucao_financeira / d.evolucao_teorica;
-  if (ratio > 1.15) return 'var(--sem-erro)'; // gastando muito acima do executado
-  if (ratio < 0.85) return 'var(--sem-ok)'; // executando bem mais do que gastando
-  return 'var(--sem-alerta)'; // dentro da faixa
+  if (ratio > 1.15) return 'detail-evolution--over'; // gastando muito acima do executado
+  if (ratio < 0.85) return 'detail-evolution--under'; // executando bem mais do que gastando
+  return 'detail-evolution--warning'; // dentro da faixa
 }
 
 function renderTable() {
@@ -182,20 +183,20 @@ function renderTable() {
           (d.flows_origem && d.flows_origem.length > 0);
         const adt = d.aditivo_total || 0;
         const adtTxt = hasAdt
-          ? `<span class="${adt < 0 ? 'pos' : 'neg'}">${adt >= 0 ? '+' : ''}${fmt(adt)}</span> <span style="color:var(--text-lighter);font-size:10px;">(${(d.flows_destino?.length || 0) + (d.flows_origem?.length || 0)})</span>`
-          : '<span style="color:var(--text-lighter);">-</span>';
+          ? `<span class="${adt < 0 ? 'pos' : 'neg'}">${adt >= 0 ? '+' : ''}${fmt(adt)}</span> <span class="detail-aditivo-count">(${(d.flows_destino?.length || 0) + (d.flows_origem?.length || 0)})</span>`
+          : '<span class="detail-empty-value">-</span>';
         const origIdx = idxMap.get(d);
         return `<tr class="folha ${hasAdt ? 'has-aditivo' : ''}" data-idx="${origIdx}" tabindex="0" aria-label="Abrir detalhes de ${escAttr(d.item || d.cod_insumo || 'item')}">
       <td>${escHtml(d.grupo)}</td>
       <td>${escHtml(d.item)}</td>
-      <td style="color:var(--text-soft);font-size:11px;">${escHtml(d.cod_insumo || '')}</td>
+      <td class="detail-insumo-code">${escHtml(d.cod_insumo || '')}</td>
       <td class="num">${fmtR$(d.licitacao)}</td>
       <td class="num">${fmtR$(d.gestao)}</td>
       <td class="num ${diff <= 0 ? 'pos' : 'neg'}">${diff != null ? (diff >= 0 ? '+' : '') + fmt(diff) : '-'}</td>
       <td class="num ${pct <= 0 ? 'pos' : 'neg'}">${pct != null ? fmtPct(pct) : '-'}</td>
       <td class="num">${adtTxt}</td>
-      <td class="num" style="color:var(--fgr-red);">${d.evolucao_teorica != null ? fmt(d.evolucao_teorica, 0) : '<span style="color:var(--border-strong);">-</span>'}</td>
-      <td class="num" style="color:${_evolClass(d)}">${d.evolucao_financeira != null ? fmt(d.evolucao_financeira, 0) : '<span style="color:var(--border-strong);">-</span>'}</td>
+      <td class="num detail-evolution detail-evolution--theoretical">${d.evolucao_teorica != null ? fmt(d.evolucao_teorica, 0) : '<span class="detail-empty-value">-</span>'}</td>
+      <td class="num detail-evolution ${_evolClass(d)}">${d.evolucao_financeira != null ? fmt(d.evolucao_financeira, 0) : '<span class="detail-empty-value">-</span>'}</td>
       <td>${badge}</td>
     </tr>`;
       })
@@ -268,24 +269,24 @@ function openItem(idx) {
     `
     <h2>${escHtml(d.item)}</h2>
     <div class="meta">${escHtml(d.grupo)} · Código ${escHtml(d.cod)} · Insumo ${escHtml(d.cod_insumo)}</div>
-    <div class="kpis" style="margin-bottom: 16px;">
+    <div class="kpis detail-modal-kpis">
       <div class="kpi"><div class="label">Licitação</div><div class="value">${fmtR$(d.licitacao)}</div></div>
       <div class="kpi"><div class="label">Gestão atual</div><div class="value">${fmtR$(d.gestao)}</div></div>
       <div class="kpi ${diff > 0 ? 'red' : 'green'}"><div class="label">Desvio</div><div class="value">${diff != null ? (diff >= 0 ? '+' : '') + fmtR$(diff) : '-'}</div><div class="sub">${pct != null ? fmtPct(pct) : ''}</div></div>
       <div class="kpi purple"><div class="label">Coberto por aditivo</div><div class="value">${fmtR$(totDest - totOrig)}</div><div class="sub">${dest.length} entrada / ${orig.length} saída</div></div>
     </div>
 
-    ${dest.length > 0 ? `<h3 style="font-size:13px; margin-bottom:8px; color:var(--accent-purple-strong);">➡️ Aditivos que ENTRARAM neste item (${fmt(totDest)})</h3>` : ''}
+    ${dest.length > 0 ? `<h3 class="detail-modal-heading detail-modal-heading--destination">➡️ Aditivos que ENTRARAM neste item (${fmt(totDest)})</h3>` : ''}
     ${dest.map((f) => renderFlowMini(f)).join('')}
 
-    ${orig.length > 0 ? `<h3 style="font-size:13px; margin: 14px 0 8px; color:var(--text-medium);">⬅️ Aditivos que SAÍRAM deste item para outros (${fmt(totOrig)})</h3>` : ''}
+    ${orig.length > 0 ? `<h3 class="detail-modal-heading detail-modal-heading--origin">⬅️ Aditivos que SAÍRAM deste item para outros (${fmt(totOrig)})</h3>` : ''}
     ${orig.map((f) => renderFlowMini(f, true)).join('')}
 
-    ${dest.length === 0 && orig.length === 0 ? '<div style="text-align:center; color:var(--text-lighter); padding:20px;">Nenhum aditivo vinculado a este item.</div>' : ''}
+    ${dest.length === 0 && orig.length === 0 ? '<div class="detail-empty-flows">Nenhum aditivo vinculado a este item.</div>' : ''}
 
     ${
       diff > 0 && totDest < diff
-        ? `<div class="alert-banner" style="margin-top:14px;">
+        ? `<div class="alert-banner detail-alert">
       ⚠️ <strong>Atenção:</strong> o desvio deste item é de ${fmtR$(diff)} mas só ${fmtR$(totDest)} estão formalizados em aditivo. <strong>${fmtR$(diff - totDest)}</strong> ainda são tendência sem aditivo.
     </div>`
         : ''
@@ -324,9 +325,9 @@ function renderFlowMini(f, isOrigem = false) {
     <div class="flow-mini-card ${escAttr(f.tipo)}">
       <div class="head">
         <strong>Nº ${escHtml(f.n_alteracao)} ${f.n_adt ? '· ' + escHtml(f.n_adt) : ''}</strong>
-        <span class="${(f.custo_flowmaster || 0) < 0 ? 'pos' : 'neg'}" style="font-weight:700;">${fmtR$(f.custo_flowmaster)}</span>
+        <span class="flow-mini-value ${(f.custo_flowmaster || 0) < 0 ? 'pos' : 'neg'}">${fmtR$(f.custo_flowmaster)}</span>
       </div>
-      <div style="font-size:11px;color:var(--text-soft);">
+      <div class="flow-mini-meta">
         ${escHtml(formatDate(f.data_br))} · <span class="badge ${depBadge[f.dep] || 'gray'}">${escHtml(f.dep)}</span>
         · ${tipoLabel[f.tipo] || escHtml(f.tipo)} · ${escHtml(f.motivo)} ${linkTxt ? '· ' + linkTxt : ''}
       </div>

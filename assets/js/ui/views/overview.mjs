@@ -75,14 +75,14 @@ function renderCardAderencia() {
   if (teor == null && fin == null) {
     // placeholder amigável em vez de esconder o card
     return `
-    <div class="kpi kpi-wide" style="opacity:0.85;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div class="label" style="margin:0;">🏗️ Aderência Físico-Financeira</div>
-        <span style="font-size:10px; color:var(--text-soft); background:var(--bg-soft); padding:2px 8px; border-radius:8px; font-weight:600;">Prevision</span>
+    <div class="kpi kpi-wide overview-adherence-card--empty">
+      <div class="overview-card-heading">
+        <div class="label overview-card-label">🏗️ Aderência Físico-Financeira</div>
+        <span class="overview-source-chip">Prevision</span>
       </div>
-      <div style="padding:22px 8px; text-align:center; color:var(--text-lighter); font-size:13px;">
+      <div class="overview-adherence-empty">
         📭 <strong>Aguardando dados</strong><br>
-        <span style="font-size:11.5px;">Envie a aba TENDÊNCIA no formato v0.55 (com colunas EVOLUÇÃO TEÓRICA e EVOLUÇÃO FINANCEIRA)</span>
+        <span class="overview-adherence-empty-help">Envie a aba TENDÊNCIA no formato v0.55 (com colunas EVOLUÇÃO TEÓRICA e EVOLUÇÃO FINANCEIRA)</span>
       </div>
     </div>`;
   }
@@ -90,24 +90,24 @@ function renderCardAderencia() {
   const absD = delta != null ? Math.abs(delta) : null;
 
   // Semáforo: verde ≤5pp, amber 5-15pp, red >15pp
-  let sema, semaLabel, semaCls, ico;
+  let semaTone, semaLabel, semaCls, ico;
   if (absD == null) {
-    sema = 'var(--text-soft)';
+    semaTone = 'neutral';
     semaLabel = 'sem comparativo';
     semaCls = '';
     ico = '⚪';
   } else if (absD <= 5) {
-    sema = 'var(--sem-ok)';
+    semaTone = 'positive';
     semaLabel = 'Dentro do esperado';
     semaCls = 'green';
     ico = '🟢';
   } else if (absD <= 15) {
-    sema = 'var(--sem-alerta)';
+    semaTone = 'warning';
     semaLabel = 'Descolamento moderado';
     semaCls = 'amber';
     ico = '🟡';
   } else {
-    sema = 'var(--sem-erro)';
+    semaTone = 'negative';
     semaLabel = 'Descolamento crítico';
     semaCls = 'red';
     ico = '🔴';
@@ -130,29 +130,29 @@ function renderCardAderencia() {
 
   return `
     <div class="kpi kpi-wide ${semaCls}">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div class="label" style="margin:0;">🏗️ Aderência Físico-Financeira</div>
-        <span style="font-size:10px; color:var(--text-soft); background:var(--bg-soft); padding:2px 8px; border-radius:8px; font-weight:600;" title="Fonte: Prevision (aba TENDÊNCIA). Indiretos não entram nesta conta.">Prevision</span>
+      <div class="overview-card-heading">
+        <div class="label overview-card-label">🏗️ Aderência Físico-Financeira</div>
+        <span class="overview-source-chip" title="Fonte: Prevision (aba TENDÊNCIA). Indiretos não entram nesta conta.">Prevision</span>
       </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:12px; align-items:baseline; margin:10px 0 6px;">
+      <div class="overview-adherence-grid">
         <div>
-          <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600; letter-spacing:0.3px;">🎯 Teórica</div>
-          <div style="font-size:22px; font-weight:700; color:var(--fgr-red);">${fmtPct(teor)}</div>
-          <div style="font-size:10.5px; color:var(--text-soft);">cronograma físico</div>
+          <div class="overview-adherence-metric-label">🎯 Teórica</div>
+          <div class="overview-adherence-metric-value overview-adherence-metric-value--theoretical">${fmtPct(teor)}</div>
+          <div class="overview-adherence-metric-note">cronograma físico</div>
         </div>
         <div>
-          <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600; letter-spacing:0.3px;">💰 Financeira</div>
-          <div style="font-size:22px; font-weight:700; color:var(--sem-alerta);">${fmtPct(fin)}</div>
-          <div style="font-size:10.5px; color:var(--text-soft);">% da licitação gasto</div>
+          <div class="overview-adherence-metric-label">💰 Financeira</div>
+          <div class="overview-adherence-metric-value overview-adherence-metric-value--financial">${fmtPct(fin)}</div>
+          <div class="overview-adherence-metric-note">% da licitação gasto</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600; letter-spacing:0.3px;">Δ</div>
-          <div style="font-size:22px; font-weight:700; color:${sema};">${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</div>
-          <div style="font-size:10.5px; color:${sema};">${ico} ${semaLabel}</div>
+        <div class="overview-adherence-delta">
+          <div class="overview-adherence-metric-label">Δ</div>
+          <div class="overview-adherence-metric-value overview-tone--${semaTone}">${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</div>
+          <div class="overview-adherence-metric-note overview-tone--${semaTone}">${ico} ${semaLabel}</div>
         </div>
       </div>
-      ${interp ? `<div style="padding:8px 10px; background:var(--bg-page); border-radius:5px; font-size:11.5px; color:var(--text-medium); margin-top:6px;">💡 ${interp}</div>` : ''}
-      <div style="font-size:10.5px; color:var(--text-lighter); margin-top:6px; font-style:italic;">
+      ${interp ? `<div class="overview-adherence-interpretation">💡 ${interp}</div>` : ''}
+      <div class="overview-adherence-note">
         ℹ️ Custos indiretos <strong>não</strong> entram nesta comparação (base: obra civil)
       </div>
     </div>`;
@@ -332,17 +332,18 @@ function renderVisao() {
   const kpiBrutoCls = desvioBrutoPct > 5 ? 'red' : desvioBrutoPct > 0 ? 'amber' : 'green';
   // Toggle INCC/IPCA
   const toggleHtml = `
-    <div class="toggle-group" style="margin-top:8px;">
+    <div class="toggle-group overview-index-toggle">
       <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="incc" class="toggle-btn ${APP_STATE.config.correcaoIndice === 'incc' ? 'active' : ''}">INCC</button>
       <button type="button" data-click-action="setCorrecaoIndice" data-action-mode="arg" data-action-arg="ipca" class="toggle-btn ${APP_STATE.config.correcaoIndice === 'ipca' ? 'active' : ''}">IPCA</button>
     </div>
   `;
 
   // Helper: linha de breakdown dentro do card
-  const bdLine = (label, valor, cor, hint) => `
-    <div style="display:flex; justify-content:space-between; align-items:baseline; padding:3px 0; font-size:11.5px;">
-      <span style="color:var(--text-soft);">${label}${hint ? ` <span style="font-size:10px; color:var(--text-lighter);">(${hint})</span>` : ''}</span>
-      <strong style="color:${cor || 'var(--text-strong)'};">${valor}</strong>
+  const signedTone = (value) => (value > 0 ? 'negative' : value < 0 ? 'positive' : 'neutral');
+  const bdLine = (label, valor, tone = 'neutral', hint) => `
+    <div class="overview-breakdown-line">
+      <span class="overview-breakdown-label">${label}${hint ? ` <span class="overview-breakdown-hint">(${hint})</span>` : ''}</span>
+      <strong class="overview-tone--${tone}">${valor}</strong>
     </div>
   `;
 
@@ -354,15 +355,15 @@ function renderVisao() {
       <div class="label">📋 Orçamento Licitação</div>
       <div class="value">${fmtR$(totLicit)}</div>
       <div class="sub">${folhas.length} itens · base original do contrato</div>
-      <hr style="border:none; border-top:1px solid var(--border); margin:10px 0;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <hr class="overview-divider">
+      <div class="overview-kpi-split">
         <div>
-          <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600;">Corrigido (${indiceLabel})</div>
-          <div style="font-size:18px; font-weight:700; color:var(--accent-purple-dark); margin-top:2px;">${fmtR$(totCorrigido)}</div>
+          <div class="overview-kpi-overline">Corrigido (${indiceLabel})</div>
+          <div class="overview-kpi-corrected">${fmtR$(totCorrigido)}</div>
         </div>
         ${toggleHtml}
       </div>
-      <div style="font-size:11px; color:var(--text-soft); margin-top:6px;">
+      <div class="overview-kpi-details">
         +${fmtR$(inflacaoAbs)} de inflação (${inflacaoPct.toFixed(1)}%)
         · ${totAltLabel}: ${fmtR$k(totAltVal)}
       </div>
@@ -373,15 +374,15 @@ function renderVisao() {
       <div class="label">📊 ${escHtml(APP_STATE.config.gestaoLabel)}</div>
       <div class="value">${fmtR$(totGestao)}</div>
       <div class="sub">planejamento vigente</div>
-      <hr style="border:none; border-top:1px solid var(--border); margin:10px 0;">
-      <div style="font-size:10px; text-transform:uppercase; color:var(--text-soft); font-weight:600; margin-bottom:4px;">Decomposição do desvio</div>
-      ${bdLine('💱 Inflação ' + indiceLabel, (inflacaoAbs >= 0 ? '+' : '') + fmtR$(inflacaoAbs), 'var(--accent-purple-dark)', 'externa, inevitável')}
-      ${bdLine('📎 Aditivos refletidos', (aditivoRastreado >= 0 ? '+' : '') + fmtR$(aditivoRastreado), 'var(--sem-alerta)', 'rastreado em Flows')}
-      ${bdLine('❓ Não rastreado', (restoNaoRastreado >= 0 ? '+' : '') + fmtR$(restoNaoRastreado), restoNaoRastreado > 0 ? 'var(--sem-erro)' : 'var(--sem-ok)', 'atualização de orçamento')}
-      <div style="border-top:2px solid var(--border-strong); margin-top:8px; padding-top:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:13px;">
-          <span style="color:var(--text-strong); font-weight:700;">🎯 Total · Desvio bruto <span style="color:var(--text-soft); font-weight:600;">(${fmtPct(desvioBrutoPct)})</span></span>
-          <strong style="color:${desvioBruto > 0 ? 'var(--sem-erro)' : desvioBruto < 0 ? 'var(--sem-ok)' : 'var(--text-soft)'}; font-size:14px;">${desvioBruto >= 0 ? '+' : ''}${fmtR$(desvioBruto)}</strong>
+      <hr class="overview-divider">
+      <div class="overview-breakdown-heading">Decomposição do desvio</div>
+      ${bdLine('💱 Inflação ' + indiceLabel, (inflacaoAbs >= 0 ? '+' : '') + fmtR$(inflacaoAbs), 'purple', 'externa, inevitável')}
+      ${bdLine('📎 Aditivos refletidos', (aditivoRastreado >= 0 ? '+' : '') + fmtR$(aditivoRastreado), 'warning', 'rastreado em Flows')}
+      ${bdLine('❓ Não rastreado', (restoNaoRastreado >= 0 ? '+' : '') + fmtR$(restoNaoRastreado), signedTone(restoNaoRastreado), 'atualização de orçamento')}
+      <div class="overview-total-block">
+        <div class="overview-total-line">
+          <span class="overview-total-label">🎯 Total · Desvio bruto <span class="overview-total-hint">(${fmtPct(desvioBrutoPct)})</span></span>
+          <strong class="overview-total-value overview-tone--${signedTone(desvioBruto)}">${desvioBruto >= 0 ? '+' : ''}${fmtR$(desvioBruto)}</strong>
         </div>
       </div>
     </div>
@@ -389,34 +390,34 @@ function renderVisao() {
     <!-- Card 3 — Tendência projetada (versão compacta v0.43) -->
     <div class="kpi kpi-wide ${APP_STATE.config.card3Modo === 'liquido' ? tendLiqCls : tendBrutoCls}">
       <div class="label">🔮 Tendência Final Projetada</div>
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:6px 0 8px;">
-        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-          <div style="font-size:24px; font-weight:700; color:var(--text-strong);">${fmtR$(APP_STATE.config.card3Modo === 'liquido' ? tendFinalLiq : tendFinal)}</div>
-          <div style="font-size:12px; color:var(--text-soft);">${APP_STATE.config.card3Modo === 'liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
+      <div class="overview-projection-head">
+        <div class="overview-projection-main">
+          <div class="overview-projection-number">${fmtR$(APP_STATE.config.card3Modo === 'liquido' ? tendFinalLiq : tendFinal)}</div>
+          <div class="overview-projection-description">${APP_STATE.config.card3Modo === 'liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
         </div>
         <div class="toggle-group">
           <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="bruto" class="toggle-btn ${APP_STATE.config.card3Modo === 'bruto' ? 'active' : ''}">Bruto</button>
           <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${APP_STATE.config.card3Modo === 'liquido' ? 'active' : ''}">Líquido</button>
         </div>
       </div>
-      ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto >= 0 ? '+' : '') + fmtR$(desvioBruto), desvioBruto > 0 ? 'var(--sem-erro)' : desvioBruto < 0 ? 'var(--sem-ok)' : 'var(--text-soft)', 'gestão atual vs licitação')}
-      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'var(--accent-purple-dark)', 'extrapolação + flows pendentes')}
-      ${bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'var(--sem-alerta)', 'flows pendentes em Diretos/Civis')}
-      <div style="border-top:2px solid var(--border-strong); margin-top:8px; padding-top:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:13px;">
-          <span style="color:var(--text-strong); font-weight:700;">📈 Δ vs Licitação <span style="color:var(--text-soft); font-weight:600;">(${fmtPct(tendVsLicPct)})</span></span>
-          <strong style="color:${tendVsLic > 0 ? 'var(--sem-erro)' : tendVsLic < 0 ? 'var(--sem-ok)' : 'var(--text-soft)'}; font-size:14px;">${tendVsLic >= 0 ? '+' : ''}${fmtR$(tendVsLic)}</strong>
+      ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto >= 0 ? '+' : '') + fmtR$(desvioBruto), signedTone(desvioBruto), 'gestão atual vs licitação')}
+      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'purple', 'extrapolação + flows pendentes')}
+      ${bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning', 'flows pendentes em Diretos/Civis')}
+      <div class="overview-total-block">
+        <div class="overview-total-line">
+          <span class="overview-total-label">📈 Δ vs Licitação <span class="overview-total-hint">(${fmtPct(tendVsLicPct)})</span></span>
+          <strong class="overview-total-value overview-tone--${signedTone(tendVsLic)}">${tendVsLic >= 0 ? '+' : ''}${fmtR$(tendVsLic)}</strong>
         </div>
         ${
           reservaProj > 0
             ? `
-        <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:11.5px; color:var(--text-soft);">
+        <div class="overview-reserve-line">
           <span>Reserva ${escHtml(insumoControlado)} (${fmtPct(reservaPct)} sobre licit.)</span>
           <span>−${fmtR$(reservaProj)}</span>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:13px;">
-          <span style="color:var(--text-strong); font-weight:700;">💧 Δ vs Licitação (Líquido)</span>
-          <strong style="color:${tendVsLicLiq > 0 ? 'var(--sem-erro)' : tendVsLicLiq < 0 ? 'var(--sem-ok)' : 'var(--text-soft)'}; font-size:14px;">${tendVsLicLiq >= 0 ? '+' : ''}${fmtR$(tendVsLicLiq)}</strong>
+        <div class="overview-total-line">
+          <span class="overview-total-label">💧 Δ vs Licitação (Líquido)</span>
+          <strong class="overview-total-value overview-tone--${signedTone(tendVsLicLiq)}">${tendVsLicLiq >= 0 ? '+' : ''}${fmtR$(tendVsLicLiq)}</strong>
         </div>`
             : ''
         }
@@ -479,25 +480,17 @@ function renderVisao() {
         const diff = v.gestao - v.licit;
         const pct = v.licit ? (diff / v.licit) * 100 : null;
         const st = pct == null ? 'gray' : pct > 10 ? 'red' : pct > 0 ? 'amber' : 'green';
-        const barColor =
-          st === 'red'
-            ? 'var(--fgr-red-vivid)'
-            : st === 'amber'
-              ? 'var(--sem-alerta)'
-              : st === 'green'
-                ? 'var(--sem-ok)'
-                : 'var(--text-lighter)';
         const barWidth = Math.min(100, Math.abs(pct || 0) * 5);
         const aditInfo =
           Math.abs(v.aditivos) > 0.01
-            ? ` · <span style="color:var(--accent-purple);">📎 ${fmtR$k(v.aditivos)} em aditivos</span>`
+            ? ` · <span class="overview-group-aditivos">📎 ${fmtR$k(v.aditivos)} em aditivos</span>`
             : '';
         return `
       <div class="grupo-row">
-        <div class="grupo-nome"><span class="dot ${st}"></span>${escHtml(g)}<span style="font-weight:400;color:var(--text-soft);font-size:11px;">(${v.n})${aditInfo}</span></div>
-        <div style="font-size:11px;color:var(--text-soft);">${fmtR$k(v.licit)} → ${fmtR$k(v.gestao)}</div>
-        <div class="${diff <= 0 ? 'pos' : 'neg'}" style="font-weight:700;font-size:13px;">${pct != null ? fmtPct(pct) : 'novo'}</div>
-        <div class="grupo-bar"><div class="grupo-bar-fill" style="width:${barWidth}%;background:${barColor};"></div></div>
+        <div class="grupo-nome"><span class="dot ${st}"></span>${escHtml(g)}<span class="overview-group-count">(${v.n})${aditInfo}</span></div>
+        <div class="overview-group-meta">${fmtR$k(v.licit)} → ${fmtR$k(v.gestao)}</div>
+        <div class="${diff <= 0 ? 'pos' : 'neg'} overview-group-diff">${pct != null ? fmtPct(pct) : 'novo'}</div>
+        <progress class="grupo-bar-progress grupo-bar-progress--${st}" max="100" value="${barWidth}" aria-hidden="true">${barWidth}</progress>
       </div>`;
       })
       .join(''),
@@ -522,7 +515,7 @@ function renderVisao() {
     if (!arr.length) {
       replaceWithParsedMarkup(
         document.getElementById(containerId),
-        '<div style="color:var(--text-lighter); text-align:center; padding:20px; font-size:12px;">Nenhum item nessa categoria.</div>',
+        '<div class="overview-list-empty">Nenhum item nessa categoria.</div>',
       );
       return;
     }
@@ -597,7 +590,7 @@ function renderDonut(tipoSum) {
     destroyApexChart('donutChart');
     replaceWithParsedMarkup(
       document.getElementById('donutChart'),
-      '<div style="text-align:center; color:var(--text-lighter); padding:80px 20px; font-size:13px;">Sem aditivos para exibir.</div>',
+      '<div class="overview-donut-empty">Sem aditivos para exibir.</div>',
     );
     return;
   }

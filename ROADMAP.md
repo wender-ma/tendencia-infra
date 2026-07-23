@@ -196,7 +196,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Gerar assets minificados e com hash, sem script clássico legado.
 - [x] Remover scripts bloqueantes do `head`.
 - [x] Externalizar favicon e logo em arquivos otimizados.
-- [ ] Configurar Content Security Policy sem `unsafe-inline` (scripts já restritos a `self`; estilos inline do legado/ApexCharts ainda impedem a conclusão).
+- [x] Configurar Content Security Policy sem `unsafe-inline`: estilos da aplicação foram externalizados, `style-src-attr 'none'` bloqueia atributos de estilo e os dois blocos estáticos do ApexCharts são limitados por hash e validados no navegador. Inventário em `docs/csp_inline_style_inventory_2026-07-23.md`.
 - [x] Configurar headers de segurança adequados ao ambiente de hospedagem.
 
 ### 11. Melhorar performance
@@ -323,3 +323,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Persistência de snapshots grandes avaliada; JSON versionado em bucket privado escolhido para a migração gradual                                          | `docs/adr_dashboard_datasets.md`                            |
 | 21/07/2026 | Migration de snapshots versionados, RLS, ativação transacional, rollback e testes PostgreSQL preparados                                                   | `20260721211500_dashboard_datasets.sql`                     |
 | 23/07/2026 | Repositório de snapshots integrado ao carregamento e aos uploads, com fallback de schema, integridade SHA-256, ativação serializada e rollback conjunto | `dashboard-dataset-repository.mjs`                          |
+| 23/07/2026 | CSP estrita concluída sem `unsafe-inline`; estilos da aplicação externalizados e CSS estático do ApexCharts limitado por hash e teste de navegador         | `test_csp_style_contract.js`, `scripts/browser/csp.spec.js` |

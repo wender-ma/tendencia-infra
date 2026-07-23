@@ -13,9 +13,18 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(/<meta name="description" content="[^"]{50,160}">/.test(html), 'Meta description ausente ou inadequada');
-assert(/<meta name="robots" content="noindex, nofollow, noarchive">/.test(html), 'Dashboard interno precisa bloquear indexação');
-assert(/^User-agent: \*\nDisallow: \/\s*$/m.test(robots), 'robots.txt interno deve ser válido e bloquear rastreamento');
+assert(
+  /<meta name="description" content="[^"]{50,160}">/.test(html),
+  'Meta description ausente ou inadequada',
+);
+assert(
+  /<meta name="robots" content="noindex, nofollow, noarchive">/.test(html),
+  'Dashboard interno precisa bloquear indexação',
+);
+assert(
+  /^User-agent: \*\nDisallow: \/\s*$/m.test(robots),
+  'robots.txt interno deve ser válido e bloquear rastreamento',
+);
 for (const header of [
   'X-Content-Type-Options: nosniff',
   'X-Frame-Options: DENY',
@@ -27,13 +36,38 @@ for (const header of [
 }
 assert(headers.includes('max-age=31536000, immutable'), 'Cache imutável de assets ausente');
 assert(headers.includes('/index.html\n  Cache-Control: no-cache'), 'HTML precisa revalidar cache');
-const cspLine = headers.split('\n').find(line => line.includes('Content-Security-Policy:')) || '';
+const cspLine = headers.split('\n').find((line) => line.includes('Content-Security-Policy:')) || '';
+const csp = cspLine.replace(/^\s*Content-Security-Policy:\s*/, '').trim();
+const cspDirective = (name) =>
+  csp
+    .split(';')
+    .map((directive) => directive.trim())
+    .find((directive) => directive.startsWith(`${name} `)) || '';
 assert(cspLine.includes("script-src 'self'"), 'CSP deve aceitar scripts somente da própria origem');
 assert(cspLine.includes("script-src-attr 'none'"), 'CSP deve bloquear atributos JavaScript');
 assert(cspLine.includes('https://*.supabase.co'), 'CSP deve permitir a API do Supabase');
 assert(!/script-src[^;]*unsafe-inline/.test(cspLine), 'CSP não pode liberar JavaScript inline');
-assert(vercel.buildCommand === 'npm run build' && vercel.outputDirectory === 'dist', 'Build da Vercel incorreto');
-const vercelHeaderNames = vercel.headers.flatMap(rule => rule.headers.map(header => header.key));
+const styleDirective = cspDirective('style-src');
+assert(styleDirective.includes("'self'"), 'CSP deve aceitar folhas de estilo da própria origem');
+assert(
+  !styleDirective.includes('unsafe-inline'),
+  'CSP não pode liberar estilos inline genericamente',
+);
+assert(
+  cspDirective('style-src-attr') === "style-src-attr 'none'",
+  'CSP deve bloquear atributos de estilo',
+);
+assert(
+  (styleDirective.match(/'sha256-[^']+'/g) || []).length === 2,
+  'CSP deve limitar o ApexCharts aos dois hashes de estilo auditados',
+);
+assert(
+  vercel.buildCommand === 'npm run build' && vercel.outputDirectory === 'dist',
+  'Build da Vercel incorreto',
+);
+const vercelHeaderNames = vercel.headers.flatMap((rule) =>
+  rule.headers.map((header) => header.key),
+);
 for (const headerName of [
   'X-Content-Type-Options',
   'X-Frame-Options',
@@ -44,5 +78,12 @@ for (const headerName of [
 ]) {
   assert(vercelHeaderNames.includes(headerName), `Header ausente na Vercel: ${headerName}`);
 }
+const vercelCsp = vercel.headers
+  .flatMap((rule) => rule.headers)
+  .find((header) => header.key === 'Content-Security-Policy');
+assert(
+  vercelCsp?.value === csp,
+  'CSP da Vercel precisa ser idêntica à política em public/_headers',
+);
 
 console.log('Contrato de metadados: dashboard interno, Vercel, headers e cache OK');

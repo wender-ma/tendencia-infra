@@ -106,7 +106,7 @@ function renderHistorico() {
   });
   const diffKpiCls = isFlat(totDiff) ? '' : totDiff > 0 ? 'red' : 'green';
   const diffKpiVal = isFlat(totDiff)
-    ? '<span style="color:var(--text-soft);font-size:16px;">estável</span>'
+    ? '<span class="history-kpi-stable">estável</span>'
     : `${totDiff >= 0 ? '+' : ''}${fmtR$(totDiff)}`;
   const diffKpiSub = isFlat(totDiff)
     ? `variação &lt; R$ ${CENT_TOLERANCE.toFixed(2)}`
@@ -194,21 +194,21 @@ function renderHistChart(gestoes, totals) {
         const variacaoPct =
           prevVal && prevVal !== 0 ? ((variacao / prevVal) * 100).toFixed(2) : null;
         const variacaoFmt = variacao >= 0 ? '+' + fmtR$(variacao) : fmtR$(variacao);
-        let html = '<div style="padding:8px 12px; font-size:12px;">';
+        let html = '<div class="history-chart-tooltip">';
         html += '<strong>' + escHtml(gestaoLabel) + '</strong><br>';
         html +=
-          '<span style="color:var(--text-soft);">Total:</span> <strong>' +
+          '<span class="history-chart-tooltip-label">Total:</span> <strong>' +
           fmtR$(valor) +
           '</strong>';
         if (prevVal != null) {
           html +=
-            '<br><span style="color:var(--text-soft);">Δ vs anterior:</span> <strong>' +
+            '<br><span class="history-chart-tooltip-label">Δ vs anterior:</span> <strong>' +
             variacaoFmt +
             '</strong>';
           if (variacaoPct !== null) html += ' (' + variacaoPct + '%)';
         }
         if (dataPointIndex === 0)
-          html += '<br><span style="color:var(--text-soft); font-size:11px;">Orçamento base</span>';
+          html += '<br><span class="history-chart-tooltip-base">Orçamento base</span>';
         html += '</div>';
         return html;
       },
@@ -237,7 +237,7 @@ function renderHistChart(gestoes, totals) {
     const d = totals[gestoes[i]] - totals[gestoes[i - 1]];
     if (isFlat(d)) {
       leg.push(
-        `<span><strong>${escHtml(gestoes[i - 1])} → ${escHtml(gestoes[i])}:</strong> <span style="color:var(--text-soft);">estável</span></span>`,
+        `<span><strong>${escHtml(gestoes[i - 1])} → ${escHtml(gestoes[i])}:</strong> <span class="history-legend-stable">estável</span></span>`,
       );
     } else {
       const pct = totals[gestoes[i - 1]] ? (d / totals[gestoes[i - 1]]) * 100 : 0;
@@ -250,7 +250,7 @@ function renderHistChart(gestoes, totals) {
   replaceWithParsedMarkup(
     document.getElementById('histLegend'),
     leg.join(' · ') +
-      ` <span style="color:var(--text-lighter); margin-left:8px;">· variações &lt; R$ ${CENT_TOLERANCE.toFixed(2)} ignoradas (arredondamento)</span>`,
+      ` <span class="history-legend-tolerance">· variações &lt; R$ ${CENT_TOLERANCE.toFixed(2)} ignoradas (arredondamento)</span>`,
   );
 }
 
@@ -273,8 +273,7 @@ function renderHistTopChanges(items, gestoes) {
     .slice(0, 10);
 
   const renderList = (arr, isUp) => {
-    if (!arr.length)
-      return '<div style="color:var(--text-lighter); text-align:center; padding:20px;">Sem variações neste período.</div>';
+    if (!arr.length) return '<div class="history-empty-changes">Sem variações neste período.</div>';
     const maxAbs = Math.max(...arr.map((x) => Math.abs(x.delta)));
     return arr
       .map((x) => {
@@ -285,7 +284,7 @@ function renderHistTopChanges(items, gestoes) {
         <div class="top-item">
           <div class="name" title="${escAttr(nome)}">${escHtml(x.insumo)} — ${escHtml(nome.length > 40 ? nome.slice(0, 37) + '...' : nome)}</div>
           <div class="val ${x.delta < 0 ? 'pos' : 'neg'}">${x.delta >= 0 ? '+' : ''}${fmtR$(x.delta)}</div>
-          <div class="top-bar"><div class="top-bar-fill ${isUp ? '' : 'green'}" style="width:${(Math.abs(x.delta) / maxAbs) * 100}%;"></div></div>
+          <progress class="top-bar-progress ${isUp ? '' : 'top-bar-progress--green'}" max="${maxAbs}" value="${Math.abs(x.delta)}">${Math.abs(x.delta)}</progress>
         </div>`;
       })
       .join('');
@@ -383,11 +382,11 @@ function renderHistHeatmap() {
         const tendMatch = APP_STATE.dados.tendencia.find((t) => t.cod_insumo === it.insumo);
         const nome = tendMatch ? tendMatch.item : it.item_cod;
         return `<tr>
-      <td style="font-size:11px;color:var(--text-soft);">${escHtml(it.insumo)}</td>
-      <td style="font-size:11.5px;">${escHtml(nome)}</td>
+      <td class="hist-insumo-cell">${escHtml(it.insumo)}</td>
+      <td class="hist-name-cell">${escHtml(nome)}</td>
       ${cells}
-      <td class="hist-cell ${dTotal < 0 ? 'down-strong' : dTotal > 0 ? 'up-strong' : 'flat'}" style="font-weight:700;">${dTotal === 0 ? '—' : (dTotal >= 0 ? '+' : '') + fmt(dTotal, 0)}</td>
-      <td class="hist-cell ${dTotal < 0 ? 'down-strong' : dTotal > 0 ? 'up-strong' : 'flat'}" style="font-weight:700;">${pctTot != null ? (pctTot >= 0 ? '+' : '') + pctTot.toFixed(1) + '%' : '—'}</td>
+      <td class="hist-cell hist-total-cell ${dTotal < 0 ? 'down-strong' : dTotal > 0 ? 'up-strong' : 'flat'}">${dTotal === 0 ? '—' : (dTotal >= 0 ? '+' : '') + fmt(dTotal, 0)}</td>
+      <td class="hist-cell hist-total-cell ${dTotal < 0 ? 'down-strong' : dTotal > 0 ? 'up-strong' : 'flat'}">${pctTot != null ? (pctTot >= 0 ? '+' : '') + pctTot.toFixed(1) + '%' : '—'}</td>
     </tr>`;
       })
       .join(''),

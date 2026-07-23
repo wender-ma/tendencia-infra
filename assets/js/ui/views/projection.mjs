@@ -626,8 +626,9 @@ function flowsPorServico(cod_servico) {
 function flowChip(info) {
   if (!info) return '';
   const liquido = info.valEntrada - info.valSaida;
-  const cor = liquido > 0 ? 'var(--sem-erro)' : liquido < 0 ? 'var(--sem-ok)' : 'var(--text-soft)';
-  return `<span style="display:inline-block; padding:1px 6px; margin-left:6px; background:var(--accent-purple-bg); color:var(--accent-purple-dark); border-radius:10px; font-size:10px; font-weight:600; cursor:help;" title="✅ ${info.total} flow(s) refletidos em planejamento · ${info.entrada} entrada(s) (+${fmt(info.valEntrada)}) · ${info.saida} saída(s) (-${fmt(info.valSaida)})">📎 ${info.total} flow${info.total > 1 ? 's' : ''} <span style="color:${cor};">${liquido >= 0 ? '+' : ''}${fmtR$k(liquido)}</span></span>`;
+  const tone = liquido > 0 ? 'increase' : liquido < 0 ? 'reduction' : 'neutral';
+  const title = `✅ ${info.total} flow(s) refletidos em planejamento · ${info.entrada} entrada(s) (+${fmt(info.valEntrada)}) · ${info.saida} saída(s) (-${fmt(info.valSaida)})`;
+  return `<span class="projection-flow-chip" title="${escAttr(title)}">📎 ${info.total} flow${info.total > 1 ? 's' : ''} <span class="projection-flow-chip__value projection-flow-chip__value--${tone}">${liquido >= 0 ? '+' : ''}${fmtR$k(liquido)}</span></span>`;
 }
 
 function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
@@ -947,48 +948,40 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const hasChildren = n.children.filter((ci) => visible.has(ci)).length > 0;
     const expanded = projExpanded.has(key);
     const st = nodeStatus(n);
-    const indent = level * 18;
+    const depth = Math.min(level, 6);
     const dV = p.diff || 0;
     const ex = p.extrapolacao || 0;
-    // Estilos por tipo
-    let trStyle = '',
-      icon = '',
+    const rowClasses = ['projection-tree-row', `projection-tree-row--${n.tipo}`];
+    if (n.tipo === 'insumo' && p.empty) rowClasses.push('is-empty');
+    let icon = '',
       labelHtml = '';
     if (n.tipo === 'raiz') {
-      trStyle =
-        'background:var(--surface-inverse); color:var(--text-on-dark); cursor:pointer; font-weight:700;';
       icon = expanded ? '▼' : '▶';
       labelHtml = `<strong>${escHtml(n.cod)} · ${escHtml(n.item)}</strong>`;
     } else if (n.tipo === 'grupo') {
-      trStyle =
-        'background:var(--fgr-red-deep); color:var(--text-on-dark); cursor:pointer; font-weight:700;';
       icon = expanded ? '▼' : '▶';
       labelHtml = `<strong>${escHtml(n.cod)} · ${escHtml(n.item)}</strong>`;
     } else if (n.tipo === 'subgrupo') {
-      trStyle =
-        'background:var(--fgr-red-light); cursor:pointer; font-weight:600; color:var(--fgr-red-deep);';
       icon = expanded ? '▼' : '▶';
       labelHtml = `${escHtml(n.cod)} · ${escHtml(n.item)}`;
     } else if (n.tipo === 'servico' || n.tipo === 'outro') {
-      trStyle = 'background:var(--fgr-red-light); cursor:pointer; color:var(--fgr-red-deep);';
       icon = expanded ? '▼' : hasChildren ? '▶' : '🔍';
       const codeMark = n.cod_servico ? `<strong>${escHtml(n.cod_servico)}</strong> · ` : '';
       const chip = n.cod_servico ? flowChip(flowsPorServico(n.cod_servico)) : '';
       labelHtml = `${codeMark}${escHtml(n.item)}${chip}`;
     } else if (n.tipo === 'insumo') {
-      trStyle = p.empty ? 'cursor:pointer; color:var(--text-lighter);' : 'cursor:pointer;';
       icon = '🔍';
       const chip = flowChip(flowsPorInsumo(n.cod_insumo));
-      labelHtml = `<span style="color:var(--text-soft);">${escHtml(n.cod_insumo)}</span> · ${escHtml(n.item)}${chip}`;
+      labelHtml = `<span class="projection-input-code">${escHtml(n.cod_insumo)}</span> · ${escHtml(n.item)}${chip}`;
     }
 
     // Texto da ação
     const acao = p.empty
       ? ''
       : dV > tolerancia
-        ? `<span style="font-size:10.5px; color:var(--sem-erro); font-weight:600;">+${fmtR$k(dV)} a planejar</span>`
+        ? `<span class="projection-action projection-action--plan">+${fmtR$k(dV)} a planejar</span>`
         : dV < -tolerancia
-          ? `<span style="font-size:10.5px; color:var(--sem-ok);">sobram ${fmtR$k(-dV)}</span>`
+          ? `<span class="projection-action projection-action--surplus">sobram ${fmtR$k(-dV)}</span>`
           : '';
 
     // Cores adaptadas ao fundo
@@ -1012,13 +1005,13 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const extrapTxt =
       Math.abs(ex) > 0.01
         ? n.tipo === 'insumo' || n.tipo === 'servico' || n.tipo === 'outro'
-          ? `<span style="font-size:10px; color:${ex < 0 ? 'var(--sem-ok)' : 'var(--sem-alerta)'};" title="${escAttr(extrapTitle)}">${ex >= 0 ? '+' : ''}${fmt(ex)}${Math.abs(flowsPendVal) > 0.01 ? ' 📎' : ''}</span>`
-          : `<span style="color:${isDark ? 'var(--badge-manual-bg)' : ex < 0 ? 'var(--sem-ok)' : 'var(--sem-alerta)'};">${ex >= 0 ? '+' : ''}${fmt(ex)}</span>`
-        : `<span style="color:${isDark ? 'rgba(255,255,255,0.5)' : 'var(--text-lighter)'};">—</span>`;
+          ? `<span class="projection-extrapolation projection-extrapolation--detail projection-extrapolation--${ex < 0 ? 'reduction' : 'increase'}" title="${escAttr(extrapTitle)}">${ex >= 0 ? '+' : ''}${fmt(ex)}${Math.abs(flowsPendVal) > 0.01 ? ' 📎' : ''}</span>`
+          : `<span class="projection-extrapolation projection-extrapolation--${isDark ? 'dark' : ex < 0 ? 'reduction' : 'increase'}">${ex >= 0 ? '+' : ''}${fmt(ex)}</span>`
+        : `<span class="projection-extrapolation projection-extrapolation--${isDark ? 'empty-dark' : 'empty'}">—</span>`;
 
     const valuesEmpty = p.empty;
     const fmtVal = (v) =>
-      valuesEmpty ? '<span style="color:var(--border-strong);">—</span>' : fmtR$(v || 0);
+      valuesEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(v || 0);
 
     // A ação fica em data attributes para não misturar dados importados com JavaScript inline.
     let actionAttrs;
@@ -1038,13 +1031,13 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const _tendUI = _vg + (p.extrapolacao || 0);
     const vgEmpty = valuesEmpty && _vg === 0;
 
-    html += `<tr style="${trStyle}" ${actionAttrs}>
-      <td style="width:24px; padding-left:${4 + indent}px;">${icon}</td>
-      <td style="padding-left:${10 + indent}px;">${labelHtml}</td>
-      <td class="num">${vgEmpty ? '<span style="color:var(--border-strong);">—</span>' : fmtR$(_vg)}</td>
+    html += `<tr class="${rowClasses.join(' ')}" ${actionAttrs}>
+      <td class="projection-tree-icon projection-tree-depth-${depth}">${icon}</td>
+      <td class="projection-tree-label projection-tree-depth-${depth}">${labelHtml}</td>
+      <td class="num">${vgEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(_vg)}</td>
       <td class="num">${fmtVal(p.realizado)}</td>
       <td class="num">${extrapTxt}</td>
-      <td class="num">${vgEmpty && Math.abs(p.extrapolacao || 0) < 0.01 ? '<span style="color:var(--border-strong);">—</span>' : '<strong>' + fmtR$(_tendUI) + '</strong>'}</td>
+      <td class="num">${vgEmpty && Math.abs(p.extrapolacao || 0) < 0.01 ? '<span class="projection-empty-value">—</span>' : '<strong>' + fmtR$(_tendUI) + '</strong>'}</td>
       <td>${statusBadge[st] || ''} ${acao}</td>
     </tr>`;
     count++;
@@ -1490,31 +1483,31 @@ function openProjDrill(servico, insumo) {
     `
     <h2>🔮 Projeção · ${escHtml(titulo)}</h2>
     <div class="meta">${escHtml(subtitulo)} · Grupo: <strong>${escHtml(proj.grupo)}</strong> ${grupoExtrapola(proj.grupo) ? '<span class="badge purple">extrapola</span>' : '<span class="badge gray">não extrapola</span>'}</div>
-    <div class="kpis kpi-2col" style="margin-bottom:14px;">
+    <div class="kpis kpi-2col projection-modal-kpis">
       <div class="kpi kpi-wide">
         <div class="label">📊 Planejado vs Realizado</div>
         <div class="value">${fmtR$(proj.planejado_total)}</div>
         <div class="sub">Planejado Total · até ${proj.ultimo_mes_planejado ? formatMonthLabel(proj.ultimo_mes_planejado) : '-'}</div>
-        <hr class="border-top-soft" style="margin:10px 0;">
+        <hr class="border-top-soft projection-modal-divider">
         <div>
           <div class="section-label">Realizado (até ${formatMonthLabel(dataCorte)})</div>
-          <div class="kpi-value-md" style="margin-top:4px;">${fmtR$(proj.realizado)}</div>
+          <div class="kpi-value-md projection-modal-kpi-value">${fmtR$(proj.realizado)}</div>
         </div>
       </div>
       <div class="kpi kpi-wide ${proj.diff > 0 ? 'red' : proj.diff < 0 ? 'green' : ''}">
         <div class="label">🔮 Extrapolação</div>
         <div class="value">${proj.extrapolacao > 0 ? '+' + fmtR$(proj.extrapolacao) : '—'}</div>
         <div class="sub">${proj.meses_gap > 0 ? `${proj.meses_gap} meses × R$${fmt(proj.ritmo_historico, 0)}/m` : 'sem gap'}</div>
-        <hr class="border-top-soft" style="margin:10px 0;">
+        <hr class="border-top-soft projection-modal-divider">
         <div>
           <div class="section-label">Tendência Final</div>
-          <div class="kpi-value-md" style="margin-top:4px;">${fmtR$(proj.tendencia)}</div>
+          <div class="kpi-value-md projection-modal-kpi-value">${fmtR$(proj.tendencia)}</div>
           <div class="sub">Δ ${proj.diff >= 0 ? '+' : ''}${fmtR$(proj.diff)}</div>
         </div>
       </div>
     </div>
-    <h3 style="font-size:13px; margin-bottom:8px;">📈 Curva S individual</h3>
-    <div id="modalProjChart" style="height:300px;"></div>
+    <h3 class="projection-modal-chart-heading">📈 Curva S individual</h3>
+    <div id="modalProjChart" class="projection-modal-chart"></div>
     ${renderFlowsRefletidosSection(servico, insumo)}
     ${renderMovimentacoesProjecaoSection(servico, insumo)}
   `,
@@ -1635,9 +1628,9 @@ function renderMovimentacoesProjecaoSection(servico, insumo) {
 
   if (!movsManuais.length) {
     return `
-      <div style="margin-top:16px; padding:12px; background:var(--bg-page); border-radius:8px; text-align:center; color:var(--text-lighter); font-size:11.5px;">
+      <div class="projection-detail-empty projection-detail-empty--movement">
         💰 Nenhuma movimentação manual da Verba de Projeção (${escHtml(insumoControlado)}) registrada para este ${insumo ? 'insumo' : 'serviço'}.<br>
-        <span style="font-size:10.5px;">Use a aba "📦 Controle Projeção" para registrar remanejamentos básicos, aportes ou devoluções fora de aditivos.</span>
+        <span class="projection-detail-empty-help">Use a aba "📦 Controle Projeção" para registrar remanejamentos básicos, aportes ou devoluções fora de aditivos.</span>
       </div>
     `;
   }
@@ -1663,40 +1656,40 @@ function renderMovimentacoesProjecaoSection(servico, insumo) {
   const cards = movsManuais
     .map((m) => {
       const ehEntrada = alvos.includes(m.destino);
-      const dirColor = ehEntrada ? 'var(--sem-erro)' : 'var(--sem-ok)';
+      const direcao = ehEntrada ? 'entrada' : 'saida';
       const dirIcon = ehEntrada ? '➡️ entrada' : '⬅️ saída';
       const insumoAlvo = ehEntrada ? m.destino : m.origem;
       const valor = m.valor || 0;
       return `
-      <div style="background:var(--bg-page); border-left:3px solid ${dirColor}; border-radius:6px; padding:10px 12px; margin-bottom:8px; font-size:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:8px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <div class="projection-detail-card projection-detail-card--${direcao}">
+        <div class="projection-detail-card-header">
+          <div class="projection-detail-card-meta">
             <strong>${escHtml(m.id)}</strong>
             ${tipoBadge[m.tipo] || m.tipo}
-            <span style="font-size:10.5px; color:var(--text-soft);">${escHtml(m.data_br || m.data || '')}</span>
-            <span style="font-size:10.5px; color:${dirColor}; font-weight:700;">${dirIcon}</span>
-            <span style="font-size:10.5px; color:var(--text-soft);"> · insumo ${escHtml(insumoAlvo)}</span>
+            <span class="projection-detail-card-date">${escHtml(m.data_br || m.data || '')}</span>
+            <span class="projection-detail-card-direction projection-detail-card-direction--${direcao}">${dirIcon}</span>
+            <span class="projection-detail-card-target"> · insumo ${escHtml(insumoAlvo)}</span>
             ${!insumo ? '' : ''}
           </div>
-          <span style="font-weight:700; color:${ehEntrada ? 'var(--sem-erro)' : 'var(--sem-ok)'}; font-size:13px;">${ehEntrada ? '+' : '-'}${fmtR$(valor)}</span>
+          <span class="projection-detail-card-amount projection-detail-card-amount--${ehEntrada ? 'increase' : 'reduction'}">${ehEntrada ? '+' : '-'}${fmtR$(valor)}</span>
         </div>
-        <div style="color:var(--text-medium); font-size:11.5px;">${escHtml(m.descricao || '')}</div>
-        ${m.justificativa ? `<div style="color:var(--text-soft); font-size:10.5px; margin-top:3px;"><em>Justificativa:</em> ${escHtml(m.justificativa.slice(0, 180))}${m.justificativa.length > 180 ? '...' : ''}</div>` : ''}
-        ${m.responsavel ? `<div style="color:var(--text-soft); font-size:10.5px; margin-top:2px;">Responsável: ${escHtml(m.responsavel)}</div>` : ''}
+        <div class="projection-detail-card-description">${escHtml(m.descricao || '')}</div>
+        ${m.justificativa ? `<div class="projection-detail-card-justification"><em>Justificativa:</em> ${escHtml(m.justificativa.slice(0, 180))}${m.justificativa.length > 180 ? '...' : ''}</div>` : ''}
+        ${m.responsavel ? `<div class="projection-detail-card-responsible">Responsável: ${escHtml(m.responsavel)}</div>` : ''}
       </div>
     `;
     })
     .join('');
 
   return `
-    <div style="margin-top:20px;">
-      <h3 style="font-size:13px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-        💰 Movimentações da Verba de Projeção ${escHtml(insumoControlado)} <span style="font-size:11px; color:var(--text-soft); font-weight:400;">${movsManuais.length} movimentação(ões) manual(is)</span>
+    <div class="projection-detail-section">
+      <h3 class="projection-detail-section-heading">
+        💰 Movimentações da Verba de Projeção ${escHtml(insumoControlado)} <span class="projection-detail-section-count">${movsManuais.length} movimentação(ões) manual(is)</span>
       </h3>
-      <div style="background:var(--sem-alerta-bg); padding:10px 12px; border-radius:6px; margin-bottom:12px; font-size:12px; color:var(--sem-alerta); display:flex; gap:18px; flex-wrap:wrap;">
-        <span><strong>${movsManuais.filter((m) => alvos.includes(m.destino)).length}</strong> entrada(s): <strong style="color:var(--sem-erro);">+${fmtR$(totEntrada)}</strong></span>
-        <span><strong>${movsManuais.filter((m) => alvos.includes(m.origem)).length}</strong> saída(s): <strong style="color:var(--sem-ok);">-${fmtR$(totSaida)}</strong></span>
-        <span>Líquido: <strong style="color:${liquido < 0 ? 'var(--sem-ok)' : 'var(--sem-erro)'};">${liquido >= 0 ? '+' : ''}${fmtR$(liquido)}</strong></span>
+      <div class="projection-detail-summary projection-detail-summary--manual">
+        <span><strong>${movsManuais.filter((m) => alvos.includes(m.destino)).length}</strong> entrada(s): <strong class="projection-detail-summary-increase">+${fmtR$(totEntrada)}</strong></span>
+        <span><strong>${movsManuais.filter((m) => alvos.includes(m.origem)).length}</strong> saída(s): <strong class="projection-detail-summary-reduction">-${fmtR$(totSaida)}</strong></span>
+        <span>Líquido: <strong class="projection-detail-summary-${liquido < 0 ? 'reduction' : 'increase'}">${liquido >= 0 ? '+' : ''}${fmtR$(liquido)}</strong></span>
       </div>
       ${cards}
     </div>
@@ -1749,9 +1742,9 @@ function renderFlowsRefletidosSection(servico, insumo) {
 
   if (!flowsRel.length && !flowsPend.length) {
     return `
-      <div style="margin-top:20px; padding:14px; background:var(--bg-page); border-radius:8px; text-align:center; color:var(--text-lighter); font-size:12px;">
+      <div class="projection-detail-empty projection-detail-empty--flows">
         📎 Nenhum flow (refletido ou pendente) para este ${insumo ? 'insumo' : 'serviço'}.<br>
-        <span style="font-size:11px;">Vá na aba "🔗 Flows / Aditivos" para classificar aditivos.</span>
+        <span class="projection-detail-empty-help projection-detail-empty-help--flows">Vá na aba "🔗 Flows / Aditivos" para classificar aditivos.</span>
       </div>
     `;
   }
@@ -1787,33 +1780,32 @@ function renderFlowsRefletidosSection(servico, insumo) {
   function renderCard(f) {
     const dir = f._direcao;
     const dirIcon = dir === 'entrada' ? '➡️ entrada' : '⬅️ saída';
-    const dirColor = dir === 'entrada' ? 'var(--sem-erro)' : 'var(--sem-ok)';
     const valor = f.custo_flowmaster || 0;
     const insAlvoTxt = f._insumoAlvo
-      ? `<span style="font-size:10.5px; color:var(--text-soft);"> · insumo ${escHtml(f._insumoAlvo)}</span>`
+      ? `<span class="projection-detail-card-target"> · insumo ${escHtml(f._insumoAlvo)}</span>`
       : '';
     return `
-      <div style="background:var(--bg-page); border-left:3px solid ${dirColor}; border-radius:6px; padding:10px 12px; margin-bottom:8px; font-size:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:8px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <div class="projection-detail-card projection-detail-card--${dir}">
+        <div class="projection-detail-card-header">
+          <div class="projection-detail-card-meta">
             <strong>Nº ${escHtml(f.n_alteracao)}</strong>
             ${f.is_manual ? '<span class="badge-manual">✋ Manual</span>' : ''}
             <span class="badge ${depBadge[f.dep] || 'gray'}">${escHtml(f.dep || '')}</span>
             ${tipoLabel[f.tipo] || ''}
-            <span style="font-size:10.5px; color:var(--text-soft);">${escHtml(formatDate(f.data_br))}</span>
-            <span style="font-size:10.5px; color:${dirColor}; font-weight:700;">${dirIcon}</span>
+            <span class="projection-detail-card-date">${escHtml(formatDate(f.data_br))}</span>
+            <span class="projection-detail-card-direction projection-detail-card-direction--${dir}">${dirIcon}</span>
             ${insAlvoTxt}
           </div>
-          <span style="font-weight:700; color:${valor < 0 ? 'var(--sem-ok)' : 'var(--sem-erro)'}; font-size:13px;">${valor >= 0 ? '+' : ''}${fmtR$(valor)}</span>
+          <span class="projection-detail-card-amount projection-detail-card-amount--${valor < 0 ? 'reduction' : 'increase'}">${valor >= 0 ? '+' : ''}${fmtR$(valor)}</span>
         </div>
-        <div style="color:var(--text-medium); font-size:11.5px;"><strong>${escHtml(f.motivo || '')}</strong></div>
-        <div style="color:var(--text-soft); font-size:11px; margin-top:3px;">${escHtml((f.descricao || '').slice(0, 220))}${(f.descricao || '').length > 220 ? '...' : ''}</div>
-        ${f.justificativa ? `<div style="color:var(--text-soft); font-size:10.5px; margin-top:3px;"><em>Justificativa:</em> ${escHtml(f.justificativa.slice(0, 180))}${f.justificativa.length > 180 ? '...' : ''}</div>` : ''}
+        <div class="projection-detail-card-description"><strong>${escHtml(f.motivo || '')}</strong></div>
+        <div class="projection-detail-card-copy">${escHtml((f.descricao || '').slice(0, 220))}${(f.descricao || '').length > 220 ? '...' : ''}</div>
+        ${f.justificativa ? `<div class="projection-detail-card-justification"><em>Justificativa:</em> ${escHtml(f.justificativa.slice(0, 180))}${f.justificativa.length > 180 ? '...' : ''}</div>` : ''}
       </div>
     `;
   }
 
-  function renderSecao(titulo, lista, corFundo, corTexto) {
+  function renderSecao(titulo, lista, tone) {
     if (!lista.length) return '';
     const totE = lista
       .filter((f) => f._direcao === 'entrada')
@@ -1823,14 +1815,14 @@ function renderFlowsRefletidosSection(servico, insumo) {
       .reduce((s, f) => s + (f.custo_flowmaster || 0), 0);
     const liq = totE - totS;
     return `
-      <div style="margin-top:20px;">
-        <h3 style="font-size:13px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-          ${titulo} <span style="font-size:11px; color:var(--text-soft); font-weight:400;">${lista.length} aditivo(s)</span>
+      <div class="projection-detail-section">
+        <h3 class="projection-detail-section-heading">
+          ${titulo} <span class="projection-detail-section-count">${lista.length} aditivo(s)</span>
         </h3>
-        <div style="background:${corFundo}; padding:10px 12px; border-radius:6px; margin-bottom:12px; font-size:12px; color:${corTexto}; display:flex; gap:18px; flex-wrap:wrap;">
-          <span><strong>${lista.filter((f) => f._direcao === 'entrada').length}</strong> entrada(s): <strong style="color:var(--sem-erro);">+${fmtR$(totE)}</strong></span>
-          <span><strong>${lista.filter((f) => f._direcao === 'saida').length}</strong> saída(s): <strong style="color:var(--sem-ok);">-${fmtR$(totS)}</strong></span>
-          <span>Líquido: <strong style="color:${liq < 0 ? 'var(--sem-ok)' : 'var(--sem-erro)'};">${liq >= 0 ? '+' : ''}${fmtR$(liq)}</strong></span>
+        <div class="projection-detail-summary projection-detail-summary--${tone}">
+          <span><strong>${lista.filter((f) => f._direcao === 'entrada').length}</strong> entrada(s): <strong class="projection-detail-summary-increase">+${fmtR$(totE)}</strong></span>
+          <span><strong>${lista.filter((f) => f._direcao === 'saida').length}</strong> saída(s): <strong class="projection-detail-summary-reduction">-${fmtR$(totS)}</strong></span>
+          <span>Líquido: <strong class="projection-detail-summary-${liq < 0 ? 'reduction' : 'increase'}">${liq >= 0 ? '+' : ''}${fmtR$(liq)}</strong></span>
         </div>
         ${lista.map(renderCard).join('')}
       </div>
@@ -1838,8 +1830,8 @@ function renderFlowsRefletidosSection(servico, insumo) {
   }
 
   return `
-    ${renderSecao('✅ Flows refletidos no planejamento', flowsRel, 'var(--accent-purple-bg)', 'var(--accent-purple-dark)')}
-    ${renderSecao('⏳ Flows pendentes (ainda não refletidos) — entram como extrapolação', flowsPend, 'var(--sem-alerta-bg)', 'var(--sem-alerta)')}
+    ${renderSecao('✅ Flows refletidos no planejamento', flowsRel, 'reflected')}
+    ${renderSecao('⏳ Flows pendentes (ainda não refletidos) — entram como extrapolação', flowsPend, 'pending')}
   `;
 }
 

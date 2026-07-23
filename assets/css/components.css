@@ -35,6 +35,10 @@
     white-space: pre-wrap;
   }
   #chartTooltip.show { opacity: 1; }
+  #chartTooltip.tooltip--top-left { top: 14px; left: 14px; right: auto; bottom: auto; }
+  #chartTooltip.tooltip--top-right { top: 14px; right: 14px; left: auto; bottom: auto; }
+  #chartTooltip.tooltip--bottom-left { bottom: 14px; left: 14px; right: auto; top: auto; }
+  #chartTooltip.tooltip--bottom-right { bottom: 14px; right: 14px; left: auto; top: auto; }
   #chartTooltip strong { color: var(--fgr-red-vivid); }
   #chartTooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; }
   #chartTooltip .tt-label { color: var(--text-soft); }

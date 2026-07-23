@@ -36,8 +36,8 @@ function showManualText(key) {
     document.getElementById('modalContent'),
     `
     <h2>ℹ️ Como exportar</h2>
-    <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: var(--text-medium); margin-top: 12px;">${escHtml(text)}</div>
-    <div style="margin-top: 16px; text-align: right;">
+    <div class="manual-export-text">${escHtml(text)}</div>
+    <div class="manual-export-actions">
       <button class="btn-sm" data-click-action="closeModal">Fechar</button>
     </div>
   `,
@@ -333,19 +333,17 @@ function hideTooltip() {
 }
 function positionTooltip(evt, tt) {
   if (!tt) tt = document.getElementById('chartTooltip');
-  const pad = 14;
-  let x = evt.clientX + pad,
-    y = evt.clientY + pad;
-  // Forçar render para medir
-  tt.style.left = '-9999px';
-  tt.style.top = '-9999px';
-  const rect = tt.getBoundingClientRect();
-  if (x + rect.width > window.innerWidth - pad) x = evt.clientX - rect.width - pad;
-  if (y + rect.height > window.innerHeight - pad) y = evt.clientY - rect.height - pad;
-  if (x < pad) x = pad;
-  if (y < pad) y = pad;
-  tt.style.left = x + 'px';
-  tt.style.top = y + 'px';
+  if (!tt) return;
+  const positions = [
+    'tooltip--top-left',
+    'tooltip--top-right',
+    'tooltip--bottom-left',
+    'tooltip--bottom-right',
+  ];
+  const vertical = evt.clientY > window.innerHeight / 2 ? 'bottom' : 'top';
+  const horizontal = evt.clientX > window.innerWidth / 2 ? 'right' : 'left';
+  tt.classList.remove(...positions);
+  tt.classList.add(`tooltip--${vertical}-${horizontal}`);
 }
 // Helper para linha de tooltip formatada
 function ttRow(label, val) {
@@ -431,7 +429,7 @@ function updateEditCount() {
   replaceWithParsedMarkup(
     el,
     parts.length
-      ? parts.join(' ') + ' <span style="color:var(--text-soft);">— não esqueça de exportar</span>'
+      ? parts.join(' ') + ' <span class="flow-edit-reminder">— não esqueça de exportar</span>'
       : '',
   );
 }
@@ -476,14 +474,6 @@ function renderFlowsAggregates() {
     <div class="flow-card purple"><div class="lbl">Aumento Real</div><div class="v">${fmtR$(tipoSums.aumento_real.v)}</div><div class="sub">${tipoSums.aumento_real.n} aditivos</div></div>
   `,
   );
-  const colors = {
-    aumento_real: 'var(--fgr-red-vivid)',
-    remanejamento: 'var(--text-medium)',
-    economia: 'var(--sem-ok)',
-    pendente: 'var(--sem-alerta)',
-    cancelado: 'var(--text-medium)',
-    sem_classificacao: 'var(--text-lighter)',
-  };
   const labels = {
     aumento_real: '🔴 Aumento real',
     remanejamento: '🔵 Remanejamento',
@@ -499,9 +489,9 @@ function renderFlowsAggregates() {
       .map(
         ([t, v]) => `
     <div class="top-item">
-      <div class="name">${labels[t]} <span style="color:var(--text-soft);font-size:11px;">(${v.n})</span></div>
+      <div class="name">${labels[t]} <span class="top-item-count">(${v.n})</span></div>
       <div class="val">${fmtR$(v.v)}</div>
-      <div class="top-bar"><div class="top-bar-fill" style="width:${(Math.abs(v.v) / maxV) * 100}%;background:${colors[t]};"></div></div>
+      <progress class="top-bar-progress top-bar-progress--${t}" max="${maxV}" value="${Math.abs(v.v)}">${Math.abs(v.v)}</progress>
     </div>`,
       )
       .join(''),
@@ -514,9 +504,9 @@ function renderFlowsAggregates() {
       replaceWithParsedMarkup(
         elDesc,
         `
-        <div style="background:var(--bg-soft); border-left:3px solid var(--text-lighter); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-medium);">
+        <div class="flow-discarded-summary">
           <span>❌ <strong>Marcados como "Não refletir":</strong> ${descartados.length} aditivo(s)</span>
-          <strong style="color:var(--text-soft);">${fmtR$(valDesc)}</strong>
+          <strong class="flow-discarded-value">${fmtR$(valDesc)}</strong>
         </div>
       `,
       );
@@ -679,7 +669,7 @@ function msFilterOpts(key, term) {
   const opts = document.querySelectorAll(`#ms_${key}_list .ms-opt`);
   opts.forEach((o) => {
     const txt = o.dataset.search || '';
-    o.style.display = txt.includes(t) ? '' : 'none';
+    o.hidden = !txt.includes(t);
   });
 }
 
@@ -828,13 +818,13 @@ function updateMassBar() {
   if (!bar) return;
   if (!isEditorDaObraAtiva()) {
     MASS_SELECTED.clear();
-    bar.style.display = 'none';
+    bar.hidden = true;
     bar.replaceChildren();
     return;
   }
   const n = MASS_SELECTED.size;
   if (n === 0) {
-    bar.style.display = 'none';
+    bar.hidden = true;
     bar.replaceChildren();
     return;
   }
@@ -843,14 +833,14 @@ function updateMassBar() {
     .map((nAlt) => getFlowsObraAtiva().find((f) => f.n_alteracao === nAlt))
     .filter(Boolean);
   const totVal = selFlows.reduce((s, f) => s + (f.custo_flowmaster || 0), 0);
-  bar.style.display = 'flex';
+  bar.hidden = false;
   bar.className = 'mass-bar';
   replaceWithParsedMarkup(
     bar,
     `
     <strong>☑️ ${n} aditivo${n > 1 ? 's' : ''} selecionado${n > 1 ? 's' : ''}</strong>
-    <span style="opacity:0.85; font-size:12px;">· Σ ${fmtR$(totVal)}</span>
-    <span style="margin-left:auto;"></span>
+    <span class="mass-bar-total">· Σ ${fmtR$(totVal)}</span>
+    <span class="mass-bar-spacer"></span>
     <button class="btn-mass" data-click-action="massAplicarDestino" title="Aplica o mesmo INSUMO PLANEJAMENTO em todos os selecionados">🎯 Aplicar Destino</button>
     <button class="btn-mass" data-click-action="massAplicarOrigem" title="Aplica o mesmo INSUMO REMANEJAMENTO em todos os selecionados">🔄 Aplicar Origem</button>
     <button class="btn-mass" data-click-action="massAplicarRefletido" title="Marca todos com o mesmo status de reflexo">✅ Marcar Refletido</button>
@@ -864,7 +854,7 @@ function massPrompt(titulo, descricao, opcoesHtml, callback) {
   const html = `
     <form data-modal-form="mass">
     <h2>${titulo}</h2>
-    <div class="meta" style="margin-bottom: 14px;">${descricao}</div>
+    <div class="meta mass-prompt-meta">${descricao}</div>
     <div class="form-grid">
       ${opcoesHtml}
     </div>
@@ -912,8 +902,8 @@ function massAplicarDestino() {
   const opt = `
     <div class="full">
       <label for="massDestInput">INSUMO PLANEJAMENTO (destino) a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
-      <input type="text" id="massDestInput" list="insumosDatalist" placeholder="digite p/ buscar..." style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
-      <div style="font-size:11px; color:var(--text-soft); margin-top:4px;">Aceita opções especiais (Aumento de obra, Não encontrado!, etc.) e os 125 insumos da tendência</div>
+      <input type="text" id="massDestInput" class="field-control" list="insumosDatalist" placeholder="digite p/ buscar...">
+      <div class="field-help">Aceita opções especiais (Aumento de obra, Não encontrado!, etc.) e os 125 insumos da tendência</div>
     </div>
   `;
   massPrompt(
@@ -961,7 +951,7 @@ function massAplicarOrigem() {
   const opt = `
     <div class="full">
       <label for="massOrigInput">INSUMO DE REMANEJAMENTO (origem) a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
-      <input type="text" id="massOrigInput" list="insumosDatalist" placeholder="digite p/ buscar..." style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
+      <input type="text" id="massOrigInput" class="field-control" list="insumosDatalist" placeholder="digite p/ buscar...">
     </div>
   `;
   massPrompt(
@@ -1006,7 +996,7 @@ function massAplicarRefletido() {
   const opt = `
     <div class="full">
       <label for="massReflInput">Status de reflexo a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
-      <select id="massReflInput" style="width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13px;">
+      <select id="massReflInput" class="field-control">
         <option value="sim">✅ Sim — refletir no planejamento</option>
         <option value="nao">❌ Não — não refletir (ex: cancelado)</option>
         <option value="pendente">⏳ Pendente — ainda não decidido</option>

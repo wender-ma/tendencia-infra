@@ -44,7 +44,6 @@ export function createModalService({
     const [{ previousFocus, onClose }] = stack.splice(index, 1);
     backdrop.classList.remove('show');
     backdrop.setAttribute('aria-hidden', 'true');
-    backdrop.style.removeProperty('z-index');
     activeModal = stack[stack.length - 1] || null;
     if (activeModal) activeModal.backdrop.setAttribute('aria-hidden', 'false');
     else documentRef.body.classList.remove('modal-open');
@@ -70,7 +69,6 @@ export function createModalService({
     activeModal = entry;
     backdrop.classList.add('show');
     backdrop.setAttribute('aria-hidden', 'false');
-    backdrop.style.zIndex = String(2000 + stack.length * 10);
     documentRef.body.classList.add('modal-open');
 
     windowRef.requestAnimationFrame(() => {

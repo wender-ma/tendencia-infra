@@ -345,7 +345,7 @@ function _promptSheetMapping(sheetNames, autoDetected) {
       `
       <h2>🗂️ Mapeamento de abas</h2>
       <div class="meta">Não consegui identificar automaticamente todas as abas. Selecione manualmente qual é cada uma:</div>
-      <div style="margin: 18px 0;">
+      <div class="sheet-mapping-fields">
         <div class="sheet-mapping-row">
           <label for="mapSheet_tendencia">📈 Tendência:</label>
           <select id="mapSheet_tendencia">${['<option value="">— nenhuma —</option>', ...sheetNames.map((n) => opt(n, autoDetected.tendencia))].join('')}</select>
@@ -358,11 +358,11 @@ function _promptSheetMapping(sheetNames, autoDetected) {
           <label for="mapSheet_gestoes">📅 Gestões:</label>
           <select id="mapSheet_gestoes">${['<option value="">— nenhuma —</option>', ...sheetNames.map((n) => opt(n, autoDetected.gestoes))].join('')}</select>
         </div>
-        <p style="font-size:11.5px; color:var(--text-soft); margin-top:10px;">
+        <p class="sheet-mapping-hint">
           💡 Se uma aba não existir na planilha, deixe em "— nenhuma —" e ela não será processada.
         </p>
       </div>
-      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+      <div class="sheet-mapping-actions">
         <button class="btn-sm" id="mapSheetsCancel">Cancelar</button>
         <button class="btn-sm primary" id="mapSheetsOk">✅ Processar</button>
       </div>
@@ -560,12 +560,12 @@ function _renderExcelProgress(msg) {
   card.setAttribute('aria-atomic', 'true');
   if (!msg) {
     card.replaceChildren();
-    card.style.display = 'none';
+    card.hidden = true;
     card.setAttribute('aria-hidden', 'true');
     return;
   }
   card.setAttribute('aria-hidden', 'false');
-  card.style.display = 'block';
+  card.hidden = false;
   const step = document.createElement('div');
   step.className = 'prog-step';
   step.textContent = String(msg);
@@ -598,14 +598,12 @@ const UPLOAD_META = {
   tendencia: {
     label: 'TENDÊNCIA',
     icon: '📈',
-    color: 'var(--fgr-red-vivid)',
     desc: 'Alimenta: KPIs da Visão Geral, tabela de Detalhamento, curva S de Tendência de Obra e Controle de Projeção. Fonte: aba TENDÊNCIA da planilha.',
     manualKey: 'tendencia',
   },
   flows: {
     label: 'FLOWS / ADITIVOS',
     icon: '🔗',
-    color: 'var(--text-medium)',
     desc: 'Alimenta: aba Flows/Aditivos, decomposição do desvio na Visão Geral e Controle de Projeção. Fonte: aba FlowsValor da planilha.',
     manualKey: 'flows',
     global: true,
@@ -613,7 +611,6 @@ const UPLOAD_META = {
   gestoes: {
     label: 'GESTÕES 🌐',
     icon: '📅',
-    color: 'var(--text-medium)',
     desc: 'Alimenta: Histórico Mensal e curva S da Tendência de Obra. Fonte: aba Gestões da planilha. ⚠️ ARQUIVO COMPARTILHADO: 1 upload afeta TODAS as obras (v0.58b).',
     manualKey: 'gestoes',
     global: true,
@@ -653,11 +650,11 @@ function renderUploadRuntimeBlock(kinds) {
     .filter(Boolean);
   const processing = states.find((state) => state.status === 'processing');
   if (processing) {
-    return `<div role="status" class="upload-card-meta" style="background:var(--sem-alerta-bg); color:var(--sem-alerta);">⏳ ${escHtml(processing.message || 'Upload em processamento...')}</div>`;
+    return `<div role="status" class="upload-card-meta upload-card-meta--processing">⏳ ${escHtml(processing.message || 'Upload em processamento...')}</div>`;
   }
   const failed = states.find((state) => state.status === 'failed');
   if (failed) {
-    return `<div role="alert" class="upload-card-meta" style="background:var(--fgr-red-light); color:var(--sem-erro);">❌ Última tentativa não foi aplicada: ${escHtml(failed.message || 'falha desconhecida')}</div>`;
+    return `<div role="alert" class="upload-card-meta upload-card-meta--failed">❌ Última tentativa não foi aplicada: ${escHtml(failed.message || 'falha desconhecida')}</div>`;
   }
   return '';
 }
@@ -694,7 +691,7 @@ function renderUploadsCentral() {
   const excelMeta = lastExcel
     ? `
     <div class="upload-card-meta filled">
-      📁 <strong>${escHtml(lastExcel.nome_arquivo)}</strong>${lastExcel.tamanho_bytes ? ' <span style="color:var(--text-soft);">(' + fmtBytes(lastExcel.tamanho_bytes) + ')</span>' : ''}<br>
+      📁 <strong>${escHtml(lastExcel.nome_arquivo)}</strong>${lastExcel.tamanho_bytes ? ' <span class="upload-meta-detail">(' + fmtBytes(lastExcel.tamanho_bytes) + ')</span>' : ''}<br>
       📅 Enviado ${lastExcel.enviado_por ? 'por <code>' + escHtml(lastExcel.enviado_por) + '</code> ' : ''}em ${escHtml(fmtUploadDate(lastExcel.enviado_em))}<br>
       📊 Abas processadas: ${lastExcel.relatedKinds.map((k) => `${UPLOAD_META[k].icon} ${UPLOAD_META[k].label.split(' ')[0]}`).join(' · ')}
     </div>`
@@ -703,17 +700,17 @@ function renderUploadsCentral() {
 
   const excelCard = `
     <div class="upload-excel-card" id="excelUploadCard">
-      <h3>📊 Upload Completo (Excel) <span style="font-size:11px; color:var(--sem-ok-vivid); font-weight:600; margin-left:4px;">RECOMENDADO</span></h3>
+      <h3>📊 Upload Completo (Excel) <span class="upload-excel-recommended">RECOMENDADO</span></h3>
       <p class="subtitle">Envie a planilha inteira (<code>.xlsx</code> ou <code>.xlsm</code>) e o dashboard extrai automaticamente as abas <strong>Tendência</strong>, <strong>FlowsValor</strong> e <strong>Gestões</strong>.</p>
       ${excelRuntimeBlock}
       ${excelMeta}
-      <div class="upload-progress" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" style="display:none;"></div>
+        <div class="upload-progress" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" hidden></div>
       <div class="upload-card-actions">
         <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() && !excelProcessing ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_excel">
           📊 ${lastExcel ? 'Substituir planilha' : 'Escolher planilha Excel'}
         </button>
         <button class="btn-sm" data-click-action="openUploadsHistory" data-action-mode="arg" data-action-arg="tendencia" title="Ver todos os uploads">📜 Histórico</button>
-        <input type="file" id="fileInput_excel" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar planilha Excel" style="display:none" data-change-action="handleExcelUpload" data-action-mode="event">
+        <input type="file" id="fileInput_excel" class="upload-file-input" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar planilha Excel" data-change-action="handleExcelUpload" data-action-mode="event">
       </div>
     </div>`;
 
@@ -738,18 +735,18 @@ function renderUploadsCentral() {
           .filter(Boolean)
           .join(' · ');
         const sourceTag = last.upload_group_id
-          ? ' <span style="font-size:10px; color:var(--sem-ok-vivid); background:var(--sem-ok-bg); padding:1px 6px; border-radius:8px; margin-left:4px;">via Excel</span>'
+          ? ' <span class="upload-source-tag">via Excel</span>'
           : '';
         metaBlock = `
         <div class="upload-card-meta filled">
-          📁 <strong>${escHtml(last.nome_arquivo)}</strong>${sourceTag}${detalhes ? ' <span style="color:var(--text-soft);">(' + detalhes + ')</span>' : ''}<br>
+          📁 <strong>${escHtml(last.nome_arquivo)}</strong>${sourceTag}${detalhes ? ' <span class="upload-meta-detail">(' + detalhes + ')</span>' : ''}<br>
           📅 Enviado ${last.enviado_por ? 'por <code>' + escHtml(last.enviado_por) + '</code> ' : ''}em ${escHtml(fmtUploadDate(last.enviado_em))}
         </div>`;
       } else {
         metaBlock = `<div class="upload-card-meta empty">📭 Nenhum arquivo carregado ainda.</div>`;
       }
       return `
-      <div class="upload-card" data-kind="${k}" style="border-top: 3px solid ${meta.color};">
+      <div class="upload-card" data-kind="${k}">
         <div class="upload-card-header">
           <div>
             <h3 class="upload-card-title">${meta.icon} ${meta.label}</h3>
@@ -764,7 +761,7 @@ function renderUploadsCentral() {
           </button>
           <button class="btn-sm" data-click-action="openUploadsHistory" data-action-mode="arg" data-action-arg="${k}" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
           <button class="btn-sm" data-click-action="showManualText" data-action-mode="arg" data-action-arg="${meta.manualKey}">ℹ️ Como exportar?</button>
-          <input type="file" id="fileInput_${k}" accept=".csv" aria-label="Selecionar arquivo CSV de ${escAttr(meta.label)}" style="display:none" data-change-action="handleUpload" data-action-mode="event-arg" data-action-arg="${k}">
+          <input type="file" id="fileInput_${k}" class="upload-file-input" accept=".csv" aria-label="Selecionar arquivo CSV de ${escAttr(meta.label)}" data-change-action="handleUpload" data-action-mode="event-arg" data-action-arg="${k}">
         </div>
       </div>`;
     })
@@ -837,7 +834,7 @@ async function openUploadsHistory(kind) {
     `
     <h2>📜 Histórico de uploads — ${meta.icon} ${meta.label}</h2>
     <div class="meta">Mantemos os últimos <strong>${UPLOADS_MAX_PER_TYPE}</strong> arquivos por tipo (mais antigos são descartados automaticamente).</div>
-    <div id="uploadsHistoryList" style="margin-top:14px;">⏳ Carregando...</div>
+    <div id="uploadsHistoryList" class="uploads-history-list">⏳ Carregando...</div>
   `,
   );
   openModal();
@@ -853,7 +850,7 @@ async function _renderUploadsHistoryList(kind) {
   if (!list.length) {
     replaceWithParsedMarkup(
       box,
-      '<div style="text-align:center; color:var(--text-lighter); padding:30px;">Nenhum upload registrado ainda.</div>',
+      '<div class="uploads-history-empty">Nenhum upload registrado ainda.</div>',
     );
     return;
   }
@@ -863,15 +860,15 @@ async function _renderUploadsHistoryList(kind) {
   replaceWithParsedMarkup(
     box,
     `
-    <table style="width:100%; font-size:12.5px; border-collapse:collapse;">
+    <table class="uploads-history-table">
       <thead>
-        <tr style="background:var(--bg-page); text-align:left;">
-          <th style="padding:8px; border-bottom:2px solid var(--border);">Data / Hora</th>
-          <th style="padding:8px; border-bottom:2px solid var(--border);">Arquivo</th>
-          <th style="padding:8px; border-bottom:2px solid var(--border);">Tamanho</th>
-          <th style="padding:8px; border-bottom:2px solid var(--border);">Linhas</th>
-          <th style="padding:8px; border-bottom:2px solid var(--border);">Enviado por</th>
-          <th style="padding:8px; border-bottom:2px solid var(--border); text-align:right;">Ações</th>
+        <tr class="uploads-history-heading">
+          <th>Data / Hora</th>
+          <th>Arquivo</th>
+          <th>Tamanho</th>
+          <th>Linhas</th>
+          <th>Enviado por</th>
+          <th class="uploads-history-actions-heading">Ações</th>
         </tr>
       </thead>
       <tbody>
@@ -891,35 +888,35 @@ async function _renderUploadsHistoryList(kind) {
             const btnDownload = canDownload
               ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(cleanStoragePath)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo" aria-label="Baixar ${escAttr(r.nome_arquivo)}">📥</button>`
               : cleanStoragePath
-                ? `<span style="color:var(--text-lighter); font-size:11px;" title="${hasValidStoragePath ? 'Faça login para baixar' : 'Arquivo indisponível para a obra ativa'}">🔒</span>`
-                : `<span style="color:var(--text-lighter); font-size:11px;" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`;
+                ? `<span class="uploads-history-unavailable" title="${hasValidStoragePath ? 'Faça login para baixar' : 'Arquivo indisponível para a obra ativa'}">🔒</span>`
+                : `<span class="uploads-history-unavailable" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`;
             const btnAtivar =
               canReativar && hasValidStoragePath
                 ? `<button class="btn-sm primary" data-action="ativar-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
                 : isAtivo
                   ? ''
-                  : `<span style="color:var(--text-lighter); font-size:11px;" title="Arquivo sem storage_path — não pode ser reativado">—</span>`;
+                  : `<span class="uploads-history-unavailable" title="Arquivo sem storage_path — não pode ser reativado">—</span>`;
             const btnExcluir = canExcluir
-              ? `<button class="btn-sm danger" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" aria-label="Excluir ${escAttr(r.nome_arquivo)}" style="background:var(--fgr-red-light); border:1px solid var(--sem-erro-border); color:var(--sem-erro);">🗑️</button>`
+              ? `<button class="btn-sm danger uploads-history-delete" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" aria-label="Excluir ${escAttr(r.nome_arquivo)}">🗑️</button>`
               : isAtivo && canManage
-                ? `<span style="color:var(--text-lighter); font-size:11px;" title="Ative outro arquivo antes de excluir este">🔒</span>`
+                ? `<span class="uploads-history-unavailable" title="Ative outro arquivo antes de excluir este">🔒</span>`
                 : '';
             return `
-            <tr style="border-bottom:1px solid var(--bg-soft); ${isAtivo ? 'background:var(--sem-ok-subtle);' : ''}">
-              <td style="padding:8px;">${escHtml(fmtUploadDate(r.enviado_em))} ${isAtivo ? '<span style="display:inline-block; margin-left:4px; padding:2px 8px; background:var(--sem-ok-vivid); color:var(--text-on-dark); font-size:9px; font-weight:700; border-radius:10px; letter-spacing:0.3px;">📌 ATIVO</span>' : ''}</td>
-              <td style="padding:8px; font-family:monospace; font-size:11.5px;">${escHtml(r.nome_arquivo)}</td>
-              <td style="padding:8px; color:var(--text-soft);">${fmtBytes(r.tamanho_bytes)}</td>
-              <td style="padding:8px; color:var(--text-soft);">${r.linhas != null ? r.linhas.toLocaleString('pt-BR') : '-'}</td>
-              <td style="padding:8px; font-size:11.5px; color:var(--text-soft);">${r.enviado_por ? escHtml(r.enviado_por) : '<em>anônimo</em>'}</td>
-              <td style="padding:8px; text-align:right; white-space:nowrap;">
-                <span style="display:inline-flex; gap:4px; align-items:center;">${btnDownload} ${btnAtivar} ${btnExcluir}</span>
+            <tr class="uploads-history-row ${isAtivo ? 'is-active' : ''}">
+              <td>${escHtml(fmtUploadDate(r.enviado_em))} ${isAtivo ? '<span class="uploads-history-active">📌 ATIVO</span>' : ''}</td>
+              <td class="uploads-history-file">${escHtml(r.nome_arquivo)}</td>
+              <td class="uploads-history-muted">${fmtBytes(r.tamanho_bytes)}</td>
+              <td class="uploads-history-muted">${r.linhas != null ? r.linhas.toLocaleString('pt-BR') : '-'}</td>
+              <td class="uploads-history-sender">${r.enviado_por ? escHtml(r.enviado_por) : '<em>anônimo</em>'}</td>
+              <td class="uploads-history-actions-cell">
+                <span class="uploads-history-actions">${btnDownload} ${btnAtivar} ${btnExcluir}</span>
               </td>
             </tr>`;
           })
           .join('')}
       </tbody>
     </table>
-    <div style="margin-top:12px; padding:10px 14px; background:var(--bg-page); border-radius:4px; font-size:11.5px; color:var(--text-soft); line-height:1.5;">
+    <div class="uploads-history-help">
       💡 <strong>Ativar:</strong> marca esse arquivo como fonte de dados do dashboard (substitui o atual sem apagar).<br>
       🗑️ <strong>Excluir:</strong> apaga permanentemente do banco e Storage. Só permitido em arquivos não-ativos.<br>
       📌 <strong>Ativo:</strong> arquivo cujos dados estão sendo usados no dashboard agora.<br>
@@ -1208,7 +1205,7 @@ function renderSourcesHeaders() {
         return `<span class="src-item src-empty" title="Nenhum arquivo enviado ainda para ${meta ? meta.label : k}">${meta ? meta.icon : ''} ${meta ? meta.label : k}: (sem dados)</span>`;
       }
       const tip = `${last.nome_arquivo} · ${fmtUploadDate(last.enviado_em)}${last.enviado_por ? ' · ' + last.enviado_por : ''}`;
-      return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span style="color:var(--text-soft);">(${escHtml(fmtUploadDateShort(last.enviado_em))})</span></span>`;
+      return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span class="src-date">(${escHtml(fmtUploadDateShort(last.enviado_em))})</span></span>`;
     });
     replaceWithParsedMarkup(el, '📎 ' + parts.join(' <span class="src-sep">·</span> '));
   });

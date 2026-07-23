@@ -36,18 +36,15 @@ async function renderObrasAdmin() {
   if (!isAdminGeral()) {
     replaceWithParsedMarkup(
       tbody,
-      '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-soft);">Acesso restrito a administradores.</td></tr>',
+      '<tr><td colspan="7" class="table-empty table-empty--restricted">Acesso restrito a administradores.</td></tr>',
     );
     return;
   }
-  replaceWithParsedMarkup(
-    tbody,
-    '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>',
-  );
+  replaceWithParsedMarkup(tbody, '<tr><td colspan="7" class="table-empty">carregando…</td></tr>');
   if (!SUPA) {
     replaceWithParsedMarkup(
       tbody,
-      '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Sem conexão com o Supabase.</td></tr>',
+      '<tr><td colspan="7" class="table-empty table-empty--error">Sem conexão com o Supabase.</td></tr>',
     );
     return;
   }
@@ -57,7 +54,7 @@ async function renderObrasAdmin() {
     if (!data || !data.length) {
       replaceWithParsedMarkup(
         tbody,
-        '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">Nenhuma obra cadastrada.</td></tr>',
+        '<tr><td colspan="7" class="table-empty">Nenhuma obra cadastrada.</td></tr>',
       );
       return;
     }
@@ -76,23 +73,23 @@ async function renderObrasAdmin() {
               : '<span class="badge gray" title="Detectada de upload de Gestões — só pode desativar">📥 Upload</span>';
           const dt = o.criada_em ? new Date(o.criada_em).toLocaleString('pt-BR') : '—';
           const toggleLbl = ativa ? '⏸️ Desativar' : '▶️ Ativar';
-          const toggleStyle = ativa
-            ? 'background:var(--sem-alerta-bg); border:1px solid var(--sem-alerta); color:var(--sem-alerta);'
-            : 'background:var(--sem-ok-bg); border:1px solid var(--sem-ok-border); color:var(--sem-ok-text);';
+          const toggleClass = ativa
+            ? 'admin-action-button--toggle-active'
+            : 'admin-action-button--toggle-inactive';
           const podeDeletar = origem === 'manual';
           const btnDeletar = podeDeletar
-            ? `<button class="btn-sm" data-action="deletar-obra" data-codigo="${escAttr(o.codigo_obra)}" data-nome="${escAttr(o.nome)}" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Deletar permanentemente (obra manual)" aria-label="Deletar obra ${escAttr(o.nome)} permanentemente">🗑️</button>`
-            : `<button class="btn-sm" disabled style="padding:3px 8px; font-size:11px; opacity:0.4; cursor:not-allowed;" title="Obras de upload não podem ser deletadas — só desative" aria-label="Esta obra não pode ser deletada">🗑️</button>`;
+            ? `<button class="btn-sm admin-action-button admin-action-button--delete" data-action="deletar-obra" data-codigo="${escAttr(o.codigo_obra)}" data-nome="${escAttr(o.nome)}" title="Deletar permanentemente (obra manual)" aria-label="Deletar obra ${escAttr(o.nome)} permanentemente">🗑️</button>`
+            : `<button class="btn-sm admin-action-button admin-action-button--disabled" disabled title="Obras de upload não podem ser deletadas — só desative" aria-label="Esta obra não pode ser deletada">🗑️</button>`;
           return `<tr data-codigo="${escAttr(o.codigo_obra)}" data-ativa="${ativa}">
-        <td style="font-family:monospace; font-size:12px;">${escHtml(o.codigo_obra)}</td>
+        <td class="admin-code-cell">${escHtml(o.codigo_obra)}</td>
         <td><strong>${escHtml(o.nome)}</strong></td>
-        <td style="font-family:monospace; font-size:11px; color:var(--text-soft);">${escHtml(o.key_empobratd || '—')}</td>
+        <td class="admin-key-cell">${escHtml(o.key_empobratd || '—')}</td>
         <td>${origemBadge}</td>
         <td>${badge}</td>
-        <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
+        <td class="admin-muted-cell">${dt}</td>
         <td>
-          <button class="btn-sm" data-action="editar-obra" data-codigo="${escAttr(o.codigo_obra)}" title="Editar nome/key" aria-label="Editar obra ${escAttr(o.nome)}" style="padding:3px 8px; font-size:11px;">✏️</button>
-          <button class="btn-sm" data-action="toggle-obra" data-codigo="${escAttr(o.codigo_obra)}" style="padding:3px 8px; font-size:11px; ${toggleStyle}">${toggleLbl}</button>
+          <button class="btn-sm admin-action-button" data-action="editar-obra" data-codigo="${escAttr(o.codigo_obra)}" title="Editar nome/key" aria-label="Editar obra ${escAttr(o.nome)}">✏️</button>
+          <button class="btn-sm admin-action-button ${toggleClass}" data-action="toggle-obra" data-codigo="${escAttr(o.codigo_obra)}">${toggleLbl}</button>
           ${btnDeletar}
         </td>
       </tr>`;
@@ -103,7 +100,7 @@ async function renderObrasAdmin() {
     console.warn('[ADMIN] renderObrasAdmin erro:', e);
     replaceWithParsedMarkup(
       tbody,
-      `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Erro ao carregar: ${escHtml(e.message || String(e))}</td></tr>`,
+      `<tr><td colspan="7" class="table-empty table-empty--error">Erro ao carregar: ${escHtml(e.message || String(e))}</td></tr>`,
     );
   }
 }
@@ -130,7 +127,7 @@ const ObraForm = (function () {
     document.getElementById('obraFormTitle').textContent = 'Nova obra';
     document.getElementById('obraFormCodigo').value = '';
     document.getElementById('obraFormCodigo').readOnly = false;
-    document.getElementById('obraFormCodigo').style.background = '';
+    document.getElementById('obraFormCodigo').classList.remove('is-readonly');
     document.getElementById('obraFormNome').value = '';
     document.getElementById('obraFormKey').value = '';
     document.getElementById('obraFormObs').value = '';
@@ -161,7 +158,7 @@ const ObraForm = (function () {
       document.getElementById('obraFormTitle').textContent = 'Editar obra: ' + codigo;
       document.getElementById('obraFormCodigo').value = data.codigo_obra;
       document.getElementById('obraFormCodigo').readOnly = true;
-      document.getElementById('obraFormCodigo').style.background = 'var(--bg-soft)';
+      document.getElementById('obraFormCodigo').classList.add('is-readonly');
       document.getElementById('obraFormNome').value = data.nome || '';
       document.getElementById('obraFormKey').value = data.key_empobratd || '';
       document.getElementById('obraFormObs').value = data.observacao || '';
@@ -376,18 +373,15 @@ async function renderEditoresAdmin() {
   if (!isAdminGeral()) {
     replaceWithParsedMarkup(
       tbody,
-      '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-soft);">Acesso restrito a administradores.</td></tr>',
+      '<tr><td colspan="7" class="table-empty table-empty--restricted">Acesso restrito a administradores.</td></tr>',
     );
     return;
   }
-  replaceWithParsedMarkup(
-    tbody,
-    '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>',
-  );
+  replaceWithParsedMarkup(tbody, '<tr><td colspan="7" class="table-empty">carregando…</td></tr>');
   if (!SUPA) {
     replaceWithParsedMarkup(
       tbody,
-      '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Sem conexão com o Supabase.</td></tr>',
+      '<tr><td colspan="7" class="table-empty table-empty--error">Sem conexão com o Supabase.</td></tr>',
     );
     return;
   }
@@ -401,7 +395,7 @@ async function renderEditoresAdmin() {
     if (!data || !data.length) {
       replaceWithParsedMarkup(
         tbody,
-        '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-lighter);">Nenhum editor cadastrado.</td></tr>',
+        '<tr><td colspan="7" class="table-empty">Nenhum editor cadastrado.</td></tr>',
       );
       return;
     }
@@ -446,28 +440,28 @@ async function renderEditoresAdmin() {
             : '<span class="badge green">✏️ Editor</span>';
           let obrasHtml;
           if (isAdmin) {
-            obrasHtml = '<span style="color:var(--text-soft); font-size:11px;">— todas —</span>';
+            obrasHtml = '<span class="admin-projects-all">— todas —</span>';
           } else if (g.obras.length === 0) {
             obrasHtml =
-              '<span style="color:var(--sem-erro); font-size:11px;" title="Editor sem obra atribuída — não edita nada">⚠️ nenhuma obra</span>';
+              '<span class="admin-projects-none" title="Editor sem obra atribuída — não edita nada">⚠️ nenhuma obra</span>';
           } else {
             obrasHtml = g.obras
               .map((cod) => {
                 const info = obrasByCodigo[cod];
-                return `<span class="badge" style="background:var(--fgr-red-light); color:var(--fgr-red-deep); margin:2px; display:inline-block;" title="${escAttr(info?.nome || cod)}"><code style="font-size:10px;">${escHtml(cod)}</code></span>`;
+                return `<span class="badge admin-project-badge" title="${escAttr(info?.nome || cod)}"><code class="admin-project-code">${escHtml(cod)}</code></span>`;
               })
               .join('');
           }
           const dt = g.adicionado_em ? new Date(g.adicionado_em).toLocaleString('pt-BR') : '—';
           return `<tr>
-        <td style="font-family:monospace; font-size:12px;">${escHtml(g.email)}</td>
+        <td class="admin-code-cell">${escHtml(g.email)}</td>
         <td>${escHtml(g.nome || '—')}</td>
         <td>${roleBadge}</td>
         <td>${obrasHtml}</td>
-        <td style="font-size:11px; color:var(--text-soft);">${escHtml(g.observacao || '')}</td>
-        <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
+        <td class="admin-muted-cell">${escHtml(g.observacao || '')}</td>
+        <td class="admin-muted-cell">${dt}</td>
         <td>
-          <button class="btn-sm" data-action="editar-editor" data-email="${escAttr(g.email)}" style="padding:4px 10px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--fgr-red-deep); color:var(--fgr-red-deep);" title="Editar papel, obras, ou excluir">✏️ Editar</button>
+          <button class="btn-sm admin-action-button admin-action-button--editor" data-action="editar-editor" data-email="${escAttr(g.email)}" title="Editar papel, obras, ou excluir">✏️ Editar</button>
         </td>
       </tr>`;
         })
@@ -477,7 +471,7 @@ async function renderEditoresAdmin() {
     console.warn('[ADMIN] renderEditoresAdmin erro:', err);
     replaceWithParsedMarkup(
       tbody,
-      `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--sem-erro);">Erro ao carregar: ${escHtml(err.message || String(err))}</td></tr>`,
+      `<tr><td colspan="7" class="table-empty table-empty--error">Erro ao carregar: ${escHtml(err.message || String(err))}</td></tr>`,
     );
   }
 }
@@ -500,13 +494,13 @@ async function openEditorForm(email) {
     : '➕ Adicionar usuário';
   document.getElementById('editorFormEmail').value = email || '';
   document.getElementById('editorFormEmail').readOnly = isEditando;
-  document.getElementById('editorFormEmail').style.background = isEditando ? 'var(--bg-soft)' : '';
+  document.getElementById('editorFormEmail').classList.toggle('is-readonly', isEditando);
   document.getElementById('editorFormNome').value = '';
   document.getElementById('editorFormObs').value = '';
 
   // Botão excluir: só aparece se editando
   const delBtn = document.getElementById('editorFormDeleteBtn');
-  if (delBtn) delBtn.style.display = isEditando ? '' : 'none';
+  if (delBtn) delBtn.hidden = !isEditando;
 
   // Default: editor
   document.querySelector('input[name="editorFormRole"][value="editor"]').checked = true;
@@ -560,7 +554,7 @@ async function populaObrasCheckboxes(marcadasSet) {
   if (obrasAtivas.length === 0) {
     replaceWithParsedMarkup(
       container,
-      '<div style="padding:8px; color:var(--text-lighter); font-size:12px;">Nenhuma obra ativa cadastrada.</div>',
+      '<div class="admin-projects-empty">Nenhuma obra ativa cadastrada.</div>',
     );
     return;
   }
@@ -570,9 +564,9 @@ async function populaObrasCheckboxes(marcadasSet) {
       .map((o) => {
         const checked = marcadasSet.has(o.codigo_obra) ? 'checked' : '';
         return `<label class="editor-project-option">
-      <input type="checkbox" class="editor-obra-cb" value="${escAttr(o.codigo_obra)}" ${checked} style="width:16px; height:16px; cursor:pointer;">
-      <code style="font-size:11px; color:var(--text-soft);">${escHtml(o.codigo_obra)}</code>
-      <span style="font-size:13px;">${escHtml(o.nome)}</span>
+      <input type="checkbox" class="editor-obra-cb admin-project-checkbox" value="${escAttr(o.codigo_obra)}" ${checked}>
+      <code class="admin-project-option-code">${escHtml(o.codigo_obra)}</code>
+      <span class="admin-project-option-name">${escHtml(o.nome)}</span>
     </label>`;
       })
       .join(''),
@@ -589,7 +583,7 @@ function editorObrasMarcarTodas(marcar) {
 function editorFormOnRoleChange() {
   const role = document.querySelector('input[name="editorFormRole"]:checked')?.value;
   const block = document.getElementById('editorFormObrasBlock');
-  if (block) block.style.display = role === 'admin' ? 'none' : '';
+  if (block) block.hidden = role === 'admin';
 }
 
 // Salvar todas as permissões em uma única transação no banco.
@@ -672,18 +666,15 @@ async function renderPendentesAdmin() {
     if (badge) badge.textContent = '';
     replaceWithParsedMarkup(
       tbody,
-      '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-soft);">Acesso restrito a administradores.</td></tr>',
+      '<tr><td colspan="5" class="table-empty table-empty--restricted">Acesso restrito a administradores.</td></tr>',
     );
     return;
   }
-  replaceWithParsedMarkup(
-    tbody,
-    '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-lighter);">carregando…</td></tr>',
-  );
+  replaceWithParsedMarkup(tbody, '<tr><td colspan="5" class="table-empty">carregando…</td></tr>');
   if (!SUPA) {
     replaceWithParsedMarkup(
       tbody,
-      '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--sem-erro);">Sem conexão com o Supabase.</td></tr>',
+      '<tr><td colspan="5" class="table-empty table-empty--error">Sem conexão com o Supabase.</td></tr>',
     );
     return;
   }
@@ -698,7 +689,7 @@ async function renderPendentesAdmin() {
     if (!data || !data.length) {
       replaceWithParsedMarkup(
         tbody,
-        '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-lighter);">Nenhum cadastro aguardando aprovação. 🎉</td></tr>',
+        '<tr><td colspan="5" class="table-empty">Nenhum cadastro aguardando aprovação. 🎉</td></tr>',
       );
       return;
     }
@@ -708,13 +699,13 @@ async function renderPendentesAdmin() {
         .map((e) => {
           const dt = e.adicionado_em ? new Date(e.adicionado_em).toLocaleString('pt-BR') : '—';
           return `<tr>
-        <td style="font-family:monospace; font-size:12px;">${escHtml(e.email)}</td>
+        <td class="admin-code-cell">${escHtml(e.email)}</td>
         <td>${escHtml(e.nome || '—')}</td>
-        <td style="font-size:11px; color:var(--text-soft);">${escHtml(e.observacao || '')}</td>
-        <td style="font-size:11px; color:var(--text-soft);">${dt}</td>
+        <td class="admin-muted-cell">${escHtml(e.observacao || '')}</td>
+        <td class="admin-muted-cell">${dt}</td>
         <td>
-          <button class="btn-sm" data-action="aprovar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:var(--sem-ok-bg); border:1px solid var(--sem-ok-border); color:var(--sem-ok-text);" title="Definir papel e aprovar">✅ Aprovar</button>
-          <button class="btn-sm" data-action="rejeitar-pendente" data-email="${escAttr(e.email)}" style="padding:3px 8px; font-size:11px; background:var(--fgr-red-light); border:1px solid var(--sem-erro); color:var(--sem-erro);" title="Negar acesso">❌ Rejeitar</button>
+          <button class="btn-sm admin-action-button admin-action-button--approve" data-action="aprovar-pendente" data-email="${escAttr(e.email)}" title="Definir papel e aprovar">✅ Aprovar</button>
+          <button class="btn-sm admin-action-button admin-action-button--reject" data-action="rejeitar-pendente" data-email="${escAttr(e.email)}" title="Negar acesso">❌ Rejeitar</button>
         </td>
       </tr>`;
         })
@@ -724,7 +715,7 @@ async function renderPendentesAdmin() {
     console.warn('[ADMIN] renderPendentesAdmin erro:', err);
     replaceWithParsedMarkup(
       tbody,
-      `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--sem-erro);">Erro: ${escHtml(err.message || String(err))}</td></tr>`,
+      `<tr><td colspan="5" class="table-empty table-empty--error">Erro: ${escHtml(err.message || String(err))}</td></tr>`,
     );
   }
 }

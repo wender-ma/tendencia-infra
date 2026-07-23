@@ -141,14 +141,6 @@ function renderFlows() {
   );
 
   // Tipos com barras
-  const colors = {
-    aumento_real: 'var(--fgr-red-vivid)',
-    remanejamento: 'var(--text-medium)',
-    economia: 'var(--sem-ok)',
-    pendente: 'var(--sem-alerta)',
-    cancelado: 'var(--text-medium)',
-    sem_classificacao: 'var(--text-lighter)',
-  };
   const labels = {
     aumento_real: '🔴 Aumento real',
     remanejamento: '🔵 Remanejamento',
@@ -164,9 +156,9 @@ function renderFlows() {
       .map(
         ([t, v]) => `
     <div class="top-item">
-      <div class="name">${labels[t]} <span style="color:var(--text-soft);font-size:11px;">(${v.n})</span></div>
+      <div class="name">${labels[t]} <span class="top-item-count">(${v.n})</span></div>
       <div class="val">${fmtR$(v.v)}</div>
-      <div class="top-bar"><div class="top-bar-fill" style="width:${(Math.abs(v.v) / maxV) * 100}%;background:${colors[t]};"></div></div>
+      <progress class="top-bar-progress top-bar-progress--${t}" max="${maxV}" value="${Math.abs(v.v)}">${Math.abs(v.v)}</progress>
     </div>`,
       )
       .join(''),
@@ -179,9 +171,9 @@ function renderFlows() {
       replaceWithParsedMarkup(
         elDesc,
         `
-        <div style="background:var(--bg-soft); border-left:3px solid var(--text-lighter); border-radius:6px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-medium);">
+        <div class="flow-discarded-summary">
           <span>❌ <strong>Marcados como "Não refletir":</strong> ${descartados.length} aditivo(s)</span>
-          <strong style="color:var(--text-soft);">${fmtR$(valDesc)}</strong>
+          <strong class="flow-discarded-value">${fmtR$(valDesc)}</strong>
         </div>
       `,
       );
@@ -208,9 +200,9 @@ function renderFlows() {
       .map(
         ([m, v]) => `
     <div class="top-item">
-      <div class="name">${escHtml(m)} <span style="color:var(--text-soft);font-size:11px;">(${v.n})</span></div>
+      <div class="name">${escHtml(m)} <span class="top-item-count">(${v.n})</span></div>
       <div class="val ${v.v < 0 ? 'pos' : 'neg'}">${v.v >= 0 ? '+' : ''}${fmtR$(v.v)}</div>
-      <div class="top-bar"><div class="top-bar-fill ${v.v < 0 ? 'green' : ''}" style="width:${(Math.abs(v.v) / maxM) * 100}%;"></div></div>
+      <progress class="top-bar-progress ${v.v < 0 ? 'top-bar-progress--green' : ''}" max="${maxM}" value="${Math.abs(v.v)}">${Math.abs(v.v)}</progress>
     </div>`,
       )
       .join(''),
@@ -365,10 +357,10 @@ function renderFlowTable() {
         const isSelected = MASS_SELECTED.has(f.n_alteracao);
         return `
     <tr class="${statusClass} ${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
-      <td style="text-align:center; vertical-align:middle;">
-        <input type="checkbox" ${isSelected ? 'checked' : ''} data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="toggleMassSelect" data-action-mode="self" style="cursor:pointer; transform:scale(1.15);">
+      <td class="flow-selection-cell">
+        <input class="flow-selection-input" type="checkbox" ${isSelected ? 'checked' : ''} data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="toggleMassSelect" data-action-mode="self">
       </td>
-      <td style="vertical-align:middle; padding:6px;">
+      <td class="flow-status-cell">
         <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="onRefletidoChange" data-action-mode="self" title="Status de reflexo no planejamento">
           <option value="pendente" ${(f.refletido_status || 'pendente') === 'pendente' ? 'selected' : ''}>⏳ Pendente</option>
           <option value="sim" ${f.refletido_status === 'sim' ? 'selected' : ''}>✅ Sim</option>
@@ -376,7 +368,7 @@ function renderFlowTable() {
         </select>
       </td>
       <td>${escHtml(f.n_alteracao)}${manualBadge}${delBtn}</td>
-      <td style="font-size:11px;color:var(--text-soft);">${escHtml(formatDate(f.data_br))}</td>
+      <td class="flow-date-cell">${escHtml(formatDate(f.data_br))}</td>
       <td><span class="badge ${depBadge[f.dep] || 'gray'}">${escHtml(f.dep || '')}</span></td>
       <td>${tipoLabel[f.tipo] || ''}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_planejamento')}</td>
@@ -385,7 +377,7 @@ function renderFlowTable() {
         value="${escAttr(valStr)}" data-n="${escAttr(f.n_alteracao)}"
         data-change-action="onValorChange" data-action-mode="self" data-select-on-focus
         title="Aceita valores como 1234,56 ou -1.234,56" placeholder="0,00"></td>
-      <td style="font-size:11px;"><strong>${escHtml(f.motivo || '')}</strong><br><span style="color:var(--text-soft);">${escHtml((f.descricao || '').length > 110 ? (f.descricao || '').slice(0, 107) + '...' : f.descricao || '')}</span></td>
+      <td class="flow-reason-cell"><strong>${escHtml(f.motivo || '')}</strong><br><span class="flow-reason-description">${escHtml((f.descricao || '').length > 110 ? (f.descricao || '').slice(0, 107) + '...' : f.descricao || '')}</span></td>
     </tr>`;
       })
       .join(''),

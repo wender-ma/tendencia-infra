@@ -129,17 +129,15 @@ function applyLocksToUI() {
     if (inp) {
       inp.readOnly = trancado || !canEdit;
       inp.disabled = !canEdit;
-      inp.style.background = trancado || !canEdit ? 'var(--bg-soft)' : '';
-      inp.style.color = trancado || !canEdit ? 'var(--text-soft)' : '';
-      inp.style.cursor = trancado || !canEdit ? 'not-allowed' : '';
+      inp.classList.toggle('is-locked', trancado || !canEdit);
     }
     if (btn) {
       btn.textContent = trancado ? '🔒' : '🔓';
       btn.title = trancado
         ? 'Trancado — clique para destravar'
         : 'Destravado — clique para trancar';
-      btn.style.background = trancado ? 'var(--sem-alerta-bg)' : 'var(--bg-card)';
-      btn.style.borderColor = trancado ? 'var(--sem-alerta)' : 'var(--border-strong)';
+      btn.classList.toggle('is-locked', trancado);
+      btn.setAttribute('aria-pressed', String(trancado));
     }
   });
 }
@@ -356,14 +354,14 @@ function renderProjCtrl() {
     `
     <div class="kpi ${confCls}"><div class="label">🔍 Valor no Sistema</div><div class="value">${valorSistema != null ? fmtR$(valorSistema) : '—'}</div><div class="sub">${valorSistema != null ? `Tendência · insumo ${escHtml(insumoCtrl)}` : 'insumo não encontrado na Tendência'}</div></div>
     <div class="kpi ${saldoCls} kpi-wide"><div class="label">📊 Saldo Controlado</div><div class="value">${fmtR$(saldoAtual)}</div>
-      <div style="margin-top:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:11.5px;">
-          <span style="color:var(--sem-ok);">⬆️ Entradas (aportes)</span>
-          <strong style="color:var(--sem-ok);">+${fmt(totalEntradas)}</strong>
+      <div class="projection-balance-breakdown">
+        <div class="projection-balance-row is-entry">
+          <span>⬆️ Entradas (aportes)</span>
+          <strong>+${fmt(totalEntradas)}</strong>
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline; padding:2px 0; font-size:11.5px;">
-          <span style="color:var(--sem-erro);">⬇️ Saídas (verba utilizada)</span>
-          <strong style="color:var(--sem-erro);">−${fmt(totalSaidas)}</strong>
+        <div class="projection-balance-row is-exit">
+          <span>⬇️ Saídas (verba utilizada)</span>
+          <strong>−${fmt(totalSaidas)}</strong>
         </div>
       </div>
     </div>
@@ -378,7 +376,7 @@ function renderProjCtrl() {
       replaceWithParsedMarkup(
         elBanner,
         `
-        <div style="padding:10px 14px; background:var(--sem-alerta-bg); border-left:4px solid var(--sem-alerta); border-radius:6px; font-size:12.5px; color:var(--sem-alerta);">
+        <div class="projection-conf-alert projection-conf-alert--warning">
           ⚠️ <strong>Insumo controlado (${escHtml(insumoCtrl)}) não foi encontrado na aba TENDÊNCIA.</strong> Verifique se está correto no campo "Insumo controlado" acima.
         </div>`,
       );
@@ -386,7 +384,7 @@ function renderProjCtrl() {
       replaceWithParsedMarkup(
         elBanner,
         `
-        <div style="padding:10px 14px; background:var(--sem-ok-bg); border-left:4px solid var(--sem-ok); border-radius:6px; font-size:12.5px; color:var(--sem-ok);">
+        <div class="projection-conf-alert projection-conf-alert--success">
           ✅ <strong>Conferido!</strong> Saldo controlado (${fmtR$(saldoAtual)}) = Valor no sistema (${fmtR$(valorSistema)}). Diferença: ${fmtR$(confDiff)} (dentro da tolerância de R$ ${TOL_CONF.toFixed(2)}).
         </div>`,
       );
@@ -395,14 +393,14 @@ function renderProjCtrl() {
       replaceWithParsedMarkup(
         elBanner,
         `
-        <div style="padding:10px 14px; background:var(--fgr-red-light); border-left:4px solid var(--fgr-red-vivid); border-radius:6px; font-size:12.5px; color:var(--sem-erro);">
+        <div class="projection-conf-alert projection-conf-alert--error">
           ⚠️ <strong>Divergência identificada:</strong> existem ${fmtR$(Math.abs(confDiff))} ${sinal} no sistema do que o controlado.
-          <div style="margin-top:6px; font-size:11.5px; color:var(--sem-erro-text); display:flex; gap:18px; flex-wrap:wrap;">
+          <div class="projection-conf-details">
             <span>📊 Saldo controlado: <strong>${fmtR$(saldoAtual)}</strong></span>
             <span>🔍 Valor no sistema (Tendência): <strong>${fmtR$(valorSistema)}</strong></span>
             <span>❓ Não identificado: <strong>${confDiff >= 0 ? '+' : ''}${fmtR$(confDiff)}</strong></span>
           </div>
-          <div style="margin-top:6px; font-size:11px; color:var(--sem-erro-text);">
+          <div class="projection-conf-note">
             💡 Isso significa que há movimentações no sistema (Tendência) que ainda não foram registradas neste controle. Adicione uma movimentação manual ou ajuste o saldo inicial.
           </div>
         </div>`,
@@ -492,22 +490,25 @@ function renderProjCtrlChart(movs) {
         const dirLabel = m.direcao === 'entrada' ? 'Entrada' : 'Saída';
         const valorFmt = (m.direcao === 'entrada' ? '+' : '-') + fmtR$(m.valor);
         const dataFmt = m.data_br || p.data;
-        let html = '<div style="padding:8px 12px; font-size:12px;">';
+        let html = '<div class="projection-chart-tooltip">';
         html += '<strong>' + escHtml(m.tipo || dirLabel) + '</strong><br>';
-        html += '<span style="color:var(--text-soft);">Data:</span> ' + escHtml(dataFmt) + '<br>';
         html +=
-          '<span style="color:var(--text-soft);">Direção:</span> ' + escHtml(dirLabel) + '<br>';
+          '<span class="projection-chart-tooltip-label">Data:</span> ' + escHtml(dataFmt) + '<br>';
         html +=
-          '<span style="color:var(--text-soft);">Valor:</span> <strong>' +
+          '<span class="projection-chart-tooltip-label">Direção:</span> ' +
+          escHtml(dirLabel) +
+          '<br>';
+        html +=
+          '<span class="projection-chart-tooltip-label">Valor:</span> <strong>' +
           valorFmt +
           '</strong><br>';
         html +=
-          '<span style="color:var(--text-soft);">Saldo:</span> <strong>' +
+          '<span class="projection-chart-tooltip-label">Saldo:</span> <strong>' +
           fmtR$(p.saldo) +
           '</strong>';
         if (m.descricao)
           html +=
-            '<br><span style="color:var(--text-soft); font-size:11px;">' +
+            '<br><span class="projection-chart-tooltip-description">' +
             escHtml(m.descricao.slice(0, 80)) +
             '</span>';
         html += '</div>';
@@ -589,46 +590,46 @@ function renderMovTable(movs, saldoFinal) {
         .map((m) => {
           const dirIcon =
             m.direcao === 'entrada'
-              ? '<span style="color:var(--sem-ok); font-size:16px;" title="Entrada (recebeu verba)">⬅️</span>'
-              : '<span style="color:var(--sem-erro); font-size:16px;" title="Saída (liberou verba)">➡️</span>';
+              ? '<span class="projection-direction-icon is-entry" title="Entrada (recebeu verba)">⬅️</span>'
+              : '<span class="projection-direction-icon is-exit" title="Saída (liberou verba)">➡️</span>';
           const valCls = m.direcao === 'entrada' ? 'pos' : 'neg';
           const valSign = m.direcao === 'entrada' ? '+' : '-';
 
           // Chips para origem do dado
           let chips = '';
           if (m.origem_dado === 'flow') {
-            chips = `<span style="display:inline-block; padding:1px 6px; margin-left:6px; background:var(--fgr-red-light); color:var(--fgr-red); border-radius:10px; font-size:10px; font-weight:600; cursor:help;" title="Importado do Flow #${escAttr(m.flow_n || '')}. Para alterar, vá na aba 🔗 Flows.">🔗 Flow #${escHtml(m.flow_n || '')}</span>`;
+            chips = `<span class="projection-origin-chip projection-origin-chip--flow" title="Importado do Flow #${escAttr(m.flow_n || '')}. Para alterar, vá na aba 🔗 Flows.">🔗 Flow #${escHtml(m.flow_n || '')}</span>`;
           } else if (m.origem_dado === 'inicial') {
-            chips = `<span style="display:inline-block; padding:1px 6px; margin-left:6px; background:var(--sem-alerta-bg); color:var(--sem-alerta); border-radius:10px; font-size:10px; font-weight:600;">💰 Saldo inicial</span>`;
+            chips = `<span class="projection-origin-chip projection-origin-chip--initial">💰 Saldo inicial</span>`;
           } else if (m.origem_dado === 'manual') {
-            chips = `<span style="display:inline-block; margin-left:6px;">
-        <button data-editor-only data-action="edit-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid var(--fgr-red-light); background:var(--fgr-red-light); color:var(--fgr-red-dark); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer; margin-right:3px;" title="Editar">✏️ Editar</button>
-        <button data-editor-only data-action="delete-mov" data-id="${escAttr(m.id)}" style="padding:2px 6px; border:1px solid var(--sem-erro-border); background:var(--fgr-red-light); color:var(--sem-erro); border-radius:4px; font-size:10px; font-weight:600; cursor:pointer;" title="Excluir">🗑️ Excluir</button>
+            chips = `<span class="projection-movement-actions">
+        <button class="projection-movement-action projection-movement-action--edit" data-editor-only data-action="edit-mov" data-id="${escAttr(m.id)}" title="Editar">✏️ Editar</button>
+        <button class="projection-movement-action projection-movement-action--delete" data-editor-only data-action="delete-mov" data-id="${escAttr(m.id)}" title="Excluir">🗑️ Excluir</button>
       </span>`;
           }
 
-          const trStyle =
+          const rowClass =
             m.origem_dado === 'flow'
-              ? 'background:var(--row-flow-bg);'
+              ? 'projection-movement-row--flow'
               : m.origem_dado === 'inicial'
-                ? 'background:var(--row-initial-bg);'
+                ? 'projection-movement-row--initial'
                 : '';
-          return `<tr style="${trStyle}">
-      <td style="font-size:11.5px; color:var(--text-soft);">${escHtml(m.data_br || m.data || '')}</td>
+          return `<tr class="${rowClass}">
+      <td class="projection-movement-date">${escHtml(m.data_br || m.data || '')}</td>
       <td>${tipoBadge[m.tipo] || escHtml(m.tipo)}</td>
-      <td style="text-align:center;">${dirIcon}</td>
-      <td style="font-size:11.5px;">${escHtml(m.origem || '—')}</td>
-      <td style="font-size:11.5px;">${escHtml(m.destino || '—')}</td>
-      <td style="font-size:11.5px;">
-        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:2px;">
+      <td class="projection-movement-direction">${dirIcon}</td>
+      <td class="projection-movement-origin">${escHtml(m.origem || '—')}</td>
+      <td class="projection-movement-origin">${escHtml(m.destino || '—')}</td>
+      <td class="projection-movement-description-cell">
+        <div class="projection-movement-description">
           <strong>${escHtml((m.descricao || '').slice(0, 80))}${(m.descricao || '').length > 80 ? '...' : ''}</strong>
           ${chips}
         </div>
-        ${m.justificativa ? `<div style="color:var(--text-soft); font-size:10.5px; margin-top:2px;">${escHtml(m.justificativa.slice(0, 80))}${m.justificativa.length > 80 ? '...' : ''}</div>` : ''}
+        ${m.justificativa ? `<div class="projection-movement-justification">${escHtml(m.justificativa.slice(0, 80))}${m.justificativa.length > 80 ? '...' : ''}</div>` : ''}
       </td>
-      <td style="font-size:11px;">${escHtml(m.responsavel || '—')}</td>
+      <td class="projection-movement-responsible">${escHtml(m.responsavel || '—')}</td>
       <td class="num ${valCls}"><strong>${valSign}${fmt(m.valor || 0)}</strong></td>
-      <td class="num"><span style="color:${m._saldo < 0 ? 'var(--sem-erro)' : 'var(--sem-ok)'}; font-weight:600;">${fmt(m._saldo)}</span></td>
+      <td class="num"><span class="projection-movement-balance ${m._saldo < 0 ? 'is-negative' : 'is-positive'}">${fmt(m._saldo)}</span></td>
     </tr>`;
         })
         .join(''),
@@ -708,7 +709,7 @@ function openMovForm(editingId) {
       <button type="button" class="btn-sm" data-click-action="closeModal">Cancelar</button>
       <button type="submit" class="btn-sm primary" data-action="save-mov" data-id="${escAttr(editingId || '')}">💾 Salvar</button>
     </div>
-    <div style="margin-top:10px; padding:8px 12px; background:var(--sem-alerta-bg); border-radius:6px; font-size:11px; color:var(--sem-alerta);">
+    <div class="projection-movement-form-note">
       💡 A direção (entrada/saída) é calculada automaticamente: se o insumo controlado (${escHtml(insumo)}) aparecer no campo <strong>Destino</strong>, é uma entrada. Se aparecer em <strong>Origem</strong>, é uma saída.
     </div>
     </form>

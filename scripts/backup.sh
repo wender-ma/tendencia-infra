@@ -11,6 +11,7 @@ mkdir -p "$BACKUP_DIR"
 
 tar \
   --exclude=".git" \
+  --exclude=".env*" \
   --exclude=".mimocode/node_modules" \
   --exclude="backups/snapshots" \
   -czf "$BACKUP_FILE" \

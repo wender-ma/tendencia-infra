@@ -14,6 +14,8 @@ verdes no commit que sera avaliado.
   usuario `rejected`; cada conta deve usar email sem dados pessoais reais.
 - Preencher `.env.development.local` com `VITE_APP_ENV=development` e as
   credenciais anon do projeto de desenvolvimento.
+- Executar `npm run test:development`; o smoke anonimo deve sincronizar sem erros
+  e sem requisicoes remotas de escrita.
 - Cadastrar no provedor de hospedagem somente as variaveis de producao:
   `VITE_APP_ENV=production`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 - Confirmar que a URL do Supabase e a origem do projeto, sem `/rest/v1`.
@@ -30,6 +32,8 @@ locais nao versionados.
   disponivel.
 - Aplicar, na ordem, as migrations em `supabase/migrations/` no SQL Editor do
   projeto de desenvolvimento.
+- Executar `./scripts/audit_supabase_contract.sh datasets` com as variaveis do
+  ambiente de desenvolvimento; o comando deve terminar sem divergencias.
 - Executar as consultas de `supabase/tests/` correspondentes e guardar o resultado
   da validacao junto ao ticket ou deploy.
 - Aplicar `20260721211500_dashboard_datasets.sql`, importar dados de teste e

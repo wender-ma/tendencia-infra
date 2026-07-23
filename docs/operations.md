@@ -38,6 +38,16 @@ Supabase ficticia e conexoes remotas bloqueadas.
 As validacoes que dependem de Supabase real, dados representativos, leitor de tela
 ou decisao de negocio estao organizadas em `docs/manual_validation.md`.
 
+Com `.env.development.local` preenchido, o smoke anônimo do ambiente real pode ser
+executado por:
+
+```bash
+npm run test:development
+```
+
+O comando inicia um servidor isolado, confirma boot e sincronização e falha se o
+navegador tentar qualquer método remoto diferente de `GET`, `HEAD` ou `OPTIONS`.
+
 ## Deploy do frontend
 
 O Vercel deve usar:
@@ -90,6 +100,15 @@ a tabela ainda não existe; após a migration, ela passa a preferir o snapshot a
 e mantém escrita dupla. Não faça backfill nem remova as chaves legadas antes de
 validar imports, troca de obra e rollback de upload com dados de desenvolvimento.
 
+Depois da aplicação, valide a publicação do novo contrato sem escrita remota:
+
+```bash
+set -a
+source .env.development.local
+set +a
+./scripts/audit_supabase_contract.sh datasets
+```
+
 ## Backups locais do projeto
 
 ```bash
@@ -97,6 +116,9 @@ validar imports, troca de obra e rollback de upload com dados de desenvolvimento
 ```
 
 O script cria snapshots em `backups/snapshots/`, mantém os 12 mais recentes e remove o mais antigo. Com agendamento a cada 30 minutos, a janela local é de aproximadamente seis horas.
+
+Arquivos `.env*` nao entram nos arquivos compactados. Em uma restauracao, recrie a
+configuracao local a partir dos templates versionados e do painel do provedor.
 
 ## Retenção de uploads
 

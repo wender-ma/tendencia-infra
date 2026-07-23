@@ -29,7 +29,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
-- [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: o frontend agora exige credenciais explícitas e compatíveis com o modo do Vite, os testes usam um endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta provisionar o projeto Supabase de desenvolvimento, preencher `.env.development.local` e cadastrar as variáveis de produção na hospedagem.
+- [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: projeto e `.env.development.local` configurados, perfil remoto endurecido confirmado, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
 - [ ] Criar obra e usuários de teste sem dados confidenciais.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
 
@@ -204,7 +204,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: leitura preferencial, fallback, escrita dupla, rollback e validações locais foram implementados; faltam aplicar a migration no Supabase de desenvolvimento, executar o backfill, validar dados reais e então interromper a escrita dos blobs legados.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: leitura preferencial, fallback, escrita dupla, rollback e validações locais foram implementados; auditoria remota de 23/07 confirmou que tabela e RPC ainda estão ausentes, portanto faltam aplicar a migration no Supabase de desenvolvimento, executar o backfill, validar dados reais e então interromper a escrita dos blobs legados.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -236,7 +236,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes de XSS para campos importados.
 - [x] Criar testes de integração para upload, falhas por etapa e rollback parcial.
 - [x] Criar testes E2E para login, troca de obra, edição e administração com Supabase controlado no navegador.
-- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel.
+- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel (boot anônimo real e somente leitura validado em 23/07/2026; faltam admin, editor e rejected).
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
 - [x] Executar Lighthouse no CI com orçamentos e relatório para download.
@@ -326,3 +326,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 23/07/2026 | Repositório de snapshots integrado ao carregamento e aos uploads, com fallback de schema, integridade SHA-256, ativação serializada e rollback conjunto | `dashboard-dataset-repository.mjs`                          |
 | 23/07/2026 | Ambientes Supabase isolados: sem endpoint embutido, credenciais validadas por modo, teste com endpoint fictício e preflight obrigatório no deploy | `config.js`, `verify_production_environment.mjs`            |
 | 23/07/2026 | CSP estrita concluída sem `unsafe-inline`; estilos da aplicação externalizados e CSS estático do ApexCharts limitado por hash e teste de navegador         | `test_csp_style_contract.js`, `scripts/browser/csp.spec.js` |
+| 23/07/2026 | Projeto de desenvolvimento configurado localmente; perfil remoto endurecido confirmado e ausência da migration de snapshots registrada sem escrita | `docs/supabase_development_audit_2026-07-23.md`             |

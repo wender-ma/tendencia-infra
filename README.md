@@ -48,6 +48,7 @@ Dashboard de tendência orçamentária
 - `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
 - `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
+- `docs/supabase_development_audit_2026-07-23.md`: evidência somente leitura do ambiente de desenvolvimento e estado das migrations.
 - `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
 - `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
 - `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
@@ -80,7 +81,7 @@ SUPABASE_ANON_KEY="sua-chave-anon-public" \
 ./scripts/audit_supabase_contract.sh baseline
 ```
 
-Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no projeto de desenvolvimento.
+Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no projeto de desenvolvimento. Depois da migration de snapshots versionados, use `datasets`; esse perfil também exige a tabela `dashboard_datasets`.
 
 ## Validação de importações
 
@@ -188,6 +189,9 @@ npm run test:browser
 O projeto possui um script de backup em `scripts/backup.sh` e uma rotina agendada para executá-lo a cada 30 minutos.
 
 Ele cria um arquivo compactado em `backups/snapshots/`, mantém os 12 backups mais recentes e remove automaticamente os mais antigos.
+
+Arquivos `.env*` sao omitidos dos snapshots para nao replicar configuracoes locais.
+Os templates versionados podem ser recuperados pelo Git.
 
 Para criar um backup manual:
 

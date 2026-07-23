@@ -3,8 +3,8 @@ set -euo pipefail
 
 PROFILE="${1:-baseline}"
 
-if [[ "$PROFILE" != "baseline" && "$PROFILE" != "hardened" ]]; then
-  echo "Uso: $0 [baseline|hardened]" >&2
+if [[ "$PROFILE" != "baseline" && "$PROFILE" != "hardened" && "$PROFILE" != "datasets" ]]; then
+  echo "Uso: $0 [baseline|hardened|datasets]" >&2
   exit 2
 fi
 
@@ -31,6 +31,12 @@ CONTRACTS=(
   "upload_history|id,codigo_obra,tipo,nome_arquivo,tamanho_bytes,linhas,enviado_por,storage_path,upload_group_id,is_active,enviado_em"
   "upload_history_latest|id,codigo_obra,tipo,nome_arquivo,tamanho_bytes,linhas,enviado_por,storage_path,upload_group_id,is_active,enviado_em"
 )
+
+if [[ "$PROFILE" == "datasets" ]]; then
+  CONTRACTS+=(
+    "dashboard_datasets|id,codigo_obra,tipo,versao,storage_path,sha256,linhas,bytes,status,upload_history_id,created_at,created_by,activated_at"
+  )
+fi
 
 TMP_BODY="$(mktemp)"
 TMP_HEADERS="$(mktemp)"
@@ -62,7 +68,7 @@ for contract in "${CONTRACTS[@]}"; do
     editores_permitidos|upload_history|upload_history_latest) sensitive=true ;;
   esac
 
-  if [[ "$PROFILE" == "hardened" && "$sensitive" == true ]]; then
+  if [[ "$PROFILE" != "baseline" && "$sensitive" == true ]]; then
     if [[ "$status" == "401" || "$status" == "403" ]]; then
       printf 'OK   %-30s acesso anonimo bloqueado (HTTP %s)\n' "$table" "$status"
     else
@@ -88,7 +94,9 @@ if (( failures > 0 )); then
   exit 1
 fi
 
-if [[ "$PROFILE" == "hardened" ]]; then
+if [[ "$PROFILE" == "datasets" ]]; then
+  echo "Resultado: perfil endurecido e contrato de snapshots confirmados."
+elif [[ "$PROFILE" == "hardened" ]]; then
   echo "Resultado: perfil endurecido confirmado para acessos anonimos."
 else
   echo "Resultado: baseline publico confirmado."

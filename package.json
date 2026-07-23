@@ -14,6 +14,7 @@
     "check": "npm run lint && npm run format:check && npm test && npm run build",
     "test": "node scripts/run_contract_tests.js",
     "test:browser": "playwright test",
+    "test:development": "node scripts/run_development_smoke.js",
     "test:lighthouse": "npm run build && node scripts/run_lighthouse.js"
   },
   "devDependencies": {

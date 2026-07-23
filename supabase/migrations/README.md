@@ -11,7 +11,9 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Revisão contra o baseline administrativo: concluída.
 - Teste local de aplicação das três migrations: concluído.
 - Teste local dos três rollbacks: concluído.
-- Aplicação em Supabase de desenvolvimento: pendente.
+- Comportamento endurecido de RLS no Supabase de desenvolvimento: confirmado por auditoria anônima em 23/07/2026.
+- Migration administrativa no Supabase de desenvolvimento: estado não comprovável apenas com a chave `anon`.
+- Migration de snapshots no Supabase de desenvolvimento: ausente em 23/07/2026 (`PGRST205`/`PGRST202`).
 - Aplicação em produção: pendente.
 
 Teste local reproduzível:

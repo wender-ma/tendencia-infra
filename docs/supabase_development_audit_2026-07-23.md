@@ -53,5 +53,9 @@ set +a
 ./scripts/audit_supabase_contract.sh datasets
 ```
 
+Se o schema REST continuar sem a tabela, execute
+`supabase/audit/verify_dashboard_datasets_deployment.sql`. A consulta retorna um
+resumo booleano de todos os objetos e solicita a recarga do cache PostgREST.
+
 Nao execute backfill nem interrompa a escrita dupla enquanto esse gate e os fluxos
 reais de upload, ativacao e rollback nao estiverem validados.

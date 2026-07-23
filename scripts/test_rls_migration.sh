@@ -46,12 +46,30 @@ run_sql() {
     < "$ROOT_DIR/$path"
 }
 
+run_sql_expect_complete() {
+  local label="$1"
+  local path="$2"
+  local output
+  echo "==> $label"
+  output="$(
+    docker exec -i "$CONTAINER" \
+      psql --quiet --tuples-only --set ON_ERROR_STOP=1 -U postgres -d tendencia_test \
+      < "$ROOT_DIR/$path"
+  )"
+  echo "$output"
+  if ! grep -q '"complete": true' <<< "$output"; then
+    echo "Erro: auditoria da migration nao confirmou complete: true." >&2
+    exit 1
+  fi
+}
+
 run_sql "Criando baseline auditado" "supabase/tests/fixture_baseline.sql"
 run_sql "Aplicando migration RLS" "supabase/migrations/20260720172000_rls_hardening.sql"
 run_sql "Validando estado endurecido" "supabase/tests/assert_hardened.sql"
 run_sql "Aplicando operacoes administrativas atomicas" "supabase/migrations/20260720203000_admin_transactions.sql"
 run_sql "Validando transacoes administrativas" "supabase/tests/assert_admin_transactions.sql"
 run_sql "Aplicando snapshots versionados" "supabase/migrations/20260721211500_dashboard_datasets.sql"
+run_sql_expect_complete "Auditando deploy dos snapshots" "supabase/audit/verify_dashboard_datasets_deployment.sql"
 run_sql "Validando snapshots versionados" "supabase/tests/assert_dashboard_datasets.sql"
 run_sql "Removendo objetos dos snapshots de teste" "supabase/tests/cleanup_dashboard_dataset_objects.sql"
 run_sql "Aplicando rollback dos snapshots versionados" "supabase/rollback/20260721211500_dashboard_datasets_rollback.sql"

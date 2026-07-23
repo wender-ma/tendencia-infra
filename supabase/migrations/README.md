@@ -22,6 +22,14 @@ Teste local reproduzível:
 ./scripts/test_rls_migration.sh
 ```
 
+Auditoria remota somente leitura após a terceira migration:
+
+```text
+supabase/audit/verify_dashboard_datasets_deployment.sql
+```
+
+O resultado deve indicar `complete: true`.
+
 Ordem de aplicação:
 
 1. `20260720172000_rls_hardening.sql`

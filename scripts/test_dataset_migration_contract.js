@@ -12,6 +12,10 @@ const rollback = fs.readFileSync(
   path.join(root, 'supabase/rollback/20260721211500_dashboard_datasets_rollback.sql'),
   'utf8',
 );
+const deploymentAudit = fs.readFileSync(
+  path.join(root, 'supabase/audit/verify_dashboard_datasets_deployment.sql'),
+  'utf8',
+);
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -43,5 +47,20 @@ assert(
   !migration.includes('delete from public.dashboard_config'),
   'Migration preparatoria nao pode apagar os blobs legados',
 );
+for (const contract of [
+  "to_regclass('public.dashboard_datasets')",
+  "to_regprocedure('public.activate_dashboard_dataset(uuid)')",
+  "to_regprocedure('public.fail_dashboard_dataset(uuid)')",
+  "to_regprocedure('public.rollback_dashboard_dataset(uuid,uuid)')",
+  "bucket.id = 'dashboard-datasets'",
+  'table_policy_count = 3',
+  'storage_policy_count = 3',
+  "pg_notify('pgrst', 'reload schema')",
+]) {
+  assert(
+    deploymentAudit.includes(contract),
+    `Auditoria de deploy dos datasets incompleta: ${contract}`,
+  );
+}
 
 console.log('Contrato de datasets: bucket privado, versões, ativação e rollback OK');

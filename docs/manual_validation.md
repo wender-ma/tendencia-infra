@@ -34,6 +34,9 @@ locais nao versionados.
   projeto de desenvolvimento.
 - Executar `./scripts/audit_supabase_contract.sh datasets` com as variaveis do
   ambiente de desenvolvimento; o comando deve terminar sem divergencias.
+- Se o endpoint ainda retornar `PGRST205`, executar
+  `supabase/audit/verify_dashboard_datasets_deployment.sql` no SQL Editor e
+  confirmar `complete: true`.
 - Executar as consultas de `supabase/tests/` correspondentes e guardar o resultado
   da validacao junto ao ticket ou deploy.
 - Aplicar `20260721211500_dashboard_datasets.sql`, importar dados de teste e

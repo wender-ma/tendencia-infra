@@ -24,7 +24,13 @@ module.exports = defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --host 127.0.0.1 --port 4174',
+    command: 'npm run build:test && npm run preview -- --host 127.0.0.1 --port 4174',
+    env: {
+      ...process.env,
+      VITE_APP_ENV: 'test',
+      VITE_SUPABASE_URL: 'https://test.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'test-anon-public-key',
+    },
     url: 'http://127.0.0.1:4174',
     reuseExistingServer: false,
     timeout: 120_000,

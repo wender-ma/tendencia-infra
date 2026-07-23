@@ -62,7 +62,7 @@ assert(
   'CSP deve limitar o ApexCharts aos dois hashes de estilo auditados',
 );
 assert(
-  vercel.buildCommand === 'npm run build' && vercel.outputDirectory === 'dist',
+  vercel.buildCommand === 'npm run build:production' && vercel.outputDirectory === 'dist',
   'Build da Vercel incorreto',
 );
 const vercelHeaderNames = vercel.headers.flatMap((rule) =>

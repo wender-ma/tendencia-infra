@@ -4,19 +4,33 @@ const DEFAULT_RETRY_ATTEMPTS = 3;
 const BASE_RETRY_DELAY_MS = 1000;
 
 export function createSupabaseService(
-  { url, anonKey },
+  {
+    url,
+    anonKey,
+    configurationStatus = 'ready',
+    environment = 'unconfigured',
+    buildMode = 'unconfigured',
+  },
   { reportError = (context, error) => console.warn(`[${context}]`, error) } = {},
 ) {
   let client = null;
   let initializationError = null;
 
-  try {
-    if (!url || !anonKey) throw new Error('Configuracao do Supabase incompleta');
-    client = createClient(url, anonKey);
-    console.log('[SUPA] cliente inicializado');
-  } catch (error) {
-    initializationError = error;
-    reportError('Supabase/inicializar cliente', error);
+  if (!url || !anonKey) {
+    if (configurationStatus === 'environment-mismatch') {
+      initializationError = new Error(
+        `Configuracao Supabase declarada para ${environment}, mas o build usa ${buildMode}`,
+      );
+      reportError('Supabase/validar ambiente', initializationError);
+    }
+  } else {
+    try {
+      client = createClient(url, anonKey);
+      console.log('[SUPA] cliente inicializado');
+    } catch (error) {
+      initializationError = error;
+      reportError('Supabase/inicializar cliente', error);
+    }
   }
 
   async function retry(operation, maxAttempts = DEFAULT_RETRY_ATTEMPTS) {
@@ -38,6 +52,9 @@ export function createSupabaseService(
   return Object.freeze({
     client,
     initializationError,
+    configurationStatus,
+    environment,
+    buildMode,
     retry,
     url,
   });

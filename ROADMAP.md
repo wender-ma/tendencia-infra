@@ -29,8 +29,9 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
-- [ ] Definir ambiente de desenvolvimento separado da produção.
+- [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: o frontend agora exige credenciais explícitas e compatíveis com o modo do Vite, os testes usam um endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta provisionar o projeto Supabase de desenvolvimento, preencher `.env.development.local` e cadastrar as variáveis de produção na hospedagem.
 - [ ] Criar obra e usuários de teste sem dados confidenciais.
+- [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
 
 ## P0: segurança crítica
 
@@ -323,4 +324,5 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Persistência de snapshots grandes avaliada; JSON versionado em bucket privado escolhido para a migração gradual                                          | `docs/adr_dashboard_datasets.md`                            |
 | 21/07/2026 | Migration de snapshots versionados, RLS, ativação transacional, rollback e testes PostgreSQL preparados                                                   | `20260721211500_dashboard_datasets.sql`                     |
 | 23/07/2026 | Repositório de snapshots integrado ao carregamento e aos uploads, com fallback de schema, integridade SHA-256, ativação serializada e rollback conjunto | `dashboard-dataset-repository.mjs`                          |
+| 23/07/2026 | Ambientes Supabase isolados: sem endpoint embutido, credenciais validadas por modo, teste com endpoint fictício e preflight obrigatório no deploy | `config.js`, `verify_production_environment.mjs`            |
 | 23/07/2026 | CSP estrita concluída sem `unsafe-inline`; estilos da aplicação externalizados e CSS estático do ApexCharts limitado por hash e teste de navegador         | `test_csp_style_contract.js`, `scripts/browser/csp.spec.js` |

@@ -483,6 +483,11 @@ Promise.resolve()
         dashboard: DASHBOARD_CONFIG,
         storageKeys: STORAGE_KEYS,
         supabaseUrl: SUPABASE_CONFIG.url,
+        supabaseEnvironment: Object.freeze({
+          status: supabaseService.configurationStatus,
+          declared: supabaseService.environment,
+          buildMode: supabaseService.buildMode,
+        }),
       }),
       actions: actionRegistry,
       supabase: supabaseService,

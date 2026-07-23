@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/verify_build.js",
+    "build:production": "node scripts/verify_production_environment.mjs && npm run build",
+    "build:test": "vite build --mode test && node scripts/verify_build.js",
     "preview": "vite preview",
     "lint": "eslint assets/js",
     "format": "prettier --write assets/js",

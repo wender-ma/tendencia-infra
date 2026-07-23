@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INDEX_FILE="$ROOT_DIR/index.html"
 PROFILE="${1:-baseline}"
 
 if [[ "$PROFILE" != "baseline" && "$PROFILE" != "hardened" ]]; then
@@ -10,19 +8,11 @@ if [[ "$PROFILE" != "baseline" && "$PROFILE" != "hardened" ]]; then
   exit 2
 fi
 
-PROJECT_URL="${SUPABASE_URL:-}"
-SUPA_KEY="${SUPABASE_ANON_KEY:-}"
-
-if [[ -z "$PROJECT_URL" ]]; then
-  PROJECT_URL="$(sed -n "s/^const SUPA_URL = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
-fi
-
-if [[ -z "$SUPA_KEY" ]]; then
-  SUPA_KEY="$(sed -n "s/^const SUPA_KEY = '\([^']*\)';/\1/p" "$INDEX_FILE" | head -n 1)"
-fi
+PROJECT_URL="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
+SUPA_KEY="${SUPABASE_ANON_KEY:-${VITE_SUPABASE_ANON_KEY:-}}"
 
 if [[ -z "$PROJECT_URL" || -z "$SUPA_KEY" ]]; then
-  echo "Erro: SUPABASE_URL/SUPABASE_ANON_KEY ou SUPA_URL/SUPA_KEY em index.html nao encontrados." >&2
+  echo "Erro: defina SUPABASE_URL e SUPABASE_ANON_KEY (ou as variantes VITE_) no ambiente." >&2
   exit 1
 fi
 

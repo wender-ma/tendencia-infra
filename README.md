@@ -50,6 +50,7 @@ Dashboard de tendência orçamentária
 - `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
 - `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
 - `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
+- `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
 - `experiments/preview-modal.html`: protótipo isolado do modal.
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
@@ -122,14 +123,26 @@ Os testes podem também ser executados individualmente:
 
 Os testes cobrem cabeçalhos, datas, diálogos, dependências, módulos, estado, autorização e ausência de blocos de erro silenciosos.
 
-## Desenvolvimento e build
+## Desenvolvimento, ambientes e build
 
-Requisito: Node.js `^20.19.0` ou `>=22.12.0`.
+Requisito: Node.js `>=22.19.0`.
 
-Instale as dependências e inicie o servidor local:
+O frontend nao possui endpoint ou chave Supabase padrao no codigo. Sem configuracao
+explicita, ele inicia em modo offline e usa apenas o armazenamento local do navegador.
+Isso evita que um desenvolvimento local grave acidentalmente no ambiente de producao.
+
+Para desenvolvimento, use um projeto Supabase exclusivo e crie a configuracao local:
 
 ```bash
 npm install
+cp .env.example .env.development.local
+```
+
+Preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` com o projeto de
+desenvolvimento. Mantenha `VITE_APP_ENV=development` e nao use a URL de
+producao nesse arquivo. Em seguida, inicie o servidor:
+
+```bash
 npm run dev
 ```
 
@@ -137,21 +150,29 @@ O Vite disponibiliza a aplicação em `http://localhost:5173/` por padrão.
 
 As bibliotecas do navegador são instaladas pelo gerenciador de pacotes e empacotadas pelo Vite. O SheetJS usa o pacote oficial `0.20.3`, distribuído pelo CDN oficial do projeto porque o registro npm parou na versão vulnerável `0.18.5`.
 
-O projeto mantém valores padrão para a configuração pública do Supabase. Para usar outro ambiente sem editar o código, crie um arquivo `.env.local` baseado em `.env.example`:
+Para producao, configure no provedor de hospedagem as tres variaveis abaixo. O
+endpoint deve ser a origem do projeto, por exemplo `https://abc.supabase.co`,
+sem o sufixo `/rest/v1`:
 
 ```bash
+VITE_APP_ENV="production"
 VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
 VITE_SUPABASE_ANON_KEY="sua-chave-anon-public"
 ```
 
-A chave `anon public` é exposta ao navegador por definição. A proteção dos dados continua dependendo das políticas RLS e da autorização no Supabase.
+A configuracao e recusada quando `VITE_APP_ENV` nao corresponde ao modo do Vite.
+A chave `anon public` e exposta ao navegador por definicao; a protecao dos dados
+continua dependendo das politicas RLS e da autorizacao no Supabase.
 
-Para gerar e validar o pacote de produção:
+Para gerar e validar o pacote de producao pronto para publicar:
 
 ```bash
-npm run build
+npm run build:production
 npm run preview
 ```
+
+`npm run build` continua disponivel para verificacoes locais e de CI; sem
+credenciais ele gera deliberadamente uma versao offline do dashboard.
 
 O build é criado em `dist/`, que não deve ser versionado.
 

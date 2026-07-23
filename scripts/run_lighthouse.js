@@ -44,7 +44,7 @@ async function main() {
     ]);
     chrome = await chromeLauncher.launch({
       chromePath: chromium.executablePath(),
-      chromeFlags: ['--headless', '--no-sandbox', '--disable-gpu'],
+      chromeFlags: ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
     });
     const result = await lighthouse(url, {
       port: chrome.port,
@@ -58,9 +58,17 @@ async function main() {
     fs.mkdirSync(reportDirectory, { recursive: true });
     fs.writeFileSync(path.join(reportDirectory, 'lhr.json'), result.report);
 
+    if (result.lhr.runtimeError) {
+      const { code, message } = result.lhr.runtimeError;
+      throw new Error(`Lighthouse nao concluiu a coleta (${code}): ${message}`);
+    }
+
     const scores = Object.fromEntries(
       Object.entries(thresholds).map(([category, minimum]) => {
-        const score = result.lhr.categories[category]?.score || 0;
+        const score = result.lhr.categories[category]?.score;
+        if (typeof score !== 'number') {
+          throw new Error(`Lighthouse nao retornou escore para a categoria ${category}`);
+        }
         return [category, { score, minimum, passed: score >= minimum }];
       }),
     );

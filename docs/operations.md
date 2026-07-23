@@ -6,11 +6,17 @@ Requisitos: Node.js `>=22.19.0` e npm.
 
 ```bash
 npm ci
-cp .env.example .env.local
+cp .env.example .env.development.local
 npm run dev
 ```
 
-As variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` são públicas no bundle. Nunca use `service_role` ou qualquer segredo de servidor no frontend.
+Preencha o arquivo com um projeto Supabase exclusivo de desenvolvimento e mantenha
+`VITE_APP_ENV=development`. Nunca use a URL de producao nesse arquivo. Para evitar
+misturas acidentais, a aplicacao descarta as credenciais quando `VITE_APP_ENV` nao
+corresponde ao modo do Vite; sem credenciais validas, ela funciona em modo offline.
+
+As variaveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sao publicas no bundle.
+Nunca use `service_role` ou qualquer segredo de servidor no frontend.
 
 ## Validação
 
@@ -23,18 +29,29 @@ npm run test:lighthouse
 npm audit --audit-level=high
 ```
 
-`npm run check` executa lint, verificação de formatação, contratos e build. O teste de navegador executa smoke funcional, axe e inspeções responsivas com Supabase remoto bloqueado.
+`npm run check` executa lint, verificacao de formatacao, contratos e build. O teste
+de navegador executa smoke funcional, axe e inspecoes responsivas com configuracao
+Supabase ficticia e conexoes remotas bloqueadas.
 
 `npm run test:lighthouse` audita o build de produção com mínimos de 65 em performance, 90 em acessibilidade, 85 em boas práticas e 75 em SEO. O relatório completo fica em `.lighthouseci/lhr.json`; a verificação de indexabilidade é omitida porque o dashboard interno usa `noindex` deliberadamente.
+
+As validacoes que dependem de Supabase real, dados representativos, leitor de tela
+ou decisao de negocio estao organizadas em `docs/manual_validation.md`.
 
 ## Deploy do frontend
 
 O Vercel deve usar:
 
-- build: `npm run build`;
+- build: `npm run build:production`;
 - diretório de saída: `dist`;
-- variáveis públicas: `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`;
+- variaveis publicas: `VITE_APP_ENV=production`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`;
 - configuração de headers: `vercel.json`.
+
+O preflight do build bloqueia o deploy se uma das tres variaveis estiver ausente,
+se `VITE_APP_ENV` nao for `production` ou se a URL contiver `/rest/v1`. Cadastre
+as variaveis no ambiente de producao do provedor antes de enviar este commit para a
+branch publicada. O template `.env.production.example` serve apenas como referencia
+local e nao deve receber valores reais versionados.
 
 O deploy do frontend não aplica migrations nem altera o banco. Depois da publicação, confirme o carregamento, login, troca de obra e headers HTTP no domínio final.
 

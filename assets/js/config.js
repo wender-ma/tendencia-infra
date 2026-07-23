@@ -1,15 +1,28 @@
-const DEFAULT_SUPABASE_URL = 'https://jmfgegnfctlyuevqadba.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZmdlZ25mY3RseXVldnFhZGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMTg3NTQsImV4cCI6MjA5ODg5NDc1NH0.I46uFmDdXq3orJpkFq6wn4zATuENhbe-7Q1Xst3Vm0E';
-
-function readEnvironment(name, fallback) {
+function readEnvironment(name, fallback = '') {
   const value = import.meta.env?.[name];
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
+const buildMode = readEnvironment('MODE', 'development');
+const declaredEnvironment = readEnvironment('VITE_APP_ENV');
+const requestedSupabaseUrl = readEnvironment('VITE_SUPABASE_URL');
+const requestedSupabaseAnonKey = readEnvironment('VITE_SUPABASE_ANON_KEY');
+const hasSupabaseCredentials = Boolean(requestedSupabaseUrl && requestedSupabaseAnonKey);
+const configurationStatus = !hasSupabaseCredentials
+  ? 'missing-credentials'
+  : !declaredEnvironment
+    ? 'missing-environment'
+    : declaredEnvironment !== buildMode
+      ? 'environment-mismatch'
+      : 'ready';
+const canConnectToSupabase = configurationStatus === 'ready';
+
 export const SUPABASE_CONFIG = Object.freeze({
-  url: readEnvironment('VITE_SUPABASE_URL', DEFAULT_SUPABASE_URL),
-  anonKey: readEnvironment('VITE_SUPABASE_ANON_KEY', DEFAULT_SUPABASE_ANON_KEY),
+  url: canConnectToSupabase ? requestedSupabaseUrl : '',
+  anonKey: canConnectToSupabase ? requestedSupabaseAnonKey : '',
+  environment: declaredEnvironment || 'unconfigured',
+  buildMode,
+  configurationStatus,
 });
 
 export const STORAGE_KEYS = Object.freeze({

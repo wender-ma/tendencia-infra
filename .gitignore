@@ -10,4 +10,5 @@ playwright-report/
 test-results/
 .env*
 !.env.example
+!.env.production.example
 .lighthouseci/

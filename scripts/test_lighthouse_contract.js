@@ -23,6 +23,8 @@ for (const [category, minimum] of [
   assert(runner.includes(`${category}: ${minimum}`), `Orçamento ausente: ${category}`);
 }
 assert(runner.includes("skipAudits: ['is-crawlable']"), 'Exceção do noindex interno não documentada no runner');
+assert(runner.includes("'--disable-dev-shm-usage'"), 'Lighthouse precisa suportar containers com /dev/shm reduzido');
+assert(runner.includes('result.lhr.runtimeError'), 'Lighthouse deve distinguir falha de coleta de escore baixo');
 assert(workflow.includes('run: npm run test:lighthouse'), 'Lighthouse não é executado no CI');
 assert(workflow.includes('name: lighthouse-report'), 'Relatório Lighthouse não é preservado no CI');
 

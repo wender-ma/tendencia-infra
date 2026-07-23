@@ -25,6 +25,8 @@ for (const contract of [
   'public.authz_can_manage_dashboard_dataset',
   'public.activate_dashboard_dataset',
   'public.rollback_dashboard_dataset',
+  "'previous_id', previous_id",
+  'pg_advisory_xact_lock',
   "dataset.status <> 'processing'",
   "bucket_id = 'dashboard-datasets'",
   'dashboard_datasets_storage_read_active',

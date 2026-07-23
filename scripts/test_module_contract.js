@@ -23,6 +23,10 @@ const dashboardRepository = fs.readFileSync(
   path.join(root, 'assets/js/services/dashboard-repository.mjs'),
   'utf8',
 );
+const dashboardDatasetRepository = fs.readFileSync(
+  path.join(root, 'assets/js/services/dashboard-dataset-repository.mjs'),
+  'utf8',
+);
 const syncStatus = fs.readFileSync(path.join(root, 'assets/js/services/sync-status.mjs'), 'utf8');
 const uploadCoordinator = fs.readFileSync(
   path.join(root, 'assets/js/services/upload-coordinator.mjs'),
@@ -169,6 +173,22 @@ assert(
 assert(
   !dashboardRepository.includes('installLegacyDashboardRepository'),
   'Repositório de dados voltou a publicar adaptador global',
+);
+assert(
+  dashboardDatasetRepository.includes('export function createDashboardDatasetRepository'),
+  'Repositório de snapshots versionados ausente',
+);
+assert(
+  dashboardDatasetRepository.includes('isDatasetSchemaUnavailable'),
+  'Fallback seguro enquanto a migration não foi aplicada está ausente',
+);
+assert(
+  dashboardDatasetRepository.includes('rollback_dashboard_dataset'),
+  'Rollback de snapshots não usa a RPC transacional',
+);
+assert(
+  dashboardDatasetRepository.includes('Integridade inválida para o dataset'),
+  'Leitura de snapshots não valida integridade',
 );
 assert(
   syncStatus.includes('export function createSyncStatusService'),
@@ -356,6 +376,10 @@ assert(
   bootstrap.includes('createSupabaseService(SUPABASE_CONFIG, {') &&
     bootstrap.includes('reportError: (context, error) => logger.warn(context, error)'),
   'Bootstrap nao cria o servico Supabase com logger sanitizado',
+);
+assert(
+  bootstrap.includes('createDashboardDatasetRepository({'),
+  'Bootstrap não cria o repositório de snapshots versionados',
 );
 assert(
   !bootstrap.includes('installLegacySupabaseGlobals'),

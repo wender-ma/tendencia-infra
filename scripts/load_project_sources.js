@@ -24,6 +24,7 @@ function loadProjectSources() {
     readProjectFile('assets/js/application.mjs'),
     readProjectFile('assets/js/services/dashboard-export.mjs'),
     readProjectFile('assets/js/services/dashboard-repository.mjs'),
+    readProjectFile('assets/js/services/dashboard-dataset-repository.mjs'),
     readProjectFile('assets/js/services/project-repository.mjs'),
     readProjectFile('assets/js/services/storage-service.mjs'),
     readProjectFile('assets/js/services/sync-status.mjs'),

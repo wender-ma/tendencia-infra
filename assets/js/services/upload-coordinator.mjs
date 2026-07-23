@@ -121,11 +121,7 @@ export function createUploadCoordinator({
     }
     let datasets;
     try {
-      datasets = await dashboardDatasetRepository.saveForUpload(
-        kinds,
-        getDashboardData(),
-        records,
-      );
+      datasets = await dashboardDatasetRepository.saveForUpload(kinds, getDashboardData(), records);
     } catch (datasetError) {
       try {
         await restoreDashboardRows(previousRows);
@@ -145,9 +141,7 @@ export function createUploadCoordinator({
   async function restoreSavedData(snapshot, persistence) {
     const errors = [];
     try {
-      await dashboardDatasetRepository.rollbackSnapshots(
-        persistence?.datasets?.activations || [],
-      );
+      await dashboardDatasetRepository.rollbackSnapshots(persistence?.datasets?.activations || []);
     } catch (error) {
       errors.push(error);
     }
@@ -156,7 +150,8 @@ export function createUploadCoordinator({
     } catch (error) {
       errors.push(error);
     }
-    if (errors.length) throw new AggregateError(errors, 'Rollback da persistência do dashboard falhou');
+    if (errors.length)
+      throw new AggregateError(errors, 'Rollback da persistência do dashboard falhou');
   }
 
   function setRuntimeState(kinds, status, message = '') {

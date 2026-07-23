@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 21/07/2026
+Última atualização: 23/07/2026
 
 ## Como acompanhar
 
@@ -203,7 +203,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md` (depende de migration no Supabase de desenvolvimento).
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: leitura preferencial, fallback, escrita dupla, rollback e validações locais foram implementados; faltam aplicar a migration no Supabase de desenvolvimento, executar o backfill, validar dados reais e então interromper a escrita dos blobs legados.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -322,3 +322,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Views, parsers e dependências sob demanda deixaram o escopo global; composição passou a usar um registro interno de APIs                                 | `assets/js/bootstrap.js`                                    |
 | 21/07/2026 | Persistência de snapshots grandes avaliada; JSON versionado em bucket privado escolhido para a migração gradual                                          | `docs/adr_dashboard_datasets.md`                            |
 | 21/07/2026 | Migration de snapshots versionados, RLS, ativação transacional, rollback e testes PostgreSQL preparados                                                   | `20260721211500_dashboard_datasets.sql`                     |
+| 23/07/2026 | Repositório de snapshots integrado ao carregamento e aos uploads, com fallback de schema, integridade SHA-256, ativação serializada e rollback conjunto | `dashboard-dataset-repository.mjs`                          |

@@ -1,7 +1,7 @@
 # ADR: persistência dos datasets do dashboard
 
-Status: aprovado para implementação após validação no Supabase de desenvolvimento  
-Data: 21/07/2026
+Status: frontend implementado; aguarda aplicação da migration e backfill no Supabase de desenvolvimento
+Data: 23/07/2026
 
 ## Contexto
 
@@ -34,13 +34,13 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 - Escrita por obra exige editor ativo atribuído à obra.
 - Datasets globais exigem administrador ativo.
 - Policies de Storage validam o primeiro segmento do caminho; o cliente nunca fornece um caminho fora do escopo autorizado.
-- Hash e tamanho são conferidos antes da ativação para detectar objetos incompletos.
+- A RPC de ativação confirma que o objeto existe; o cliente calcula hash e tamanho ao gravar e os valida novamente antes de consumir o JSON, usando o fallback legado se a integridade falhar.
 
 ## Migração gradual
 
 1. Criar bucket, tabela, constraints, índices, policies e RPC em desenvolvimento.
-2. Adicionar ao repositório leitura preferencial do snapshot ativo, com fallback para `dashboard_config`.
-3. Implementar escrita dupla temporária e validar rollback de upload.
+2. Adicionar ao repositório leitura preferencial do snapshot ativo, com fallback para `dashboard_config`. Concluído no frontend.
+3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente; aguarda validação no Supabase de desenvolvimento.
 4. Executar backfill das chaves atuais para objetos versionados.
 5. Comparar contagem, hash e conteúdo desserializado por tipo e obra.
 6. Interromper a escrita dos quatro blobs em `dashboard_config`.

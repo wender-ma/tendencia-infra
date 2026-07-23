@@ -312,15 +312,8 @@ export function createProjectController({
   async function recarregarDadosDaObra() {
     if (!hasBackend() || !state.obra.ativa) return false;
     resetDadosObra();
-    const [
-      classifications,
-      manuals,
-      projectionConfig,
-      movements,
-      config,
-      datasets,
-      latestUploads,
-    ] = await Promise.all([
+    const [classifications, manuals, projectionConfig, movements, config, datasets, latestUploads] =
+      await Promise.all([
         dashboardRepository.loadClassifications(),
         dashboardRepository.loadManuals(),
         dashboardRepository.loadProjectionConfig(),

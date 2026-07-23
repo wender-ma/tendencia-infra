@@ -64,6 +64,15 @@ Migrations ficam em `supabase/migrations/` e não são executadas pelo CI nem pe
 
 Rollback de frontend não reverte banco, Storage ou registros de upload.
 
+### Snapshots versionados do dashboard
+
+Para iniciar a migração gradual em desenvolvimento, aplique
+`supabase/migrations/20260721211500_dashboard_datasets.sql` no SQL Editor depois
+de executar o teste local. A aplicação continua lendo `dashboard_config` enquanto
+a tabela ainda não existe; após a migration, ela passa a preferir o snapshot ativo
+e mantém escrita dupla. Não faça backfill nem remova as chaves legadas antes de
+validar imports, troca de obra e rollback de upload com dados de desenvolvimento.
+
 ## Backups locais do projeto
 
 ```bash

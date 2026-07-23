@@ -40,6 +40,26 @@ values (
 
 select public.activate_dashboard_dataset('10000000-0000-0000-0000-000000000001');
 
+insert into public.dashboard_datasets (
+  id, codigo_obra, tipo, versao, storage_path, sha256, linhas, bytes
+) values (
+  '10000000-0000-0000-0000-000000000005', 'OBRA-A', 'tendencia', 2,
+  'OBRA-A/tendencia/v2.json', repeat('e', 64), 11, 110
+);
+
+insert into storage.objects (id, bucket_id, name)
+values (
+  '10000000-0000-0000-0000-000000000015',
+  'dashboard-datasets',
+  'OBRA-A/tendencia/v2.json'
+);
+
+select public.activate_dashboard_dataset('10000000-0000-0000-0000-000000000005');
+select public.rollback_dashboard_dataset(
+  '10000000-0000-0000-0000-000000000005',
+  '10000000-0000-0000-0000-000000000001'
+);
+
 do $$
 begin
   if not exists (

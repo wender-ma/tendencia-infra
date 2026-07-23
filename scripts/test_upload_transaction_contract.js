@@ -134,8 +134,8 @@ assert(
   'Reativação só pode ativar após persistir',
 );
 assert(
-  historyActivation.includes('supaRestoreDashboardRows('),
-  'Reativação precisa restaurar dados em caso de falha',
+  historyActivation.includes('restoreSavedData('),
+  'Reativação precisa restaurar dados legados e snapshots em caso de falha',
 );
 
 assert(

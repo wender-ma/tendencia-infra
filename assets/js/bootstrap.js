@@ -24,6 +24,7 @@ import {
   createDashboardRepository,
   DASHBOARD_DATA_KEYS,
 } from './services/dashboard-repository.mjs';
+import { createDashboardDatasetRepository } from './services/dashboard-dataset-repository.mjs';
 import { ensureApexCharts, ensureXlsx } from './services/dependency-service.mjs';
 import { createExcelService } from './services/excel-service.mjs';
 import { createLogger } from './services/logger.mjs';
@@ -151,6 +152,11 @@ const dashboardRepository = createDashboardRepository({
   onMutation: (error) => syncStatusService.recordMutation(error, 'Dados'),
   warn: (context, error) => logger.warn(context, error),
 });
+const dashboardDatasetRepository = createDashboardDatasetRepository({
+  getClient: () => supabaseService.client,
+  getActiveProject: () => appState.obra.ativa,
+  warn: (context, error) => logger.warn(context, error),
+});
 const dashboardRuntime = createDashboardRuntime({
   state: appState,
   config: DASHBOARD_CONFIG,
@@ -189,6 +195,7 @@ const projectController = createProjectController({
   state: appState,
   projectRepository,
   dashboardRepository,
+  dashboardDatasetRepository,
   uploadRepository,
   storage: storageService,
   storageKeys: {
@@ -245,6 +252,7 @@ const uploadCoordinator = createUploadCoordinator({
   isAdmin: () => authService.isAdmin(),
   isGlobalKind: (kind) => isGlobalUploadKind(kind),
   dataKeys: DASHBOARD_DATA_KEYS,
+  dashboardDatasetRepository,
   uploadRepository,
   executeTransaction: executeUploadTransaction,
   setProjectSelectorDisabled: (disabled) => {
@@ -491,6 +499,7 @@ Promise.resolve()
       excel: excelService,
       exports: dashboardExportService,
       dashboardRepository,
+      dashboardDatasetRepository,
       runtime: dashboardRuntime,
       projectRepository,
       projectController,

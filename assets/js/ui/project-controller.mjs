@@ -70,6 +70,7 @@ export function createProjectController({
   state,
   projectRepository,
   dashboardRepository,
+  dashboardDatasetRepository = { loadForDashboard: async () => ({}) },
   uploadRepository,
   storage,
   storageKeys,
@@ -263,6 +264,16 @@ export function createProjectController({
     state.dados.projRaw = Array.isArray(projection) ? projection : [];
   }
 
+  function aplicarDatasetsVersionados(datasets) {
+    if (!datasets) return;
+    if (Array.isArray(datasets.tendency)) state.dados.tendencia = datasets.tendency;
+    if (Array.isArray(datasets.flows)) state.dados.flows = datasets.flows;
+    if (datasets.history?.items) state.dados.historico = datasets.history;
+    if (Array.isArray(datasets.projectionRaw)) state.dados.projRaw = datasets.projectionRaw;
+    atualizarGestaoLabelPelaHistoria();
+    aplicarFallbackGestaoDoHistorico();
+  }
+
   function posCarregarDados() {
     try {
       applyManuals();
@@ -301,17 +312,26 @@ export function createProjectController({
   async function recarregarDadosDaObra() {
     if (!hasBackend() || !state.obra.ativa) return false;
     resetDadosObra();
-    const [classifications, manuals, projectionConfig, movements, config, latestUploads] =
-      await Promise.all([
+    const [
+      classifications,
+      manuals,
+      projectionConfig,
+      movements,
+      config,
+      datasets,
+      latestUploads,
+    ] = await Promise.all([
         dashboardRepository.loadClassifications(),
         dashboardRepository.loadManuals(),
         dashboardRepository.loadProjectionConfig(),
         dashboardRepository.loadMovements(),
         dashboardRepository.loadDashboardConfig(),
+        dashboardDatasetRepository.loadForDashboard(),
         uploadRepository.loadLatest(),
       ]);
     aplicarCacheLocal(classifications, manuals, projectionConfig, movements);
     aplicarDadosPersistidos(config);
+    aplicarDatasetsVersionados(datasets);
     for (const kind of Object.keys(state.uploads)) state.uploads[kind] = null;
     Object.assign(state.uploads, latestUploads || {});
     posCarregarDados();
@@ -375,6 +395,7 @@ export function createProjectController({
     resetDadosObra,
     aplicarCacheLocal,
     aplicarDadosPersistidos,
+    aplicarDatasetsVersionados,
     posCarregarDados,
   });
 }

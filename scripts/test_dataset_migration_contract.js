@@ -24,6 +24,7 @@ for (const contract of [
   'dashboard_datasets_active_global_unique',
   'public.authz_can_manage_dashboard_dataset',
   'public.activate_dashboard_dataset',
+  'public.rollback_dashboard_dataset',
   "dataset.status <> 'processing'",
   "bucket_id = 'dashboard-datasets'",
   'dashboard_datasets_storage_read_active',

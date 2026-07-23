@@ -10,6 +10,7 @@ function assert(condition, message) {
 function createOperations({ failAt, cleanupFailures = [] } = {}) {
   const calls = [];
   const cleanupErrors = [];
+  const saveInputs = [];
   const record = (name, value) => calls.push(value == null ? name : `${name}:${value}`);
   const fail = name => {
     if (failAt === name || cleanupFailures.includes(name)) throw new Error(`erro em ${name}`);
@@ -18,6 +19,7 @@ function createOperations({ failAt, cleanupFailures = [] } = {}) {
   return {
     calls,
     cleanupErrors,
+    saveInputs,
     operations: {
       captureDashboardRows: async kinds => {
         record('capture', kinds.join(','));
@@ -34,9 +36,11 @@ function createOperations({ failAt, cleanupFailures = [] } = {}) {
         fail(`create-${item.kind}`);
         return { id: `id-${item.kind}`, tipo: item.kind };
       },
-      saveAllData: async kinds => {
+      saveAllData: async (kinds, snapshot, records) => {
         record('save', kinds.join(','));
+        saveInputs.push({ kinds, snapshot, records });
         fail('save');
+        return { datasets: { activations: [{ current: { id: 'dataset-new' } }] } };
       },
       activateRecord: async item => {
         record('activate', item.tipo);
@@ -50,6 +54,10 @@ function createOperations({ failAt, cleanupFailures = [] } = {}) {
       restoreDashboardRows: async () => {
         record('restore-dashboard');
         fail('restore-dashboard');
+      },
+      restoreSavedData: async (_snapshot, persistence) => {
+        record('restore-saved', persistence.datasets.activations.length);
+        fail('restore-saved');
       },
       markRecordsFailed: async records => {
         record('mark-failed', records.map(item => item.tipo).join(','));
@@ -102,6 +110,9 @@ async function main() {
   const success = createOperations();
   const result = await executeUploadTransaction(input, success.operations);
   assert(result.records.length === 2, 'Commit não retornou os dois registros ativos');
+  assert(success.saveInputs.length === 1, 'Persistência deve ocorrer uma única vez');
+  assert(success.saveInputs[0].snapshot.previous, 'Snapshot legado não chegou à persistência');
+  assert(success.saveInputs[0].records.length === 2, 'Metadados não chegaram aos snapshots');
   assert(
     success.calls.join('|')
       === 'capture:tendencia,flows|upload:excel|create:tendencia|create:flows|save:tendencia,flows|activate:tendencia|activate:flows|active:tendencia,flows|state:active',
@@ -112,7 +123,7 @@ async function main() {
   await expectFailure(executeUploadTransaction, activationFailure, 'ativação do novo dataset');
   assert(
     activationFailure.calls.slice(-7).join('|')
-      === 'rollback:tendencia|restore-dashboard|mark-failed:tendencia,flows|remove-storage:OBRA/excel/file.xlsx|delete-records:tendencia,flows|restore-memory:before|state:failed',
+      === 'rollback:tendencia|restore-saved:1|mark-failed:tendencia,flows|remove-storage:OBRA/excel/file.xlsx|delete-records:tendencia,flows|restore-memory:before|state:failed',
     `Rollback fora de ordem: ${activationFailure.calls.join('|')}`,
   );
 

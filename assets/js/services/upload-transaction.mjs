@@ -18,6 +18,7 @@ export async function executeUploadTransaction(
     records: [],
     activations: [],
     dashboardSnapshot: null,
+    dashboardPersistence: null,
     dashboardPersisted: false,
   };
 
@@ -42,7 +43,11 @@ export async function executeUploadTransaction(
     }
 
     transaction.stage = 'persistência dos dados';
-    await operations.saveAllData(kinds);
+    transaction.dashboardPersistence = await operations.saveAllData(
+      kinds,
+      transaction.dashboardSnapshot,
+      transaction.records,
+    );
     transaction.dashboardPersisted = true;
 
     transaction.stage = 'ativação do novo dataset';
@@ -64,7 +69,12 @@ export async function executeUploadTransaction(
     }
     if (transaction.dashboardPersisted) {
       await cleanup('restaurar dados anteriores', () =>
-        operations.restoreDashboardRows(transaction.dashboardSnapshot),
+        operations.restoreSavedData
+          ? operations.restoreSavedData(
+              transaction.dashboardSnapshot,
+              transaction.dashboardPersistence,
+            )
+          : operations.restoreDashboardRows(transaction.dashboardSnapshot),
       );
     }
     await cleanup('marcar tentativa como falha', () =>

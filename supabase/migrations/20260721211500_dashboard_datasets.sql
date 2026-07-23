@@ -31,7 +31,7 @@ create table public.dashboard_datasets (
   id uuid primary key,
   codigo_obra text references public.obras(codigo_obra) on delete cascade,
   tipo text not null,
-  versao integer not null check (versao > 0),
+  versao bigint not null check (versao > 0),
   storage_path text not null unique,
   sha256 text not null check (sha256 ~ '^[0-9a-f]{64}$'),
   linhas integer not null default 0 check (linhas >= 0),
@@ -158,6 +158,7 @@ set search_path = ''
 as $$
 declare
   dataset public.dashboard_datasets%rowtype;
+  previous_id uuid;
 begin
   select * into dataset
   from public.dashboard_datasets
@@ -189,6 +190,13 @@ begin
     hashtext(coalesce(dataset.codigo_obra, '_global') || ':' || dataset.tipo)
   );
 
+  select id into previous_id
+  from public.dashboard_datasets
+  where status = 'active'
+    and tipo = dataset.tipo
+    and codigo_obra is not distinct from dataset.codigo_obra
+  for update;
+
   update public.dashboard_datasets
   set status = 'superseded'
   where status = 'active'
@@ -205,7 +213,8 @@ begin
     'tipo', dataset.tipo,
     'versao', dataset.versao,
     'storage_path', dataset.storage_path,
-    'status', 'active'
+    'status', 'active',
+    'previous_id', previous_id
   );
 end;
 $$;
@@ -235,10 +244,79 @@ begin
 end;
 $$;
 
+create or replace function public.rollback_dashboard_dataset(
+  p_current_id uuid,
+  p_previous_id uuid default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_dataset public.dashboard_datasets%rowtype;
+  previous_dataset public.dashboard_datasets%rowtype;
+begin
+  select * into current_dataset
+  from public.dashboard_datasets
+  where id = p_current_id
+  for update;
+
+  if not found then return false; end if;
+  if not public.authz_can_manage_dashboard_dataset(
+    current_dataset.codigo_obra,
+    current_dataset.tipo
+  ) then
+    raise exception 'Sem permissao para reverter este dataset' using errcode = '42501';
+  end if;
+  if current_dataset.status <> 'active' then return false; end if;
+
+  perform pg_advisory_xact_lock(
+    hashtext(coalesce(current_dataset.codigo_obra, '_global') || ':' || current_dataset.tipo)
+  );
+
+  if p_previous_id is not null then
+    select * into previous_dataset
+    from public.dashboard_datasets
+    where id = p_previous_id
+    for update;
+
+    if not found
+      or previous_dataset.status <> 'superseded'
+      or previous_dataset.tipo <> current_dataset.tipo
+      or previous_dataset.codigo_obra is distinct from current_dataset.codigo_obra then
+      raise exception 'Dataset anterior invalido para rollback' using errcode = '23514';
+    end if;
+
+    if not exists (
+      select 1 from storage.objects
+      where bucket_id = 'dashboard-datasets'
+        and name = previous_dataset.storage_path
+    ) then
+      raise exception 'Objeto da versao anterior nao foi encontrado' using errcode = '23503';
+    end if;
+  end if;
+
+  update public.dashboard_datasets
+  set status = 'failed', activated_at = null
+  where id = current_dataset.id;
+
+  if p_previous_id is not null then
+    update public.dashboard_datasets
+    set status = 'active', activated_at = now()
+    where id = previous_dataset.id;
+  end if;
+
+  return true;
+end;
+$$;
+
 revoke all on function public.activate_dashboard_dataset(uuid) from public, anon;
 revoke all on function public.fail_dashboard_dataset(uuid) from public, anon;
+revoke all on function public.rollback_dashboard_dataset(uuid, uuid) from public, anon;
 grant execute on function public.activate_dashboard_dataset(uuid) to authenticated;
 grant execute on function public.fail_dashboard_dataset(uuid) to authenticated;
+grant execute on function public.rollback_dashboard_dataset(uuid, uuid) to authenticated;
 
 -- Remove somente policies anteriores que citam este bucket, permitindo reaplicar
 -- a migration em um ambiente descartavel sem tocar no bucket de uploads.

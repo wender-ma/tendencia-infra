@@ -21,8 +21,8 @@ let supaListUploadsByType;
 let supaGetDownloadURL;
 let supaEnforceRollingBackup;
 let supaCaptureDashboardRows;
-let supaRestoreDashboardRows;
 let supaSaveAllData;
+let restoreSavedData;
 let setUploadRuntimeState;
 let captureInMemoryUploadState;
 let restoreInMemoryUploadState;
@@ -1000,6 +1000,7 @@ async function marcarUploadComoAtivo(uploadId, kind) {
   authToast('⏳ Ativando arquivo...', 'info', 2500);
   const memorySnapshot = captureInMemoryUploadState();
   let dashboardSnapshot = null;
+  let dashboardPersistence = null;
   let dashboardPersisted = false;
   let activation = null;
   let alvo = null;
@@ -1042,7 +1043,7 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     }
     // 4) Persistir antes de ativar; ambos possuem compensação em caso de falha.
     dashboardSnapshot = await supaCaptureDashboardRows([kind]);
-    await supaSaveAllData([kind]);
+    dashboardPersistence = await supaSaveAllData([kind], dashboardSnapshot, [alvo]);
     dashboardPersisted = true;
     activation = await supaActivateUploadRecord(alvo);
   } catch (e) {
@@ -1057,7 +1058,7 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     }
     if (dashboardPersisted) {
       try {
-        await supaRestoreDashboardRows(dashboardSnapshot);
+        await restoreSavedData(dashboardSnapshot, dashboardPersistence);
       } catch (cleanupError) {
         cleanupErrors.push('dados anteriores: ' + cleanupError.message);
       }
@@ -1249,8 +1250,8 @@ export function createUploadView({
   supaGetDownloadURL = uploadRepository.getDownloadUrl;
   supaEnforceRollingBackup = uploadRepository.enforceRollingBackup;
   supaCaptureDashboardRows = uploadCoordinator.captureDashboardRows;
-  supaRestoreDashboardRows = uploadCoordinator.restoreDashboardRows;
   supaSaveAllData = uploadCoordinator.saveAllData;
+  restoreSavedData = uploadCoordinator.restoreSavedData;
   setUploadRuntimeState = uploadCoordinator.setRuntimeState;
   captureInMemoryUploadState = uploadCoordinator.captureMemoryState;
   restoreInMemoryUploadState = uploadCoordinator.restoreMemoryState;

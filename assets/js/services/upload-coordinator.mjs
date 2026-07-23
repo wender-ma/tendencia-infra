@@ -49,6 +49,10 @@ export function createUploadCoordinator({
   isAdmin,
   isGlobalKind,
   dataKeys,
+  dashboardDatasetRepository = {
+    saveForUpload: async () => ({ available: false, activations: [] }),
+    rollbackSnapshots: async () => {},
+  },
   uploadRepository,
   executeTransaction,
   setProjectSelectorDisabled = () => {},
@@ -98,7 +102,7 @@ export function createUploadCoordinator({
     }
   }
 
-  async function saveAllData(kinds) {
+  async function saveAllData(kinds, previousRows = null, records = []) {
     const supabase = client();
     if (!supabase) throw new Error('Supabase indisponível');
     if (!canEditActiveProject?.()) {
@@ -115,8 +119,44 @@ export function createUploadCoordinator({
       markSyncError(error);
       throw error;
     }
+    let datasets;
+    try {
+      datasets = await dashboardDatasetRepository.saveForUpload(
+        kinds,
+        getDashboardData(),
+        records,
+      );
+    } catch (datasetError) {
+      try {
+        await restoreDashboardRows(previousRows);
+      } catch (restoreError) {
+        throw new AggregateError(
+          [datasetError, restoreError],
+          'Falha ao persistir snapshots e restaurar dashboard_config',
+        );
+      }
+      markSyncError(datasetError);
+      throw datasetError;
+    }
     markSynced();
-    return rows;
+    return { rows, datasets };
+  }
+
+  async function restoreSavedData(snapshot, persistence) {
+    const errors = [];
+    try {
+      await dashboardDatasetRepository.rollbackSnapshots(
+        persistence?.datasets?.activations || [],
+      );
+    } catch (error) {
+      errors.push(error);
+    }
+    try {
+      await restoreDashboardRows(snapshot);
+    } catch (error) {
+      errors.push(error);
+    }
+    if (errors.length) throw new AggregateError(errors, 'Rollback da persistência do dashboard falhou');
   }
 
   function setRuntimeState(kinds, status, message = '') {
@@ -169,6 +209,7 @@ export function createUploadCoordinator({
             item.groupId,
           ),
         saveAllData,
+        restoreSavedData,
         activateRecord: uploadRepository.activateRecord,
         rollbackActivation: uploadRepository.rollbackActivation,
         restoreDashboardRows,
@@ -193,6 +234,7 @@ export function createUploadCoordinator({
     captureDashboardRows,
     restoreDashboardRows,
     saveAllData,
+    restoreSavedData,
     setRuntimeState,
     captureMemoryState,
     restoreMemoryState,

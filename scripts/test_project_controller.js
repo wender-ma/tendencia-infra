@@ -131,6 +131,12 @@ const { pathToFileURL } = require('url');
     state,
     projectRepository: { listProjects: async () => projects },
     dashboardRepository,
+    dashboardDatasetRepository: {
+      loadForDashboard: async () => ({
+        tendency: [{ is_folha: true, cod_insumo: 'I9', origem: 'snapshot' }],
+        flows: [{ codigo_obra: 'OBRA-A', origem: 'snapshot' }],
+      }),
+    },
     uploadRepository: { loadLatest: async () => ({ tendencia: { id: 1 } }) },
     storage: {
       set(key, value) {
@@ -165,6 +171,8 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(await controller.recarregarDadosDaObra(), true);
   assert.strictEqual(state.dados.tendencia.length, 1);
   assert.strictEqual(state.dados.flows.length, 1);
+  assert.strictEqual(state.dados.tendencia[0].origem, 'snapshot');
+  assert.strictEqual(state.dados.flows[0].origem, 'snapshot');
   assert.strictEqual(state.dados.projRaw.length, 1);
   assert.strictEqual(state.uploads.tendencia.id, 1);
   assert(stored.has('classifications'));

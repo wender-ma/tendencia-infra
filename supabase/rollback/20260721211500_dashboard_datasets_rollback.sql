@@ -19,6 +19,7 @@ drop policy if exists dashboard_datasets_storage_delete_inactive on storage.obje
 
 drop function if exists public.activate_dashboard_dataset(uuid);
 drop function if exists public.fail_dashboard_dataset(uuid);
+drop function if exists public.rollback_dashboard_dataset(uuid, uuid);
 drop table if exists public.dashboard_datasets;
 drop function if exists public.authz_can_manage_dashboard_dataset_path(text);
 drop function if exists public.authz_can_manage_dashboard_dataset(text, text);

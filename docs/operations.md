@@ -111,7 +111,7 @@ set +a
 
 Se o REST ainda responder `PGRST205`, execute no SQL Editor
 `supabase/audit/verify_dashboard_datasets_deployment.sql`. O resultado
-`complete: true` comprova tabela, RPCs, RLS, bucket e seis policies; a última
+`complete: true` comprova tabela, RPCs, RLS, bucket e seis policies; a primeira
 instrução também solicita a recarga do schema do PostgREST.
 
 ## Backups locais do projeto

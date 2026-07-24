@@ -1,6 +1,8 @@
 -- Auditoria somente leitura da migration de snapshots versionados.
 -- Execute no SQL Editor do projeto de desenvolvimento.
 
+select pg_notify('pgrst', 'reload schema') as schema_reload_requested;
+
 with deployment as (
   select
     to_regclass('public.dashboard_datasets') is not null as table_exists,
@@ -58,5 +60,3 @@ select jsonb_build_object(
     and storage_policy_count = 3
 ) as dashboard_datasets_deployment
 from deployment;
-
-select pg_notify('pgrst', 'reload schema') as schema_reload_requested;

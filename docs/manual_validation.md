@@ -15,6 +15,9 @@ verdes no commit que sera avaliado.
 - Copiar `.env.roles.example` para `.env.roles.local`, preencher somente com as
   contas ficticias de desenvolvimento e executar `npm run test:development:roles`.
   O runner nao imprime senhas e recusa escritas remotas fora do endpoint de login.
+- Depois da matriz de papeis passar, executar
+  `ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:snapshots`; confirmar os
+  dois bloqueios de RLS, os dois ciclos de versao e zero snapshots ativos ao final.
 - Preencher `.env.development.local` com `VITE_APP_ENV=development` e as
   credenciais anon do projeto de desenvolvimento.
 - Executar `npm run env:target` e comparar o project ref exibido com a URL do SQL

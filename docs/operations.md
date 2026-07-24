@@ -124,6 +124,18 @@ npm run test:development:roles
 O runner permite requisicoes de leitura e o `POST` do login; qualquer outra
 escrita remota interrompe o teste.
 
+Depois da matriz de papeis passar, valide o ciclo real de snapshots somente no
+projeto de desenvolvimento:
+
+```bash
+ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:snapshots
+```
+
+O teste cria duas versoes minimas de Tendencia como editor e duas de Flows como
+admin, valida ativacao, integridade, leitura, rollback e bloqueios de RLS. Todas
+as versoes e objetos criados sao removidos no bloco de limpeza, inclusive quando
+uma assercao falha. Nunca execute esse comando em producao.
+
 Se o REST ainda responder `PGRST205`, execute no SQL Editor
 `supabase/audit/verify_dashboard_datasets_deployment.sql`. O resultado
 `complete: true` comprova tabela, RPCs, RLS, bucket e seis policies; o campo

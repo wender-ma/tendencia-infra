@@ -8,11 +8,23 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   const rows = [];
   const objects = new Map();
 
-  function resultFor({ mode, payload, filters, limit }) {
+  function resultFor({ mode, payload, filters, limit, returningRequested }) {
     if (schemaMissing) {
-      return { data: null, error: { code: 'PGRST205', message: 'dashboard_datasets schema cache' } };
+      return {
+        data: null,
+        error: { code: 'PGRST205', message: 'dashboard_datasets schema cache' },
+      };
     }
     if (mode === 'insert') {
+      if (returningRequested) {
+        return {
+          data: null,
+          error: {
+            code: '42501',
+            message: 'processing rows are hidden by the select policy',
+          },
+        };
+      }
       const row = { ...payload, created_at: new Date().toISOString(), activated_at: null };
       rows.push(row);
       return { data: row, error: null };
@@ -30,9 +42,16 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   }
 
   function from() {
-    const state = { mode: 'select', payload: null, filters: [], limit: null };
+    const state = {
+      mode: 'select',
+      payload: null,
+      filters: [],
+      limit: null,
+      returningRequested: false,
+    };
     const query = {
       select() {
+        if (state.mode === 'insert') state.returningRequested = true;
         return query;
       },
       insert(payload) {
@@ -152,12 +171,9 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     history: { items: [{ codigo_obra: 'OBRA-A', insumo: 'I1' }], gestoes: [] },
     projectionRaw: [{ codigo_obra: 'OBRA-A', mes: '2026-01' }],
   };
-  const entries = buildDatasetEntries(
-    dashboardData,
-    ['tendencia', 'gestoes'],
-    'OBRA-A',
-    [{ id: 9, tipo: 'gestoes' }],
-  );
+  const entries = buildDatasetEntries(dashboardData, ['tendencia', 'gestoes'], 'OBRA-A', [
+    { id: 9, tipo: 'gestoes' },
+  ]);
   assert.deepStrictEqual(
     entries.map(({ type, codigoObra, uploadHistoryId }) => ({
       type,
@@ -208,7 +224,10 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
 
   const changedData = { ...dashboardData, tendency: [{ codigo_obra: 'OBRA-A', item: 2 }] };
   const second = await repository.saveForUpload(['tendencia'], changedData);
-  assert.strictEqual(supabase.rows.find((row) => row.id === first.activations[0].current.id).status, 'superseded');
+  assert.strictEqual(
+    supabase.rows.find((row) => row.id === first.activations[0].current.id).status,
+    'superseded',
+  );
   await repository.rollbackSnapshots(second.activations);
   assert.strictEqual(supabase.rows.length, 1);
   assert.strictEqual(supabase.rows[0].status, 'active');

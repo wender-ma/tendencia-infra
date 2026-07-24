@@ -101,3 +101,26 @@ O backfill foi dispensado exclusivamente neste projeto de desenvolvimento. A
 escrita dupla continua ativa ate criar o primeiro snapshot por upload autenticado,
 validar sua leitura e exercitar o rollback. Esta decisao nao se aplica ao projeto
 legado nem a producao, que devem ter inventarios independentes.
+
+## Matriz autenticada e snapshots em 24/07/2026
+
+O runner Playwright autenticou as tres contas ficticias e confirmou:
+
+- admin com papel global e acesso de edicao;
+- editor restrito a `OBRA-TESTE`;
+- usuario `rejected` autenticado, mas sem papel ou permissao de edicao;
+- nenhuma escrita remota fora do endpoint de login.
+
+O smoke de snapshots executou escritas minimas e temporarias no desenvolvimento:
+
+- RLS recusou Tendencia para o usuario `rejected`;
+- RLS recusou Flows global para o editor;
+- o editor criou, leu e reverteu duas versoes de Tendencia;
+- o admin criou, leu e reverteu duas versoes globais de Flows;
+- hash, tamanho, ativacao da versao nova e restauracao da anterior foram validados;
+- a limpeza removeu metadados e objetos, terminando com zero snapshots ativos.
+
+Durante a preparacao, foi corrigido o insert que solicitava `RETURNING` de uma
+linha `processing`, invisivel pela policy de leitura ate a ativacao. O cliente
+agora usa os metadados que acabou de gerar e nao amplia a policy RLS. A auditoria
+REST e o smoke anonimo passaram novamente depois da limpeza.

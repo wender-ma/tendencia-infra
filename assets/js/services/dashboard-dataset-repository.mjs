@@ -243,13 +243,9 @@ export function createDashboardDatasetRepository({
     let metadata = null;
     let uploaded = false;
     try {
-      const { data, error: insertError } = await client()
-        .from(TABLE)
-        .insert(candidate)
-        .select(METADATA_COLUMNS)
-        .single();
+      const { error: insertError } = await client().from(TABLE).insert(candidate);
       if (insertError) throw insertError;
-      metadata = data;
+      metadata = candidate;
 
       const { error: uploadError } = await client()
         .storage.from(DASHBOARD_DATASET_BUCKET)

@@ -15,6 +15,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Migration administrativa no Supabase de desenvolvimento: estado não comprovável apenas com a chave `anon`.
 - Migration de snapshots no Supabase de desenvolvimento: aplicada e confirmada por SQL e REST em 24/07/2026.
 - Backfill no Supabase de desenvolvimento: dispensado em 24/07/2026 após inventário confirmar zero blobs legados, snapshots e objetos no bucket.
+- Ciclo autenticado no Supabase de desenvolvimento: editor/Tendência e admin/Flows validados com duas versões, leitura, integridade, rollback e limpeza em 24/07/2026.
 - Migration de snapshots no projeto legado: aplicada por engano e confirmada em 24/07/2026; nenhuma reversão automática foi executada.
 - Aplicação em produção: pendente.
 

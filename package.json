@@ -17,6 +17,7 @@
     "test:browser": "playwright test",
     "test:development": "node scripts/run_development_smoke.js",
     "test:development:roles": "node scripts/run_development_role_smoke.js",
+    "test:development:snapshots": "node scripts/run_development_snapshot_smoke.js",
     "test:lighthouse": "npm run build && node scripts/run_lighthouse.js"
   },
   "devDependencies": {

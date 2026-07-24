@@ -30,7 +30,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
 - [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: projeto e `.env.development.local` configurados, perfil remoto endurecido confirmado, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
-- [ ] **EM ANDAMENTO** Criar obra e usuários de teste sem dados confidenciais; runner local não destrutivo para `admin`, `editor` e `rejected` implementado, faltando criar/preencher as contas no Supabase de desenvolvimento.
+- [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
 
 ## P0: segurança crítica
@@ -204,7 +204,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: migration confirmada por SQL e REST, inventário remoto limpo e backfill dispensado no desenvolvimento em 24/07. Faltam fluxo autenticado e validação com dados de teste antes de interromper a escrita dupla; legado e produção exigem inventários próprios.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento concluído com migration, inventário, RLS, duas versões, integridade, leitura, rollback e limpeza reais. A escrita dupla permanece até inventário, backfill e transição próprios de produção.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -236,7 +236,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes de XSS para campos importados.
 - [x] Criar testes de integração para upload, falhas por etapa e rollback parcial.
 - [x] Criar testes E2E para login, troca de obra, edição e administração com Supabase controlado no navegador.
-- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel (boot anônimo real validado; runner autenticado não destrutivo implementado, faltando fornecer contas fictícias de admin, editor e rejected).
+- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel (login, resolução de admin/editor/rejected e troca para `OBRA-TESTE` validados; edição e administração completas pela interface ainda pendentes).
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
 - [x] Executar Lighthouse no CI com orçamentos e relatório para download.
@@ -330,3 +330,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Divergência de alvo identificada: migration de snapshots presente no projeto legado e ausente no desenvolvimento; checagem explícita de project ref adicionada | `show_supabase_target.js`, `docs/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Migration de snapshots confirmada no desenvolvimento correto por SQL e REST; auditoria ampliada com inventário de dados sem conteúdo dos blobs | `verify_dashboard_datasets_deployment.sql`, `docs/adr_dashboard_datasets.md` |
 | 24/07/2026 | Inventário do desenvolvimento confirmou zero blobs, snapshots e objetos; backfill dispensado somente nesse ambiente | `docs/supabase_development_audit_2026-07-23.md` |
+| 24/07/2026 | Matriz real de papéis e ciclos de snapshots validados no desenvolvimento; `RETURNING` incompatível com RLS removido | `run_development_snapshot_smoke.js`, `dashboard-dataset-repository.mjs` |

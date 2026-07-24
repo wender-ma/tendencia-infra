@@ -24,6 +24,10 @@ const developmentRoleSmoke = fs.readFileSync(
   path.join(root, 'scripts/run_development_role_smoke.js'),
   'utf8',
 );
+const developmentSnapshotSmoke = fs.readFileSync(
+  path.join(root, 'scripts/run_development_snapshot_smoke.js'),
+  'utf8',
+);
 const targetReporter = fs.readFileSync(path.join(root, 'scripts/show_supabase_target.js'), 'utf8');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
@@ -114,6 +118,18 @@ assert(
     developmentRoleSmoke.includes('unexpectedWrites.length') &&
     !developmentRoleSmoke.includes('console.log(profile.password)'),
   'Matriz real de papeis deve usar segredos locais e impedir escritas fora do login',
+);
+assert(
+  packageJson.scripts['test:development:snapshots'] ===
+    'node scripts/run_development_snapshot_smoke.js' &&
+    developmentSnapshotSmoke.includes("values.ALLOW_DEVELOPMENT_WRITES !== '1'") &&
+    developmentSnapshotSmoke.includes('await repository.rollbackSnapshots(pendingActivations)') &&
+    developmentSnapshotSmoke.includes('await repository.rollbackSnapshots(activations)') &&
+    developmentSnapshotSmoke.includes("'rejected/tendencia'") &&
+    developmentSnapshotSmoke.includes("'editor/flows-global'") &&
+    developmentSnapshotSmoke.includes('activeSnapshotsAfterCleanup: count') &&
+    !developmentSnapshotSmoke.includes('console.log(password)'),
+  'Smoke real de snapshots deve exigir opt-in, validar RLS e sempre limpar versoes de teste',
 );
 for (const contract of [
   "loadEnv(mode, process.cwd(), 'VITE_')",

@@ -1,6 +1,6 @@
 # ADR: persistência dos datasets do dashboard
 
-Status: migration e frontend implementados em desenvolvimento; aguarda validação autenticada
+Status: validado em desenvolvimento; aguarda inventário e transição de produção
 Data: 23/07/2026
 
 ## Contexto
@@ -40,10 +40,10 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 
 1. Criar bucket, tabela, constraints, índices, policies e RPC em desenvolvimento.
 2. Adicionar ao repositório leitura preferencial do snapshot ativo, com fallback para `dashboard_config`. Concluído no frontend.
-3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente; o teste autenticado no Supabase de desenvolvimento permanece pendente.
+3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente e no Supabase de desenvolvimento em 24/07/2026.
 4. Executar backfill das chaves atuais para objetos versionados. Dispensado no desenvolvimento em 24/07/2026: a auditoria confirmou zero chaves legadas, snapshots e objetos no bucket. Produção e o projeto legado exigem inventário próprio.
-5. Comparar contagem, hash e conteúdo desserializado por tipo e obra.
-6. Interromper a escrita dos quatro blobs em `dashboard_config`.
+5. Comparar contagem, hash e conteúdo desserializado por tipo e obra. Validado em desenvolvimento com duas versões de Tendência por editor e duas de Flows por admin, incluindo leitura e rollback.
+6. Interromper a escrita dos quatro blobs em `dashboard_config`. Pendente do inventário e da transição de produção; a escrita dupla permanece ativa.
 7. Após uma janela de estabilidade, remover somente as chaves grandes antigas.
 
 ## Critérios de aceite
@@ -56,4 +56,4 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 
 ## Consequências
 
-O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A implementação depende de migration e validação manual no projeto Supabase de desenvolvimento antes de qualquer mudança em produção.
+O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões e o rollback foram validados em desenvolvimento. A transição de produção continua condicionada a inventário, backfill e validação próprios.

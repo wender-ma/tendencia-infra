@@ -31,6 +31,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
 - [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: projeto e `.env.development.local` configurados, perfil remoto endurecido confirmado, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
+- [ ] **AÇÃO MANUAL** Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento; o workflow autenticado confirmou `PGRST202` para `admin_delete_obra` em 24/07/2026.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
 
 ## P0: segurança crítica
@@ -331,3 +332,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Migration de snapshots confirmada no desenvolvimento correto por SQL e REST; auditoria ampliada com inventário de dados sem conteúdo dos blobs | `verify_dashboard_datasets_deployment.sql`, `docs/adr_dashboard_datasets.md` |
 | 24/07/2026 | Inventário do desenvolvimento confirmou zero blobs, snapshots e objetos; backfill dispensado somente nesse ambiente | `docs/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Matriz real de papéis e ciclos de snapshots validados no desenvolvimento; `RETURNING` incompatível com RLS removido | `run_development_snapshot_smoke.js`, `dashboard-dataset-repository.mjs` |
+| 24/07/2026 | Workflow real detectou migration administrativa ausente; dados temporários removidos e auditoria SQL específica adicionada | `verify_admin_transactions_deployment.sql`, `run_development_workflow_smoke.js` |

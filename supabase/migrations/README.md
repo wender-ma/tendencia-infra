@@ -12,7 +12,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Teste local de aplicação das três migrations: concluído.
 - Teste local dos três rollbacks: concluído.
 - Comportamento endurecido de RLS no Supabase de desenvolvimento: confirmado por auditoria anônima em 23/07/2026.
-- Migration administrativa no Supabase de desenvolvimento: estado não comprovável apenas com a chave `anon`.
+- Migration administrativa no Supabase de desenvolvimento: ausente em 24/07/2026; `admin_delete_obra` retornou `PGRST202` no workflow autenticado.
 - Migration de snapshots no Supabase de desenvolvimento: aplicada e confirmada por SQL e REST em 24/07/2026.
 - Backfill no Supabase de desenvolvimento: dispensado em 24/07/2026 após inventário confirmar zero blobs legados, snapshots e objetos no bucket.
 - Ciclo autenticado no Supabase de desenvolvimento: editor/Tendência e admin/Flows validados com duas versões, leitura, integridade, rollback e limpeza em 24/07/2026.

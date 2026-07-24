@@ -124,3 +124,16 @@ Durante a preparacao, foi corrigido o insert que solicitava `RETURNING` de uma
 linha `processing`, invisivel pela policy de leitura ate a ativacao. O cliente
 agora usa os metadados que acabou de gerar e nao amplia a policy RLS. A auditoria
 REST e o smoke anonimo passaram novamente depois da limpeza.
+
+## Migration administrativa ausente em 24/07/2026
+
+O workflow real confirmou que o admin consegue criar uma obra manual pela
+interface, mas a limpeza atomica retornou `PGRST202`: a RPC
+`admin_delete_obra(text)` nao existe no schema REST do desenvolvimento. A
+classificacao e a obra temporarias foram removidas pelas policies RLS diretas e o
+inventario de prefixos `E2E-` terminou zerado.
+
+Isso comprova que `20260720203000_admin_transactions.sql` ainda nao foi aplicada
+no projeto `xtfbhpisopvnrxmagrek`. A validacao da interface administrativa fica
+pendente ate aplicar essa migration e confirmar
+`supabase/audit/verify_admin_transactions_deployment.sql`.

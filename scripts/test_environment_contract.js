@@ -28,6 +28,10 @@ const developmentSnapshotSmoke = fs.readFileSync(
   path.join(root, 'scripts/run_development_snapshot_smoke.js'),
   'utf8',
 );
+const developmentWorkflowSmoke = fs.readFileSync(
+  path.join(root, 'scripts/run_development_workflow_smoke.js'),
+  'utf8',
+);
 const targetReporter = fs.readFileSync(path.join(root, 'scripts/show_supabase_target.js'), 'utf8');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
@@ -130,6 +134,17 @@ assert(
     developmentSnapshotSmoke.includes('activeSnapshotsAfterCleanup: count') &&
     !developmentSnapshotSmoke.includes('console.log(password)'),
   'Smoke real de snapshots deve exigir opt-in, validar RLS e sempre limpar versoes de teste',
+);
+assert(
+  packageJson.scripts['test:development:workflows'] ===
+    'node scripts/run_development_workflow_smoke.js' &&
+    developmentWorkflowSmoke.includes("values.ALLOW_DEVELOPMENT_WRITES !== '1'") &&
+    developmentWorkflowSmoke.includes("from('flow_classifications')") &&
+    developmentWorkflowSmoke.includes("rpc('admin_delete_obra'") &&
+    developmentWorkflowSmoke.includes('await cleanup(') &&
+    developmentWorkflowSmoke.includes('cleanupComplete: true') &&
+    !developmentWorkflowSmoke.includes('console.log(password)'),
+  'Workflows reais devem exigir opt-in e remover classificacao e obra temporarias',
 );
 for (const contract of [
   "loadEnv(mode, process.cwd(), 'VITE_')",

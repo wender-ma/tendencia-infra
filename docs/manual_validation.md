@@ -18,6 +18,9 @@ verdes no commit que sera avaliado.
 - Depois da matriz de papeis passar, executar
   `ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:snapshots`; confirmar os
   dois bloqueios de RLS, os dois ciclos de versao e zero snapshots ativos ao final.
+- Confirmar `verify_admin_transactions_deployment.sql` com `complete: true` e
+  executar `ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:workflows`; o
+  resultado deve validar e remover a classificacao e a obra temporarias.
 - Preencher `.env.development.local` com `VITE_APP_ENV=development` e as
   credenciais anon do projeto de desenvolvimento.
 - Executar `npm run env:target` e comparar o project ref exibido com a URL do SQL

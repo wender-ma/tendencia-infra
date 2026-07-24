@@ -56,6 +56,12 @@ for (const contract of [
   'table_policy_count = 3',
   'storage_policy_count = 3',
   "pg_notify('pgrst', 'reload schema')",
+  'data_inventory',
+  'legacy_dataset_key_count',
+  'active_snapshot_count',
+  'storage_object_count',
+  'backfill_review_required',
+  'octet_length(valor)',
 ]) {
   assert(
     deploymentAudit.includes(contract),

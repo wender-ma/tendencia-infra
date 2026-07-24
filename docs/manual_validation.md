@@ -38,13 +38,14 @@ locais nao versionados.
   ambiente de desenvolvimento; o comando deve terminar sem divergencias.
 - Se o endpoint ainda retornar `PGRST205`, executar
   `supabase/audit/verify_dashboard_datasets_deployment.sql` no SQL Editor e
-  confirmar `complete: true`.
+  confirmar `complete: true`; guardar também o objeto `data_inventory`.
 - Executar as consultas de `supabase/tests/` correspondentes e guardar o resultado
   da validacao junto ao ticket ou deploy.
 - Aplicar `20260721211500_dashboard_datasets.sql`, importar dados de teste e
   validar upload, ativacao, troca de obra e rollback de upload.
-- Fazer o backfill dos blobs legados apenas depois de os snapshots ativos serem
-  lidos corretamente; nao interromper a escrita dupla antes disso.
+- Se `data_inventory.backfill_review_required` for verdadeiro, fazer o backfill
+  dos blobs legados apenas depois de os snapshots ativos serem lidos corretamente.
+  Nao interromper a escrita dupla antes do teste autenticado e da comparacao.
 
 Aceite: as politicas RLS bloqueiam papeis indevidos, os snapshots ativos carregam
 os mesmos dados esperados e um rollback mantem o dashboard utilizavel.

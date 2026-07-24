@@ -40,6 +40,52 @@ with deployment as (
         and policy.tablename = 'objects'
         and policy.policyname like 'dashboard_datasets_storage_%'
     ) as storage_policy_count
+),
+legacy_dataset_keys as (
+  select
+    chave,
+    octet_length(valor) as bytes
+  from public.dashboard_config
+  where chave in ('dados_flows', 'dados_historico', 'dados_projraw')
+    or chave ~ '^[^:]+:(dados_tendencia|dados_flows)$'
+),
+snapshot_statuses as (
+  select status, count(*) as total
+  from public.dashboard_datasets
+  group by status
+),
+inventory as (
+  select
+    (select count(*) from legacy_dataset_keys) as legacy_dataset_key_count,
+    coalesce((select sum(bytes) from legacy_dataset_keys), 0) as legacy_dataset_bytes,
+    (select count(*) from public.dashboard_datasets) as snapshot_count,
+    (
+      select count(*)
+      from public.dashboard_datasets
+      where status = 'active'
+    ) as active_snapshot_count,
+    (
+      select count(*)
+      from storage.objects
+      where bucket_id = 'dashboard-datasets'
+    ) as storage_object_count,
+    coalesce(
+      (
+        select jsonb_agg(
+          jsonb_build_object('chave', chave, 'bytes', bytes)
+          order by chave
+        )
+        from legacy_dataset_keys
+      ),
+      '[]'::jsonb
+    ) as legacy_keys,
+    coalesce(
+      (
+        select jsonb_object_agg(status, total)
+        from snapshot_statuses
+      ),
+      '{}'::jsonb
+    ) as snapshots_by_status
 )
 select jsonb_build_object(
   'table_exists', table_exists,
@@ -50,6 +96,17 @@ select jsonb_build_object(
   'private_bucket_exists', private_bucket_exists,
   'table_policy_count', table_policy_count,
   'storage_policy_count', storage_policy_count,
+  'data_inventory',
+    jsonb_build_object(
+      'legacy_dataset_key_count', legacy_dataset_key_count,
+      'legacy_dataset_bytes', legacy_dataset_bytes,
+      'legacy_keys', legacy_keys,
+      'snapshot_count', snapshot_count,
+      'active_snapshot_count', active_snapshot_count,
+      'snapshots_by_status', snapshots_by_status,
+      'storage_object_count', storage_object_count,
+      'backfill_review_required', legacy_dataset_key_count > 0
+    ),
   'complete',
     table_exists
     and activate_rpc_exists
@@ -60,4 +117,5 @@ select jsonb_build_object(
     and table_policy_count = 3
     and storage_policy_count = 3
 ) as dashboard_datasets_deployment
-from deployment;
+from deployment
+cross join inventory;

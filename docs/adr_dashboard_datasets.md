@@ -1,6 +1,6 @@
 # ADR: persistência dos datasets do dashboard
 
-Status: frontend implementado; aguarda aplicação da migration e backfill no Supabase de desenvolvimento
+Status: migration e frontend implementados em desenvolvimento; aguarda validação autenticada
 Data: 23/07/2026
 
 ## Contexto
@@ -40,8 +40,8 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 
 1. Criar bucket, tabela, constraints, índices, policies e RPC em desenvolvimento.
 2. Adicionar ao repositório leitura preferencial do snapshot ativo, com fallback para `dashboard_config`. Concluído no frontend.
-3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente; aguarda validação no Supabase de desenvolvimento.
-4. Executar backfill das chaves atuais para objetos versionados.
+3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente; o teste autenticado no Supabase de desenvolvimento permanece pendente.
+4. Executar backfill das chaves atuais para objetos versionados. A auditoria de inventário define se esta etapa se aplica ao ambiente.
 5. Comparar contagem, hash e conteúdo desserializado por tipo e obra.
 6. Interromper a escrita dos quatro blobs em `dashboard_config`.
 7. Após uma janela de estabilidade, remover somente as chaves grandes antigas.

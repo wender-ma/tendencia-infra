@@ -13,7 +13,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Teste local dos três rollbacks: concluído.
 - Comportamento endurecido de RLS no Supabase de desenvolvimento: confirmado por auditoria anônima em 23/07/2026.
 - Migration administrativa no Supabase de desenvolvimento: estado não comprovável apenas com a chave `anon`.
-- Migration de snapshots no Supabase de desenvolvimento: ausente em 24/07/2026 (`PGRST205`).
+- Migration de snapshots no Supabase de desenvolvimento: aplicada e confirmada por SQL e REST em 24/07/2026.
 - Migration de snapshots no projeto legado: aplicada por engano e confirmada em 24/07/2026; nenhuma reversão automática foi executada.
 - Aplicação em produção: pendente.
 

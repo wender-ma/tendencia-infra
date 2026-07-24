@@ -76,3 +76,16 @@ Portanto, a migration foi aplicada no projeto legado, nao no ambiente configurad
 de desenvolvimento. O arquivo e aditivo e nao move nem remove os blobs existentes.
 Nenhum rollback automatico foi executado. Antes da proxima aplicacao, execute
 `npm run env:target` e confirme o mesmo project ref na URL do SQL Editor.
+
+## Aplicacao confirmada no desenvolvimento em 24/07/2026
+
+A migration foi reaplicada no alvo correto `xtfbhpisopvnrxmagrek`. A auditoria
+SQL confirmou `complete: true` e a auditoria REST confirmou as 13 colunas de
+`dashboard_datasets`, o perfil endurecido e zero snapshots ativos visiveis para
+anonimo. O smoke real concluiu o boot sincronizado, sem erros de pagina e apenas
+com requisicoes `GET`.
+
+A auditoria SQL agora inclui `data_inventory`, sem retornar o conteudo dos blobs,
+para decidir se existe backfill no ambiente e detectar snapshots ou objetos
+residuais. A escrita dupla permanece ativa ate o fluxo autenticado validar upload,
+ativacao, leitura e rollback.

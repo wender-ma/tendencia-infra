@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 23/07/2026
+Última atualização: 24/07/2026
 
 ## Como acompanhar
 
@@ -31,7 +31,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
 - [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: projeto e `.env.development.local` configurados, perfil remoto endurecido confirmado, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
-- [ ] **AÇÃO MANUAL** Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento; o workflow autenticado confirmou `PGRST202` para `admin_delete_obra` em 24/07/2026.
+- [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
 
 ## P0: segurança crítica
@@ -237,7 +237,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes de XSS para campos importados.
 - [x] Criar testes de integração para upload, falhas por etapa e rollback parcial.
 - [x] Criar testes E2E para login, troca de obra, edição e administração com Supabase controlado no navegador.
-- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel (login, resolução de admin/editor/rejected e troca para `OBRA-TESTE` validados; edição e administração completas pela interface ainda pendentes).
+- [x] Validar os testes E2E no Supabase de desenvolvimento com usuários de cada papel, incluindo login, resolução de admin/editor/rejected, troca de obra, edição de classificação e administração de obra pela interface, com limpeza integral.
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
 - [x] Executar Lighthouse no CI com orçamentos e relatório para download.
@@ -333,3 +333,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Inventário do desenvolvimento confirmou zero blobs, snapshots e objetos; backfill dispensado somente nesse ambiente | `docs/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Matriz real de papéis e ciclos de snapshots validados no desenvolvimento; `RETURNING` incompatível com RLS removido | `run_development_snapshot_smoke.js`, `dashboard-dataset-repository.mjs` |
 | 24/07/2026 | Workflow real detectou migration administrativa ausente; dados temporários removidos e auditoria SQL específica adicionada | `verify_admin_transactions_deployment.sql`, `run_development_workflow_smoke.js` |
+| 24/07/2026 | Histórico remoto de migrations reconciliado, migration administrativa aplicada via CLI e três RPCs verificadas; edição e administração E2E passaram com limpeza integral | `run_development_workflow_smoke.js`, `verify_admin_transactions_deployment.sql` |

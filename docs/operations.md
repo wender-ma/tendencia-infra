@@ -144,9 +144,9 @@ ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:workflows
 ```
 
 O runner altera uma classificacao temporaria como editor e cria uma obra manual
-temporaria como admin. A limpeza remove os dois registros; se a RPC administrativa
-estiver ausente, a obra ainda e removida pela policy direta, mas o teste falha para
-impedir que o ambiente seja considerado completo.
+temporaria como admin. A limpeza remove os dois registros. O teste falha se a RPC
+administrativa estiver ausente e informa as causas internas de falhas paralelas
+para que o ambiente nao seja considerado completo por engano.
 
 Se o REST ainda responder `PGRST205`, execute no SQL Editor
 `supabase/audit/verify_dashboard_datasets_deployment.sql`. O resultado

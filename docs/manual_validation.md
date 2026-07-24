@@ -72,8 +72,11 @@ Com um navegador sem sessao previa, verificar os cenarios abaixo:
 | Admin | Administra obras e editores e pode operar todas as obras autorizadas. |
 
 O comando `npm run test:development:roles` automatiza a autenticacao e a
-resolucao de papeis desta matriz sem alterar dados. Edicao, upload e administracao
-continuam exigindo a validacao manual controlada descrita nas etapas seguintes.
+resolucao de papeis desta matriz sem alterar dados. Os comandos
+`test:development:snapshots` e `test:development:workflows` cobrem, com limpeza
+automatica, upload versionado, edicao de classificacao e administracao de obra.
+A verificacao manual desta secao permanece como aceite assistido antes da
+publicacao, especialmente para confirmar o que cada perfil consegue enxergar.
 
 Registrar qualquer linha, arquivo ou botao acessivel fora do esperado antes de
 seguir para producao.

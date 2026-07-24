@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const net = require('net');
 const path = require('path');
 const { once } = require('events');
 const { spawn } = require('child_process');
@@ -9,8 +10,19 @@ const { chromium } = require('@playwright/test');
 const { createClient } = require('@supabase/supabase-js');
 
 const root = path.resolve(__dirname, '..');
-const port = 4178;
-const appUrl = `http://127.0.0.1:${port}/`;
+let appUrl;
+
+async function getAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      server.close(() => resolve(address.port));
+    });
+  });
+}
 
 function readEnvFile(fileName) {
   const filePath = path.join(root, fileName);
@@ -208,20 +220,42 @@ async function verifyAdminWorkflow(browser, adminClient, marker, projectCode) {
   );
   try {
     await session.page.locator('#tab-btn-admin').click();
+    await session.page.waitForFunction(
+      () => !document.getElementById('obrasAdminTbody')?.textContent?.includes('carregando'),
+    );
     await session.page.locator('[data-click-action="openObraForm"]').click();
     await session.page.locator('#obraFormCodigo').fill(projectCode);
     await session.page.locator('#obraFormNome').fill(`Obra temporaria ${marker}`);
     await session.page.locator('#obraFormObs').fill('Criada pelo smoke real e removida ao final');
-    await session.page.locator('#obraForm').dispatchEvent('submit');
+    await session.page.locator('#obraForm button[type="submit"]').click();
     await waitForRow(
       adminClient,
       'obras',
       { codigo_obra: projectCode },
       (row) => row?.origem === 'manual' && row?.ativa === true,
     );
-    await session.page
-      .locator(`#obrasAdminTbody tr[data-codigo="${projectCode}"]`)
-      .waitFor({ state: 'visible' });
+    try {
+      await session.page.waitForFunction(
+        (expectedCode) =>
+          document.getElementById('obrasAdminTbody')?.textContent?.includes(expectedCode),
+        projectCode,
+      );
+    } catch (error) {
+      const tableText = await session.page.locator('#obrasAdminTbody').innerText().catch(String);
+      const tableHtml = await session.page.locator('#obrasAdminTbody').innerHTML().catch(String);
+      const toastText = await session.page
+        .locator('.toast,.auth-toast,[role="alert"]')
+        .allTextContents()
+        .catch(() => []);
+      throw new Error(
+        [
+          error.message,
+          `Tabela admin: ${tableText}`,
+          `HTML contem codigo: ${tableHtml.includes(projectCode)}`,
+          `Toasts: ${toastText.join(' | ')}`,
+        ].join('\n'),
+      );
+    }
     assertWrites(session.remoteWrites, ['/rest/v1/obras']);
     assert.deepStrictEqual(session.pageErrors, []);
   } finally {
@@ -270,6 +304,8 @@ async function stopServer(server) {
 }
 
 async function main() {
+  const port = await getAvailablePort();
+  appUrl = `http://127.0.0.1:${port}/`;
   const [editorClient, adminClient] = await Promise.all([
     authenticatedClient(
       'editor',
@@ -349,5 +385,15 @@ async function main() {
 
 main().catch((error) => {
   console.error(error.message || error);
+  if (Array.isArray(error.errors)) {
+    for (const cause of error.errors) {
+      console.error(cause?.message || cause);
+      if (Array.isArray(cause?.errors)) {
+        for (const nestedCause of cause.errors) {
+          console.error(nestedCause?.message || nestedCause);
+        }
+      }
+    }
+  }
   process.exitCode = 1;
 });

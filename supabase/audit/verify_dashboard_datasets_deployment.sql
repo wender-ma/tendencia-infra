@@ -1,5 +1,6 @@
 -- Auditoria somente leitura da migration de snapshots versionados.
 -- Execute no SQL Editor do projeto de desenvolvimento.
+-- Antes, execute `npm run env:target` e compare o project ref com a URL aberta.
 
 select pg_notify('pgrst', 'reload schema') as schema_reload_requested;
 

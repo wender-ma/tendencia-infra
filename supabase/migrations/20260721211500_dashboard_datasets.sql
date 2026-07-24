@@ -4,6 +4,8 @@
 -- Depende de 20260720172000_rls_hardening.sql.
 -- Prepara a retirada gradual dos blobs grandes de dashboard_config. Esta
 -- migration nao move nem exclui dados existentes.
+-- Antes de aplicar, execute `npm run env:target` e confirme que o project ref
+-- exibido e o mesmo presente na URL do SQL Editor.
 -- ============================================================================
 
 begin;

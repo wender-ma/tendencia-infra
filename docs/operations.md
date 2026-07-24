@@ -83,13 +83,18 @@ Não use `git reset --hard` em uma branch compartilhada.
 
 Migrations ficam em `supabase/migrations/` e não são executadas pelo CI nem pelo deploy do frontend. Antes de qualquer migration remota:
 
-1. confirme o ambiente e faça export/backup;
+1. execute `npm run env:target`, compare o project ref com a URL do SQL Editor e faça export/backup;
 2. execute `./scripts/test_rls_migration.sh`;
 3. aplique a migration no SQL Editor do ambiente correto;
 4. execute as consultas de verificação correspondentes;
 5. use o script pareado em `supabase/rollback/` somente se a reversão for necessária.
 
 Rollback de frontend não reverte banco, Storage ou registros de upload.
+
+Nunca use apenas o nome visual do projeto para escolher o alvo: confirme o project
+ref exibido por `npm run env:target`. Uma migration aplicada no projeto incorreto
+nao deve ser revertida automaticamente; primeiro registre o estado e avalie o
+rollback com o responsavel pelo banco.
 
 ### Snapshots versionados do dashboard
 

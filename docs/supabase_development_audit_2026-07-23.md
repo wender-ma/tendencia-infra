@@ -59,3 +59,20 @@ resumo booleano de todos os objetos e solicita a recarga do cache PostgREST.
 
 Nao execute backfill nem interrompa a escrita dupla enquanto esse gate e os fluxos
 reais de upload, ativacao e rollback nao estiverem validados.
+
+## Divergencia de alvo identificada em 24/07/2026
+
+A auditoria SQL retornou `complete: true`, mas o REST do projeto configurado como
+desenvolvimento continuou respondendo `PGRST205`. A comparacao somente leitura dos
+dois endpoints mostrou:
+
+- desenvolvimento `xtfbhpisopvnrxmagrek`: `dashboard_datasets` ausente;
+- projeto legado `jmfgegnfctlyuevqadba`: perfil `datasets` completo e tabela sem
+  snapshots ativos visiveis;
+- projeto legado: 11 chaves em `dashboard_config`, incluindo os quatro formatos de
+  blob que motivaram a migration.
+
+Portanto, a migration foi aplicada no projeto legado, nao no ambiente configurado
+de desenvolvimento. O arquivo e aditivo e nao move nem remove os blobs existentes.
+Nenhum rollback automatico foi executado. Antes da proxima aplicacao, execute
+`npm run env:target` e confirme o mesmo project ref na URL do SQL Editor.

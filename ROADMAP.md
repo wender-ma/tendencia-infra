@@ -204,7 +204,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: leitura preferencial, fallback, escrita dupla, rollback e validações locais foram implementados; auditoria remota de 23/07 confirmou que tabela e RPC ainda estão ausentes, portanto faltam aplicar a migration no Supabase de desenvolvimento, executar o backfill, validar dados reais e então interromper a escrita dos blobs legados.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: frontend e validações locais concluídos; em 24/07 a migration foi detectada no projeto legado, enquanto continua ausente no desenvolvimento configurado. Falta aplicá-la no alvo correto, validar dados reais e então interromper a escrita dos blobs legados; nenhum rollback automático foi executado.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -327,3 +327,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 23/07/2026 | Ambientes Supabase isolados: sem endpoint embutido, credenciais validadas por modo, teste com endpoint fictício e preflight obrigatório no deploy | `config.js`, `verify_production_environment.mjs`            |
 | 23/07/2026 | CSP estrita concluída sem `unsafe-inline`; estilos da aplicação externalizados e CSS estático do ApexCharts limitado por hash e teste de navegador         | `test_csp_style_contract.js`, `scripts/browser/csp.spec.js` |
 | 23/07/2026 | Projeto de desenvolvimento configurado localmente; perfil remoto endurecido confirmado e ausência da migration de snapshots registrada sem escrita | `docs/supabase_development_audit_2026-07-23.md`             |
+| 24/07/2026 | Divergência de alvo identificada: migration de snapshots presente no projeto legado e ausente no desenvolvimento; checagem explícita de project ref adicionada | `show_supabase_target.js`, `docs/supabase_development_audit_2026-07-23.md` |

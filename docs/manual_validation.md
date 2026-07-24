@@ -14,6 +14,8 @@ verdes no commit que sera avaliado.
   usuario `rejected`; cada conta deve usar email sem dados pessoais reais.
 - Preencher `.env.development.local` com `VITE_APP_ENV=development` e as
   credenciais anon do projeto de desenvolvimento.
+- Executar `npm run env:target` e comparar o project ref exibido com a URL do SQL
+  Editor antes de cada migration.
 - Executar `npm run test:development`; o smoke anonimo deve sincronizar sem erros
   e sem requisicoes remotas de escrita.
 - Cadastrar no provedor de hospedagem somente as variaveis de producao:

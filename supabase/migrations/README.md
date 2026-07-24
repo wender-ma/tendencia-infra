@@ -13,7 +13,8 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Teste local dos três rollbacks: concluído.
 - Comportamento endurecido de RLS no Supabase de desenvolvimento: confirmado por auditoria anônima em 23/07/2026.
 - Migration administrativa no Supabase de desenvolvimento: estado não comprovável apenas com a chave `anon`.
-- Migration de snapshots no Supabase de desenvolvimento: ausente em 23/07/2026 (`PGRST205`/`PGRST202`).
+- Migration de snapshots no Supabase de desenvolvimento: ausente em 24/07/2026 (`PGRST205`).
+- Migration de snapshots no projeto legado: aplicada por engano e confirmada em 24/07/2026; nenhuma reversão automática foi executada.
 - Aplicação em produção: pendente.
 
 Teste local reproduzível:
@@ -35,6 +36,9 @@ Ordem de aplicação:
 1. `20260720172000_rls_hardening.sql`
 2. `20260720203000_admin_transactions.sql`
 3. `20260721211500_dashboard_datasets.sql`
+
+Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
+URL do SQL Editor.
 
 Em uma reversão completa, execute os arquivos de `../rollback/` na ordem inversa. A terceira migration apenas prepara snapshots versionados e não remove os blobs atuais de `dashboard_config`. Seu rollback exige que o bucket `dashboard-datasets` esteja vazio.
 

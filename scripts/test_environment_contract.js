@@ -20,6 +20,7 @@ const developmentSmoke = fs.readFileSync(
   path.join(root, 'scripts/run_development_smoke.js'),
   'utf8',
 );
+const targetReporter = fs.readFileSync(path.join(root, 'scripts/show_supabase_target.js'), 'utf8');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
 
@@ -94,6 +95,13 @@ assert(
     developmentSmoke.includes("runtime.declaredEnvironment !== 'development'") &&
     developmentSmoke.includes('unsafeRequests.length > 0'),
   'Smoke do ambiente real deve ser anonimo, development e somente leitura',
+);
+assert(
+  packageJson.scripts['env:target'] === 'node scripts/show_supabase_target.js' &&
+    targetReporter.includes("'.env.development.local'") &&
+    targetReporter.includes("hostname.endsWith('.supabase.co')") &&
+    !targetReporter.includes('VITE_SUPABASE_ANON_KEY'),
+  'Identificacao do alvo deve mostrar somente ambiente, URL e project ref',
 );
 for (const contract of [
   "loadEnv(mode, process.cwd(), 'VITE_')",

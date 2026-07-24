@@ -56,6 +56,7 @@ Dashboard de tendência orçamentária
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
 - `scripts/audit_supabase_contract.sh`: valida o contrato anônimo nos perfis `baseline` e `hardened`.
+- `scripts/audit_supabase_inventory.mjs`: inventaria deployment e volume de datasets pela Management API somente leitura, sem retornar conteúdo ou códigos de obra.
 - `scripts/test_rls_migration.sh`: aplica as migrations de RLS e operações administrativas, valida regras e testa os rollbacks em PostgreSQL descartável.
 - `supabase/audit/`: consultas somente leitura para inventariar o ambiente implantado, incluindo exportação em um único JSON.
 - `supabase/drafts/`: SQL em revisão que não deve ser aplicado diretamente.
@@ -82,6 +83,22 @@ SUPABASE_ANON_KEY="sua-chave-anon-public" \
 ```
 
 Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no projeto de desenvolvimento. Depois da migration de snapshots versionados, use `datasets`; esse perfil também exige a tabela `dashboard_datasets`.
+
+Para inventariar schema, policies e volume dos datasets sem abrir o SQL Editor,
+crie `.env.supabase.local` a partir do template administrativo e informe um
+Personal Access Token:
+
+```bash
+cp .env.supabase.example .env.supabase.local
+npm run audit:supabase:inventory -- \
+  --project-ref abcdefghijklmnopqrst \
+  --confirm-project-ref abcdefghijklmnopqrst
+```
+
+O comando confirma que o token possui acesso ao alvo e usa exclusivamente o
+endpoint SQL `read-only` da Management API. A saída contém apenas estado do
+deployment, contagens e tamanhos agregados; não inclui conteúdo dos datasets,
+códigos de obra, token ou senha.
 
 ## Validação de importações
 
@@ -154,7 +171,7 @@ O Vite disponibiliza a aplicação em `http://localhost:5173/` por padrão.
 
 As bibliotecas do navegador são instaladas pelo gerenciador de pacotes e empacotadas pelo Vite. O SheetJS usa o pacote oficial `0.20.3`, distribuído pelo CDN oficial do projeto porque o registro npm parou na versão vulnerável `0.18.5`.
 
-Para producao, configure no provedor de hospedagem as tres variaveis abaixo. O
+Para producao, configure no provedor de hospedagem as quatro variaveis abaixo. O
 endpoint deve ser a origem do projeto, por exemplo `https://abc.supabase.co`,
 sem o sufixo `/rest/v1`:
 

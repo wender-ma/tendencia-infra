@@ -29,7 +29,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
-- [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: projeto e `.env.development.local` configurados, perfil remoto endurecido confirmado, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
+- [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: os dois projetos foram identificados por `project ref`, desenvolvimento e credenciais locais estão isolados, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
@@ -48,6 +48,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Comparar o schema implantado com `docs/supabase_schema.sql`.
 - [x] Validar o contrato público de tabelas e colunas esperado pelo frontend (implementado em `1cb9096`).
 - [x] Criar auditor somente leitura e inventário para o SQL Editor (implementado em `1cb9096`).
+- [x] Automatizar e executar no desenvolvimento o inventário agregado pela Management API `read-only`, com confirmação dupla do alvo e sem conteúdo de negócio.
 - [x] Criar diretório `supabase/migrations/` e separar rascunhos não executáveis (implementado em `1cb9096`).
 - [x] Promover o rascunho de RLS para migration após comparar com o baseline real.
 - [x] Versionar as tabelas `obras`, `editores_permitidos` e `upload_history` no baseline de metadados.
@@ -336,3 +337,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Histórico remoto de migrations reconciliado, migration administrativa aplicada via CLI e três RPCs verificadas; edição e administração E2E passaram com limpeza integral | `run_development_workflow_smoke.js`, `verify_admin_transactions_deployment.sql` |
 | 24/07/2026 | Transição de datasets ganhou modos `dual` e `snapshots`; o modo final não consulta nem grava blobs legados, preserva configurações pequenas e falha fechado sem schema ou integridade | `config.js`, `upload-coordinator.mjs`, `dashboard-dataset-repository.mjs` |
 | 24/07/2026 | Reset de cache passou a remover snapshots e blobs legados transacionalmente; policies de manutenção corrigiram a limpeza silenciosa e o smoke real terminou sem metadata ou objetos residuais | `20260724183000_dashboard_dataset_reset.sql`, `20260724190000_dashboard_dataset_cleanup_policies.sql` |
+| 24/07/2026 | Auditor remoto passou a usar a Management API somente leitura, confirmação dupla do alvo e inventário agregado sem conteúdo ou códigos de obra; desenvolvimento confirmou deployment completo e backfill dispensado | `audit_supabase_inventory.mjs`, `docs/supabase_development_audit_2026-07-23.md` |

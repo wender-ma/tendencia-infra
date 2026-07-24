@@ -12,5 +12,6 @@ test-results/
 !.env.example
 !.env.production.example
 !.env.roles.example
+!.env.supabase.example
 .lighthouseci/
 supabase/.temp/

@@ -90,11 +90,16 @@ para decidir se existe backfill no ambiente e detectar snapshots ou objetos
 residuais. A escrita dupla permanece ativa ate o fluxo autenticado validar upload,
 ativacao, leitura e rollback.
 
-O inventario remoto executado em 24/07/2026 confirmou:
+O inventario remoto foi repetido em 24/07/2026 pelo comando
+`npm run audit:supabase:inventory`, com confirmacao dupla do project ref,
+nome esperado `Desenvolvimento Teste` e endpoint da Management API
+`read-only`. A execucao confirmou:
 
 - zero chaves legadas e zero bytes em `dashboard_config`;
 - zero snapshots em qualquer status;
 - zero objetos no bucket `dashboard-datasets`;
+- quatro policies na tabela e quatro policies de Storage;
+- deployment completo, com RLS, bucket privado e todas as RPCs esperadas;
 - `backfill_review_required: false`.
 
 O backfill foi dispensado exclusivamente neste projeto de desenvolvimento. A

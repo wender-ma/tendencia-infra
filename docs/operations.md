@@ -102,6 +102,29 @@ ref exibido por `npm run env:target`. Uma migration aplicada no projeto incorret
 nao deve ser revertida automaticamente; primeiro registre o estado e avalie o
 rollback com o responsavel pelo banco.
 
+### Inventario remoto somente leitura
+
+Para consultar o estado dos datasets sem executar SQL manualmente, copie
+`.env.supabase.example` para `.env.supabase.local` e preencha o Personal Access
+Token, a senha local usada pela CLI e o project ref padrao. O arquivo preenchido
+e ignorado pelo Git e pelos backups.
+
+Execute o auditor repetindo o alvo nos dois argumentos:
+
+```bash
+npm run audit:supabase:inventory -- \
+  --project-ref abcdefghijklmnopqrst \
+  --confirm-project-ref abcdefghijklmnopqrst \
+  --expected-project-name "Nome conferido no painel"
+```
+
+O nome esperado e opcional, mas cria uma segunda verificacao humana alem do
+project ref. O script consulta a lista de projetos acessiveis e usa apenas
+`/database/query/read-only`; ele nao usa a senha do banco, nao solicita valores
+dos datasets e agrega chaves por escopo e tipo para nao revelar codigos de obra.
+O resultado informa se o deployment esta completo, quantos blobs legados exigem
+backfill, quantos snapshots existem por status e quantos objetos estao no bucket.
+
 ### Snapshots versionados do dashboard
 
 Para iniciar a migração gradual em desenvolvimento, aplique
@@ -125,7 +148,7 @@ set +a
 Mantenha `VITE_DATASET_PERSISTENCE_MODE=dual` ate concluir o inventario do ambiente.
 Para interromper o uso dos blobs grandes:
 
-1. faça backup do banco e execute a auditoria SQL de datasets;
+1. faça backup do banco e execute o inventario remoto somente leitura;
 2. conclua qualquer backfill indicado por `backfill_review_required`;
 3. compare contagem, hash e conteudo por tipo e obra;
 4. configure `VITE_DATASET_PERSISTENCE_MODE=snapshots` na hospedagem e publique;

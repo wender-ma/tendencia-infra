@@ -27,6 +27,10 @@ verdes no commit que sera avaliado.
   Editor antes de cada migration.
 - Executar `npm run test:development`; o smoke anonimo deve sincronizar sem erros
   e sem requisicoes remotas de escrita.
+- Criar `.env.supabase.local` a partir de `.env.supabase.example` e executar
+  `npm run audit:supabase:inventory -- --project-ref <ref> --confirm-project-ref <ref>`
+  primeiro no desenvolvimento. O resultado deve identificar o projeto correto e
+  declarar `audit_mode: supabase-management-api-read-only`.
 - Cadastrar no provedor de hospedagem somente as variaveis de producao:
   `VITE_APP_ENV=production`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e
   `VITE_DATASET_PERSISTENCE_MODE=dual`.
@@ -46,6 +50,9 @@ locais nao versionados.
   projeto de desenvolvimento.
 - Executar `./scripts/audit_supabase_contract.sh datasets` com as variaveis do
   ambiente de desenvolvimento; o comando deve terminar sem divergencias.
+- Antes de qualquer backfill, repetir `npm run audit:supabase:inventory` com o
+  project ref de producao confirmado e guardar somente a saida agregada. Nenhuma
+  migration deve ser aplicada durante essa etapa.
 - Se o endpoint ainda retornar `PGRST205`, executar
   `supabase/audit/verify_dashboard_datasets_deployment.sql` no SQL Editor e
   confirmar `complete: true`; guardar também o objeto `data_inventory`.

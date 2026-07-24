@@ -200,6 +200,12 @@ npm run build:production
 npm run preview
 ```
 
+O estado agregado do banco de produção está registrado em
+`docs/supabase_production_inventory_2026-07-24.md`. O backfill dos datasets possui
+um runner separado, bloqueado por alvo, deployment completo, admin ativo e opt-in
+explícito. Consulte `docs/operations.md` e execute sempre `--mode plan` antes de
+qualquer escrita.
+
 `npm run build` continua disponivel para verificacoes locais e de CI; sem
 credenciais ele gera deliberadamente uma versao offline do dashboard.
 

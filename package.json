@@ -5,6 +5,7 @@
   "scripts": {
     "env:target": "node scripts/show_supabase_target.js",
     "audit:supabase:inventory": "node --env-file-if-exists=.env.supabase.local scripts/audit_supabase_inventory.mjs",
+    "backfill:production:datasets": "node --env-file-if-exists=.env.supabase.local --env-file-if-exists=.env.production-backfill.local scripts/run_production_dataset_backfill.mjs",
     "dev": "vite",
     "build": "vite build && node scripts/verify_build.js",
     "build:production": "node scripts/verify_production_environment.mjs && npm run build",

@@ -160,6 +160,53 @@ pequenas, como `gestao_label`. Se o deploy apresentar falha, restaure
 `VITE_DATASET_PERSISTENCE_MODE=dual` e publique novamente. As chaves legadas so
 servem como rollback enquanto ainda nao tiverem sido removidas.
 
+### Backfill controlado de producao
+
+O inventario de 24/07/2026 esta em
+`docs/supabase_production_inventory_2026-07-24.md`. Ele confirmou quatro blobs
+legados e deployment incompleto. Antes de usar o runner, aplique as migrations
+`20260724183000_dashboard_dataset_reset.sql` e
+`20260724190000_dashboard_dataset_cleanup_policies.sql`, repita o inventario e
+exija `complete: true`.
+
+Depois desse gate, copie `.env.production-backfill.example` para
+`.env.production-backfill.local` e preencha somente localmente a URL/chave publica
+de producao e uma conta de aplicacao que seja admin ativa. O Personal Access Token
+continua em `.env.supabase.local`; nenhum dos dois arquivos preenchidos entra no
+Git ou nos backups.
+
+Gere primeiro apenas o plano:
+
+```bash
+npm run backfill:production:datasets -- \
+  --project-ref <ref-producao> \
+  --confirm-project-ref <ref-producao> \
+  --expected-project-name "<nome-conferido>" \
+  --mode plan
+```
+
+O plano autentica para ler os blobs, mas nao grava banco ou Storage e imprime
+somente contagens, tipos, linhas e bytes agregados. Ele recusa deployment
+incompleto, snapshots ativos, chaves inesperadas, alteracao de contagem/tamanho e
+conta sem papel `admin` ativo.
+
+O modo de escrita exige, alem da revisao do plano, dois opt-ins:
+
+```bash
+ALLOW_PRODUCTION_BACKFILL=1 npm run backfill:production:datasets -- \
+  --project-ref <ref-producao> \
+  --confirm-project-ref <ref-producao> \
+  --expected-project-name "<nome-conferido>" \
+  --mode apply \
+  --confirmation BACKFILL_LEGACY_DATASETS
+```
+
+O runner cria uma versao ativa por blob, baixa e compara cada snapshot, verifica
+que os blobs nao mudaram durante a copia e preserva todas as chaves legadas. Em
+falha, reverte as ativacoes ja feitas; se a compensacao ficar incompleta, encerra
+com erro explicito. Execute durante uma janela sem uploads e continue em modo
+`dual` ate validar o dashboard publicado.
+
 Para validar as contas reais de desenvolvimento sem alterar dados, configure
 `.env.roles.local` a partir de `.env.roles.example` e execute:
 

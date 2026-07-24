@@ -118,22 +118,37 @@ O smoke de snapshots executou escritas minimas e temporarias no desenvolvimento:
 - o editor criou, leu e reverteu duas versoes de Tendencia;
 - o admin criou, leu e reverteu duas versoes globais de Flows;
 - hash, tamanho, ativacao da versao nova e restauracao da anterior foram validados;
-- a limpeza removeu metadados e objetos, terminando com zero snapshots ativos.
+- a limpeza terminou com zero snapshots ativos, zero metadados e zero objetos.
 
 Durante a preparacao, foi corrigido o insert que solicitava `RETURNING` de uma
 linha `processing`, invisivel pela policy de leitura ate a ativacao. O cliente
 agora usa os metadados que acabou de gerar e nao amplia a policy RLS. A auditoria
 REST e o smoke anonimo passaram novamente depois da limpeza.
 
-## Migration administrativa ausente em 24/07/2026
+## Migration administrativa confirmada em 24/07/2026
 
-O workflow real confirmou que o admin consegue criar uma obra manual pela
-interface, mas a limpeza atomica retornou `PGRST202`: a RPC
-`admin_delete_obra(text)` nao existe no schema REST do desenvolvimento. A
-classificacao e a obra temporarias foram removidas pelas policies RLS diretas e o
-inventario de prefixos `E2E-` terminou zerado.
+O historico remoto foi reconciliado com as migrations aplicadas manualmente e
+`20260720203000_admin_transactions.sql` foi aplicada pela CLI no projeto de
+desenvolvimento. A auditoria confirmou as tres RPCs administrativas.
 
-Isso comprova que `20260720203000_admin_transactions.sql` ainda nao foi aplicada
-no projeto `xtfbhpisopvnrxmagrek`. A validacao da interface administrativa fica
-pendente ate aplicar essa migration e confirmar
-`supabase/audit/verify_admin_transactions_deployment.sql`.
+O workflow real foi repetido e validou pela interface a edicao temporaria de uma
+classificacao como editor e a criacao/exclusao de uma obra como admin. A limpeza
+removeu os dois registros e o inventario de prefixos `E2E-` terminou zerado.
+
+## Reset e limpeza de versoes em 24/07/2026
+
+A auditoria posterior ao primeiro smoke identificou quatro metadados `failed` e
+quatro objetos, todos criados pelo teste de Tendencia/Flows das 15:01 e sem versao
+ativa. A API de Storage exige `SELECT` e `DELETE`, mas as policies iniciais
+permitiam selecionar apenas objetos ativos; por isso a remocao retornava sem erro
+e sem efeito.
+
+Foram aplicadas `20260724183000_dashboard_dataset_reset.sql` e
+`20260724190000_dashboard_dataset_cleanup_policies.sql`. A primeira remove
+metadata versionada e chaves legadas na mesma transacao. A segunda permite
+manutencao de versoes inativas somente ao editor da obra ou ao admin do escopo
+global.
+
+Os quatro residuos foram removidos pela nova RPC. O smoke autenticado foi repetido
+e terminou com zero snapshots ativos, zero metadados em qualquer status e zero
+objetos nos caminhos de Tendencia e Flows, mantendo os bloqueios de RLS.

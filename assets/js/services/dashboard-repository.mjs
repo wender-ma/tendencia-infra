@@ -95,6 +95,7 @@ export function createDashboardRepository({
   onRead = () => {},
   warn = () => {},
   now = () => new Date(),
+  includeLegacyDatasets = true,
 }) {
   const client = () => getClient?.() || null;
   const activeProject = () => String(getActiveProject?.() || '').trim();
@@ -318,18 +319,22 @@ export function createDashboardRepository({
       'header_title',
       'indice_correcao',
       'card3_modo',
-      DASHBOARD_DATA_KEYS.DATA_F,
-      DASHBOARD_DATA_KEYS.HISTORICO,
-      DASHBOARD_DATA_KEYS.PROJ_RAW,
       `${prefix}evol_global`,
       prefix + DASHBOARD_DATA_KEYS.GESTAO_LABEL,
-      prefix + DASHBOARD_DATA_KEYS.DATA_T,
-      prefix + DASHBOARD_DATA_KEYS.DATA_F,
     ];
+    if (includeLegacyDatasets) {
+      requiredKeys.push(
+        DASHBOARD_DATA_KEYS.DATA_F,
+        DASHBOARD_DATA_KEYS.HISTORICO,
+        DASHBOARD_DATA_KEYS.PROJ_RAW,
+        prefix + DASHBOARD_DATA_KEYS.DATA_T,
+        prefix + DASHBOARD_DATA_KEYS.DATA_F,
+      );
+    }
     const rows = await read('Configuração/carregar', [], () =>
       supabase.from('dashboard_config').select('chave,valor').in('chave', requiredKeys),
     );
-    return Object.fromEntries(rows.map((row) => [row.chave, row.valor]));
+    return Object.fromEntries((rows || []).map((row) => [row.chave, row.valor]));
   }
 
   async function saveDashboardKey(key, value) {

@@ -6,7 +6,12 @@ const processEnvironment = Object.fromEntries(
   Object.entries(process.env).filter(([name]) => name.startsWith('VITE_')),
 );
 const environment = { ...fileEnvironment, ...processEnvironment };
-const requiredNames = ['VITE_APP_ENV', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'];
+const requiredNames = [
+  'VITE_APP_ENV',
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_ANON_KEY',
+  'VITE_DATASET_PERSISTENCE_MODE',
+];
 const missingNames = requiredNames.filter((name) => !environment[name]?.trim());
 
 if (missingNames.length > 0) {
@@ -18,6 +23,13 @@ if (missingNames.length > 0) {
 
 if (environment.VITE_APP_ENV.trim() !== mode) {
   console.error('Build de producao bloqueado: VITE_APP_ENV deve ser exatamente "production".');
+  process.exit(1);
+}
+
+if (!['dual', 'snapshots'].includes(environment.VITE_DATASET_PERSISTENCE_MODE.trim())) {
+  console.error(
+    'Build de producao bloqueado: VITE_DATASET_PERSISTENCE_MODE deve ser "dual" ou "snapshots".',
+  );
   process.exit(1);
 }
 

@@ -7,6 +7,13 @@ const buildMode = readEnvironment('MODE', 'development');
 const declaredEnvironment = readEnvironment('VITE_APP_ENV');
 const requestedSupabaseUrl = readEnvironment('VITE_SUPABASE_URL');
 const requestedSupabaseAnonKey = readEnvironment('VITE_SUPABASE_ANON_KEY');
+const requestedDatasetPersistenceMode = readEnvironment(
+  'VITE_DATASET_PERSISTENCE_MODE',
+  'dual',
+).toLowerCase();
+const datasetPersistenceMode = ['dual', 'snapshots'].includes(requestedDatasetPersistenceMode)
+  ? requestedDatasetPersistenceMode
+  : 'dual';
 const hasSupabaseCredentials = Boolean(requestedSupabaseUrl && requestedSupabaseAnonKey);
 const configurationStatus = !hasSupabaseCredentials
   ? 'missing-credentials'
@@ -23,6 +30,12 @@ export const SUPABASE_CONFIG = Object.freeze({
   environment: declaredEnvironment || 'unconfigured',
   buildMode,
   configurationStatus,
+});
+
+export const DATASET_PERSISTENCE_CONFIG = Object.freeze({
+  mode: datasetPersistenceMode,
+  configurationStatus:
+    datasetPersistenceMode === requestedDatasetPersistenceMode ? 'ready' : 'invalid-mode',
 });
 
 export const STORAGE_KEYS = Object.freeze({

@@ -15,6 +15,17 @@ export function isDatasetSchemaUnavailable(error) {
   );
 }
 
+export function isDatasetResetRpcUnavailable(error) {
+  const code = String(error?.code || '');
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    code === 'PGRST202' ||
+    code === '42883' ||
+    (message.includes('reset_dashboard_datasets') &&
+      (message.includes('not found') || message.includes('does not exist')))
+  );
+}
+
 export function datasetScope(type, activeProject) {
   if (type === 'tendencia') {
     const project = String(activeProject || '').trim();
@@ -101,6 +112,7 @@ export function createDashboardDatasetRepository({
   now = () => new Date(),
   createId = () => cryptoRef.randomUUID(),
   warn = () => {},
+  allowLegacyFallback = true,
 } = {}) {
   let availability = 'unknown';
   let lastVersion = 0;
@@ -116,17 +128,33 @@ export function createDashboardDatasetRepository({
   function markUnavailable(error) {
     if (!isDatasetSchemaUnavailable(error)) return false;
     availability = 'unavailable';
-    warn('Datasets/schema ainda não aplicado; usando dashboard_config', error);
+    warn(
+      allowLegacyFallback
+        ? 'Datasets/schema ainda não aplicado; usando dashboard_config'
+        : 'Datasets/schema obrigatório no modo snapshots',
+      error,
+    );
     return true;
+  }
+
+  function unavailableSchemaError(cause) {
+    return new Error('Snapshots versionados indisponíveis neste ambiente', { cause });
   }
 
   async function checkAvailability() {
     const supabase = client();
-    if (!supabase || availability === 'unavailable') return false;
+    if (!supabase) return false;
+    if (availability === 'unavailable') {
+      if (!allowLegacyFallback) throw unavailableSchemaError();
+      return false;
+    }
     if (availability === 'available') return true;
     const { error } = await supabase.from(TABLE).select('id').limit(1);
     if (error) {
-      if (markUnavailable(error)) return false;
+      if (markUnavailable(error)) {
+        if (!allowLegacyFallback) throw unavailableSchemaError(error);
+        return false;
+      }
       throw error;
     }
     availability = 'available';
@@ -170,6 +198,7 @@ export function createDashboardDatasetRepository({
     try {
       return await loadSnapshot(type, codigoObra);
     } catch (error) {
+      if (!allowLegacyFallback) throw error;
       warn(`Datasets/carregar/${type}; usando fallback legado`, error);
       return null;
     }
@@ -193,13 +222,19 @@ export function createDashboardDatasetRepository({
   }
 
   async function removeMetadata(id) {
-    const { error } = await client().from(TABLE).delete().eq('id', id);
+    const { data, error } = await client().from(TABLE).delete().eq('id', id).select('id');
     if (error) throw error;
+    if (!Array.isArray(data) || !data.some((item) => item.id === id)) {
+      throw new Error(`Metadata do dataset ${id} não foi removida`);
+    }
   }
 
   async function removeObject(path) {
-    const { error } = await client().storage.from(DASHBOARD_DATASET_BUCKET).remove([path]);
+    const { data, error } = await client().storage.from(DASHBOARD_DATASET_BUCKET).remove([path]);
     if (error) throw error;
+    if (!Array.isArray(data) || data.length !== 1) {
+      throw new Error(`Objeto do dataset não foi removido: ${path}`);
+    }
   }
 
   async function cleanupFailedVersion(metadata, uploaded) {
@@ -312,6 +347,52 @@ export function createDashboardDatasetRepository({
     }
   }
 
+  async function resetDashboardData(includeGlobal = false) {
+    const supabase = client();
+    const project = String(getActiveProject?.() || '').trim();
+    if (!supabase) throw new Error('Supabase indisponível para resetar os datasets');
+    if (!project) throw new Error('Nenhuma obra ativa para resetar os datasets');
+
+    const { data, error } = await supabase.rpc('reset_dashboard_datasets', {
+      p_codigo_obra: project,
+      p_include_global: includeGlobal === true,
+    });
+    if (error) {
+      if (allowLegacyFallback && isDatasetResetRpcUnavailable(error)) {
+        warn('Datasets/reset ainda não implantado; usando limpeza legada', error);
+        return { available: false, configDeleted: 0, datasetCount: 0 };
+      }
+      throw error;
+    }
+
+    const datasets = Array.isArray(data?.datasets) ? data.datasets : [];
+    const paths = [...new Set(datasets.map((item) => item?.storage_path).filter(Boolean))];
+    if (paths.length) {
+      const { data: removedObjects, error: storageError } = await supabase.storage
+        .from(DASHBOARD_DATASET_BUCKET)
+        .remove(paths);
+      if (
+        storageError ||
+        !Array.isArray(removedObjects) ||
+        removedObjects.length !== paths.length
+      ) {
+        const cleanupError = new Error(
+          'Dados resetados, mas a limpeza dos objetos versionados ficou pendente',
+          { cause: storageError || new Error('Storage não confirmou todos os objetos') },
+        );
+        cleanupError.code = 'DATASET_STORAGE_CLEANUP_PENDING';
+        throw cleanupError;
+      }
+    }
+
+    return {
+      available: true,
+      configDeleted: Number(data?.config_deleted || 0),
+      datasetCount: datasets.length,
+      storageObjectsRemoved: paths.length,
+    };
+  }
+
   return Object.freeze({
     bucket: DASHBOARD_DATASET_BUCKET,
     checkAvailability,
@@ -320,6 +401,7 @@ export function createDashboardDatasetRepository({
     loadForDashboard,
     saveForUpload,
     rollbackSnapshots,
+    resetDashboardData,
     get availability() {
       return availability;
     },

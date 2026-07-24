@@ -12,6 +12,32 @@ const rollback = fs.readFileSync(
   path.join(root, 'supabase/rollback/20260721211500_dashboard_datasets_rollback.sql'),
   'utf8',
 );
+const resetMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260724183000_dashboard_dataset_reset.sql'),
+  'utf8',
+);
+const resetRollback = fs.readFileSync(
+  path.join(root, 'supabase/rollback/20260724183000_dashboard_dataset_reset_rollback.sql'),
+  'utf8',
+);
+const resetAssertions = fs.readFileSync(
+  path.join(root, 'supabase/tests/assert_dashboard_dataset_reset.sql'),
+  'utf8',
+);
+const cleanupPolicyMigration = fs.readFileSync(
+  path.join(
+    root,
+    'supabase/migrations/20260724190000_dashboard_dataset_cleanup_policies.sql',
+  ),
+  'utf8',
+);
+const cleanupPolicyRollback = fs.readFileSync(
+  path.join(
+    root,
+    'supabase/rollback/20260724190000_dashboard_dataset_cleanup_policies_rollback.sql',
+  ),
+  'utf8',
+);
 const deploymentAudit = fs.readFileSync(
   path.join(root, 'supabase/audit/verify_dashboard_datasets_deployment.sql'),
   'utf8',
@@ -39,6 +65,47 @@ for (const contract of [
   assert(migration.includes(contract), `Contrato da migration de datasets ausente: ${contract}`);
 }
 
+for (const contract of [
+  'create or replace function public.reset_dashboard_datasets',
+  'public.authz_can_edit_obra(normalized_codigo_obra)',
+  'include_global and not public.authz_is_admin()',
+  'pg_advisory_xact_lock',
+  'delete from public.dashboard_datasets',
+  'delete from public.dashboard_config',
+  "'dados_flows', 'dados_historico', 'dados_projraw'",
+  "'datasets', removed_datasets",
+]) {
+  assert(resetMigration.includes(contract), `Contrato do reset de datasets ausente: ${contract}`);
+}
+assert(
+  resetRollback.includes('drop function if exists public.reset_dashboard_datasets'),
+  'Rollback do reset de datasets ausente',
+);
+for (const contract of [
+  'dashboard_datasets_read_inactive_managed',
+  'status <>',
+  'public.authz_can_manage_dashboard_dataset(codigo_obra, tipo)',
+  'dashboard_datasets_storage_read_inactive_managed',
+  'public.authz_can_manage_dashboard_dataset_path(name)',
+]) {
+  assert(
+    cleanupPolicyMigration.includes(contract),
+    `Policy de limpeza dos datasets ausente: ${contract}`,
+  );
+}
+assert(
+  cleanupPolicyRollback.includes('drop policy if exists dashboard_datasets_read_inactive_managed') &&
+    cleanupPolicyRollback.includes(
+      'drop policy if exists dashboard_datasets_storage_read_inactive_managed',
+    ),
+  'Rollback das policies de limpeza ausente',
+);
+assert(
+  resetAssertions.includes("public.reset_dashboard_datasets('OBRA-A', false)") &&
+    resetAssertions.includes("public.reset_dashboard_datasets('OBRA-A', true)"),
+  'Reset de datasets nao testa escopo de obra e global',
+);
+
 assert(
   rollback.includes('Rollback interrompido: remova primeiro os objetos'),
   'Rollback deve preservar objetos ainda armazenados',
@@ -52,9 +119,10 @@ for (const contract of [
   "to_regprocedure('public.activate_dashboard_dataset(uuid)')",
   "to_regprocedure('public.fail_dashboard_dataset(uuid)')",
   "to_regprocedure('public.rollback_dashboard_dataset(uuid,uuid)')",
+  "to_regprocedure('public.reset_dashboard_datasets(text,boolean)')",
   "bucket.id = 'dashboard-datasets'",
-  'table_policy_count = 3',
-  'storage_policy_count = 3',
+  'table_policy_count = 4',
+  'storage_policy_count = 4',
   "pg_notify('pgrst', 'reload schema')",
   'data_inventory',
   'legacy_dataset_key_count',

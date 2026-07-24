@@ -49,6 +49,7 @@ export function createUploadCoordinator({
   isAdmin,
   isGlobalKind,
   dataKeys,
+  persistenceMode = 'dual',
   dashboardDatasetRepository = {
     saveForUpload: async () => ({ available: false, activations: [] }),
     rollbackSnapshots: async () => {},
@@ -62,6 +63,9 @@ export function createUploadCoordinator({
   reportCleanupError = () => {},
   now = () => new Date(),
 }) {
+  if (!['dual', 'snapshots'].includes(persistenceMode)) {
+    throw new Error(`Modo de persistência de datasets inválido: ${persistenceMode}`);
+  }
   const runtimeState = Object.create(null);
   const client = () => getClient?.() || null;
   const activeProject = () => String(getActiveProject?.() || '').trim();
@@ -70,10 +74,18 @@ export function createUploadCoordinator({
     return buildUploadDashboardRows(getDashboardData(), kinds, activeProject(), now(), dataKeys);
   }
 
+  function persistenceRowsFor(kinds) {
+    const rows = rowsFor(kinds);
+    if (persistenceMode === 'dual') return rows;
+    const managementKey = projectKey(dataKeys.GESTAO_LABEL, activeProject());
+    return rows.filter((row) => row.chave === managementKey);
+  }
+
   async function captureDashboardRows(kinds) {
     const supabase = client();
     if (!supabase) throw new Error('Supabase indisponível');
-    const keys = rowsFor(kinds).map((row) => row.chave);
+    const keys = persistenceRowsFor(kinds).map((row) => row.chave);
+    if (!keys.length) return { keys: [], rows: [] };
     const { data, error } = await supabase
       .from('dashboard_config')
       .select('chave,valor')
@@ -113,15 +125,22 @@ export function createUploadCoordinator({
     }
     if (!activeProject()) throw new Error('Nenhuma obra ativa para persistência');
 
-    const rows = rowsFor(kinds);
-    const { error } = await supabase.from('dashboard_config').upsert(rows, { onConflict: 'chave' });
-    if (error) {
-      markSyncError(error);
-      throw error;
+    const rows = persistenceRowsFor(kinds);
+    if (rows.length) {
+      const { error } = await supabase
+        .from('dashboard_config')
+        .upsert(rows, { onConflict: 'chave' });
+      if (error) {
+        markSyncError(error);
+        throw error;
+      }
     }
     let datasets;
     try {
       datasets = await dashboardDatasetRepository.saveForUpload(kinds, getDashboardData(), records);
+      if (persistenceMode === 'snapshots' && !datasets?.available) {
+        throw new Error('Snapshots versionados indisponíveis; upload não foi persistido');
+      }
     } catch (datasetError) {
       try {
         await restoreDashboardRows(previousRows);
@@ -225,6 +244,7 @@ export function createUploadCoordinator({
   }
 
   return Object.freeze({
+    persistenceMode,
     runtimeState,
     captureDashboardRows,
     restoreDashboardRows,

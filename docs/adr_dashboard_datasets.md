@@ -43,7 +43,7 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente e no Supabase de desenvolvimento em 24/07/2026.
 4. Executar backfill das chaves atuais para objetos versionados. Dispensado no desenvolvimento em 24/07/2026: a auditoria confirmou zero chaves legadas, snapshots e objetos no bucket. Produção e o projeto legado exigem inventário próprio.
 5. Comparar contagem, hash e conteúdo desserializado por tipo e obra. Validado em desenvolvimento com duas versões de Tendência por editor e duas de Flows por admin, incluindo leitura e rollback.
-6. Interromper a escrita dos quatro blobs em `dashboard_config`. Pendente do inventário e da transição de produção; a escrita dupla permanece ativa.
+6. Interromper a leitura e a escrita dos quatro blobs em `dashboard_config`. O modo configurável `snapshots` está implementado com falha fechada e rollback operacional para `dual`; a ativação em produção permanece pendente do inventário e da transição.
 7. Após uma janela de estabilidade, remover somente as chaves grandes antigas.
 
 ## Critérios de aceite
@@ -51,9 +51,10 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 - Troca de obra não baixa datasets de outras obras.
 - Uma falha de upload não altera a versão ativa.
 - Rollback reativa a versão anterior sem reprocessar o arquivo original.
+- Reset de cache remove ponteiros versionados e chaves legadas na mesma transação e confirma a limpeza posterior dos objetos.
 - O frontend continua funcionando durante a migração com o fallback legado.
 - `dashboard_config` deixa de armazenar `dados_tendencia`, `dados_flows`, `dados_historico` e `dados_projraw`.
 
 ## Consequências
 
-O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões e o rollback foram validados em desenvolvimento. A transição de produção continua condicionada a inventário, backfill e validação próprios.
+O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões, o rollback e o reset transacional foram validados em desenvolvimento. A transição de produção continua condicionada a inventário, backfill e validação próprios.

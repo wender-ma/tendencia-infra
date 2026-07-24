@@ -1,5 +1,10 @@
 import { createApplication } from './application.mjs';
-import { DASHBOARD_CONFIG, STORAGE_KEYS, SUPABASE_CONFIG } from './config.js';
+import {
+  DASHBOARD_CONFIG,
+  DATASET_PERSISTENCE_CONFIG,
+  STORAGE_KEYS,
+  SUPABASE_CONFIG,
+} from './config.js';
 import { createImportParserService } from './parsers/index.mjs';
 import { createPerformanceMonitor } from './performance.mjs';
 import { createFeedbackService } from './ui/feedback.mjs';
@@ -151,11 +156,13 @@ const dashboardRepository = createDashboardRepository({
   retry: (operation) => supabaseService.retry(operation),
   onMutation: (error) => syncStatusService.recordMutation(error, 'Dados'),
   warn: (context, error) => logger.warn(context, error),
+  includeLegacyDatasets: DATASET_PERSISTENCE_CONFIG.mode === 'dual',
 });
 const dashboardDatasetRepository = createDashboardDatasetRepository({
   getClient: () => supabaseService.client,
   getActiveProject: () => appState.obra.ativa,
   warn: (context, error) => logger.warn(context, error),
+  allowLegacyFallback: DATASET_PERSISTENCE_CONFIG.mode === 'dual',
 });
 const dashboardRuntime = createDashboardRuntime({
   state: appState,
@@ -252,6 +259,7 @@ const uploadCoordinator = createUploadCoordinator({
   isAdmin: () => authService.isAdmin(),
   isGlobalKind: (kind) => isGlobalUploadKind(kind),
   dataKeys: DASHBOARD_DATA_KEYS,
+  persistenceMode: DATASET_PERSISTENCE_CONFIG.mode,
   dashboardDatasetRepository,
   uploadRepository,
   executeTransaction: executeUploadTransaction,
@@ -430,6 +438,7 @@ Promise.resolve()
 
     const uploadMaintenance = createUploadMaintenance({
       dashboardRepository,
+      dashboardDatasetRepository,
       uploadRepository,
       getActiveProject: () => appState.obra.ativa,
       getProjectInfo: (project) => projectController.getProjectInfo(project),
@@ -481,6 +490,7 @@ Promise.resolve()
       state: appState,
       config: Object.freeze({
         dashboard: DASHBOARD_CONFIG,
+        datasetPersistence: DATASET_PERSISTENCE_CONFIG,
         storageKeys: STORAGE_KEYS,
         supabaseUrl: SUPABASE_CONFIG.url,
         supabaseEnvironment: Object.freeze({

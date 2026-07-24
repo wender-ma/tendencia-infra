@@ -16,7 +16,8 @@ const { pathToFileURL } = require('url');
     'OBRA-A:gestao_label',
     'OBRA-A:evol_global',
   ]);
-  assert.deepStrictEqual(buildResetCacheKeys('OBRA-A', true).slice(-2), [
+  assert.deepStrictEqual(buildResetCacheKeys('OBRA-A', true).slice(-3), [
+    'dados_flows',
     'dados_historico',
     'dados_projraw',
   ]);
@@ -29,6 +30,12 @@ const { pathToFileURL } = require('url');
       async deleteDashboardKeys(keys) {
         events.push(['delete-cache', keys]);
         return keys.length;
+      },
+    },
+    dashboardDatasetRepository: {
+      async resetDashboardData(includeGlobal) {
+        events.push(['reset-datasets', includeGlobal]);
+        return { available: true, configDeleted: 7, datasetCount: 2 };
       },
     },
     uploadRepository: {
@@ -56,8 +63,11 @@ const { pathToFileURL } = require('url');
   });
 
   assert.strictEqual(await service.resetCacheDados(), true);
-  const cacheDelete = events.find(([name]) => name === 'delete-cache');
-  assert.strictEqual(cacheDelete[1].length, 6, 'Administrador confirmou também as chaves globais');
+  assert.deepStrictEqual(events.find(([name]) => name === 'reset-datasets'), [
+    'reset-datasets',
+    true,
+  ]);
+  assert(!events.some(([name]) => name === 'delete-cache'));
   assert(events.some(([name]) => name === 'clear-local'));
   assert(events.some(([name]) => name === 'reload'));
 
@@ -66,7 +76,32 @@ const { pathToFileURL } = require('url');
   assert(events.some(([name]) => name === 'render-uploads'));
   assert(events.some(([name]) => name === 'render-headers'));
 
-  console.log('Manutenção de uploads: chaves e confirmações OK');
+  const fallbackEvents = [];
+  const fallbackService = createUploadMaintenance({
+    dashboardRepository: {
+      async deleteDashboardKeys(keys) {
+        fallbackEvents.push(keys);
+        return keys.length;
+      },
+    },
+    dashboardDatasetRepository: {
+      async resetDashboardData() {
+        return { available: false };
+      },
+    },
+    uploadRepository: {},
+    getActiveProject: () => 'OBRA-A',
+    getProjectInfo: () => ({ nome: 'Obra A' }),
+    requireEditor: () => true,
+    isAdmin: () => false,
+    requestConfirmation: async () => true,
+    toast: () => {},
+    schedule: () => {},
+  });
+  assert.strictEqual(await fallbackService.resetCacheDados(), true);
+  assert.strictEqual(fallbackEvents[0].length, 4);
+
+  console.log('Manutenção de uploads: reset transacional, fallback e confirmações OK');
 })().catch((error) => {
   console.error(error);
   process.exit(1);

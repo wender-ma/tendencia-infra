@@ -106,6 +106,35 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   };
 
   async function rpc(name, params) {
+    if (schemaMissing) {
+      return {
+        data: null,
+        error: {
+          code: 'PGRST202',
+          message: `function public.${name} was not found in the schema cache`,
+        },
+      };
+    }
+    if (name === 'reset_dashboard_datasets') {
+      const removed = rows.filter(
+        (row) =>
+          (row.codigo_obra === params.p_codigo_obra && row.tipo === 'tendencia') ||
+          (params.p_include_global === true && row.codigo_obra == null),
+      );
+      removed.forEach((row) => rows.splice(rows.indexOf(row), 1));
+      return {
+        data: {
+          config_deleted: params.p_include_global ? 7 : 4,
+          datasets: removed.map(({ id, codigo_obra, tipo, storage_path }) => ({
+            id,
+            codigo_obra,
+            tipo,
+            storage_path,
+          })),
+        },
+        error: null,
+      };
+    }
     if (name === 'activate_dashboard_dataset') {
       const current = rows.find((row) => row.id === params.p_dataset_id);
       const previous = rows.find(
@@ -197,6 +226,24 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     available: false,
     activations: [],
   });
+  assert.deepStrictEqual(await missingRepository.resetDashboardData(false), {
+    available: false,
+    configDeleted: 0,
+    datasetCount: 0,
+  });
+  const strictMissingRepository = createDashboardDatasetRepository({
+    getClient: () => missing.client,
+    getActiveProject: () => 'OBRA-A',
+    allowLegacyFallback: false,
+  });
+  await assert.rejects(
+    strictMissingRepository.loadForDashboard(),
+    /Snapshots versionados indisponíveis/,
+  );
+  await assert.rejects(
+    strictMissingRepository.resetDashboardData(false),
+    (error) => error?.code === 'PGRST202',
+  );
 
   const supabase = createSupabaseMock();
   const ids = [
@@ -244,8 +291,34 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     undefined,
     'Snapshot corrompido precisa cair no fallback legado',
   );
+  const strictRepository = createDashboardDatasetRepository({
+    getClient: () => supabase.client,
+    getActiveProject: () => 'OBRA-A',
+    allowLegacyFallback: false,
+  });
+  await assert.rejects(
+    strictRepository.loadForDashboard(),
+    /Integridade inválida para o dataset flows/,
+    'Modo snapshots não pode ocultar corrupção usando dados legados',
+  );
+  const projectReset = await repository.resetDashboardData(false);
+  assert.deepStrictEqual(projectReset, {
+    available: true,
+    configDeleted: 4,
+    datasetCount: 1,
+    storageObjectsRemoved: 1,
+  });
+  assert(supabase.rows.every((row) => row.codigo_obra == null));
+  assert.strictEqual(supabase.objects.size, 1);
 
-  console.log('Repositório de datasets: fallback, versões, leitura e rollback OK');
+  const globalReset = await repository.resetDashboardData(true);
+  assert.strictEqual(globalReset.datasetCount, 1);
+  assert.strictEqual(supabase.rows.length, 0);
+  assert.strictEqual(supabase.objects.size, 0);
+
+  console.log(
+    'Repositório de datasets: fallback, versões, reset, leitura e rollback configuráveis OK',
+  );
 })().catch((error) => {
   console.error(error);
   process.exit(1);

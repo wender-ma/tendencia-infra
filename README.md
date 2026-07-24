@@ -141,7 +141,10 @@ cp .env.example .env.development.local
 
 Preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` com o projeto de
 desenvolvimento. Mantenha `VITE_APP_ENV=development` e nao use a URL de
-producao nesse arquivo. Em seguida, inicie o servidor:
+producao nesse arquivo. Mantenha `VITE_DATASET_PERSISTENCE_MODE=dual` enquanto
+o ambiente ainda depender dos blobs antigos de `dashboard_config`; use
+`snapshots` somente depois de confirmar a migration e os dados versionados.
+Em seguida, inicie o servidor:
 
 ```bash
 npm run dev
@@ -159,11 +162,19 @@ sem o sufixo `/rest/v1`:
 VITE_APP_ENV="production"
 VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
 VITE_SUPABASE_ANON_KEY="sua-chave-anon-public"
+VITE_DATASET_PERSISTENCE_MODE="dual"
 ```
 
 A configuracao e recusada quando `VITE_APP_ENV` nao corresponde ao modo do Vite.
 A chave `anon public` e exposta ao navegador por definicao; a protecao dos dados
 continua dependendo das politicas RLS e da autorizacao no Supabase.
+
+O modo `dual` consulta e grava temporariamente os datasets versionados e os quatro
+blobs legados. O modo `snapshots` deixa de consultar e gravar esses blobs, preserva
+somente configuracoes pequenas em `dashboard_config` e bloqueia uploads se o schema
+versionado estiver indisponivel. A troca para `snapshots` e o rollback para `dual`
+nao exigem alteracao de codigo, mas devem seguir o inventario e os gates descritos
+em `docs/operations.md`.
 
 Para gerar e validar o pacote de producao pronto para publicar:
 

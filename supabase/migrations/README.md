@@ -1,6 +1,6 @@
 # Migrations do Supabase
 
-Este diretório contém apenas migrations incrementais revisadas. As três migrations foram validadas em sequência, com seus rollbacks, em PostgreSQL 15 descartável.
+Este diretório contém apenas migrations incrementais revisadas. As cinco migrations foram validadas em sequência, com seus rollbacks, em PostgreSQL 15 descartável.
 
 O baseline versionado em `../../docs/supabase_metadata_2026-07-20.json` inclui relações, colunas, tipos, constraints, índices, grants, policies, funções, trigger, view e bucket. Ele não contém linhas das tabelas nem credenciais.
 
@@ -9,13 +9,14 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 ## Estado das migrations
 
 - Revisão contra o baseline administrativo: concluída.
-- Teste local de aplicação das três migrations: concluído.
-- Teste local dos três rollbacks: concluído.
+- Teste local de aplicação das cinco migrations: concluído.
+- Teste local dos cinco rollbacks: concluído.
 - Comportamento endurecido de RLS no Supabase de desenvolvimento: confirmado por auditoria anônima em 23/07/2026.
-- Migration administrativa no Supabase de desenvolvimento: ausente em 24/07/2026; `admin_delete_obra` retornou `PGRST202` no workflow autenticado.
+- Migration administrativa no Supabase de desenvolvimento: aplicada e as três RPCs auditadas em 24/07/2026.
 - Migration de snapshots no Supabase de desenvolvimento: aplicada e confirmada por SQL e REST em 24/07/2026.
 - Backfill no Supabase de desenvolvimento: dispensado em 24/07/2026 após inventário confirmar zero blobs legados, snapshots e objetos no bucket.
 - Ciclo autenticado no Supabase de desenvolvimento: editor/Tendência e admin/Flows validados com duas versões, leitura, integridade, rollback e limpeza em 24/07/2026.
+- Reset transacional e policies de manutenção aplicados no desenvolvimento em 24/07/2026; quatro resíduos antigos do smoke foram removidos e o novo ciclo terminou com zero metadados e objetos.
 - Migration de snapshots no projeto legado: aplicada por engano e confirmada em 24/07/2026; nenhuma reversão automática foi executada.
 - Aplicação em produção: pendente.
 
@@ -25,7 +26,7 @@ Teste local reproduzível:
 ./scripts/test_rls_migration.sh
 ```
 
-Auditoria remota somente leitura após a terceira migration:
+Auditoria remota somente leitura após a quinta migration:
 
 ```text
 supabase/audit/verify_dashboard_datasets_deployment.sql
@@ -38,6 +39,8 @@ Ordem de aplicação:
 1. `20260720172000_rls_hardening.sql`
 2. `20260720203000_admin_transactions.sql`
 3. `20260721211500_dashboard_datasets.sql`
+4. `20260724183000_dashboard_dataset_reset.sql`
+5. `20260724190000_dashboard_dataset_cleanup_policies.sql`
 
 Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
 URL do SQL Editor.

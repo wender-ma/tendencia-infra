@@ -30,6 +30,7 @@ module.exports = defineConfig({
       VITE_APP_ENV: 'test',
       VITE_SUPABASE_URL: 'https://test.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'test-anon-public-key',
+      VITE_DATASET_PERSISTENCE_MODE: 'dual',
     },
     url: 'http://127.0.0.1:4174',
     reuseExistingServer: false,

@@ -72,6 +72,7 @@ async function main() {
       buildMode: window.dashboardServices.config.supabaseEnvironment.buildMode,
       configStatus: window.dashboardServices.config.supabaseEnvironment.status,
       declaredEnvironment: window.dashboardServices.config.supabaseEnvironment.declared,
+      datasetPersistenceMode: window.dashboardServices.config.datasetPersistence.mode,
       hasClient: Boolean(window.dashboardServices.supabase.client),
       syncState: document.getElementById('supaBadge')?.dataset.syncState || null,
     }));
@@ -92,6 +93,13 @@ async function main() {
     }
     if (runtime.declaredEnvironment !== 'development' || runtime.buildMode !== 'development') {
       throw new Error('O smoke remoto deve usar exclusivamente o modo development');
+    }
+    const requestedDatasetMode = process.env.VITE_DATASET_PERSISTENCE_MODE;
+    if (
+      requestedDatasetMode &&
+      runtime.datasetPersistenceMode !== requestedDatasetMode.toLowerCase()
+    ) {
+      throw new Error('O modo de persistencia solicitado nao foi aplicado pelo frontend');
     }
     if (
       !runtime.hasClient ||

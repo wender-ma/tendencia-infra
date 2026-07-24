@@ -13,6 +13,8 @@ with deployment as (
       as fail_rpc_exists,
     to_regprocedure('public.rollback_dashboard_dataset(uuid,uuid)') is not null
       as rollback_rpc_exists,
+    to_regprocedure('public.reset_dashboard_datasets(text,boolean)') is not null
+      as reset_rpc_exists,
     coalesce(
       (
         select cls.relrowsecurity
@@ -92,6 +94,7 @@ select jsonb_build_object(
   'activate_rpc_exists', activate_rpc_exists,
   'fail_rpc_exists', fail_rpc_exists,
   'rollback_rpc_exists', rollback_rpc_exists,
+  'reset_rpc_exists', reset_rpc_exists,
   'rls_enabled', rls_enabled,
   'private_bucket_exists', private_bucket_exists,
   'table_policy_count', table_policy_count,
@@ -112,10 +115,11 @@ select jsonb_build_object(
     and activate_rpc_exists
     and fail_rpc_exists
     and rollback_rpc_exists
+    and reset_rpc_exists
     and rls_enabled
     and private_bucket_exists
-    and table_policy_count = 3
-    and storage_policy_count = 3
+    and table_policy_count = 4
+    and storage_policy_count = 4
 ) as dashboard_datasets_deployment
 from deployment
 cross join inventory;

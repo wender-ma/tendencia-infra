@@ -5,7 +5,7 @@ const PROJECT_CACHE_KEYS = Object.freeze([
   'evol_global',
 ]);
 
-const GLOBAL_CACHE_KEYS = Object.freeze(['dados_historico', 'dados_projraw']);
+const GLOBAL_CACHE_KEYS = Object.freeze(['dados_flows', 'dados_historico', 'dados_projraw']);
 
 export function buildResetCacheKeys(projectCode, includeGlobal = false) {
   const project = String(projectCode || '').trim();
@@ -16,6 +16,7 @@ export function buildResetCacheKeys(projectCode, includeGlobal = false) {
 
 export function createUploadMaintenance({
   dashboardRepository,
+  dashboardDatasetRepository,
   uploadRepository,
   getActiveProject,
   getProjectInfo,
@@ -43,7 +44,7 @@ export function createUploadMaintenance({
     const projectName = getProjectInfo?.(project)?.nome || project;
     const confirmed = await requestConfirmation(
       'Resetar cache da obra',
-      `Isto vai apagar do Supabase os dados desta obra (${projectName}):\n\n- Tendência individual\n- Flows individual\n- Aderência Físico-Financeira\n\nAs outras obras e os arquivos originais no Storage não serão afetados.`,
+      `Isto vai apagar do Supabase os dados desta obra (${projectName}):\n\n- Tendência individual\n- Rótulo e evolução da gestão\n\nAs outras obras e os arquivos originais de upload não serão afetados.`,
       { confirmText: 'Resetar cache' },
     );
     if (!confirmed) return false;
@@ -52,21 +53,36 @@ export function createUploadMaintenance({
       isAdmin?.() === true &&
       (await requestConfirmation(
         'Apagar também os dados globais?',
-        'Histórico e Curva S são compartilhados entre TODAS as obras. Confirmar afeta o dashboard de todas; cancelar mantém os dados globais.',
+        'Flows, Histórico e Curva S são compartilhados entre TODAS as obras. Confirmar afeta o dashboard de todas; cancelar mantém os dados globais.',
         { confirmText: 'Apagar globais' },
       ));
 
     toast('Limpando cache...', 'info', 2000);
     try {
-      const count = await dashboardRepository.deleteDashboardKeys(
-        buildResetCacheKeys(project, includeGlobal),
+      const datasetReset = await dashboardDatasetRepository?.resetDashboardData(
+        includeGlobal === true,
       );
+      const count =
+        datasetReset?.available === true
+          ? datasetReset.configDeleted + datasetReset.datasetCount
+          : await dashboardRepository.deleteDashboardKeys(
+              buildResetCacheKeys(project, includeGlobal),
+            );
       clearLocalEvolution();
-      toast(`Cache limpo (${count} chaves). Recarregando...`, 'ok', 2000);
+      toast(`Cache limpo (${count} item(ns)). Recarregando...`, 'ok', 2000);
       schedule(reload, 1500);
       return true;
     } catch (error) {
       reportError('Cache/limpar', error);
+      if (error?.code === 'DATASET_STORAGE_CLEANUP_PENDING') {
+        toast(
+          'Os dados foram resetados, mas alguns objetos antigos exigem limpeza administrativa.',
+          'warn',
+          6000,
+        );
+        schedule(reload, 2000);
+        return true;
+      }
       toast('Não foi possível limpar o cache. Tente novamente.', 'err', 5000);
       return false;
     }

@@ -12,6 +12,10 @@ const productionVerifier = fs.readFileSync(
   path.join(root, 'scripts/verify_production_environment.mjs'),
   'utf8',
 );
+const productionVerifierTest = fs.readFileSync(
+  path.join(root, 'scripts/test_production_environment.js'),
+  'utf8',
+);
 const developmentExample = fs.readFileSync(path.join(root, '.env.example'), 'utf8');
 const productionExample = fs.readFileSync(path.join(root, '.env.production.example'), 'utf8');
 const gitignore = fs.readFileSync(path.join(root, '.gitignore'), 'utf8');
@@ -53,6 +57,7 @@ for (const contract of [
   "readEnvironment('VITE_APP_ENV')",
   "readEnvironment('VITE_SUPABASE_URL')",
   "readEnvironment('VITE_SUPABASE_ANON_KEY')",
+  "readEnvironment(\n  'VITE_DATASET_PERSISTENCE_MODE'",
   "configurationStatus === 'ready'",
   "'environment-mismatch'",
 ]) {
@@ -77,6 +82,11 @@ assert(
 );
 assert(developmentExample.includes('VITE_APP_ENV=development'), 'Template dev sem ambiente');
 assert(productionExample.includes('VITE_APP_ENV=production'), 'Template prod sem ambiente');
+assert(
+  developmentExample.includes('VITE_DATASET_PERSISTENCE_MODE=dual') &&
+    productionExample.includes('VITE_DATASET_PERSISTENCE_MODE=dual'),
+  'Templates precisam declarar o modo seguro de transicao dos datasets',
+);
 assert(gitignore.includes('!.env.production.example'), 'Template de producao nao versionado');
 assert(
   backupScript.includes('--exclude=".env*"'),
@@ -131,7 +141,9 @@ assert(
     developmentSnapshotSmoke.includes('await repository.rollbackSnapshots(activations)') &&
     developmentSnapshotSmoke.includes("'rejected/tendencia'") &&
     developmentSnapshotSmoke.includes("'editor/flows-global'") &&
-    developmentSnapshotSmoke.includes('activeSnapshotsAfterCleanup: count') &&
+    developmentSnapshotSmoke.includes('activeSnapshotsAfterCleanup: activeCount') &&
+    developmentSnapshotSmoke.includes('residualMetadataAfterCleanup: metadataCount') &&
+    developmentSnapshotSmoke.includes('residualObjectsAfterCleanup: residualObjectCount') &&
     !developmentSnapshotSmoke.includes('console.log(password)'),
   'Smoke real de snapshots deve exigir opt-in, validar RLS e sempre limpar versoes de teste',
 );
@@ -148,11 +160,17 @@ assert(
 );
 for (const contract of [
   "loadEnv(mode, process.cwd(), 'VITE_')",
-  "VITE_APP_ENV', 'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'",
+  "'VITE_DATASET_PERSISTENCE_MODE'",
   'VITE_APP_ENV deve ser exatamente "production"',
+  'VITE_DATASET_PERSISTENCE_MODE deve ser "dual" ou "snapshots"',
   'sem /rest/v1 ou outros caminhos',
 ]) {
   assert(productionVerifier.includes(contract), `Preflight de producao incompleto: ${contract}`);
 }
+assert(
+  productionVerifierTest.includes("for (const mode of ['dual', 'snapshots'])") &&
+    productionVerifierTest.includes("VITE_DATASET_PERSISTENCE_MODE: 'automatico'"),
+  'Preflight de producao precisa testar modos validos e invalidos',
+);
 
 console.log('Contrato de ambientes: dev, teste e producao isolados sem fallback remoto OK');

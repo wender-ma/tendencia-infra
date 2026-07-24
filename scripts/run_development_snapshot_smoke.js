@@ -218,12 +218,30 @@ async function main() {
     (data) => data.flows,
   );
 
-  const { count, error } = await newClient()
+  const verificationClient = newClient();
+  const { count: activeCount, error: activeError } = await verificationClient
     .from('dashboard_datasets')
     .select('id', { count: 'exact', head: true })
     .eq('status', 'active');
-  if (error) throw error;
-  assert.strictEqual(count, 0, 'Snapshots ativos de teste permaneceram no ambiente');
+  if (activeError) throw activeError;
+  assert.strictEqual(activeCount, 0, 'Snapshots ativos de teste permaneceram no ambiente');
+
+  const { count: metadataCount, error: metadataError } = await adminClient
+    .from('dashboard_datasets')
+    .select('id', { count: 'exact', head: true });
+  if (metadataError) throw metadataError;
+  assert.strictEqual(metadataCount, 0, 'Metadata inativa permaneceu após o ciclo de teste');
+
+  const { data: projectObjects, error: projectObjectsError } = await adminClient.storage
+    .from('dashboard-datasets')
+    .list(`${project}/tendencia`, { limit: 100 });
+  if (projectObjectsError) throw projectObjectsError;
+  const { data: globalObjects, error: globalObjectsError } = await adminClient.storage
+    .from('dashboard-datasets')
+    .list('_global/flows', { limit: 100 });
+  if (globalObjectsError) throw globalObjectsError;
+  const residualObjectCount = (projectObjects?.length || 0) + (globalObjects?.length || 0);
+  assert.strictEqual(residualObjectCount, 0, 'Objetos inativos permaneceram após o ciclo de teste');
 
   console.log(
     JSON.stringify(
@@ -233,7 +251,9 @@ async function main() {
         deniedByRls: ['rejected/tendencia', 'editor/flows-global'],
         validatedLifecycles: ['editor/tendencia', 'admin/flows-global'],
         versionsPerLifecycle: 2,
-        activeSnapshotsAfterCleanup: count,
+        activeSnapshotsAfterCleanup: activeCount,
+        residualMetadataAfterCleanup: metadataCount,
+        residualObjectsAfterCleanup: residualObjectCount,
       },
       null,
       2,

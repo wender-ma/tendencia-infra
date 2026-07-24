@@ -131,6 +131,25 @@ class Query {
   assert.strictEqual(movements[0].created_at, '2026-07-21T12:00:00Z');
   assert.strictEqual(movements[0].created_by, 'editor@example.com');
 
+  await repository.loadDashboardConfig();
+  const dualKeys = calls
+    .filter((call) => call.table === 'dashboard_config' && call.method === 'in')
+    .at(-1).args[1];
+  assert(dualKeys.includes('OBRA-A:dados_tendencia'));
+  assert(dualKeys.includes('dados_historico'));
+
+  const snapshotsRepository = createDashboardRepository({
+    getClient: () => client,
+    getActiveProject: () => 'OBRA-A',
+    includeLegacyDatasets: false,
+  });
+  await snapshotsRepository.loadDashboardConfig();
+  const snapshotsKeys = calls
+    .filter((call) => call.table === 'dashboard_config' && call.method === 'in')
+    .at(-1).args[1];
+  assert(snapshotsKeys.includes('OBRA-A:gestao_label'));
+  assert(!snapshotsKeys.some((key) => key.includes('dados_')));
+
   const callCount = calls.length;
   await repository.patchClassification('ADT-2', { custo_flowmaster: 1 }, 'OBRA-B');
   assert.strictEqual(calls.length, callCount, 'Patch fora da obra ativa deve ser ignorado');

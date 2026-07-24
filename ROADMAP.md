@@ -205,7 +205,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento concluído com migration, inventário, RLS, duas versões, integridade, leitura, rollback e limpeza reais. A escrita dupla permanece até inventário, backfill e transição próprios de produção.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento concluído com migration, inventário, RLS, duas versões, integridade, leitura, rollback e limpeza reais; o modo `snapshots` já elimina leitura/escrita legada com falha fechada e rollback para `dual`. A ativação permanece pendente do inventário, backfill e transição próprios de produção.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -334,3 +334,5 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Matriz real de papéis e ciclos de snapshots validados no desenvolvimento; `RETURNING` incompatível com RLS removido | `run_development_snapshot_smoke.js`, `dashboard-dataset-repository.mjs` |
 | 24/07/2026 | Workflow real detectou migration administrativa ausente; dados temporários removidos e auditoria SQL específica adicionada | `verify_admin_transactions_deployment.sql`, `run_development_workflow_smoke.js` |
 | 24/07/2026 | Histórico remoto de migrations reconciliado, migration administrativa aplicada via CLI e três RPCs verificadas; edição e administração E2E passaram com limpeza integral | `run_development_workflow_smoke.js`, `verify_admin_transactions_deployment.sql` |
+| 24/07/2026 | Transição de datasets ganhou modos `dual` e `snapshots`; o modo final não consulta nem grava blobs legados, preserva configurações pequenas e falha fechado sem schema ou integridade | `config.js`, `upload-coordinator.mjs`, `dashboard-dataset-repository.mjs` |
+| 24/07/2026 | Reset de cache passou a remover snapshots e blobs legados transacionalmente; policies de manutenção corrigiram a limpeza silenciosa e o smoke real terminou sem metadata ou objetos residuais | `20260724183000_dashboard_dataset_reset.sql`, `20260724190000_dashboard_dataset_cleanup_policies.sql` |

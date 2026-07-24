@@ -18,6 +18,11 @@ corresponde ao modo do Vite; sem credenciais validas, ela funciona em modo offli
 As variaveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` sao publicas no bundle.
 Nunca use `service_role` ou qualquer segredo de servidor no frontend.
 
+`VITE_DATASET_PERSISTENCE_MODE` aceita `dual` ou `snapshots`. O padrao seguro e
+`dual`, usado durante a migracao. O modo `snapshots` remove os quatro blobs grandes
+do caminho de leitura e escrita e falha explicitamente se a infraestrutura
+versionada nao estiver disponivel.
+
 ## Validação
 
 Antes de publicar:
@@ -54,10 +59,11 @@ O Vercel deve usar:
 
 - build: `npm run build:production`;
 - diretório de saída: `dist`;
-- variaveis publicas: `VITE_APP_ENV=production`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`;
+- variaveis publicas: `VITE_APP_ENV=production`, `VITE_SUPABASE_URL`,
+  `VITE_SUPABASE_ANON_KEY` e `VITE_DATASET_PERSISTENCE_MODE`;
 - configuração de headers: `vercel.json`.
 
-O preflight do build bloqueia o deploy se uma das tres variaveis estiver ausente,
+O preflight do build bloqueia o deploy se uma das quatro variaveis estiver ausente,
 se `VITE_APP_ENV` nao for `production` ou se a URL contiver `/rest/v1`. Cadastre
 as variaveis no ambiente de producao do provedor antes de enviar este commit para a
 branch publicada. O template `.env.production.example` serve apenas como referencia
@@ -114,6 +120,23 @@ set +a
 ./scripts/audit_supabase_contract.sh datasets
 ```
 
+### Transicao para snapshots
+
+Mantenha `VITE_DATASET_PERSISTENCE_MODE=dual` ate concluir o inventario do ambiente.
+Para interromper o uso dos blobs grandes:
+
+1. faça backup do banco e execute a auditoria SQL de datasets;
+2. conclua qualquer backfill indicado por `backfill_review_required`;
+3. compare contagem, hash e conteudo por tipo e obra;
+4. configure `VITE_DATASET_PERSISTENCE_MODE=snapshots` na hospedagem e publique;
+5. valide login, troca de obra, leitura, upload e rollback;
+6. aguarde a janela de estabilidade antes de remover chaves legadas.
+
+No modo `snapshots`, `dashboard_config` continua armazenando apenas configuracoes
+pequenas, como `gestao_label`. Se o deploy apresentar falha, restaure
+`VITE_DATASET_PERSISTENCE_MODE=dual` e publique novamente. As chaves legadas so
+servem como rollback enquanto ainda nao tiverem sido removidas.
+
 Para validar as contas reais de desenvolvimento sem alterar dados, configure
 `.env.roles.local` a partir de `.env.roles.example` e execute:
 
@@ -134,7 +157,8 @@ ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:snapshots
 O teste cria duas versoes minimas de Tendencia como editor e duas de Flows como
 admin, valida ativacao, integridade, leitura, rollback e bloqueios de RLS. Todas
 as versoes e objetos criados sao removidos no bloco de limpeza, inclusive quando
-uma assercao falha. Nunca execute esse comando em producao.
+uma assercao falha. O aceite exige zero metadata e zero objetos residuais, alem de
+zero snapshots ativos. Nunca execute esse comando em producao.
 
 Depois de confirmar a migration administrativa, valide edicao e administracao
 pela interface:
@@ -150,9 +174,15 @@ para que o ambiente nao seja considerado completo por engano.
 
 Se o REST ainda responder `PGRST205`, execute no SQL Editor
 `supabase/audit/verify_dashboard_datasets_deployment.sql`. O resultado
-`complete: true` comprova tabela, RPCs, RLS, bucket e seis policies; o campo
+`complete: true` comprova tabela, RPCs, RLS, bucket e oito policies; o campo
 `data_inventory` informa blobs legados, snapshots por status e objetos no bucket.
 A primeira instrução também solicita a recarga do schema do PostgREST.
+
+O reset de cache usa `reset_dashboard_datasets` para remover metadata versionada e
+chaves legadas na mesma transacao. Depois do commit, o frontend remove os objetos
+retornados pela API de Storage. As policies de manutencao permitem selecionar
+versoes inativas somente a quem ja pode administrar a obra ou o escopo global,
+pois o Storage exige `SELECT` e `DELETE` para concluir a remocao.
 
 ## Backups locais do projeto
 

@@ -28,7 +28,8 @@ verdes no commit que sera avaliado.
 - Executar `npm run test:development`; o smoke anonimo deve sincronizar sem erros
   e sem requisicoes remotas de escrita.
 - Cadastrar no provedor de hospedagem somente as variaveis de producao:
-  `VITE_APP_ENV=production`, `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+  `VITE_APP_ENV=production`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` e
+  `VITE_DATASET_PERSISTENCE_MODE=dual`.
 - Confirmar que a URL do Supabase e a origem do projeto, sem `/rest/v1`.
 
 Aceite: desenvolvimento e producao usam IDs de projeto Supabase diferentes; um
@@ -55,6 +56,9 @@ locais nao versionados.
 - Se `data_inventory.backfill_review_required` for verdadeiro, fazer o backfill
   dos blobs legados apenas depois de os snapshots ativos serem lidos corretamente.
   Nao interromper a escrita dupla antes do teste autenticado e da comparacao.
+- Depois de comparar contagem, hash e conteudo, alterar
+  `VITE_DATASET_PERSISTENCE_MODE` para `snapshots`, publicar e repetir os smokes.
+  Se houver falha, restaurar `dual` e publicar novamente antes de investigar.
 
 Aceite: as politicas RLS bloqueiam papeis indevidos, os snapshots ativos carregam
 os mesmos dados esperados e um rollback mantem o dashboard utilizavel.

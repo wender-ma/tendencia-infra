@@ -89,3 +89,15 @@ A auditoria SQL agora inclui `data_inventory`, sem retornar o conteudo dos blobs
 para decidir se existe backfill no ambiente e detectar snapshots ou objetos
 residuais. A escrita dupla permanece ativa ate o fluxo autenticado validar upload,
 ativacao, leitura e rollback.
+
+O inventario remoto executado em 24/07/2026 confirmou:
+
+- zero chaves legadas e zero bytes em `dashboard_config`;
+- zero snapshots em qualquer status;
+- zero objetos no bucket `dashboard-datasets`;
+- `backfill_review_required: false`.
+
+O backfill foi dispensado exclusivamente neste projeto de desenvolvimento. A
+escrita dupla continua ativa ate criar o primeiro snapshot por upload autenticado,
+validar sua leitura e exercitar o rollback. Esta decisao nao se aplica ao projeto
+legado nem a producao, que devem ter inventarios independentes.

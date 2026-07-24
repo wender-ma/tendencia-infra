@@ -41,7 +41,7 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 1. Criar bucket, tabela, constraints, índices, policies e RPC em desenvolvimento.
 2. Adicionar ao repositório leitura preferencial do snapshot ativo, com fallback para `dashboard_config`. Concluído no frontend.
 3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente; o teste autenticado no Supabase de desenvolvimento permanece pendente.
-4. Executar backfill das chaves atuais para objetos versionados. A auditoria de inventário define se esta etapa se aplica ao ambiente.
+4. Executar backfill das chaves atuais para objetos versionados. Dispensado no desenvolvimento em 24/07/2026: a auditoria confirmou zero chaves legadas, snapshots e objetos no bucket. Produção e o projeto legado exigem inventário próprio.
 5. Comparar contagem, hash e conteúdo desserializado por tipo e obra.
 6. Interromper a escrita dos quatro blobs em `dashboard_config`.
 7. Após uma janela de estabilidade, remover somente as chaves grandes antigas.

@@ -213,10 +213,14 @@ pois o Storage exige `SELECT` e `DELETE` para concluir a remocao.
 ./scripts/backup.sh
 ```
 
-O script cria snapshots em `backups/snapshots/`, mantém os 12 mais recentes e remove o mais antigo. Com agendamento a cada 30 minutos, a janela local é de aproximadamente seis horas.
+O script cria snapshots de forma atômica em `backups/snapshots/`, mantém os 12
+mais recentes e remove os excedentes mais antigos. Com agendamento a cada 30
+minutos, a janela local é de aproximadamente seis horas.
 
-Arquivos `.env*` nao entram nos arquivos compactados. Em uma restauracao, recrie a
-configuracao local a partir dos templates versionados e do painel do provedor.
+Arquivos locais `.env*` nao entram nos arquivos compactados, mas os templates
+`*.example` entram. Dependencias, builds e relatorios gerados tambem sao omitidos;
+depois de restaurar, execute `npm ci` e `npm run build`, e recrie as credenciais
+locais a partir dos templates e do painel do provedor.
 
 ## Retenção de uploads
 

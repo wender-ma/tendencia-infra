@@ -89,8 +89,10 @@ assert(
 );
 assert(gitignore.includes('!.env.production.example'), 'Template de producao nao versionado');
 assert(
-  backupScript.includes('--exclude=".env*"'),
-  'Backups compactados nao podem copiar configuracoes locais de ambiente',
+  backupScript.includes('-name ".env*"') &&
+    backupScript.includes('if [[ "$env_name" != *.example ]]') &&
+    backupScript.includes('TAR_EXCLUDES+=("--exclude=$env_name")'),
+  'Backups devem omitir configuracoes locais e preservar somente templates de ambiente',
 );
 assert(
   packageJson.scripts['build:production'] ===

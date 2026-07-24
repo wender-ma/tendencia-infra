@@ -25,7 +25,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 ## Estado inicial
 
 - [x] Revisão técnica inicial do `index.html` concluída.
-- [x] Rotina de backup local criada.
+- [x] Rotina de backup local criada, com publicação atômica, retenção de 12 snapshots e teste de restauração.
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
@@ -338,3 +338,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Transição de datasets ganhou modos `dual` e `snapshots`; o modo final não consulta nem grava blobs legados, preserva configurações pequenas e falha fechado sem schema ou integridade | `config.js`, `upload-coordinator.mjs`, `dashboard-dataset-repository.mjs` |
 | 24/07/2026 | Reset de cache passou a remover snapshots e blobs legados transacionalmente; policies de manutenção corrigiram a limpeza silenciosa e o smoke real terminou sem metadata ou objetos residuais | `20260724183000_dashboard_dataset_reset.sql`, `20260724190000_dashboard_dataset_cleanup_policies.sql` |
 | 24/07/2026 | Auditor remoto passou a usar a Management API somente leitura, confirmação dupla do alvo e inventário agregado sem conteúdo ou códigos de obra; desenvolvimento confirmou deployment completo e backfill dispensado | `audit_supabase_inventory.mjs`, `docs/supabase_development_audit_2026-07-23.md` |
+| 24/07/2026 | Backup local endurecido: templates e fontes recuperáveis, segredos e artefatos regeneráveis omitidos, publicação atômica e retenção coberta por teste real | `backup.sh`, `test_backup_contract.js` |

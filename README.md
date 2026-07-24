@@ -216,10 +216,15 @@ npm run test:browser
 
 O projeto possui um script de backup em `scripts/backup.sh` e uma rotina agendada para executá-lo a cada 30 minutos.
 
-Ele cria um arquivo compactado em `backups/snapshots/`, mantém os 12 backups mais recentes e remove automaticamente os mais antigos.
+Ele cria primeiro um arquivo temporário e só publica o snapshot depois que a
+compactação termina. Os 12 backups completos mais recentes são mantidos e os mais
+antigos são removidos automaticamente.
 
-Arquivos `.env*` sao omitidos dos snapshots para nao replicar configuracoes locais.
-Os templates versionados podem ser recuperados pelo Git.
+Configurações locais `.env*` são omitidas para não replicar credenciais. Os
+templates `*.example`, código-fonte, documentação, migrations e lockfile entram no
+snapshot. Dependências, build e relatórios gerados (`node_modules/`, `dist/`,
+Playwright e Lighthouse) são omitidos porque podem ser recriados com `npm ci` e
+`npm run build`.
 
 Para criar um backup manual:
 

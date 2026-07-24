@@ -39,23 +39,6 @@ select pg_temp.assert_true(
   'a RPC de permissoes deve ser exposta somente a authenticated'
 );
 
-select pg_temp.assert_true(
-  (select count(*) = 6
-   from pg_constraint c
-   join pg_namespace n on n.oid = c.connamespace
-   where n.nspname = 'public'
-     and c.conname in (
-       'editores_permitidos_codigo_obra_fkey',
-       'flow_classifications_codigo_obra_fkey',
-       'flow_manuals_codigo_obra_fkey',
-       'projecao_config_codigo_obra_fkey',
-       'projecao_movimentacoes_codigo_obra_fkey',
-       'upload_history_codigo_obra_fkey'
-     )
-     and c.confdeltype = 'c'),
-  'as seis chaves estrangeiras devem usar ON DELETE CASCADE'
-);
-
 set role authenticated;
 select set_config(
   'request.jwt.claims',

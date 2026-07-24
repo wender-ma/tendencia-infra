@@ -119,7 +119,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Criar RPC transacional para alteração de permissões de usuário (`20260720203000_admin_transactions.sql`).
 - [x] Evitar apagar permissões antes de validar e inserir as novas (`20260720203000_admin_transactions.sql`).
 - [x] Criar RPC transacional para exclusão completa de obra (`20260720203000_admin_transactions.sql`).
-- [x] Configurar chaves estrangeiras e cascatas controladas (`20260720203000_admin_transactions.sql`).
+- [x] Remover dependências da obra dentro da RPC transacional sem alterar ownership das FKs (`20260720203000_admin_transactions.sql`).
 - [x] Interromper upload quando Storage, metadata ou persistência falhar.
 - [x] Adicionar estados `processing`, `active` e `failed` aos uploads.
 - [x] Ativar um novo dataset somente após persistência completa.
@@ -290,7 +290,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Baseline administrativo versionado; migration incremental, rollback e testes locais preparados                                                           | `supabase/migrations/20260720172000_rls_hardening.sql`      |
 | 20/07/2026 | CSS monolítico separado em tokens, base, componentes e dashboard, com contrato automatizado de assets                                                    | `assets/css/`                                               |
 | 20/07/2026 | Vite configurado com lockfile, suíte centralizada em `npm test` e build de produção validado                                                             | `package.json`                                              |
-| 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas; cascatas e proteção do último admin adicionadas                                               | `supabase/migrations/20260720203000_admin_transactions.sql` |
+| 20/07/2026 | Permissões e exclusão de obra migradas para RPCs atômicas, com proteção do último admin                                                                  | `supabase/migrations/20260720203000_admin_transactions.sql` |
 | 20/07/2026 | Formulários semânticos, linhas por teclado, ordenação acessível e validação em cinco viewports                                                           | `scripts/test_accessibility_contract.js`                    |
 | 21/07/2026 | Dependências de navegador fixadas e carregadas localmente pelo Vite; CDNs removidos, JavaScript principal externalizado e smoke test de navegador criado | `assets/js/bootstrap.js`                                    |
 | 21/07/2026 | Configuração e credenciais públicas extraídas do legado; cliente e retry centralizados em serviço Supabase com suporte a variáveis de ambiente           | `assets/js/services/supabase-service.js`                    |

@@ -39,36 +39,6 @@ begin
 end;
 $$;
 
-alter table public.editores_permitidos
-  drop constraint editores_permitidos_codigo_obra_fkey,
-  add constraint editores_permitidos_codigo_obra_fkey
-    foreign key (codigo_obra) references public.obras(codigo_obra) on delete cascade;
-
-alter table public.flow_classifications
-  drop constraint flow_classifications_codigo_obra_fkey,
-  add constraint flow_classifications_codigo_obra_fkey
-    foreign key (codigo_obra) references public.obras(codigo_obra) on delete cascade;
-
-alter table public.flow_manuals
-  drop constraint flow_manuals_codigo_obra_fkey,
-  add constraint flow_manuals_codigo_obra_fkey
-    foreign key (codigo_obra) references public.obras(codigo_obra) on delete cascade;
-
-alter table public.projecao_config
-  drop constraint projecao_config_codigo_obra_fkey,
-  add constraint projecao_config_codigo_obra_fkey
-    foreign key (codigo_obra) references public.obras(codigo_obra) on delete cascade;
-
-alter table public.projecao_movimentacoes
-  drop constraint projecao_movimentacoes_codigo_obra_fkey,
-  add constraint projecao_movimentacoes_codigo_obra_fkey
-    foreign key (codigo_obra) references public.obras(codigo_obra) on delete cascade;
-
-alter table public.upload_history
-  drop constraint upload_history_codigo_obra_fkey,
-  add constraint upload_history_codigo_obra_fkey
-    foreign key (codigo_obra) references public.obras(codigo_obra) on delete cascade;
-
 create or replace function public.admin_replace_user_permissions(
   p_email text,
   p_nome text default null,
@@ -306,10 +276,17 @@ begin
   from public.dashboard_config
   where left(chave, length(v_codigo) + 1) = v_codigo || ':';
 
+  -- Os deletes explicitos preservam as FKs importadas e permanecem atomicos
+  -- dentro desta chamada, sem exigir ownership das tabelas para alterar constraints.
+  delete from public.flow_classifications where codigo_obra = v_codigo;
+  delete from public.flow_manuals where codigo_obra = v_codigo;
+  delete from public.projecao_config where codigo_obra = v_codigo;
+  delete from public.projecao_movimentacoes where codigo_obra = v_codigo;
+  delete from public.upload_history where codigo_obra = v_codigo;
+  delete from public.editores_permitidos where codigo_obra = v_codigo;
   delete from public.dashboard_config
   where left(chave, length(v_codigo) + 1) = v_codigo || ':';
 
-  -- As seis FKs acima removem os registros vinculados na mesma transacao.
   delete from public.obras where codigo_obra = v_codigo;
 
   return jsonb_build_object(

@@ -84,8 +84,20 @@ assert(
   ),
 );
 
-const cascadeCount = (migration.match(/on delete cascade/gi) || []).length;
-assert(cascadeCount === 6, 'A migration deve configurar exatamente seis cascatas controladas');
+[
+  'delete from public.flow_classifications where codigo_obra = v_codigo',
+  'delete from public.flow_manuals where codigo_obra = v_codigo',
+  'delete from public.projecao_config where codigo_obra = v_codigo',
+  'delete from public.projecao_movimentacoes where codigo_obra = v_codigo',
+  'delete from public.upload_history where codigo_obra = v_codigo',
+  'delete from public.editores_permitidos where codigo_obra = v_codigo',
+].forEach((contract) =>
+  assert(migration.includes(contract), `Delete transacional ausente: ${contract}`),
+);
+assert(
+  !migration.includes('drop constraint') && !migration.includes('on delete cascade'),
+  'Migration administrativa nao deve exigir ownership para alterar FKs',
+);
 
 [
   'admin_replace_user_permissions(text,text,text,text,text[])',
@@ -97,4 +109,4 @@ assert(cascadeCount === 6, 'A migration deve configurar exatamente seis cascatas
   assert(deploymentAudit.includes(contract), `Auditoria administrativa incompleta: ${contract}`),
 );
 
-console.log('Contrato administrativo: RPCs atômicas e cascatas controladas OK');
+console.log('Contrato administrativo: RPCs e deletes compostos atomicos OK');

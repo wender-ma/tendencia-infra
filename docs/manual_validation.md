@@ -12,6 +12,9 @@ verdes no commit que sera avaliado.
   confidenciais de producao.
 - Criar uma obra de teste e usuarios ativos de `admin` e `editor`, alem de um
   usuario `rejected`; cada conta deve usar email sem dados pessoais reais.
+- Copiar `.env.roles.example` para `.env.roles.local`, preencher somente com as
+  contas ficticias de desenvolvimento e executar `npm run test:development:roles`.
+  O runner nao imprime senhas e recusa escritas remotas fora do endpoint de login.
 - Preencher `.env.development.local` com `VITE_APP_ENV=development` e as
   credenciais anon do projeto de desenvolvimento.
 - Executar `npm run env:target` e comparar o project ref exibido com a URL do SQL
@@ -61,6 +64,10 @@ Com um navegador sem sessao previa, verificar os cenarios abaixo:
 | Editor sem acesso a obra B | Nao edita nem enxerga dados privados da obra B. |
 | Usuario rejected | Nao recebe permissao de edicao. |
 | Admin | Administra obras e editores e pode operar todas as obras autorizadas. |
+
+O comando `npm run test:development:roles` automatiza a autenticacao e a
+resolucao de papeis desta matriz sem alterar dados. Edicao, upload e administracao
+continuam exigindo a validacao manual controlada descrita nas etapas seguintes.
 
 Registrar qualquer linha, arquivo ou botao acessivel fora do esperado antes de
 seguir para producao.

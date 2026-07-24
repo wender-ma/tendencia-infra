@@ -30,7 +30,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
 - [ ] **EM ANDAMENTO** Isolar desenvolvimento da produção: projeto e `.env.development.local` configurados, perfil remoto endurecido confirmado, testes usam endpoint fictício e o deploy bloqueia configuração incompleta; ainda falta cadastrar e validar as variáveis de produção na hospedagem.
-- [ ] Criar obra e usuários de teste sem dados confidenciais.
+- [ ] **EM ANDAMENTO** Criar obra e usuários de teste sem dados confidenciais; runner local não destrutivo para `admin`, `editor` e `rejected` implementado, faltando criar/preencher as contas no Supabase de desenvolvimento.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
 
 ## P0: segurança crítica
@@ -236,7 +236,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Criar testes de XSS para campos importados.
 - [x] Criar testes de integração para upload, falhas por etapa e rollback parcial.
 - [x] Criar testes E2E para login, troca de obra, edição e administração com Supabase controlado no navegador.
-- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel (boot anônimo real e somente leitura validado em 23/07/2026; faltam admin, editor e rejected).
+- [ ] Validar os testes E2E em um ambiente Supabase real com usuários de cada papel (boot anônimo real validado; runner autenticado não destrutivo implementado, faltando fornecer contas fictícias de admin, editor e rejected).
 - [x] Criar testes visuais para mobile e desktop.
 - [x] Executar axe no CI.
 - [x] Executar Lighthouse no CI com orçamentos e relatório para download.

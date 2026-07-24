@@ -114,6 +114,16 @@ set +a
 ./scripts/audit_supabase_contract.sh datasets
 ```
 
+Para validar as contas reais de desenvolvimento sem alterar dados, configure
+`.env.roles.local` a partir de `.env.roles.example` e execute:
+
+```bash
+npm run test:development:roles
+```
+
+O runner permite requisicoes de leitura e o `POST` do login; qualquer outra
+escrita remota interrompe o teste.
+
 Se o REST ainda responder `PGRST205`, execute no SQL Editor
 `supabase/audit/verify_dashboard_datasets_deployment.sql`. O resultado
 `complete: true` comprova tabela, RPCs, RLS, bucket e seis policies; o campo

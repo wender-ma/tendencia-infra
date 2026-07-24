@@ -11,4 +11,5 @@ test-results/
 .env*
 !.env.example
 !.env.production.example
+!.env.roles.example
 .lighthouseci/

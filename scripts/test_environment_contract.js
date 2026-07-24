@@ -20,6 +20,10 @@ const developmentSmoke = fs.readFileSync(
   path.join(root, 'scripts/run_development_smoke.js'),
   'utf8',
 );
+const developmentRoleSmoke = fs.readFileSync(
+  path.join(root, 'scripts/run_development_role_smoke.js'),
+  'utf8',
+);
 const targetReporter = fs.readFileSync(path.join(root, 'scripts/show_supabase_target.js'), 'utf8');
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 const vercel = JSON.parse(fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'));
@@ -102,6 +106,14 @@ assert(
     targetReporter.includes("hostname.endsWith('.supabase.co')") &&
     !targetReporter.includes('VITE_SUPABASE_ANON_KEY'),
   'Identificacao do alvo deve mostrar somente ambiente, URL e project ref',
+);
+assert(
+  packageJson.scripts['test:development:roles'] === 'node scripts/run_development_role_smoke.js' &&
+    developmentRoleSmoke.includes("readEnvFile('.env.roles.local')") &&
+    developmentRoleSmoke.includes("const allowedAuthWrites = new Set(['/auth/v1/token'])") &&
+    developmentRoleSmoke.includes('unexpectedWrites.length') &&
+    !developmentRoleSmoke.includes('console.log(profile.password)'),
+  'Matriz real de papeis deve usar segredos locais e impedir escritas fora do login',
 );
 for (const contract of [
   "loadEnv(mode, process.cwd(), 'VITE_')",

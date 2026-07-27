@@ -32,6 +32,16 @@ const { pathToFileURL } = require('url');
     resolveInitialProject(projects, { search: '?obra=INVALIDA', storedProject: 'OBRA-A' }),
     'OBRA-A',
   );
+  assert.strictEqual(
+    resolveInitialProject(
+      projects.map((project) => ({
+        ...project,
+        hasActiveTendency: project.codigo_obra === 'OBRA-B',
+      })),
+      {},
+    ),
+    'OBRA-B',
+  );
   assert.strictEqual(resolveInitialProject([], { defaultProject: 'PADRAO' }), 'PADRAO');
   assert.strictEqual(
     findLatestManagement(['GESTÃO 06-2026', 'Atual', 'GESTAO 12-2025', 'GESTÃO 07-2026']),
@@ -80,6 +90,25 @@ const { pathToFileURL } = require('url');
     getClient: () => ({
       from(table) {
         repositoryCalls.push(['from', table]);
+        if (table === 'dashboard_datasets') {
+          return {
+            select(columns) {
+              repositoryCalls.push(['select', columns]);
+              return this;
+            },
+            eq(column, value) {
+              repositoryCalls.push(['eq', column, value]);
+              return this;
+            },
+            not(column, operator, value) {
+              repositoryCalls.push(['not', column, operator, value]);
+              return Promise.resolve({
+                data: [{ codigo_obra: 'OBRA-B' }],
+                error: null,
+              });
+            },
+          };
+        }
         return {
           select(columns) {
             repositoryCalls.push(['select', columns]);
@@ -93,7 +122,13 @@ const { pathToFileURL } = require('url');
       },
     }),
   });
-  assert.deepStrictEqual(await projectRepository.listProjects(), projects);
+  assert.deepStrictEqual(
+    await projectRepository.listProjects(),
+    projects.map((project) => ({
+      ...project,
+      hasActiveTendency: project.codigo_obra === 'OBRA-B',
+    })),
+  );
   assert.deepStrictEqual(repositoryCalls[2], ['order', 'nome', { ascending: true }]);
 
   const stored = new Map();

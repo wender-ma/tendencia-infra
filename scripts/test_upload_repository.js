@@ -11,9 +11,8 @@ function assert(condition, message) {
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/services/upload-repository.mjs'),
   );
-  const { buildUploadStoragePath, sanitizeStoragePath, UPLOADS_BUCKET } = await import(
-    moduleUrl.href
-  );
+  const { buildUploadStoragePath, createUploadRepository, sanitizeStoragePath, UPLOADS_BUCKET } =
+    await import(moduleUrl.href);
 
   assert(
     sanitizeStoragePath('/OBRA/tendencia/file.csv') === 'OBRA/tendencia/file.csv',
@@ -43,7 +42,30 @@ function assert(condition, message) {
 
   assert(UPLOADS_BUCKET === 'uploads-history', 'Bucket do serviço está incorreto');
 
-  console.log('Repositório de uploads: caminhos seguros e API encapsulada OK');
+  let privateReadCount = 0;
+  const anonymousRepository = createUploadRepository({
+    getClient: () => ({
+      from() {
+        privateReadCount += 1;
+        throw new Error('Visitante não deve consultar histórico privado');
+      },
+    }),
+    getActiveProject: () => 'OBRA-A',
+    getCurrentUser: () => null,
+  });
+  assert(
+    Object.keys(await anonymousRepository.loadLatest()).length === 0,
+    'Visitante recebeu metadados privados de upload',
+  );
+  assert(
+    (await anonymousRepository.listByType('tendencia')).length === 0,
+    'Visitante recebeu histórico privado de upload',
+  );
+  assert(privateReadCount === 0, 'Visitante tentou consultar tabelas privadas de upload');
+
+  console.log(
+    'Repositório de uploads: caminhos seguros, leitura privada e API encapsulada OK',
+  );
 })().catch((error) => {
   console.error(error);
   process.exit(1);

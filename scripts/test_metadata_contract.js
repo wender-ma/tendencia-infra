@@ -19,11 +19,11 @@ assert(
 );
 assert(
   /<meta name="robots" content="noindex, nofollow, noarchive">/.test(html),
-  'Dashboard interno precisa bloquear indexação',
+  'Dashboard precisa bloquear indexação até a aprovação do produto',
 );
 assert(
   /^User-agent: \*\nDisallow: \/\s*$/m.test(robots),
-  'robots.txt interno deve ser válido e bloquear rastreamento',
+  'robots.txt deve bloquear rastreamento até a aprovação do produto',
 );
 for (const header of [
   'X-Content-Type-Options: nosniff',
@@ -86,4 +86,4 @@ assert(
   'CSP da Vercel precisa ser idêntica à política em public/_headers',
 );
 
-console.log('Contrato de metadados: dashboard interno, Vercel, headers e cache OK');
+console.log('Contrato de metadados: noindex deliberado, Vercel, headers e cache OK');

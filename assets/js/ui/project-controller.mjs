@@ -18,6 +18,10 @@ export function resolveInitialProject(
   if (storedProject && catalog.some((project) => project.codigo_obra === storedProject)) {
     return storedProject;
   }
+  const publicDefault = catalog.find(
+    (project) => project.ativa && project.hasActiveTendency === true,
+  );
+  if (publicDefault) return publicDefault.codigo_obra;
   return catalog.find((project) => project.ativa)?.codigo_obra || defaultProject;
 }
 

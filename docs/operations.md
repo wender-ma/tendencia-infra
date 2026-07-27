@@ -38,7 +38,7 @@ npm audit --audit-level=high
 de navegador executa smoke funcional, axe e inspecoes responsivas com configuracao
 Supabase ficticia e conexoes remotas bloqueadas.
 
-`npm run test:lighthouse` audita o build de produção com mínimos de 65 em performance, 90 em acessibilidade, 85 em boas práticas e 75 em SEO. O relatório completo fica em `.lighthouseci/lhr.json`; a verificação de indexabilidade é omitida porque o dashboard interno usa `noindex` deliberadamente.
+`npm run test:lighthouse` audita o build de produção com mínimos de 65 em performance, 90 em acessibilidade, 85 em boas práticas e 75 em SEO. O relatório completo fica em `.lighthouseci/lhr.json`; a verificação de indexabilidade é omitida porque o produto ainda aguarda uma decisão explícita sobre indexação em buscadores e mantém `noindex` deliberadamente.
 
 As validacoes que dependem de Supabase real, dados representativos, leitor de tela
 ou decisao de negocio estao organizadas em `docs/manual_validation.md`.

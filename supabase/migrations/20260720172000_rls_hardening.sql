@@ -3,10 +3,9 @@
 -- ============================================================================
 -- Baseline: docs/supabase_metadata_2026-07-20.json
 --
--- Esta migration preserva temporariamente a leitura publica das tabelas
--- operacionais para nao quebrar o modo de visualizacao atual. Whitelist,
--- metadados de upload e arquivos exigem autenticacao. A decisao de tornar todo
--- o dashboard interno continua registrada no roadmap.
+-- Esta migration preserva a leitura publica das tabelas operacionais.
+-- Whitelist, metadados de upload e arquivos exigem autenticacao. Esse contrato
+-- foi confirmado pelo responsavel do negocio em 27/07/2026.
 -- ============================================================================
 
 begin;

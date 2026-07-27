@@ -318,7 +318,7 @@ export function createUploadRepository({
   async function listByType(kind, limit = 50, strict = false) {
     const supabase = client();
     const project = activeProject();
-    if (!supabase || !project) return [];
+    if (!supabase || !getCurrentUser?.() || !project) return [];
     const { data, error } = await supabase
       .from('upload_history')
       .select('*')
@@ -395,7 +395,7 @@ export function createUploadRepository({
     const map = {};
     const supabase = client();
     const project = activeProject();
-    if (!supabase || !project) return map;
+    if (!supabase || !getCurrentUser?.() || !project) return map;
     for (const kind of ['tendencia', 'flows', 'gestoes']) {
       const { data } = await supabase
         .from('upload_history')
@@ -413,7 +413,7 @@ export function createUploadRepository({
   async function loadLatest() {
     const supabase = client();
     const project = activeProject();
-    if (!supabase || !project) return {};
+    if (!supabase || !getCurrentUser?.() || !project) return {};
     try {
       const { data, error } = await retry(() =>
         supabase.from('upload_history_latest').select('*').eq('codigo_obra', project),

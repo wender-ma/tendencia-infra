@@ -5,8 +5,10 @@ centralizados em `docs/external_actions.md`. Este checklist atende principalment
 EXT-03, EXT-06 e EXT-08.
 
 Em 27/07/2026, o smoke tecnico do dominio publicado confirmou HTTP 200, headers
-defensivos, boot concluido e nenhum erro de pagina. Permanecem pendentes os
-fluxos autenticados, a validacao assistiva e os arquivos reais representativos.
+defensivos, boot concluido e nenhum erro de pagina. O responsavel funcional
+confirmou login por Google, carregamento dos dados, recarga completa, abas, troca
+de obra e area administrativa. Permanecem pendentes a validacao assistiva e os
+arquivos reais representativos.
 
 Esta checklist cobre apenas atividades que nao podem ser executadas de forma segura
 no repositorio: acesso a Supabase, dados reais, decisoes de negocio e tecnologias
@@ -86,10 +88,10 @@ locais nao versionados.
 Aceite: as politicas RLS bloqueiam papeis indevidos, os snapshots ativos carregam
 os mesmos dados esperados e um rollback mantem o dashboard utilizavel.
 
-Status em 27/07/2026: o responsavel validou login, dados e fluxos principais no
-dashboard real em modo `dual`. As inconsistencias de tabelas com conteudo longo
-foram corrigidas e cobertas em mobile e desktop; a confirmacao no dominio final
-depende da publicacao da revisao atual.
+Status em 27/07/2026: o responsavel validou login, dados, recarga completa, abas,
+troca de obra e area administrativa no dominio final em modo `snapshots`. Foram
+observadas inconsistencias visuais residuais em algumas tabelas; elas nao
+impediram os fluxos e ficam registradas para um lote posterior de polimento.
 
 ## 3. Matriz de permissoes em ambiente real
 
@@ -97,7 +99,7 @@ Com um navegador sem sessao previa, verificar os cenarios abaixo:
 
 | Perfil | Acao esperada |
 | --- | --- |
-| Anonimo | Le acesso somente ao que a decisao de negocio permitir; nao cria, altera ou baixa arquivo privado. |
+| Anonimo | Visualiza dados operacionais de qualquer obra publicada; nao cria, altera nem acessa arquivo ou historico privado. |
 | Editor da obra A | Edita e envia dados apenas da obra A. |
 | Editor sem acesso a obra B | Nao edita nem enxerga dados privados da obra B. |
 | Usuario rejected | Nao recebe permissao de edicao. |
@@ -107,8 +109,9 @@ O comando `npm run test:development:roles` automatiza a autenticacao e a
 resolucao de papeis desta matriz sem alterar dados. Os comandos
 `test:development:snapshots` e `test:development:workflows` cobrem, com limpeza
 automatica, upload versionado, edicao de classificacao e administracao de obra.
-A verificacao manual desta secao permanece como aceite assistido antes da
-publicacao, especialmente para confirmar o que cada perfil consegue enxergar.
+A verificacao manual e o smoke anonimo desta secao confirmaram em 27/07/2026 que
+a leitura operacional funciona sem login, enquanto controles de edicao e Admin
+permanecem indisponiveis ao visitante.
 
 Registrar qualquer linha, arquivo ou botao acessivel fora do esperado antes de
 seguir para producao.
@@ -143,9 +146,10 @@ exposicao anonima sem autorizacao expressa do negocio.
 
 ## 6. Publicacao
 
-- Manter `noindex, nofollow` enquanto o dashboard for interno.
-- So adicionar Open Graph se houver uma decisao de tornar o produto publico e uma
-  imagem/texto de preview aprovados.
+- Manter `noindex, nofollow` ate haver decisao explicita sobre indexacao em
+  buscadores.
+- So adicionar Open Graph depois da aprovacao de uma imagem e de um texto de
+  preview, independentemente de o acesso pelo link ja ser publico.
 - Depois do deploy, conferir headers HTTP, login, troca de obra, upload e o estado
   de sincronizacao no dominio final.
 

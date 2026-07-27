@@ -32,7 +32,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] **EXT-02 concluído** Isolar desenvolvimento da produção: as quatro variáveis de Production foram configuradas na Vercel, o deployment da `main` concluiu e o domínio público respondeu com headers defensivos, boot concluído e sem erro de página em 27/07/2026.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
-- [ ] **AÇÃO EXTERNA EXT-03** Executar as validações externas restantes conforme `docs/manual_validation.md` depois que EXT-02 publicar a revisão atual.
+- [x] **EXT-03 concluído** Validar o domínio publicado: o responsável confirmou dados, recarga, abas, troca de obra e administração sem erros funcionais em 27/07/2026.
 
 ## P0: segurança crítica
 
@@ -63,7 +63,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Restringir na migration administradores pelo papel `admin` ativo.
 - [x] Restringir na migration editores às obras atribuídas em `editores_permitidos`.
 - [x] Revisar e endurecer na migration as políticas do bucket privado `uploads-history`.
-- [ ] **DECISÃO EXTERNA EXT-04** Confirmar se visualização anônima de dados é permitida pelo negócio.
+- [x] **EXT-04 concluído** Permitir visualização anônima dos dados operacionais de todas as obras; login permanece obrigatório para edição, uploads, históricos privados e administração.
 - [x] Auditar logs e dados para identificar alterações indevidas anteriores; a janela retida não apresentou escrita anônima bem-sucedida e o inventário agregado encontrou zero registros sem escopo obrigatório. Limitações registradas em `docs/supabase_production_log_audit_2026-07-27.md`.
 - [x] Testar a API diretamente como anônimo, usuário rejeitado, editor e administrador.
 - [x] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
@@ -258,8 +258,8 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Revisar textos e termos técnicos apresentados ao usuário.
 - [x] Corrigir inconsistências de formatação observadas em tabelas com conteúdo longo; células quebram texto sem alargar a página, ações permanecem estáveis e o histórico possui rolagem própria em mobile.
 - [x] Adicionar `meta description`.
-- [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
-- [ ] **DECISÃO EXTERNA EXT-09** Adicionar Open Graph somente se o produto for declarado público.
+- [x] Manter `robots noindex, nofollow` até haver decisão explícita sobre indexação em buscadores.
+- [ ] **DECISÃO EXTERNA EXT-09** Decidir sobre indexação em buscadores e aprovar texto/imagem de Open Graph; o acesso público pelo link já está autorizado.
 - [x] Revisar impressão e exportação em diferentes navegadores (Chromium, Firefox e WebKit no Playwright/CI).
 
 ## Sequência de entregas
@@ -282,6 +282,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 20/07/2026 | Reservar uploads de Flows, Gestões e Excel completo para administradores    | Esses arquivos alteram conjuntos globais ou multiobra                                                      | A definir   |
 | 20/07/2026 | Planejar o dashboard como interno no primeiro rascunho de RLS               | É o perfil mais seguro até o negócio aprovar explicitamente leitura pública                                | A definir   |
 | 20/07/2026 | Preservar temporariamente a leitura pública apenas das tabelas operacionais | Evita mudar o produto sem decisão do negócio; whitelist, histórico e arquivos passam a exigir autenticação | A definir   |
+| 27/07/2026 | Permitir leitura pública dos dados operacionais de todas as obras            | Qualquer visitante deve visualizar o dashboard; login é reservado a responsáveis por edição e administração | Responsável pelo negócio |
 
 ## Histórico de progresso
 
@@ -351,3 +352,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Dependência transitiva `brace-expansion` atualizada para `5.0.8` após alerta do CI; auditoria npm voltou a zero vulnerabilidades | `package-lock.json` |
 | 27/07/2026 | Nove pendências externas classificadas por ID, dependência, responsável e aceite; contrato impede novos itens abertos sem classificação | `external_actions.md`, `test_roadmap_contract.js` |
 | 27/07/2026 | EXT-02 concluído: variáveis de Production configuradas, deployment publicado e smoke público confirmou HTTP 200, headers defensivos, boot concluído e zero erros de página | `operations.md`, `manual_validation.md` |
+| 27/07/2026 | EXT-03 e EXT-04 concluídos: fluxos autenticados validados pelo responsável e leitura operacional pública aprovada; seleção inicial prioriza obra com snapshot e visitante não consulta histórico privado | `project-controller.mjs`, `upload-repository.mjs`, `manual_validation.md` |

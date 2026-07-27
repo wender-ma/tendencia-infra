@@ -41,7 +41,7 @@ function setCard3Modo(v) {
       'A configuração foi salva apenas neste navegador.',
     );
   }
-  if (typeof renderVisao === 'function') renderVisao();
+  if (typeof renderVisao === 'function') renderVisao({ cardsOnly: true });
 }
 
 function setCorrecaoIndice(v) {
@@ -59,7 +59,7 @@ function setCorrecaoIndice(v) {
       d.licitacao_corrigido = v === 'ipca' ? d.corrigido_ipca : d.corrigido_incc;
     });
   }
-  if (typeof renderVisao === 'function') renderVisao();
+  if (typeof renderVisao === 'function') renderVisao({ cardsOnly: true });
 }
 
 // v0.55 — Card 4: Aderência Físico-Financeira (Prevision)
@@ -231,7 +231,7 @@ function obraTemTendencia() {
   );
 }
 
-function renderVisao() {
+function renderVisao({ cardsOnly = false } = {}) {
   // guard sem dados de Tendência
   if (!obraTemTendencia()) {
     const kpisEl = document.getElementById('kpis');
@@ -488,6 +488,8 @@ function renderVisao() {
     ${renderCardAderencia()}
   `,
   );
+
+  if (cardsOnly) return;
 
   // Alerta de pendentes
   if (totPendente > 0) {

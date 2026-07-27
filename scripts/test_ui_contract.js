@@ -68,6 +68,11 @@ assert(
   'Card de licitação deve distinguir base, correção e total sem repetir o rótulo original',
 );
 assert(
+  (overview.match(/renderVisao\(\{ cardsOnly: true \}\)/g) || []).length === 2 &&
+    overview.includes('if (cardsOnly) return;'),
+  'Toggles dos cards não devem recriar os gráficos da Visão Geral',
+);
+assert(
   !overview.includes('<div class="sub">planejamento vigente</div>'),
   'Card de Gestão não deve exibir o subtítulo removido',
 );

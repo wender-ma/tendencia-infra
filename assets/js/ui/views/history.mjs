@@ -169,7 +169,7 @@ function renderHistChart(gestoes, totals) {
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
     },
-    colors: [resolveColor('var(--fgr-red-deep)')],
+    colors: [resolveColor('var(--chart-primary)')],
     stroke: { curve: 'smooth', width: 2.5 },
     fill: {
       type: 'gradient',
@@ -217,9 +217,9 @@ function renderHistChart(gestoes, totals) {
       show: true,
       position: 'top',
       fontSize: '12px',
-      labels: { colors: resolveColor('var(--text-medium)') },
+      labels: { colors: resolveColor('var(--chart-text)') },
     },
-    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
     markers: {
       size: 5,

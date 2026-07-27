@@ -21,6 +21,13 @@
     --accent-info-soft:     #CFFAFE;
     --link-color:           #2563EB;
 
+    /* Gráficos */
+    --chart-primary:        #991B1B;
+    --chart-text:           #111827;
+    --chart-grid:           #CBD5E1;
+    --chart-track:          #E5E7EB;
+    --chart-neutral:        #64748B;
+
     /* Semáforo (vinho para não competir com marca) */
     --sem-erro:       #5A0808;   /* vinho quase preto — estouro/erro */
     --sem-erro-bg:    #FEE2E2;   /* fundo suave de erro */
@@ -41,6 +48,8 @@
     --sem-alerta-text:  #9A3412;
     --sem-alerta-strong-bg: #FED7AA;
     --sem-alerta-subtle: #FFFBEB;
+    --sem-erro-on-dark: #FCA5A5;
+    --sem-alerta-on-dark: #FDE68A;
 
     /* Status refletido (aditivos) */
     --ref-sim-bg:     #D1FAE5;
@@ -59,10 +68,10 @@
     --badge-manual-fg:  #78350F;
 
     /* Neutros */
-    --text-strong:    #1F2937;   /* títulos e valores fortes */
-    --text-medium:    #374151;   /* corpo principal */
-    --text-soft:      #6B7280;   /* labels e secundário */
-    --text-lighter:   #6B7280;   /* placeholder e hint com contraste AA */
+    --text-strong:    #111827;   /* títulos e valores fortes */
+    --text-medium:    #111827;   /* corpo principal */
+    --text-soft:      #1F2937;   /* labels e secundário */
+    --text-lighter:   #374151;   /* placeholder e hint com contraste AA */
     --border:         #E5E7EB;   /* bordas padrão */
     --border-strong:  #D1D5DB;   /* bordas com destaque */
     --bg-page:        #F9FAFB;   /* fundo geral da página */
@@ -100,14 +109,23 @@
     --accent-purple-deep:   #C4B5FD;
     --accent-purple-bg:     #312E81;
     --accent-info:          #67E8F9;
+    --accent-info-vivid:    #38BDF8;
     --accent-info-text:     #BAE6FD;
     --accent-info-bg:       #0C4A6E;
     --accent-info-soft:     #164E63;
     --link-color:           #93C5FD;
-    --text-strong:    #F1F5F9;
-    --text-medium:    #CBD5E1;
-    --text-soft:      #94A3B8;
-    --text-lighter:   #94A3B8;
+    --sem-erro-vivid: #F87171;
+    --sem-alerta-vivid: #FBBF24;
+    --sem-ok-vivid:   #34D399;
+    --chart-primary:  #FB7185;
+    --chart-text:     #FFFFFF;
+    --chart-grid:     #64748B;
+    --chart-track:    #475569;
+    --chart-neutral:  #94A3B8;
+    --text-strong:    #FFFFFF;
+    --text-medium:    #F8FAFC;
+    --text-soft:      #E2E8F0;
+    --text-lighter:   #CBD5E1;
     --border:         #334155;
     --border-strong:  #475569;
     --bg-page:        #0F172A;

@@ -486,7 +486,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
     },
-    colors: [resolveColor('var(--fgr-red-deep)'), resolveColor('var(--sem-alerta)')],
+    colors: [resolveColor('var(--chart-primary)'), resolveColor('var(--sem-alerta)')],
     stroke: { curve: 'smooth', width: [2.5, 2.5] },
     fill: {
       type: ['gradient', 'solid'],
@@ -517,13 +517,13 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
         },
         {
           x: categories[fimIdx],
-          borderColor: resolveColor('var(--text-soft)'),
+          borderColor: resolveColor('var(--chart-neutral)'),
           strokeDashArray: 2,
           label: {
             text: 'Fim: ' + formatMonthLabel(dataFim),
             style: {
               color: resolveColor('var(--text-on-dark)'),
-              background: resolveColor('var(--text-soft)'),
+              background: resolveColor('var(--chart-neutral)'),
               fontSize: '10px',
               padding: { left: 6, right: 6, top: 2, bottom: 2 },
             },
@@ -541,9 +541,9 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
       show: true,
       position: 'top',
       fontSize: '12px',
-      labels: { colors: resolveColor('var(--text-medium)') },
+      labels: { colors: resolveColor('var(--chart-text)') },
     },
-    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
     markers: {
       size: [4, 4],
@@ -1524,7 +1524,7 @@ function openProjDrill(servico, insumo) {
       animations: { enabled: true, easing: 'easeinout', speed: 600 },
       toolbar: { show: false },
     },
-    colors: [resolveColor('var(--fgr-red-deep)'), resolveColor('var(--sem-alerta)')],
+    colors: [resolveColor('var(--chart-primary)'), resolveColor('var(--sem-alerta)')],
     stroke: { curve: 'smooth', width: [2.5, 2.5] },
     fill: {
       type: ['gradient', 'solid'],
@@ -1553,7 +1553,7 @@ function openProjDrill(servico, insumo) {
         },
         {
           x: categories[fimIdx],
-          borderColor: resolveColor('var(--text-soft)'),
+          borderColor: resolveColor('var(--chart-neutral)'),
           strokeDashArray: 2,
           label: {
             text: 'Fim',
@@ -1562,7 +1562,7 @@ function openProjDrill(servico, insumo) {
             offsetY: -10,
             style: {
               color: resolveColor('var(--text-on-dark)'),
-              background: resolveColor('var(--text-soft)'),
+              background: resolveColor('var(--chart-neutral)'),
               fontSize: '10px',
               padding: { left: 6, right: 6, top: 2, bottom: 2 },
             },
@@ -1580,9 +1580,9 @@ function openProjDrill(servico, insumo) {
       show: true,
       position: 'top',
       fontSize: '11px',
-      labels: { colors: resolveColor('var(--text-medium)') },
+      labels: { colors: resolveColor('var(--chart-text)') },
     },
-    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
     markers: {
       size: [4, 4],

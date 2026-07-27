@@ -120,7 +120,18 @@ export function createDashboardRuntime({
     try {
       const ApexCharts = await ensureApexCharts();
       if (chartVersions.get(containerId) !== version || !container.isConnected) return null;
-      const chart = new ApexCharts(container, options);
+      const chart = new ApexCharts(container, {
+        ...options,
+        chart: {
+          ...options.chart,
+          foreColor: resolveColor('var(--chart-text)'),
+          background: 'transparent',
+        },
+        theme: {
+          mode: documentRef.body?.classList.contains('dark') ? 'dark' : 'light',
+          ...options.theme,
+        },
+      });
       await chart.render();
       charts.set(containerId, chart);
       return chart;

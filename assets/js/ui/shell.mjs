@@ -78,6 +78,8 @@ export function createDashboardShell({
     const isDark = body.classList.toggle('dark');
     updateThemeButton(isDark);
     writePreference(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
+    const activeTab = root.querySelector('.tab.active')?.dataset.tab;
+    if (activeTab) renderTab(activeTab);
   }
 
   function toggleHeaderEdit() {

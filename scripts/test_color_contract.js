@@ -23,6 +23,11 @@ for (const token of [
   '--sem-alerta-subtle',
   '--text-on-dark',
   '--row-flow-bg',
+  '--chart-primary',
+  '--chart-text',
+  '--chart-grid',
+  '--chart-track',
+  '--chart-neutral',
 ]) {
   assert(tokens.includes(`${token}:`), `Token oficial ausente: ${token}`);
 }
@@ -34,7 +39,30 @@ for (const { file, source } of visualSources) {
 
 assert(tokens.includes('body.dark'), 'Tokens do tema escuro ausentes');
 assert(tokens.includes('--accent-purple:        #A78BFA'), 'Acento roxo não possui variante escura');
+assert(
+  tokens.includes('--text-strong:    #FFFFFF') && tokens.includes('--text-medium:    #F8FAFC') && tokens.includes('--chart-text:     #FFFFFF'),
+  'Tema escuro precisa manter textos e gráficos em alto contraste',
+);
 assert(!visualSources.some(({ source }) => /colors:\s*\[\s*['"]var\(--/.test(source)), 'ApexCharts recebeu variável CSS sem resolução');
-assert(visualSources.some(({ source }) => source.includes('documentRef.body || documentRef.documentElement')), 'Gráficos não resolvem tokens a partir do tema ativo');
+assert(
+  visualSources.some(({ source }) => source.includes('documentRef.body || documentRef.documentElement')),
+  'Gráficos não resolvem tokens a partir do tema ativo',
+);
+assert(
+  visualSources.some(({ source }) => source.includes("foreColor: resolveColor('var(--chart-text)')")),
+  'ApexCharts precisa aplicar a cor textual do tema aos eixos',
+);
+
+const chartSources = ['assets/js/ui/views/overview.mjs', 'assets/js/ui/views/projection.mjs', 'assets/js/ui/views/projection-control.mjs', 'assets/js/ui/views/history.mjs'].map(file =>
+  fs.readFileSync(path.join(root, file), 'utf8'),
+);
+assert(
+  chartSources.every(source => source.includes("resolveColor('var(--chart-grid)')")),
+  'Todos os gráficos precisam usar a grade de alto contraste',
+);
+assert(!chartSources.some(source => source.includes("colors: [resolveColor('var(--fgr-red-deep)')")), 'Séries não devem reutilizar o vinho profundo no modo escuro');
+
+const shell = fs.readFileSync(path.join(root, 'assets/js/ui/shell.mjs'), 'utf8');
+assert(shell.includes('if (activeTab) renderTab(activeTab);'), 'Troca de tema precisa redesenhar o gráfico da aba ativa');
 
 console.log('Contrato de cores: paleta centralizada e temas claro/escuro sem hex disperso OK');

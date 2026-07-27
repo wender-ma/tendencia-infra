@@ -606,7 +606,7 @@ function renderVisao() {
         labels: { formatter: (val) => fmtR$k(val), style: { fontSize: '10px' } },
       },
       yaxis: {
-        labels: { style: { fontSize: '11px', colors: resolveColor('var(--text-medium)') } },
+        labels: { style: { fontSize: '11px', colors: resolveColor('var(--chart-text)') } },
       },
       tooltip: {
         enabled: true,
@@ -616,10 +616,10 @@ function renderVisao() {
       dataLabels: {
         enabled: true,
         formatter: (val) => fmtR$k(val),
-        style: { fontSize: '10px', colors: [resolveColor('var(--text-medium)')] },
+        style: { fontSize: '10px', colors: [resolveColor('var(--chart-text)')] },
         offsetX: 30,
       },
-      grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+      grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
       legend: { show: false },
     };
 
@@ -728,7 +728,7 @@ function renderDonut(tipoSum) {
     rem: resolveColor('var(--accent-info-vivid)'),
     eco: resolveColor('var(--sem-ok-vivid)'),
     pen: resolveColor('var(--sem-alerta-vivid)'),
-    sem: resolveColor('var(--text-lighter)'),
+    sem: resolveColor('var(--chart-neutral)'),
   };
   const colors = visibleSegs.map((s) => colorMap[s.key]);
 

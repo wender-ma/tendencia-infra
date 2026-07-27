@@ -471,7 +471,7 @@ function renderProjCtrlChart(movs) {
       yaxis: [
         {
           y: 0,
-          borderColor: resolveColor('var(--text-lighter)'),
+          borderColor: resolveColor('var(--chart-neutral)'),
           strokeDashArray: 4,
           label: {
             text: 'Zero',
@@ -519,9 +519,9 @@ function renderProjCtrlChart(movs) {
       show: true,
       position: 'top',
       fontSize: '12px',
-      labels: { colors: resolveColor('var(--text-medium)') },
+      labels: { colors: resolveColor('var(--chart-text)') },
     },
-    grid: { borderColor: resolveColor('var(--border)'), strokeDashArray: 3 },
+    grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
     markers: {
       size: 5,

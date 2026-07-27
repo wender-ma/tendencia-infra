@@ -76,8 +76,8 @@ for (const target of labelTargets) {
 }
 
 assert(/:where\([^}]+\):focus-visible\s*{/.test(css), 'Estilo global de foco visível ausente');
-assert(css.includes('--text-lighter:   #6B7280'), 'Contraste de texto secundário no tema claro não foi corrigido');
-assert(css.includes('--text-lighter:   #94A3B8'), 'Contraste de texto secundário no tema escuro não foi corrigido');
+assert(css.includes('--text-lighter:   #374151'), 'Contraste de texto secundário no tema claro não foi corrigido');
+assert(css.includes('--text-lighter:   #CBD5E1'), 'Contraste de texto secundário no tema escuro não foi corrigido');
 assert(/id="loadingOverlay"[^>]*role="status"[^>]*aria-live="polite"/.test(html), 'Loading não é anunciado');
 assert(/function toast[\s\S]*?setAttribute\(["']aria-live["']/.test(feedbackModule), 'Toasts não configuram aria-live');
 assert(/id="loginErro"[^>]*role="alert"/.test(html) && /id="signupErro"[^>]*role="alert"/.test(html), 'Erros de autenticação não são anunciados');

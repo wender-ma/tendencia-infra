@@ -365,8 +365,6 @@ function renderVisao() {
     <div class="kpi kpi-wide ${kpiBrutoCls}">
       <div class="label">📊 ${escHtml(APP_STATE.config.gestaoLabel)}</div>
       <div class="value">${fmtR$(totGestao)}</div>
-      <div class="sub">planejamento vigente</div>
-      <hr class="overview-divider">
       <div class="overview-breakdown-heading">Decomposição do desvio</div>
       ${bdLine('💱 Inflação ' + indiceLabel, (inflacaoAbs >= 0 ? '+' : '') + fmtR$(inflacaoAbs), 'purple', 'externa, inevitável')}
       ${bdLine('📎 Aditivos refletidos', (aditivoRastreado >= 0 ? '+' : '') + fmtR$(aditivoRastreado), 'warning', 'rastreado em Flows')}

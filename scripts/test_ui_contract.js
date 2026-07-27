@@ -63,6 +63,10 @@ assert(
   'Card de licitação deve mostrar o acréscimo antes do total corrigido',
 );
 assert(
+  !overview.includes('<div class="sub">planejamento vigente</div>'),
+  'Card de Gestão não deve exibir o subtítulo removido',
+);
+assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),
   'Linhas de comandos e status precisam de estilos próprios',
 );

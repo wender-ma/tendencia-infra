@@ -43,6 +43,17 @@
     border: 2px solid var(--fgr-red-vivid); border-radius: 4px;
   }
   .skip-link:focus { transform: translateY(0); }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   /* Container sticky que segura header + tabs sempre visíveis */
   .page-header {
     position: sticky; top: 0; z-index: 100;

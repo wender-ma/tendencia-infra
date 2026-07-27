@@ -41,6 +41,10 @@ assert(tagStack.length === 0, `Tags HTML não fechadas: ${tagStack.join(', ')}`)
 
 assert((html.match(/<h1\b/gi) || []).length === 1, 'O documento precisa ter exatamente um h1');
 assert(/<h1\b[^>]*id="obraNomeGrande"/.test(html), 'O nome da obra deve ser o h1');
+assert(
+  /<h1\b[^>]*id="obraNomeGrande"[^>]*class="[^"]*\bvisually-hidden\b/.test(html),
+  'O h1 deve preservar a obra para leitores de tela sem duplicar o seletor visualmente',
+);
 ['header', 'nav', 'main', 'footer'].forEach(tag => {
   assert(new RegExp(`<${tag}\\b`, 'i').test(html), `Landmark <${tag}> ausente`);
 });

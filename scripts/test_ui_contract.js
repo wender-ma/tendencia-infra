@@ -34,7 +34,19 @@ const inlineStyleCount = (html.match(/\bstyle="/g) || []).length;
 const importantCount = (css.match(/!important/g) || []).length;
 assert(inlineStyleCount === 0, `Estilo inline reintroduzido no HTML estático: ${inlineStyleCount}`);
 assert(importantCount <= 15, `Orçamento de !important excedido: ${importantCount}`);
-assert(css.includes('.header-title-text.is-editing'), 'Edição do título precisa usar classe CSS');
+assert(!html.includes('Tendência Orçamentária'), 'Título antigo não deve aparecer no cabeçalho');
+assert(
+  !html.includes('Orçamento × Gestão × Aditivos'),
+  'Subtítulo antigo não deve aparecer no cabeçalho',
+);
+assert(
+  html.indexOf('class="header-action-row"') < html.indexOf('class="header-status-row"'),
+  'Comandos devem aparecer acima do status e da identidade',
+);
+assert(
+  css.includes('.header-action-row') && css.includes('.header-status-row'),
+  'Linhas de comandos e status precisam de estilos próprios',
+);
 assert(css.includes('.alert-banner.is-critical'), 'Alerta crítico precisa usar classe CSS');
 assert(
   css.includes('.sync-badge[data-sync-state="saving"]'),

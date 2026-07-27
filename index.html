@@ -23,25 +23,23 @@
   <!-- v0.64.1: Logo FGR -->
   <img class="header-logo" src="assets/images/logo-fgr.png" alt="FGR Incorporações" width="84" height="44">
   <div class="header-main">
-    <div class="header-title-row">
-      <span id="headerTitle" class="header-title-text">Tendência Orçamentária</span>
-      <button id="headerLockBtn" class="header-edit-button" type="button" data-click-action="toggleHeaderEdit" data-requires-edit data-admin-control title="Editar título">🔒 Editar</button>
-    </div>
-    <!-- v0.58a: nome grande da obra + dropdown -->
     <div class="header-project-row">
-      <h1 id="obraNomeGrande" class="header-project-name">📊 —</h1>
-      <select id="obraSelector" class="project-selector" data-change-action="trocarObra" data-action-mode="value" title="Trocar de obra" aria-label="Obra ativa">
+      <h1 id="obraNomeGrande" class="header-project-name visually-hidden">Nenhuma obra selecionada</h1>
+      <select id="obraSelector" class="project-selector" data-change-action="trocarObra" data-action-mode="value" title="Trocar de obra" aria-label="Selecionar obra">
         <option value="">Carregando obras...</option>
       </select>
     </div>
-    <div class="subtitle">Orçamento × Gestão × Aditivos (Flows) | <span id="dataRef">—</span></div>
   </div>
   <div class="header-actions">
-    <span id="supaBadge" class="sync-badge" role="status" aria-live="polite" aria-atomic="true">🔗 Conectando...</span>
-    <span id="authBadge" class="auth-badge pending" role="status" aria-live="polite" aria-atomic="true" title="Verificando autenticação...">⏳ ...</span>
-    <button id="authBtn" class="auth-btn" data-click-action="handleAuthClick" title="Entrar para editar">🔑 Entrar</button>
-    <button id="themeToggle" class="theme-toggle" data-click-action="toggleTheme" title="Alternar modo claro/escuro" aria-label="Alternar modo claro ou escuro">🌙</button>
-    <button class="btn" data-click-action="print">🖨️ Imprimir</button>
+    <div class="header-action-row">
+      <button id="authBtn" class="auth-btn" data-click-action="handleAuthClick" title="Entrar para editar">🔑 Entrar</button>
+      <button id="themeToggle" class="theme-toggle" data-click-action="toggleTheme" title="Alternar modo claro/escuro" aria-label="Alternar modo claro ou escuro">🌙</button>
+      <button class="btn" data-click-action="print">🖨️ Imprimir</button>
+    </div>
+    <div class="header-status-row">
+      <span id="supaBadge" class="sync-badge" role="status" aria-live="polite" aria-atomic="true">🔗 Conectando...</span>
+      <span id="authBadge" class="auth-badge pending" role="status" aria-live="polite" aria-atomic="true" title="Verificando autenticação...">⏳ ...</span>
+    </div>
   </div>
 </div>
 

@@ -159,10 +159,17 @@
   }
 
   body .header-logo { height: 10mm; }
-  body .header-title-text,
-  body .header .subtitle { color: var(--text-medium); opacity: 1; }
-  body .project-selector,
-  body .header-edit-button { display: none; }
+  body .header-project-name {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    color: var(--text-strong);
+  }
+  body .project-selector { display: none; }
   body .page-body { padding: 0; }
   body .tab-content { display: none; }
   body .tab-content.active { display: block; }

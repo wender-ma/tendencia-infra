@@ -12,13 +12,16 @@ Dashboard de tendência orçamentária
 │   ├── css/                # Tokens, base, componentes e estilos do dashboard
 │   ├── js/                 # Configuração, estado, parsers, serviços e interface
 │   └── images/             # Imagens e capturas de tela
-├── backups/                # Cópias antigas do index.html
-│   └── snapshots/           # Backups automáticos compactados
+├── backups/                # Cópias de segurança locais
+│   ├── legacy/             # Backups manuais antigos
+│   └── snapshots/          # Backups automáticos compactados
 ├── docs/                   # Guias, decisões e referências do projeto
 │   └── audits/             # Inventários e evidências somente leitura
 ├── experiments/            # Protótipos e telas isoladas
+│   └── archive/            # Protótipos preservados, fora do fluxo ativo
 ├── scripts/                 # Scripts auxiliares do projeto
-├── supabase/                # Auditoria, migrations, manutenção, rollback e testes SQL
+├── supabase/                # Migrations, auditoria, manutenção e testes SQL
+│   └── legacy/              # Schemas históricos, não executáveis em produção
 ├── ROADMAP.md               # Prioridades e acompanhamento das melhorias
 └── README.md
 ```
@@ -45,13 +48,13 @@ Dashboard de tendência orçamentária
 - `assets/js/services/upload-transaction.mjs`: coordenação de commit e rollback compensatório dos uploads.
 - `assets/js/ui/actions.mjs`: delegação central das ações declaradas pelo HTML e pelos templates.
 - `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
-- `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
+- `supabase/legacy/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
 - `docs/audits/`: inventários, baselines e evidências somente leitura, separados dos guias operacionais.
 - `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
 - `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
 - `docs/external_actions.md`: registro das decisões e validações humanas que ainda bloqueiam o roadmap.
-- `experiments/preview-modal.html`: protótipo isolado do modal.
-- `backups/`: versões antigas preservadas para consulta.
+- `experiments/archive/preview-modal.html`: protótipo isolado do modal, preservado fora do fluxo ativo.
+- `backups/`: versões antigas e snapshots automáticos preservados para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
 - `scripts/audit_supabase_contract.sh`: valida o contrato anônimo nos perfis `baseline` e `hardened`.
 - `scripts/audit_supabase_inventory.mjs`: inventaria deployment e volume de datasets pela Management API somente leitura, sem retornar conteúdo ou códigos de obra.

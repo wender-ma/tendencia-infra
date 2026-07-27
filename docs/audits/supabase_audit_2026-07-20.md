@@ -38,7 +38,7 @@ As tabelas operacionais também possuem linhas visíveis anonimamente. O fronten
 
 ### Schema local desatualizado
 
-`docs/supabase_schema.sql` não contém as tabelas e colunas multiobra encontradas. Ele também documenta políticas permissivas da fase sem autenticação e não deve ser usado como migration.
+`supabase/legacy/supabase_schema.sql` não contém as tabelas e colunas multiobra encontradas. Ele também documenta políticas permissivas da fase sem autenticação e não deve ser usado como migration.
 
 ## Limitações
 

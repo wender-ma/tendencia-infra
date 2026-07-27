@@ -38,14 +38,14 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 
 ### 1. Auditar e versionar o Supabase
 
-> Atenção em 20/07/2026: `docs/supabase_schema.sql` é um artefato histórico da fase sem autenticação, contém políticas `anon_all_*` e não representa as tabelas/campos multiobra usados pelo frontend. O arquivo recebeu um aviso para não ser executado em produção. A correção de RLS depende primeiro da exportação do schema realmente implantado.
+> Atenção em 20/07/2026: `supabase/legacy/supabase_schema.sql` é um artefato histórico da fase sem autenticação, contém políticas `anon_all_*` e não representa as tabelas/campos multiobra usados pelo frontend. O arquivo recebeu um aviso para não ser executado em produção. A correção de RLS depende primeiro da exportação do schema realmente implantado.
 
 > Auditoria pública em 20/07/2026: todas as tabelas/colunas esperadas foram confirmadas com `limit=0`, mas a role anônima consegue contabilizar linhas em `editores_permitidos`, `upload_history` e tabelas operacionais. Nenhum registro foi baixado. Evidências em `docs/audits/supabase_audit_2026-07-20.md`.
 
 > Baseline administrativo recebido e revisado em 20/07/2026: 11 relações com RLS, 24 policies, 231 grants, 25 índices, 21 constraints, quatro funções e um trigger. O JSON sem valores de negócio foi versionado em `docs/audits/supabase_metadata_2026-07-20.json`; conclusões em `docs/audits/supabase_security_baseline_2026-07-20.md`.
 
 - [x] Exportar e revisar os metadados do schema realmente implantado no Supabase.
-- [x] Comparar o schema implantado com `docs/supabase_schema.sql`.
+- [x] Comparar o schema implantado com `supabase/legacy/supabase_schema.sql`.
 - [x] Validar o contrato público de tabelas e colunas esperado pelo frontend (implementado em `1cb9096`).
 - [x] Criar auditor somente leitura e inventário para o SQL Editor (implementado em `1cb9096`).
 - [x] Automatizar e executar no desenvolvimento o inventário agregado pela Management API `read-only`, com confirmação dupla do alvo e sem conteúdo de negócio.

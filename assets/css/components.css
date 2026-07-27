@@ -148,8 +148,16 @@
     padding: 0;
   }
 
-  body .header {
+  body .header-shell {
     margin: 0 0 8mm;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body .header {
+    margin: 0;
     padding: 0 0 4mm;
     border-bottom: 1px solid var(--border-strong);
     border-radius: 0;

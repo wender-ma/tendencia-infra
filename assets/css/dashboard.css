@@ -1,7 +1,21 @@
-  .header { display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 12px; padding: 14px 20px;
+  .header-shell {
     background: linear-gradient(135deg, var(--header-start) 0%, var(--header-middle) 50%, var(--fgr-red-deep) 100%);
-    color: var(--text-on-dark); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: 14px 20px;
+    background: transparent;
+    color: var(--text-on-dark);
+    border-radius: 0;
+    box-shadow: none;
+  }
   .header h1 { font-size: 20px; font-weight: 600; }
   .header .subtitle { font-size: 12px; opacity: 0.85; margin-top: 4px; }
   .header-actions {
@@ -30,20 +44,20 @@
     border-radius: 6px;
     font-size: 12px;
   }
-  .header-logo { height: 44px; width: auto; margin-right: 16px; flex-shrink: 0; }
+  .header-logo { height: 52px; width: auto; margin-right: 18px; flex-shrink: 0; }
   .header-main { flex: 1; min-width: 0; }
   .header-project-row,
   .panel-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .header-project-row { gap: 10px; }
   .header-project-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0; }
   .project-selector {
-    width: min(100%, 620px);
-    padding: 8px 34px 8px 12px;
+    width: min(100%, 500px);
+    padding: 7px 32px 7px 11px;
     border: 1px solid rgba(255,255,255,0.35);
     border-radius: 6px;
     background: rgba(255,255,255,0.15);
     color: var(--text-on-dark);
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     backdrop-filter: blur(3px);
@@ -74,13 +88,22 @@
   .btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
     color: var(--text-on-dark); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .btn:hover { background: rgba(255,255,255,0.3); }
-  .tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--bg-card);
-    padding: 6px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); flex-wrap: wrap; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin: 0;
+    padding: 7px 12px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    border-radius: 0;
+    background: rgba(0,0,0,0.16);
+    box-shadow: none;
+    flex-wrap: wrap;
+  }
   .tab { padding: 9px 18px; cursor: pointer; border-radius: 7px;
     border: 0; background: transparent; font: inherit;
-    font-size: 13px; font-weight: 500; color: var(--text-soft); transition: all 0.15s; }
-  .tab:hover { background: var(--bg-soft); color: var(--text-strong); }
-  .tab.active { background: var(--fgr-red-deep); color: var(--text-on-dark); }
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.86); transition: all 0.15s; }
+  .tab:hover { background: rgba(255,255,255,0.12); color: var(--text-on-dark); }
+  .tab.active { background: rgba(255,255,255,0.94); color: var(--fgr-red-deep); }
   .tab:focus-visible { outline: 2px solid var(--fgr-red-vivid); outline-offset: 2px; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
@@ -1723,12 +1746,12 @@ body:not(.is-admin-geral) [data-admin-control],
     border-radius: 8px;
   }
   .header > img {
-    height: 36px;
+    height: 44px;
     margin-right: 4px;
   }
   #obraSelector {
     max-width: 100%;
-    font-size: 15px;
+    font-size: 14px;
   }
   .header-actions {
     width: 100%;

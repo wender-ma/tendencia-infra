@@ -304,7 +304,6 @@ function renderVisao() {
     reservaProj = 0;
     reportNonFatalError('Visão geral/calcular reserva de projeção', e);
   }
-  const reservaPct = totLicit ? (reservaProj / totLicit) * 100 : 0;
   const tendFinalLiq = tendFinal - reservaProj;
   const tendVsLicLiq = tendVsLic - reservaProj;
   const tendVsLicLiqPct = totLicit ? (tendVsLicLiq / totLicit) * 100 : 0;
@@ -381,36 +380,28 @@ function renderVisao() {
     <div class="kpi kpi-wide ${APP_STATE.config.card3Modo === 'liquido' ? tendLiqCls : tendBrutoCls}">
       <div class="label">🔮 Tendência Final Projetada</div>
       <div class="overview-projection-head">
-        <div class="overview-projection-main">
-          <div class="overview-projection-number">${fmtR$(APP_STATE.config.card3Modo === 'liquido' ? tendFinalLiq : tendFinal)}</div>
-          <div class="overview-projection-description">${APP_STATE.config.card3Modo === 'liquido' ? 'descontando reserva (' + escHtml(insumoControlado) + ')' : 'gestão atual + tendências de obra'}</div>
-        </div>
+        <div class="overview-projection-number">${fmtR$(APP_STATE.config.card3Modo === 'liquido' ? tendFinalLiq : tendFinal)}</div>
         <div class="toggle-group">
           <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="bruto" class="toggle-btn ${APP_STATE.config.card3Modo === 'bruto' ? 'active' : ''}">Bruto</button>
           <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${APP_STATE.config.card3Modo === 'liquido' ? 'active' : ''}">Líquido</button>
         </div>
       </div>
-      ${bdLine('🎯 Total · Desvio bruto (' + fmtPct(desvioBrutoPct) + ')', (desvioBruto >= 0 ? '+' : '') + fmtR$(desvioBruto), signedTone(desvioBruto), 'gestão atual vs licitação')}
-      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'purple', 'extrapolação + flows pendentes')}
-      ${bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning', 'flows pendentes em Diretos/Civis')}
+      ${bdLine('🎯 Total · Desvio bruto', (desvioBruto >= 0 ? '+' : '') + fmtR$(desvioBruto), signedTone(desvioBruto))}
+      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'purple')}
+      ${bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning')}
       <div class="overview-total-block">
         <div class="overview-total-line">
-          <span class="overview-total-label">📈 Δ vs Licitação <span class="overview-total-hint">(${fmtPct(tendVsLicPct)})</span></span>
+          <span class="overview-total-label">📈 Δ vs Licitação</span>
           <strong class="overview-total-value overview-tone--${signedTone(tendVsLic)}">${tendVsLic >= 0 ? '+' : ''}${fmtR$(tendVsLic)}</strong>
         </div>
-        ${
-          reservaProj > 0
-            ? `
-        <div class="overview-reserve-line">
-          <span>Reserva ${escHtml(insumoControlado)} (${fmtPct(reservaPct)} sobre licit.)</span>
-          <span>−${fmtR$(reservaProj)}</span>
+        <div class="overview-total-line">
+          <span class="overview-projection-reserve-label">${escHtml(insumoControlado)} - Projeção de Gastos</span>
+          <strong class="overview-total-value overview-tone--neutral">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
         </div>
         <div class="overview-total-line">
-          <span class="overview-total-label">💧 Δ vs Licitação (Líquido)</span>
+          <span class="overview-total-label">💧 Δ vs Licitação</span>
           <strong class="overview-total-value overview-tone--${signedTone(tendVsLicLiq)}">${tendVsLicLiq >= 0 ? '+' : ''}${fmtR$(tendVsLicLiq)}</strong>
-        </div>`
-            : ''
-        }
+        </div>
       </div>
     </div>
 

@@ -67,6 +67,16 @@ assert(
   'Card de Gestão não deve exibir o subtítulo removido',
 );
 assert(
+  !overview.includes('overview-projection-description') &&
+    !overview.includes("reservaProj > 0\n            ?"),
+  'Card de Tendência deve manter valor e toggle juntos e sempre mostrar a visão líquida',
+);
+assert(
+  overview.includes("${escHtml(insumoControlado)} - Projeção de Gastos") &&
+    overview.includes('<span class="overview-total-label">💧 Δ vs Licitação</span>'),
+  'Card de Tendência deve identificar a reserva e a diferença líquida',
+);
+assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),
   'Linhas de comandos e status precisam de estilos próprios',
 );

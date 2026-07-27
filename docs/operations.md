@@ -206,6 +206,14 @@ falha, reverte as ativacoes ja feitas; se a compensacao ficar incompleta, encerr
 com erro explicito. Execute durante uma janela sem uploads e continue em modo
 `dual` ate validar o dashboard publicado.
 
+O backfill de producao foi concluido em 27/07/2026. O plano reconheceu quatro
+datasets e 6695 linhas; a aplicacao criou e verificou quatro snapshots ativos e
+quatro objetos privados, totalizando os mesmos 974425 bytes dos blobs legados.
+Uma auditoria read-only independente confirmou as contagens e que as quatro
+chaves antigas continuam disponiveis para rollback. Nao repita o backfill neste
+estado. O proximo gate e validar login, troca de obra e leitura das quatro
+visualizacoes com a hospedagem ainda configurada em `dual`.
+
 Para validar as contas reais de desenvolvimento sem alterar dados, configure
 `.env.roles.local` a partir de `.env.roles.example` e execute:
 

@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 24/07/2026
+Última atualização: 27/07/2026
 
 ## Como acompanhar
 
@@ -207,7 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento concluído; migrations de manutenção de produção aplicadas e deployment completo confirmado. Permanecem quatro blobs legados, zero snapshots e zero objetos; faltam executar o plano/backfill autenticado e concluir a transição.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento e migrations de produção concluídos; o backfill autenticado criou e verificou quatro snapshots ativos e quatro objetos, preservando os quatro blobs legados. Falta validar o dashboard real em modo `dual`, publicar o modo `snapshots` e cumprir a janela de estabilidade antes da limpeza legada.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -342,3 +342,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Backup local endurecido: templates e fontes recuperáveis, segredos e artefatos regeneráveis omitidos, publicação atômica e retenção coberta por teste real | `backup.sh`, `test_backup_contract.js` |
 | 24/07/2026 | Inventário read-only de produção confirmou quatro blobs legados, zero snapshots/objetos e ausência das duas migrations de manutenção; runner de backfill seguro preparado sem executar escritas | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |
 | 27/07/2026 | Migrations de reset e policies de limpeza executadas manualmente em produção; inventário confirmou RPC presente, 4+4 policies, deployment completo e dados legados intactos | `supabase_production_inventory_2026-07-24.md` |
+| 27/07/2026 | Backfill autenticado de produção concluído: quatro snapshots ativos e quatro objetos verificados contra os 974425 bytes legados, sem remover as chaves de rollback | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |

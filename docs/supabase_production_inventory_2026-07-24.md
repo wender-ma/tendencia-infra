@@ -117,3 +117,33 @@ disso, o fluxo automatizado deve:
 3. reconciliar como aplicadas as tres migrations ja comprovadas;
 4. executar `db push --dry-run` e exigir somente as migrations quatro e cinco;
 5. aplicar as duas migrations e repetir o inventario read-only.
+
+## Backfill concluido - 27/07/2026
+
+O plano autenticado foi executado contra o mesmo project ref e reconheceu
+exatamente os quatro datasets esperados:
+
+| Escopo | Tipo | Linhas | Bytes |
+| --- | --- | ---: | ---: |
+| global | `flows` | 261 | 218238 |
+| global | `historico` | 469 | 126289 |
+| global | `projecao_raw` | 5758 | 554997 |
+| obra | `tendencia` | 207 | 74901 |
+| **Total** |  | **6695** | **974425** |
+
+O modo `apply` concluiu com `activated_snapshot_count: 4` e
+`verified_snapshot_count: 4`. Cada objeto foi relido e comparado com sua origem;
+as quatro chaves de `dashboard_config` foram preservadas.
+
+A auditoria independente pela Management API, executada em
+27/07/2026 as 12:48 UTC, confirmou:
+
+- deployment completo, RLS ativo e policies `4 + 4`;
+- quatro snapshots, todos com status `active`;
+- quatro objetos no bucket privado;
+- bytes por escopo e tipo iguais aos blobs legados;
+- quatro chaves legadas e 974425 bytes ainda presentes para rollback.
+
+Producao deve permanecer em `VITE_DATASET_PERSISTENCE_MODE=dual` ate a validacao
+funcional do dashboard real. Depois dessa validacao, publique o modo `snapshots`,
+monitore a janela de estabilidade e so entao avalie a remocao das chaves legadas.

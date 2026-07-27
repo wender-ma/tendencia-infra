@@ -117,6 +117,18 @@ function renderCardAderencia() {
     value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtPP = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + 'pp');
   const fmtPct = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + '%');
+  const clampPercentage = (value) => Math.max(0, Math.min(100, Number(value)));
+  const physicalPosition = teor == null ? null : clampPercentage(teor);
+  const financialPosition = fin == null ? null : clampPercentage(fin);
+  const gapStart =
+    physicalPosition != null && financialPosition != null
+      ? Math.min(physicalPosition, financialPosition)
+      : null;
+  const gapWidth =
+    physicalPosition != null && financialPosition != null
+      ? Math.abs(financialPosition - physicalPosition)
+      : null;
+  const svgNumber = (value) => value.toFixed(2);
 
   return `
     <div class="kpi kpi-wide ${semaCls}">
@@ -139,6 +151,36 @@ function renderCardAderencia() {
       <div class="overview-adherence-line overview-adherence-status overview-tone--${semaTone}">
         <span>${ico} ${semaLabel}</span>
         <strong>${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</strong>
+      </div>
+      <div class="overview-adherence-bar">
+        <svg
+          class="overview-adherence-bar-svg"
+          viewBox="0 0 100 16"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Comparação percentual: evolução física ${fmtPct(teor)} e evolução financeira ${fmtPct(fin)}"
+        >
+          <rect class="overview-adherence-bar-track" x="0" y="6" width="100" height="4" rx="2"></rect>
+          ${
+            gapStart != null && gapWidth != null
+              ? `<rect class="overview-adherence-bar-gap overview-adherence-bar-gap--${semaTone}" x="${svgNumber(gapStart)}" y="6" width="${svgNumber(gapWidth)}" height="4" rx="2"></rect>`
+              : ''
+          }
+          ${
+            physicalPosition != null
+              ? `<line class="overview-adherence-bar-marker overview-adherence-bar-marker--physical" x1="${svgNumber(physicalPosition)}" x2="${svgNumber(physicalPosition)}" y1="2" y2="14" vector-effect="non-scaling-stroke"></line>`
+              : ''
+          }
+          ${
+            financialPosition != null
+              ? `<line class="overview-adherence-bar-marker overview-adherence-bar-marker--financial" x1="${svgNumber(financialPosition)}" x2="${svgNumber(financialPosition)}" y1="2" y2="14" vector-effect="non-scaling-stroke"></line>`
+              : ''
+          }
+        </svg>
+        <div class="overview-adherence-bar-legend" aria-hidden="true">
+          <span class="overview-adherence-bar-key overview-adherence-bar-key--physical">Físico</span>
+          <span class="overview-adherence-bar-key overview-adherence-bar-key--financial">Financeiro</span>
+        </div>
       </div>
     </div>`;
 }

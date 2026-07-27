@@ -79,13 +79,21 @@ assert(
 assert(
   overview.includes('🎯 Evolução física') &&
     overview.includes('💰 Evolução financeira') &&
-    overview.includes('overview-adherence-status'),
-  'Card de Aderência deve comparar evoluções e destacar o diagnóstico',
+    overview.includes('overview-adherence-status') &&
+    overview.includes('overview-adherence-bar-svg') &&
+    overview.includes('Math.abs(financialPosition - physicalPosition)'),
+  'Card de Aderência deve comparar evoluções, destacar o diagnóstico e mostrar a diferença na barra',
 );
 assert(
   !overview.includes('overview-adherence-interpretation') &&
     !overview.includes('Custos indiretos <strong>não</strong> entram'),
   'Card de Aderência não deve reintroduzir explicações removidas',
+);
+assert(
+  css.includes('.overview-adherence-bar-gap--positive') &&
+    css.includes('.overview-adherence-bar-gap--warning') &&
+    css.includes('.overview-adherence-bar-gap--negative'),
+  'Barra de aderência precisa representar todos os níveis do diagnóstico',
 );
 assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),

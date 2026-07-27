@@ -58,9 +58,14 @@ assert(
   'Card de licitação não deve exibir os detalhes removidos',
 );
 assert(
-  overview.indexOf('overview-kpi-adjustment') <
-    overview.indexOf('overview-kpi-corrected-total'),
+  overview.indexOf('overview-kpi-adjustment') < overview.indexOf('overview-kpi-corrected-total'),
   'Card de licitação deve mostrar o acréscimo antes do total corrigido',
+);
+assert(
+  overview.includes('overview-budget-bar-svg') &&
+    overview.includes('Valor original') &&
+    overview.includes('Total corrigido'),
+  'Card de licitação deve distinguir base, correção e total com apoio visual',
 );
 assert(
   !overview.includes('<div class="sub">planejamento vigente</div>'),
@@ -68,21 +73,28 @@ assert(
 );
 assert(
   !overview.includes('overview-projection-description') &&
-    !overview.includes("reservaProj > 0\n            ?"),
+    !overview.includes('reservaProj > 0\n            ?'),
   'Card de Tendência deve manter valor e toggle juntos e sempre mostrar a visão líquida',
 );
 assert(
-  overview.includes("${escHtml(insumoControlado)} - Projeção de Gastos") &&
+  overview.includes('${escHtml(insumoControlado)} - Projeção de Gastos') &&
     overview.includes('<span class="overview-total-label">💧 Δ vs Licitação</span>'),
   'Card de Tendência deve identificar a reserva e a diferença líquida',
+);
+assert(
+  overview.includes('overview-tone--${signedTone(-reservaProj)}'),
+  'Projeção de gastos deve exibir economia em verde e estouro em vermelho',
 );
 assert(
   overview.includes('🎯 Evolução física') &&
     overview.includes('💰 Evolução financeira') &&
     overview.includes('overview-adherence-status') &&
     overview.includes('overview-adherence-bar-svg') &&
+    overview.includes('overview-adherence-bar-progress') &&
+    overview.includes('overview-adherence-bar-value') &&
+    overview.includes("delta > 0 ? 'negative' : 'positive'") &&
     overview.includes('Math.abs(financialPosition - physicalPosition)'),
-  'Card de Aderência deve comparar evoluções, destacar o diagnóstico e mostrar a diferença na barra',
+  'Card de Aderência deve preencher o progresso e colorir a diferença pela semântica financeira',
 );
 assert(
   !overview.includes('overview-adherence-interpretation') &&
@@ -92,8 +104,9 @@ assert(
 assert(
   css.includes('.overview-adherence-bar-gap--positive') &&
     css.includes('.overview-adherence-bar-gap--warning') &&
-    css.includes('.overview-adherence-bar-gap--negative'),
-  'Barra de aderência precisa representar todos os níveis do diagnóstico',
+    css.includes('.overview-adherence-bar-gap--negative') &&
+    css.includes('.overview-adherence-status > span'),
+  'Barra de aderência precisa representar os níveis e manter o diagnóstico textual neutro',
 );
 assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),

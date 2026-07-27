@@ -90,24 +90,20 @@ function renderCardAderencia() {
   const absD = delta != null ? Math.abs(delta) : null;
 
   // Semáforo: verde ≤5pp, amber 5-15pp, red >15pp
-  let semaTone, semaLabel, semaCls, ico;
+  let semaLabel, semaCls, ico;
   if (absD == null) {
-    semaTone = 'neutral';
     semaLabel = 'sem comparativo';
     semaCls = '';
     ico = '⚪';
   } else if (absD <= 5) {
-    semaTone = 'positive';
     semaLabel = 'Dentro do esperado';
     semaCls = 'green';
     ico = '🟢';
   } else if (absD <= 15) {
-    semaTone = 'warning';
     semaLabel = 'Descolamento moderado';
     semaCls = 'amber';
     ico = '🟡';
   } else {
-    semaTone = 'negative';
     semaLabel = 'Descolamento crítico';
     semaCls = 'red';
     ico = '🔴';
@@ -117,6 +113,7 @@ function renderCardAderencia() {
     value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fmtPP = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + 'pp');
   const fmtPct = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + '%');
+  const varianceTone = delta == null ? 'neutral' : delta > 0 ? 'negative' : 'positive';
   const clampPercentage = (value) => Math.max(0, Math.min(100, Number(value)));
   const physicalPosition = teor == null ? null : clampPercentage(teor);
   const financialPosition = fin == null ? null : clampPercentage(fin);
@@ -128,7 +125,27 @@ function renderCardAderencia() {
     physicalPosition != null && financialPosition != null
       ? Math.abs(financialPosition - physicalPosition)
       : null;
-  const svgNumber = (value) => value.toFixed(2);
+  const progressEnd =
+    physicalPosition != null && financialPosition != null
+      ? Math.min(physicalPosition, financialPosition)
+      : (physicalPosition ?? financialPosition);
+  const svgPosition = (value) => (value * 3).toFixed(2);
+  const fmtBarPct = (value) => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+  const markerLabel = (position, otherPosition, isPhysical) => {
+    const scaledPosition = position * 3;
+    if (position <= 8) return { x: scaledPosition + 5, anchor: 'start' };
+    if (position >= 92) return { x: scaledPosition - 5, anchor: 'end' };
+    if (otherPosition == null) return { x: scaledPosition, anchor: 'middle' };
+    const comesFirst = position < otherPosition || (position === otherPosition && isPhysical);
+    return {
+      x: scaledPosition + (comesFirst ? -5 : 5),
+      anchor: comesFirst ? 'end' : 'start',
+    };
+  };
+  const physicalLabel =
+    physicalPosition == null ? null : markerLabel(physicalPosition, financialPosition, true);
+  const financialLabel =
+    financialPosition == null ? null : markerLabel(financialPosition, physicalPosition, false);
 
   return `
     <div class="kpi kpi-wide ${semaCls}">
@@ -148,32 +165,38 @@ function renderCardAderencia() {
         </div>
       </div>
       <hr class="overview-divider">
-      <div class="overview-adherence-line overview-adherence-status overview-tone--${semaTone}">
+      <div class="overview-adherence-line overview-adherence-status overview-tone--${varianceTone}">
         <span>${ico} ${semaLabel}</span>
         <strong>${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</strong>
       </div>
       <div class="overview-adherence-bar">
         <svg
           class="overview-adherence-bar-svg"
-          viewBox="0 0 100 16"
-          preserveAspectRatio="none"
+          viewBox="0 0 300 30"
           role="img"
           aria-label="Comparação percentual: evolução física ${fmtPct(teor)} e evolução financeira ${fmtPct(fin)}"
         >
-          <rect class="overview-adherence-bar-track" x="0" y="6" width="100" height="4" rx="2"></rect>
+          <rect class="overview-adherence-bar-track" x="0" y="15" width="300" height="6" rx="3"></rect>
+          ${
+            progressEnd != null
+              ? `<rect class="overview-adherence-bar-progress" x="0" y="15" width="${svgPosition(progressEnd)}" height="6" rx="3"></rect>`
+              : ''
+          }
           ${
             gapStart != null && gapWidth != null
-              ? `<rect class="overview-adherence-bar-gap overview-adherence-bar-gap--${semaTone}" x="${svgNumber(gapStart)}" y="6" width="${svgNumber(gapWidth)}" height="4" rx="2"></rect>`
+              ? `<rect class="overview-adherence-bar-gap overview-adherence-bar-gap--${varianceTone}" x="${svgPosition(gapStart)}" y="15" width="${svgPosition(gapWidth)}" height="6" rx="3"></rect>`
               : ''
           }
           ${
             physicalPosition != null
-              ? `<line class="overview-adherence-bar-marker overview-adherence-bar-marker--physical" x1="${svgNumber(physicalPosition)}" x2="${svgNumber(physicalPosition)}" y1="2" y2="14" vector-effect="non-scaling-stroke"></line>`
+              ? `<text class="overview-adherence-bar-value" x="${physicalLabel.x.toFixed(2)}" y="9" text-anchor="${physicalLabel.anchor}">${fmtBarPct(teor)}</text>
+                 <line class="overview-adherence-bar-marker overview-adherence-bar-marker--physical" x1="${svgPosition(physicalPosition)}" x2="${svgPosition(physicalPosition)}" y1="12" y2="24" vector-effect="non-scaling-stroke"></line>`
               : ''
           }
           ${
             financialPosition != null
-              ? `<line class="overview-adherence-bar-marker overview-adherence-bar-marker--financial" x1="${svgNumber(financialPosition)}" x2="${svgNumber(financialPosition)}" y1="2" y2="14" vector-effect="non-scaling-stroke"></line>`
+              ? `<text class="overview-adherence-bar-value" x="${financialLabel.x.toFixed(2)}" y="9" text-anchor="${financialLabel.anchor}">${fmtBarPct(fin)}</text>
+                 <line class="overview-adherence-bar-marker overview-adherence-bar-marker--financial" x1="${svgPosition(financialPosition)}" x2="${svgPosition(financialPosition)}" y1="12" y2="24" vector-effect="non-scaling-stroke"></line>`
               : ''
           }
         </svg>
@@ -363,6 +386,10 @@ function renderVisao() {
 
   // Helper: linha de breakdown dentro do card
   const signedTone = (value) => (value > 0 ? 'negative' : value < 0 ? 'positive' : 'neutral');
+  const budgetBaseShare =
+    totCorrigido > 0 ? Math.max(0, Math.min(100, (totLicit / totCorrigido) * 100)) : 0;
+  const budgetCorrectionShare = Math.max(0, 100 - budgetBaseShare);
+  const budgetBarNumber = (value) => value.toFixed(2);
   const bdLine = (label, valor, tone = 'neutral', hint) => `
     <div class="overview-breakdown-line">
       <span class="overview-breakdown-label">${label}${hint ? ` <span class="overview-breakdown-hint">(${hint})</span>` : ''}</span>
@@ -374,17 +401,40 @@ function renderVisao() {
     document.getElementById('kpis'),
     `
     <!-- Card Licitação + Correção -->
-    <div class="kpi kpi-wide">
+    <div class="kpi kpi-wide overview-budget-card">
       <div class="label">📋 Orçamento Licitação</div>
-      <div class="value">${fmtR$(totLicit)}</div>
+      <div class="overview-budget-caption">Valor original</div>
+      <div class="value overview-budget-original-value">${fmtR$(totLicit)}</div>
       <hr class="overview-divider">
-      <div class="overview-kpi-overline">Corrigido (${indiceLabel})</div>
-      <div class="overview-kpi-split">
-        <div class="overview-kpi-adjustment overview-tone--${signedTone(inflacaoAbs)}">${inflacaoAbs >= 0 ? '+' : ''}${fmtR$(inflacaoAbs)}</div>
+      <div class="overview-budget-correction-head">
+        <div class="overview-kpi-overline">Correção monetária (${indiceLabel})</div>
         ${toggleHtml}
       </div>
+      <div class="overview-kpi-split">
+        <div class="overview-kpi-adjustment overview-tone--purple">${inflacaoAbs >= 0 ? '+' : ''}${fmtR$(inflacaoAbs)}</div>
+      </div>
+      <div class="overview-budget-bar">
+        <svg
+          class="overview-budget-bar-svg"
+          viewBox="0 0 100 6"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Composição do orçamento corrigido: valor original e correção monetária pelo ${indiceLabel}"
+        >
+          <rect class="overview-budget-bar-track" x="0" y="0" width="100" height="6" rx="3"></rect>
+          <rect class="overview-budget-bar-base" x="0" y="0" width="${budgetBarNumber(budgetBaseShare)}" height="6" rx="3"></rect>
+          <rect class="overview-budget-bar-correction" x="${budgetBarNumber(budgetBaseShare)}" y="0" width="${budgetBarNumber(budgetCorrectionShare)}" height="6" rx="3"></rect>
+        </svg>
+        <div class="overview-budget-bar-legend" aria-hidden="true">
+          <span class="overview-budget-bar-key overview-budget-bar-key--base">Base</span>
+          <span class="overview-budget-bar-key overview-budget-bar-key--correction">Correção ${indiceLabel}</span>
+        </div>
+      </div>
       <hr class="overview-divider">
-      <div class="overview-kpi-corrected-total">${fmtR$(totCorrigido)}</div>
+      <div class="overview-budget-total">
+        <span class="overview-budget-caption">Total corrigido</span>
+        <strong class="overview-kpi-corrected-total">${fmtR$(totCorrigido)}</strong>
+      </div>
     </div>
 
     <!-- Card Fluxo Atual (Gestão) -->
@@ -423,7 +473,7 @@ function renderVisao() {
         </div>
         <div class="overview-total-line">
           <span class="overview-projection-reserve-label">${escHtml(insumoControlado)} - Projeção de Gastos</span>
-          <strong class="overview-total-value overview-tone--neutral">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
+          <strong class="overview-total-value overview-tone--${signedTone(-reservaProj)}">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
         </div>
         <div class="overview-total-line">
           <span class="overview-total-label">💧 Δ vs Licitação</span>

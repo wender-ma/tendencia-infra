@@ -37,6 +37,7 @@ try {
   write('test-results/result.json');
   write('.lighthouseci/lhr.json');
   write('supabase/.temp/project-ref');
+  write('backups/database/production.sql', 'dados-reais-nao-arquivar');
   write('backups/backup.log');
 
   fs.mkdirSync(fixtureBackups, { recursive: true });
@@ -86,6 +87,7 @@ try {
     './test-results/result.json',
     './.lighthouseci/lhr.json',
     './supabase/.temp/project-ref',
+    './backups/database/production.sql',
     './backups/backup.log',
   ]) {
     assert(

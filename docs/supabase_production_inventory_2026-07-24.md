@@ -78,3 +78,25 @@ falha.
 Uma prova real em `--mode plan` foi interrompida antes do login administrativo,
 como esperado, porque o deployment ainda esta incompleto. Nenhum backfill foi
 executado.
+
+## Preflight de aplicacao em 27/07/2026
+
+A Management API confirmou novamente os objetos das tres primeiras migrations:
+funcoes de autorizacao, tres RPCs administrativas e a tabela de snapshots estao
+presentes; a RPC de reset continua ausente. O schema
+`supabase_migrations.schema_migrations` ainda nao existe nesse projeto.
+
+O projeto informou zero backups disponiveis e PITR desabilitado. A tentativa de
+dump logico chegou ao pooler oficial, mas foi recusada antes de ler dados porque a
+senha local configurada pertence ao projeto de desenvolvimento. Nenhuma migration,
+policy, funcao ou dado de producao foi alterado.
+
+Para continuar, preencha somente
+`SUPABASE_PRODUCTION_DB_PASSWORD` em `.env.production-database.local`. Depois
+disso, o fluxo automatizado deve:
+
+1. gerar dumps separados de schema, dados e papeis;
+2. validar tamanho e hash dos tres arquivos;
+3. reconciliar como aplicadas as tres migrations ja comprovadas;
+4. executar `db push --dry-run` e exigir somente as migrations quatro e cinco;
+5. aplicar as duas migrations e repetir o inventario read-only.

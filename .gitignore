@@ -3,6 +3,7 @@
 .mimocode/.cron-lock
 /*.bak
 backups/snapshots/
+backups/database/
 backups/backup.log
 node_modules/
 dist/
@@ -12,6 +13,7 @@ test-results/
 !.env.example
 !.env.production.example
 !.env.production-backfill.example
+!.env.production-database.example
 !.env.roles.example
 !.env.supabase.example
 .lighthouseci/

@@ -20,6 +20,7 @@ TAR_EXCLUDES=(
   --exclude="supabase/.temp"
   --exclude=".mimocode/.cron-lock"
   --exclude="backups/snapshots"
+  --exclude="backups/database"
   --exclude="backups/backup.log"
 )
 

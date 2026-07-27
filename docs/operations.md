@@ -269,6 +269,16 @@ Arquivos locais `.env*` nao entram nos arquivos compactados, mas os templates
 depois de restaurar, execute `npm ci` e `npm run build`, e recrie as credenciais
 locais a partir dos templates e do painel do provedor.
 
+Backups lógicos de bancos remotos ficam separados em `backups/database/`. Essa
+pasta pode conter dados reais, é ignorada pelo Git e nunca entra nos snapshots
+frequentes do código.
+
+Para um dump de produção, mantenha a senha separada das credenciais de
+desenvolvimento: copie `.env.production-database.example` para
+`.env.production-database.local` e preencha
+`SUPABASE_PRODUCTION_DB_PASSWORD`. O arquivo local é ignorado pelo Git, pelos
+snapshots de código e por commits.
+
 ## Retenção de uploads
 
 O aplicativo mantém no Supabase os 12 uploads mais recentes por tipo. Ao registrar o 13º, remove o mais antigo. Um arquivo ativo não pode ser excluído antes da ativação de outro. A limpeza integral do histórico é uma operação administrativa e irreversível.

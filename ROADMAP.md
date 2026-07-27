@@ -348,3 +348,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Auditoria agregada de logs e dados concluída: zero escritas anônimas bem-sucedidas na retenção disponível e zero registros operacionais sem escopo obrigatório | `supabase_production_log_audit_2026-07-27.md`, `audit_supabase_logs.mjs` |
 | 27/07/2026 | Histórico de deploy revelou que produção ainda serve `e8f11fc` de 23/07 e as revisões posteriores falharam na Vercel; build local atual em `snapshots` passou, isolando o bloqueio na configuração externa | `operations.md`, `verify_production_environment.mjs` |
 | 27/07/2026 | Tabelas estabilizadas para nomes e identificadores extensos sem overflow da página; rolagem e acesso às ações validados em mobile e desktop | `dashboard.css`, `scripts/browser/responsive.spec.js` |
+| 27/07/2026 | Dependência transitiva `brace-expansion` atualizada para `5.0.8` após alerta do CI; auditoria npm voltou a zero vulnerabilidades | `package-lock.json` |

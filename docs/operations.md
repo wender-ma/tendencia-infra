@@ -75,10 +75,10 @@ O deploy do frontend não aplica migrations nem altera o banco. Depois da public
 
 Em 27/07/2026, o historico publico de deployments confirmou que o dominio
 `https://tendencia-infra.vercel.app` ainda servia o ultimo deploy bem-sucedido,
-commit `e8f11fc` de 23/07. Os deploys posteriores, incluindo a revisao com o
-backfill concluido, falharam na Vercel. O mesmo codigo passou localmente por
-`npm run build:production` com o modo `snapshots`, portanto o bloqueio ficou
-isolado na configuracao da hospedagem.
+commit `e8f11fc` de 23/07. Os deploys posteriores, incluindo `4be540d` de 27/07
+com o backfill concluido e a correcao das tabelas, falharam na Vercel. O mesmo
+codigo passou localmente por `npm run build:production` com o modo `snapshots`,
+portanto o bloqueio ficou isolado na configuracao da hospedagem.
 
 No painel da Vercel, abra **Settings > Environment Variables** e confirme, com
 escopo **Production**, exatamente:

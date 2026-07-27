@@ -29,7 +29,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
 - [ ] Confirmar responsável técnico pelas alterações no Supabase.
-- [ ] **BLOQUEADO EM AÇÃO EXTERNA** Isolar desenvolvimento da produção: projetos, credenciais locais, testes e preflight estão isolados. O domínio ainda serve o último deploy bem-sucedido de 23/07 (`e8f11fc`), enquanto os deploys posteriores falham na Vercel. O build local da revisão atual passou em modo `snapshots`; falta conferir as quatro variáveis de produção na hospedagem e republicar a `main`.
+- [ ] **BLOQUEADO EM AÇÃO EXTERNA** Isolar desenvolvimento da produção: projetos, credenciais locais, testes e preflight estão isolados. O domínio ainda serve o último deploy bem-sucedido de 23/07 (`e8f11fc`); o deployment de `4be540d`, criado em 27/07, também falhou na Vercel. O build local da revisão atual passou em modo `snapshots`; falta conferir as quatro variáveis de produção na hospedagem e republicar a `main`.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
 - [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.

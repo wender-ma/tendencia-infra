@@ -156,6 +156,12 @@ anonimo e autenticado confirmaram carregamento, recarga, abas, troca de obra e
 administracao. O inventario agregado permaneceu com quatro snapshots ativos,
 quatro objetos privados e quatro blobs legados.
 
+O inventario somente leitura repetido em 27/07/2026 as 18:02 UTC, depois da
+correcao das tabelas ser publicada, confirmou o projeto `ACTIVE_HEALTHY`,
+deployment completo, RLS ativa, policies `4 + 4`, quatro snapshots ativos, quatro
+objetos privados, quatro blobs legados com 974425 bytes e zero registros
+operacionais sem escopo obrigatorio.
+
 A janela minima de estabilidade foi definida em sete dias corridos, de 27/07 a
 03/08/2026. A auditoria read-only
 `supabase/audit/verify_legacy_dataset_cleanup.sql` e a manutencao transacional

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
+const environmentDirectory = path.join(root, 'config', 'env');
 const config = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
 const service = fs.readFileSync(path.join(root, 'assets/js/services/supabase-service.js'), 'utf8');
 const auditScript = fs.readFileSync(path.join(root, 'scripts/audit_supabase_contract.sh'), 'utf8');
@@ -16,8 +17,11 @@ const productionVerifierTest = fs.readFileSync(
   path.join(root, 'scripts/test_production_environment.js'),
   'utf8',
 );
-const developmentExample = fs.readFileSync(path.join(root, '.env.example'), 'utf8');
-const productionExample = fs.readFileSync(path.join(root, '.env.production.example'), 'utf8');
+const developmentExample = fs.readFileSync(path.join(environmentDirectory, '.env.example'), 'utf8');
+const productionExample = fs.readFileSync(
+  path.join(environmentDirectory, '.env.production.example'),
+  'utf8',
+);
 const gitignore = fs.readFileSync(path.join(root, '.gitignore'), 'utf8');
 const playwrightConfig = fs.readFileSync(path.join(root, 'playwright.config.js'), 'utf8');
 const developmentSmoke = fs.readFileSync(
@@ -122,7 +126,7 @@ assert(
 );
 assert(
   packageJson.scripts['env:target'] === 'node scripts/show_supabase_target.js' &&
-    targetReporter.includes("'.env.development.local'") &&
+    targetReporter.includes("'config', 'env', '.env.development.local'") &&
     targetReporter.includes("hostname.endsWith('.supabase.co')") &&
     !targetReporter.includes('VITE_SUPABASE_ANON_KEY'),
   'Identificacao do alvo deve mostrar somente ambiente, URL e project ref',
@@ -161,7 +165,7 @@ assert(
   'Workflows reais devem exigir opt-in e remover classificacao e obra temporarias',
 );
 for (const contract of [
-  "loadEnv(mode, process.cwd(), 'VITE_')",
+  "loadEnv(mode, 'config/env', 'VITE_')",
   "'VITE_DATASET_PERSISTENCE_MODE'",
   'VITE_APP_ENV deve ser exatamente "production"',
   'VITE_DATASET_PERSISTENCE_MODE deve ser "dual" ou "snapshots"',

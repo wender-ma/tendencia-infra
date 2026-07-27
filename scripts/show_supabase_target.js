@@ -4,10 +4,12 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const environmentPath = path.join(root, '.env.development.local');
+const environmentPath = path.join(root, 'config', 'env', '.env.development.local');
 
 if (!fs.existsSync(environmentPath)) {
-  console.error('Ambiente ausente: crie .env.development.local a partir de .env.example.');
+  console.error(
+    'Ambiente ausente: crie config/env/.env.development.local a partir de config/env/.env.example.',
+  );
   process.exit(1);
 }
 

@@ -10,11 +10,14 @@ dist/
 playwright-report/
 test-results/
 .env*
+config/env/.env*
 !.env.example
 !.env.production.example
 !.env.production-backfill.example
 !.env.production-database.example
 !.env.roles.example
 !.env.supabase.example
+!config/env/
+!config/env/*.example
 .lighthouseci/
 supabase/.temp/

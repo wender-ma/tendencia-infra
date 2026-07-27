@@ -29,7 +29,7 @@ while IFS= read -r -d '' env_file; do
   if [[ "$env_name" != *.example ]]; then
     TAR_EXCLUDES+=("--exclude=$env_name")
   fi
-done < <(find "$PROJECT_DIR" -maxdepth 1 -type f -name ".env*" -print0)
+done < <(find "$PROJECT_DIR/config/env" -maxdepth 1 -type f -name ".env*" -print0)
 
 cleanup_temp() {
   rm -f -- "$TEMP_FILE"

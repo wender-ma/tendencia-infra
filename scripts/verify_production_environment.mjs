@@ -1,7 +1,7 @@
 import { loadEnv } from 'vite';
 
 const mode = 'production';
-const fileEnvironment = loadEnv(mode, process.cwd(), 'VITE_');
+const fileEnvironment = loadEnv(mode, 'config/env', 'VITE_');
 const processEnvironment = Object.fromEntries(
   Object.entries(process.env).filter(([name]) => name.startsWith('VITE_')),
 );

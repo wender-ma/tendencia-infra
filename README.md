@@ -12,6 +12,7 @@ Dashboard de tendência orçamentária
 │   ├── css/                # Tokens, base, componentes e estilos do dashboard
 │   ├── js/                 # Configuração, estado, parsers, serviços e interface
 │   └── images/             # Imagens e capturas de tela
+├── config/env/             # Templates e ambientes locais ignorados
 ├── backups/                # Cópias de segurança locais
 │   ├── legacy/             # Backups manuais antigos
 │   └── snapshots/          # Backups automáticos compactados
@@ -88,11 +89,11 @@ SUPABASE_ANON_KEY="sua-chave-anon-public" \
 Use `hardened` no lugar de `baseline` depois de aplicar a migration de RLS no projeto de desenvolvimento. Depois da migration de snapshots versionados, use `datasets`; esse perfil também exige a tabela `dashboard_datasets`.
 
 Para inventariar schema, policies e volume dos datasets sem abrir o SQL Editor,
-crie `.env.supabase.local` a partir do template administrativo e informe um
+crie `config/env/.env.supabase.local` a partir do template administrativo e informe um
 Personal Access Token:
 
 ```bash
-cp .env.supabase.example .env.supabase.local
+cp config/env/.env.supabase.example config/env/.env.supabase.local
 npm run audit:supabase:inventory -- \
   --project-ref abcdefghijklmnopqrst \
   --confirm-project-ref abcdefghijklmnopqrst
@@ -156,7 +157,7 @@ Para desenvolvimento, use um projeto Supabase exclusivo e crie a configuracao lo
 
 ```bash
 npm install
-cp .env.example .env.development.local
+cp config/env/.env.example config/env/.env.development.local
 ```
 
 Preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` com o projeto de

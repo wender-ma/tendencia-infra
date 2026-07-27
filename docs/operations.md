@@ -6,7 +6,7 @@ Requisitos: Node.js `>=22.19.0` e npm.
 
 ```bash
 npm ci
-cp .env.example .env.development.local
+cp config/env/.env.example config/env/.env.development.local
 npm run dev
 ```
 
@@ -43,7 +43,7 @@ Supabase ficticia e conexoes remotas bloqueadas.
 As validacoes que dependem de Supabase real, dados representativos, leitor de tela
 ou decisao de negocio estao organizadas em `docs/manual_validation.md`.
 
-Com `.env.development.local` preenchido, o smoke anônimo do ambiente real pode ser
+Com `config/env/.env.development.local` preenchido, o smoke anônimo do ambiente real pode ser
 executado por:
 
 ```bash
@@ -66,7 +66,7 @@ O Vercel deve usar:
 O preflight do build bloqueia o deploy se uma das quatro variaveis estiver ausente,
 se `VITE_APP_ENV` nao for `production` ou se a URL contiver `/rest/v1`. Cadastre
 as variaveis no ambiente de producao do provedor antes de enviar este commit para a
-branch publicada. O template `.env.production.example` serve apenas como referencia
+branch publicada. O template `config/env/.env.production.example` serve apenas como referencia
 local e nao deve receber valores reais versionados.
 
 O deploy do frontend não aplica migrations nem altera o banco. Depois da publicação, confirme o carregamento, login, troca de obra e headers HTTP no domínio final.
@@ -129,7 +129,7 @@ rollback com o responsavel pelo banco.
 ### Inventario remoto somente leitura
 
 Para consultar o estado dos datasets sem executar SQL manualmente, copie
-`.env.supabase.example` para `.env.supabase.local` e preencha o Personal Access
+`config/env/.env.supabase.example` para `config/env/.env.supabase.local` e preencha o Personal Access
 Token, a senha local usada pela CLI e o project ref padrao. O arquivo preenchido
 e ignorado pelo Git e pelos backups.
 
@@ -188,7 +188,7 @@ Depois da aplicação, valide a publicação do novo contrato sem escrita remota
 
 ```bash
 set -a
-source .env.development.local
+source config/env/.env.development.local
 set +a
 ./scripts/audit_supabase_contract.sh datasets
 ```
@@ -241,10 +241,10 @@ manutencao ja foram aplicadas e o deployment foi confirmado como `complete: true
 Continuam existindo quatro blobs legados, preservados durante o backfill e durante
 a janela de estabilidade do modo `snapshots`.
 
-Depois desse gate, copie `.env.production-backfill.example` para
-`.env.production-backfill.local` e preencha somente localmente a URL/chave publica
+Depois desse gate, copie `config/env/.env.production-backfill.example` para
+`config/env/.env.production-backfill.local` e preencha somente localmente a URL/chave publica
 de producao e uma conta de aplicacao que seja admin ativa. O Personal Access Token
-continua em `.env.supabase.local`; nenhum dos dois arquivos preenchidos entra no
+continua em `config/env/.env.supabase.local`; nenhum dos dois arquivos preenchidos entra no
 Git ou nos backups.
 
 Gere primeiro apenas o plano:
@@ -293,7 +293,7 @@ revalidados. A leitura e a escrita dos blobs legados foram interrompidas; eles
 permanecem apenas como rollback ate o fim da janela em 03/08/2026.
 
 Para validar as contas reais de desenvolvimento sem alterar dados, configure
-`.env.roles.local` a partir de `.env.roles.example` e execute:
+`config/env/.env.roles.local` a partir de `config/env/.env.roles.example` e execute:
 
 ```bash
 npm run test:development:roles
@@ -359,8 +359,8 @@ pasta pode conter dados reais, é ignorada pelo Git e nunca entra nos snapshots
 frequentes do código.
 
 Para um dump de produção, mantenha a senha separada das credenciais de
-desenvolvimento: copie `.env.production-database.example` para
-`.env.production-database.local` e preencha
+desenvolvimento: copie `config/env/.env.production-database.example` para
+`config/env/.env.production-database.local` e preencha
 `SUPABASE_PRODUCTION_DB_PASSWORD`. O arquivo local é ignorado pelo Git, pelos
 snapshots de código e por commits.
 

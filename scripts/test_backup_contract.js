@@ -27,10 +27,10 @@ try {
 
   write('README.md', 'fonte');
   write('assets/app.js', 'console.log("fonte");');
-  write('.env.example', 'VITE_APP_ENV=development');
-  write('.env.production.example', 'VITE_APP_ENV=production');
-  write('.env.local', 'SEGREDO=nao-arquivar');
-  write('.env.supabase.local', 'TOKEN=nao-arquivar');
+  write('config/env/.env.example', 'VITE_APP_ENV=development');
+  write('config/env/.env.production.example', 'VITE_APP_ENV=production');
+  write('config/env/.env.local', 'SEGREDO=nao-arquivar');
+  write('config/env/.env.supabase.local', 'TOKEN=nao-arquivar');
   write('node_modules/dependency/index.js');
   write('dist/index.html');
   write('playwright-report/index.html');
@@ -72,15 +72,15 @@ try {
   for (const required of [
     './README.md',
     './assets/app.js',
-    './.env.example',
-    './.env.production.example',
+    './config/env/.env.example',
+    './config/env/.env.production.example',
   ]) {
     assert(entries.has(required), `Arquivo recuperavel ausente do backup: ${required}`);
   }
 
   for (const forbidden of [
-    './.env.local',
-    './.env.supabase.local',
+    './config/env/.env.local',
+    './config/env/.env.supabase.local',
     './node_modules/dependency/index.js',
     './dist/index.html',
     './playwright-report/index.html',

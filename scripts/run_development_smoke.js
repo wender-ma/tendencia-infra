@@ -89,7 +89,9 @@ async function main() {
     console.log(JSON.stringify(summary, null, 2));
 
     if (runtime.configStatus !== 'ready') {
-      throw new Error('Supabase de desenvolvimento nao configurado; revise .env.development.local');
+      throw new Error(
+        'Supabase de desenvolvimento nao configurado; revise config/env/.env.development.local',
+      );
     }
     if (runtime.declaredEnvironment !== 'development' || runtime.buildMode !== 'development') {
       throw new Error('O smoke remoto deve usar exclusivamente o modo development');

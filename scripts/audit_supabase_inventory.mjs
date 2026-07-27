@@ -367,7 +367,9 @@ export async function auditSupabaseInventory({
 }) {
   assertTarget({ projectRef, confirmedProjectRef });
   if (!accessToken) {
-    throw new Error('SUPABASE_ACCESS_TOKEN ausente. Configure-o somente em .env.supabase.local.');
+    throw new Error(
+      'SUPABASE_ACCESS_TOKEN ausente. Configure-o somente em config/env/.env.supabase.local.',
+    );
   }
 
   const projects = await requestJson(`${MANAGEMENT_API}/projects`, {}, accessToken);

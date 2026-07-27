@@ -7,13 +7,14 @@ const { spawn } = require('child_process');
 const { chromium } = require('@playwright/test');
 
 const root = path.resolve(__dirname, '..');
+const environmentDirectory = path.join(root, 'config', 'env');
 const port = 4177;
 const appUrl = `http://127.0.0.1:${port}/`;
 const safeRemoteMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 const allowedAuthWrites = new Set(['/auth/v1/token']);
 
 function readEnvFile(fileName) {
-  const filePath = path.join(root, fileName);
+  const filePath = path.join(environmentDirectory, fileName);
   if (!fs.existsSync(filePath)) return {};
   return Object.fromEntries(
     fs
@@ -50,8 +51,8 @@ const missingVariables = requiredVariables.filter((name) => !String(values[name]
 
 if (missingVariables.length) {
   console.error(
-    `Configuracao ausente em .env.roles.local: ${missingVariables.join(', ')}. ` +
-      'Use .env.roles.example como referencia.',
+    `Configuracao ausente em config/env/.env.roles.local: ${missingVariables.join(', ')}. ` +
+      'Use config/env/.env.roles.example como referencia.',
   );
   process.exit(2);
 }

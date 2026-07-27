@@ -22,7 +22,7 @@ verdes no commit que sera avaliado.
   confidenciais de producao.
 - Criar uma obra de teste e usuarios ativos de `admin` e `editor`, alem de um
   usuario `rejected`; cada conta deve usar email sem dados pessoais reais.
-- Copiar `.env.roles.example` para `.env.roles.local`, preencher somente com as
+- Copiar `config/env/.env.roles.example` para `config/env/.env.roles.local`, preencher somente com as
   contas ficticias de desenvolvimento e executar `npm run test:development:roles`.
   O runner nao imprime senhas e recusa escritas remotas fora do endpoint de login.
 - Depois da matriz de papeis passar, executar
@@ -31,13 +31,13 @@ verdes no commit que sera avaliado.
 - Confirmar `verify_admin_transactions_deployment.sql` com `complete: true` e
   executar `ALLOW_DEVELOPMENT_WRITES=1 npm run test:development:workflows`; o
   resultado deve validar e remover a classificacao e a obra temporarias.
-- Preencher `.env.development.local` com `VITE_APP_ENV=development` e as
+- Preencher `config/env/.env.development.local` com `VITE_APP_ENV=development` e as
   credenciais anon do projeto de desenvolvimento.
 - Executar `npm run env:target` e comparar o project ref exibido com a URL do SQL
   Editor antes de cada migration.
 - Executar `npm run test:development`; o smoke anonimo deve sincronizar sem erros
   e sem requisicoes remotas de escrita.
-- Criar `.env.supabase.local` a partir de `.env.supabase.example` e executar
+- Criar `config/env/.env.supabase.local` a partir de `config/env/.env.supabase.example` e executar
   `npm run audit:supabase:inventory -- --project-ref <ref> --confirm-project-ref <ref>`
   primeiro no desenvolvimento. O resultado deve identificar o projeto correto e
   declarar `audit_mode: supabase-management-api-read-only`.

@@ -7,9 +7,10 @@ const { pathToFileURL } = require('url');
 const { createClient } = require('@supabase/supabase-js');
 
 const root = path.resolve(__dirname, '..');
+const environmentDirectory = path.join(root, 'config', 'env');
 
 function readEnvFile(fileName) {
-  const filePath = path.join(root, fileName);
+  const filePath = path.join(environmentDirectory, fileName);
   if (!fs.existsSync(filePath)) return {};
   return Object.fromEntries(
     fs

@@ -48,7 +48,7 @@ execute:
 
 ```bash
 set -a
-source .env.development.local
+source config/env/.env.development.local
 set +a
 ./scripts/audit_supabase_contract.sh datasets
 ```

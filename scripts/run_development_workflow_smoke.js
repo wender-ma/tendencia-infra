@@ -10,6 +10,7 @@ const { chromium } = require('@playwright/test');
 const { createClient } = require('@supabase/supabase-js');
 
 const root = path.resolve(__dirname, '..');
+const environmentDirectory = path.join(root, 'config', 'env');
 let appUrl;
 
 async function getAvailablePort() {
@@ -25,7 +26,7 @@ async function getAvailablePort() {
 }
 
 function readEnvFile(fileName) {
-  const filePath = path.join(root, fileName);
+  const filePath = path.join(environmentDirectory, fileName);
   if (!fs.existsSync(filePath)) return {};
   return Object.fromEntries(
     fs

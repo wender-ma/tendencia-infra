@@ -256,7 +256,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.
 - [x] Revisar estados vazios, loading e erro de cada aba (componente seguro compartilhado e navegação offline coberta no navegador).
 - [x] Revisar textos e termos técnicos apresentados ao usuário.
-- [ ] Corrigir inconsistências de formatação observadas em algumas tabelas de produção; tratar como polimento visual após a transição de snapshots.
+- [x] Corrigir inconsistências de formatação observadas em tabelas com conteúdo longo; células quebram texto sem alargar a página, ações permanecem estáveis e o histórico possui rolagem própria em mobile.
 - [x] Adicionar `meta description`.
 - [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
 - [ ] Adicionar Open Graph somente se o produto for público.
@@ -347,3 +347,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Dashboard real validado pelo responsável em modo `dual`; dados e fluxos principais funcionam, com ajustes de formatação de tabelas adiados para P3 | `manual_validation.md`, `adr_dashboard_datasets.md` |
 | 27/07/2026 | Auditoria agregada de logs e dados concluída: zero escritas anônimas bem-sucedidas na retenção disponível e zero registros operacionais sem escopo obrigatório | `supabase_production_log_audit_2026-07-27.md`, `audit_supabase_logs.mjs` |
 | 27/07/2026 | Histórico de deploy revelou que produção ainda serve `e8f11fc` de 23/07 e as revisões posteriores falharam na Vercel; build local atual em `snapshots` passou, isolando o bloqueio na configuração externa | `operations.md`, `verify_production_environment.mjs` |
+| 27/07/2026 | Tabelas estabilizadas para nomes e identificadores extensos sem overflow da página; rolagem e acesso às ações validados em mobile e desktop | `dashboard.css`, `scripts/browser/responsive.spec.js` |

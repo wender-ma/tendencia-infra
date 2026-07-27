@@ -79,8 +79,9 @@ Aceite: as politicas RLS bloqueiam papeis indevidos, os snapshots ativos carrega
 os mesmos dados esperados e um rollback mantem o dashboard utilizavel.
 
 Status em 27/07/2026: o responsavel validou login, dados e fluxos principais no
-dashboard real em modo `dual`. Algumas inconsistencias de formatacao de tabelas
-foram registradas como polimento visual e nao bloqueiam a transicao.
+dashboard real em modo `dual`. As inconsistencias de tabelas com conteudo longo
+foram corrigidas e cobertas em mobile e desktop; a confirmacao no dominio final
+depende da publicacao da revisao atual.
 
 ## 3. Matriz de permissoes em ambiente real
 

@@ -16,6 +16,15 @@ function assert(condition, message) {
 assert(/<meta\s+name="viewport"\s+content="width=device-width, initial-scale=1(?:\.0)?">/i.test(html), 'Meta viewport ausente');
 assert(/\.table-wrap\s*{[^}]*overflow:\s*auto/s.test(css), 'Tabelas precisam de rolagem própria');
 assert(/\.table-wrap\s*>\s*table\s*{[^}]*min-width:\s*720px/s.test(css), 'Tabelas perderam sua largura estável');
+assert(
+  /\.table-wrap\s+:is\(th,\s*td\)[^{]*\{[^}]*overflow-wrap:\s*anywhere/s.test(css),
+  'Celulas longas precisam quebrar sem expandir a pagina',
+);
+assert(
+  /\.uploads-history-list\s*\{[^}]*overflow-x:\s*auto/s.test(css) &&
+    /\.uploads-history-table\s*\{[^}]*min-width:\s*720px/s.test(css),
+  'Historico de uploads precisa de rolagem horizontal propria',
+);
 
 const mediumStart = css.lastIndexOf('@media (max-width: 900px)');
 const mediumEnd = css.indexOf('@media (max-width: 700px)', mediumStart);

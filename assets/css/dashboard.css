@@ -122,6 +122,17 @@
     border-radius: 6px;
   }
   .table-wrap > table { min-width: 720px; }
+  .table-wrap :is(th, td),
+  .uploads-history-table :is(th, td) {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .table-wrap :is(.num, .flow-selection-cell, .flow-status-cell, .flow-date-cell, .hist-cell),
+  .uploads-history-table :is(.uploads-history-muted, .uploads-history-actions-cell),
+  .admin-actions-cell {
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
   .table-pagination {
     min-height: 34px;
     display: flex;
@@ -170,7 +181,7 @@
   .view-state-row:hover { background: transparent; }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th { background: var(--bg-page); color: var(--text-medium); text-align: left; padding: 8px 10px;
-    border-bottom: 2px solid var(--border); position: sticky; top: 0;
+    border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 1;
     cursor: default; user-select: none; font-weight: 600; }
   th:is([data-sort], [data-sort-flow], [data-sort-proj]) { cursor: pointer; padding-right: 24px; }
   th:is([data-sort], [data-sort-flow], [data-sort-proj]):hover { background: var(--bg-soft); }
@@ -183,7 +194,7 @@
   th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
   tr.row-grupo td { background: var(--fgr-red-deep); color: var(--text-on-dark); font-weight: 700; padding: 6px 10px; }
   tr.row-sub td { background: var(--fgr-red-light); color: var(--fgr-red-deep); font-weight: 600; }
-  td { padding: 7px 10px; border-bottom: 1px solid var(--bg-soft); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--bg-soft); vertical-align: middle; }
   tr.folha:hover { background: var(--sem-alerta-bg); cursor: pointer; }
   tr[data-idx]:focus-visible,
   tr[data-proj-action]:focus-visible {
@@ -901,18 +912,39 @@ body:not(.is-admin-geral) [data-admin-control],
 }
 .upload-progress .prog-step { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
 .upload-file-input { display: none; }
-.uploads-history-list { margin-top: 14px; }
+.uploads-history-list {
+  max-width: 100%;
+  margin-top: 14px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
 .uploads-history-empty { padding: 30px; color: var(--text-lighter); text-align: center; }
-.uploads-history-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.uploads-history-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
 .uploads-history-heading { background: var(--bg-page); text-align: left; }
 .uploads-history-heading th { padding: 8px; border-bottom: 2px solid var(--border); }
 .uploads-history-actions-heading { text-align: right; }
 .uploads-history-row { border-bottom: 1px solid var(--bg-soft); }
 .uploads-history-row.is-active { background: var(--sem-ok-subtle); }
 .uploads-history-row td { padding: 8px; }
-.uploads-history-file { font-family: monospace; font-size: 11.5px; }
+.uploads-history-file {
+  min-width: 180px;
+  max-width: 300px;
+  font-family: monospace;
+  font-size: 11.5px;
+}
 .uploads-history-muted { color: var(--text-soft); }
-.uploads-history-sender { color: var(--text-soft); font-size: 11.5px; }
+.uploads-history-sender {
+  min-width: 140px;
+  max-width: 260px;
+  color: var(--text-soft);
+  font-size: 11.5px;
+}
 .uploads-history-actions-cell { text-align: right; white-space: nowrap; }
 .uploads-history-actions { display: inline-flex; align-items: center; gap: 4px; }
 .uploads-history-unavailable { color: var(--text-lighter); font-size: 11px; }
@@ -1015,8 +1047,13 @@ body:not(.is-admin-geral) [data-admin-control],
 .table-empty { padding: 20px; color: var(--text-lighter); text-align: center; }
 .table-empty--restricted { color: var(--text-soft); }
 .table-empty--error { color: var(--sem-erro); }
-.admin-code-cell { font-family: monospace; font-size: 12px; }
-.admin-key-cell { color: var(--text-soft); font-family: monospace; font-size: 11px; }
+.admin-code-cell { max-width: 280px; font-family: monospace; font-size: 12px; }
+.admin-key-cell {
+  max-width: 280px;
+  color: var(--text-soft);
+  font-family: monospace;
+  font-size: 11px;
+}
 .admin-muted-cell { color: var(--text-soft); font-size: 11px; }
 .admin-action-button { padding: 3px 8px; font-size: 11px; }
 .admin-action-button--delete,

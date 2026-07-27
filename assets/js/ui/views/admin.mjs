@@ -87,7 +87,7 @@ async function renderObrasAdmin() {
         <td>${origemBadge}</td>
         <td>${badge}</td>
         <td class="admin-muted-cell">${dt}</td>
-        <td>
+        <td class="admin-actions-cell">
           <button class="btn-sm admin-action-button" data-action="editar-obra" data-codigo="${escAttr(o.codigo_obra)}" title="Editar nome/key" aria-label="Editar obra ${escAttr(o.nome)}">✏️</button>
           <button class="btn-sm admin-action-button ${toggleClass}" data-action="toggle-obra" data-codigo="${escAttr(o.codigo_obra)}">${toggleLbl}</button>
           ${btnDeletar}
@@ -460,7 +460,7 @@ async function renderEditoresAdmin() {
         <td>${obrasHtml}</td>
         <td class="admin-muted-cell">${escHtml(g.observacao || '')}</td>
         <td class="admin-muted-cell">${dt}</td>
-        <td>
+        <td class="admin-actions-cell">
           <button class="btn-sm admin-action-button admin-action-button--editor" data-action="editar-editor" data-email="${escAttr(g.email)}" title="Editar papel, obras, ou excluir">✏️ Editar</button>
         </td>
       </tr>`;
@@ -703,7 +703,7 @@ async function renderPendentesAdmin() {
         <td>${escHtml(e.nome || '—')}</td>
         <td class="admin-muted-cell">${escHtml(e.observacao || '')}</td>
         <td class="admin-muted-cell">${dt}</td>
-        <td>
+        <td class="admin-actions-cell">
           <button class="btn-sm admin-action-button admin-action-button--approve" data-action="aprovar-pendente" data-email="${escAttr(e.email)}" title="Definir papel e aprovar">✅ Aprovar</button>
           <button class="btn-sm admin-action-button admin-action-button--reject" data-action="rejeitar-pendente" data-email="${escAttr(e.email)}" title="Negar acesso">❌ Rejeitar</button>
         </td>

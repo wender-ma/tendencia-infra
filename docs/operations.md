@@ -173,7 +173,7 @@ IP, email, ID de usuario, codigo de obra, arquivo ou payload. Logs agregados
 ajudam a encontrar sinais, mas nao comprovam autoria ou intencao.
 
 O resultado de producao de 27/07/2026 esta em
-`docs/supabase_production_log_audit_2026-07-27.md`.
+`docs/audits/supabase_production_log_audit_2026-07-27.md`.
 
 ### Snapshots versionados do dashboard
 
@@ -236,7 +236,7 @@ feito no primeiro passo.
 ### Backfill controlado de producao
 
 O inventario de 24/07/2026 e a verificacao de 27/07/2026 estao em
-`docs/supabase_production_inventory_2026-07-24.md`. As duas migrations de
+`docs/audits/supabase_production_inventory_2026-07-24.md`. As duas migrations de
 manutencao ja foram aplicadas e o deployment foi confirmado como `complete: true`.
 Continuam existindo quatro blobs legados, preservados durante o backfill e durante
 a janela de estabilidade do modo `snapshots`.

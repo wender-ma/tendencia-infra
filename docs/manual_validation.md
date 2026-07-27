@@ -64,7 +64,7 @@ locais nao versionados.
   project ref de producao confirmado e guardar somente a saida agregada. Nenhuma
   migration deve ser aplicada durante essa etapa.
 - O inventario de producao de 24/07/2026 esta registrado em
-  `docs/supabase_production_inventory_2026-07-24.md`. As migrations de manutencao
+  `docs/audits/supabase_production_inventory_2026-07-24.md`. As migrations de manutencao
   e o backfill foram concluidos em 27/07/2026: quatro snapshots ativos e quatro
   objetos foram verificados, mantendo os quatro blobs legados para rollback.
 - Se o endpoint ainda retornar `PGRST205`, executar

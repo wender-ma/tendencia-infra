@@ -14,7 +14,8 @@ Dashboard de tendência orçamentária
 │   └── images/             # Imagens e capturas de tela
 ├── backups/                # Cópias antigas do index.html
 │   └── snapshots/           # Backups automáticos compactados
-├── docs/                   # Documentação e scripts de banco de dados
+├── docs/                   # Guias, decisões e referências do projeto
+│   └── audits/             # Inventários e evidências somente leitura
 ├── experiments/            # Protótipos e telas isoladas
 ├── scripts/                 # Scripts auxiliares do projeto
 ├── supabase/                # Auditoria, migrations, manutenção, rollback e testes SQL
@@ -45,12 +46,7 @@ Dashboard de tendência orçamentária
 - `assets/js/ui/actions.mjs`: delegação central das ações declaradas pelo HTML e pelos templates.
 - `assets/js/services/auth-service.js`: sessão, login, whitelist e autorização por papel e obra.
 - `docs/supabase_schema.sql`: schema histórico da fase sem autenticação; não executar em produção.
-- `docs/supabase_audit_2026-07-20.md`: resultado da auditoria pública, sem leitura de registros.
-- `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
-- `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
-- `docs/supabase_development_audit_2026-07-23.md`: evidência somente leitura do ambiente de desenvolvimento e estado das migrations.
-- `docs/supabase_production_log_audit_2026-07-27.md`: auditoria agregada de atividade e escopo dos dados de produção, sem identidades ou conteúdo.
-- `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
+- `docs/audits/`: inventários, baselines e evidências somente leitura, separados dos guias operacionais.
 - `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
 - `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
 - `docs/external_actions.md`: registro das decisões e validações humanas que ainda bloqueiam o roadmap.
@@ -205,7 +201,7 @@ npm run preview
 ```
 
 O estado agregado do banco de produção está registrado em
-`docs/supabase_production_inventory_2026-07-24.md`. O backfill dos datasets possui
+`docs/audits/supabase_production_inventory_2026-07-24.md`. O backfill dos datasets possui
 um runner separado, bloqueado por alvo, deployment completo, admin ativo e opt-in
 explícito. Consulte `docs/operations.md` e execute sempre `--mode plan` antes de
 qualquer escrita.

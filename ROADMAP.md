@@ -40,9 +40,9 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 
 > Atenção em 20/07/2026: `docs/supabase_schema.sql` é um artefato histórico da fase sem autenticação, contém políticas `anon_all_*` e não representa as tabelas/campos multiobra usados pelo frontend. O arquivo recebeu um aviso para não ser executado em produção. A correção de RLS depende primeiro da exportação do schema realmente implantado.
 
-> Auditoria pública em 20/07/2026: todas as tabelas/colunas esperadas foram confirmadas com `limit=0`, mas a role anônima consegue contabilizar linhas em `editores_permitidos`, `upload_history` e tabelas operacionais. Nenhum registro foi baixado. Evidências em `docs/supabase_audit_2026-07-20.md`.
+> Auditoria pública em 20/07/2026: todas as tabelas/colunas esperadas foram confirmadas com `limit=0`, mas a role anônima consegue contabilizar linhas em `editores_permitidos`, `upload_history` e tabelas operacionais. Nenhum registro foi baixado. Evidências em `docs/audits/supabase_audit_2026-07-20.md`.
 
-> Baseline administrativo recebido e revisado em 20/07/2026: 11 relações com RLS, 24 policies, 231 grants, 25 índices, 21 constraints, quatro funções e um trigger. O JSON sem valores de negócio foi versionado em `docs/supabase_metadata_2026-07-20.json`; conclusões em `docs/supabase_security_baseline_2026-07-20.md`.
+> Baseline administrativo recebido e revisado em 20/07/2026: 11 relações com RLS, 24 policies, 231 grants, 25 índices, 21 constraints, quatro funções e um trigger. O JSON sem valores de negócio foi versionado em `docs/audits/supabase_metadata_2026-07-20.json`; conclusões em `docs/audits/supabase_security_baseline_2026-07-20.md`.
 
 - [x] Exportar e revisar os metadados do schema realmente implantado no Supabase.
 - [x] Comparar o schema implantado com `docs/supabase_schema.sql`.
@@ -64,7 +64,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Restringir na migration editores às obras atribuídas em `editores_permitidos`.
 - [x] Revisar e endurecer na migration as políticas do bucket privado `uploads-history`.
 - [x] **EXT-04 concluído** Permitir visualização anônima dos dados operacionais de todas as obras; login permanece obrigatório para edição, uploads, históricos privados e administração.
-- [x] Auditar logs e dados para identificar alterações indevidas anteriores; a janela retida não apresentou escrita anônima bem-sucedida e o inventário agregado encontrou zero registros sem escopo obrigatório. Limitações registradas em `docs/supabase_production_log_audit_2026-07-27.md`.
+- [x] Auditar logs e dados para identificar alterações indevidas anteriores; a janela retida não apresentou escrita anônima bem-sucedida e o inventário agregado encontrou zero registros sem escopo obrigatório. Limitações registradas em `docs/audits/supabase_production_log_audit_2026-07-27.md`.
 - [x] Testar a API diretamente como anônimo, usuário rejeitado, editor e administrador.
 - [x] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
 
@@ -200,7 +200,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Gerar assets minificados e com hash, sem script clássico legado.
 - [x] Remover scripts bloqueantes do `head`.
 - [x] Externalizar favicon e logo em arquivos otimizados.
-- [x] Configurar Content Security Policy sem `unsafe-inline`: estilos da aplicação foram externalizados, `style-src-attr 'none'` bloqueia atributos de estilo e os dois blocos estáticos do ApexCharts são limitados por hash e validados no navegador. Inventário em `docs/csp_inline_style_inventory_2026-07-23.md`.
+- [x] Configurar Content Security Policy sem `unsafe-inline`: estilos da aplicação foram externalizados, `style-src-attr 'none'` bloqueia atributos de estilo e os dois blocos estáticos do ApexCharts são limitados por hash e validados no navegador. Inventário em `docs/audits/csp_inline_style_inventory_2026-07-23.md`.
 - [x] Configurar headers de segurança adequados ao ambiente de hospedagem.
 
 ### 11. Melhorar performance
@@ -308,7 +308,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 21/07/2026 | Storage, paginação, Excel, validação de upload, transações e loaders deixaram de publicar adaptadores globais e passaram a ser injetados nas views       | `assets/js/bootstrap.js`                                    |
 | 21/07/2026 | Registro explícito de ações criado; exportações, login, tema/header e manutenção de uploads deixaram o escopo global                                    | `assets/js/ui/actions.mjs`                                  |
 | 21/07/2026 | Telemetria local adicionada para boot, nós do DOM, parsers e renderização por aba                                                                        | `assets/js/performance.mjs`                                 |
-| 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS                                            | `docs/innerhtml_inventory_2026-07-21.md`                    |
+| 21/07/2026 | Baseline de `innerHTML` inventariado; limpezas migradas para DOM seguro e módulos protegidos por contrato XSS                                            | `docs/audits/innerhtml_inventory_2026-07-21.md`                    |
 | 21/07/2026 | CI configurado com qualidade, build, audit, axe e smoke visual em mobile/desktop                                                                         | `.github/workflows/ci.yml`                                  |
 | 21/07/2026 | Manual alinhado às permissões por obra, falhas offline, retenção e parsers atuais                                                                        | `index.html`                                                |
 | 21/07/2026 | Operação, deploy Vercel e rollbacks de frontend/Supabase documentados e separados                                                                        | `docs/operations.md`                                        |
@@ -331,16 +331,16 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 23/07/2026 | Repositório de snapshots integrado ao carregamento e aos uploads, com fallback de schema, integridade SHA-256, ativação serializada e rollback conjunto | `dashboard-dataset-repository.mjs`                          |
 | 23/07/2026 | Ambientes Supabase isolados: sem endpoint embutido, credenciais validadas por modo, teste com endpoint fictício e preflight obrigatório no deploy | `config.js`, `verify_production_environment.mjs`            |
 | 23/07/2026 | CSP estrita concluída sem `unsafe-inline`; estilos da aplicação externalizados e CSS estático do ApexCharts limitado por hash e teste de navegador         | `test_csp_style_contract.js`, `scripts/browser/csp.spec.js` |
-| 23/07/2026 | Projeto de desenvolvimento configurado localmente; perfil remoto endurecido confirmado e ausência da migration de snapshots registrada sem escrita | `docs/supabase_development_audit_2026-07-23.md`             |
-| 24/07/2026 | Divergência de alvo identificada: migration de snapshots presente no projeto legado e ausente no desenvolvimento; checagem explícita de project ref adicionada | `show_supabase_target.js`, `docs/supabase_development_audit_2026-07-23.md` |
+| 23/07/2026 | Projeto de desenvolvimento configurado localmente; perfil remoto endurecido confirmado e ausência da migration de snapshots registrada sem escrita | `docs/audits/supabase_development_audit_2026-07-23.md`             |
+| 24/07/2026 | Divergência de alvo identificada: migration de snapshots presente no projeto legado e ausente no desenvolvimento; checagem explícita de project ref adicionada | `show_supabase_target.js`, `docs/audits/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Migration de snapshots confirmada no desenvolvimento correto por SQL e REST; auditoria ampliada com inventário de dados sem conteúdo dos blobs | `verify_dashboard_datasets_deployment.sql`, `docs/adr_dashboard_datasets.md` |
-| 24/07/2026 | Inventário do desenvolvimento confirmou zero blobs, snapshots e objetos; backfill dispensado somente nesse ambiente | `docs/supabase_development_audit_2026-07-23.md` |
+| 24/07/2026 | Inventário do desenvolvimento confirmou zero blobs, snapshots e objetos; backfill dispensado somente nesse ambiente | `docs/audits/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Matriz real de papéis e ciclos de snapshots validados no desenvolvimento; `RETURNING` incompatível com RLS removido | `run_development_snapshot_smoke.js`, `dashboard-dataset-repository.mjs` |
 | 24/07/2026 | Workflow real detectou migration administrativa ausente; dados temporários removidos e auditoria SQL específica adicionada | `verify_admin_transactions_deployment.sql`, `run_development_workflow_smoke.js` |
 | 24/07/2026 | Histórico remoto de migrations reconciliado, migration administrativa aplicada via CLI e três RPCs verificadas; edição e administração E2E passaram com limpeza integral | `run_development_workflow_smoke.js`, `verify_admin_transactions_deployment.sql` |
 | 24/07/2026 | Transição de datasets ganhou modos `dual` e `snapshots`; o modo final não consulta nem grava blobs legados, preserva configurações pequenas e falha fechado sem schema ou integridade | `config.js`, `upload-coordinator.mjs`, `dashboard-dataset-repository.mjs` |
 | 24/07/2026 | Reset de cache passou a remover snapshots e blobs legados transacionalmente; policies de manutenção corrigiram a limpeza silenciosa e o smoke real terminou sem metadata ou objetos residuais | `20260724183000_dashboard_dataset_reset.sql`, `20260724190000_dashboard_dataset_cleanup_policies.sql` |
-| 24/07/2026 | Auditor remoto passou a usar a Management API somente leitura, confirmação dupla do alvo e inventário agregado sem conteúdo ou códigos de obra; desenvolvimento confirmou deployment completo e backfill dispensado | `audit_supabase_inventory.mjs`, `docs/supabase_development_audit_2026-07-23.md` |
+| 24/07/2026 | Auditor remoto passou a usar a Management API somente leitura, confirmação dupla do alvo e inventário agregado sem conteúdo ou códigos de obra; desenvolvimento confirmou deployment completo e backfill dispensado | `audit_supabase_inventory.mjs`, `docs/audits/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Backup local endurecido: templates e fontes recuperáveis, segredos e artefatos regeneráveis omitidos, publicação atômica e retenção coberta por teste real | `backup.sh`, `test_backup_contract.js` |
 | 24/07/2026 | Inventário read-only de produção confirmou quatro blobs legados, zero snapshots/objetos e ausência das duas migrations de manutenção; runner de backfill seguro preparado sem executar escritas | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |
 | 27/07/2026 | Migrations de reset e policies de limpeza executadas manualmente em produção; inventário confirmou RPC presente, 4+4 policies, deployment completo e dados legados intactos | `supabase_production_inventory_2026-07-24.md` |

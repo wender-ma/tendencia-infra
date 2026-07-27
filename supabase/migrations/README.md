@@ -2,7 +2,7 @@
 
 Este diretório contém apenas migrations incrementais revisadas. As cinco migrations foram validadas em sequência, com seus rollbacks, em PostgreSQL 15 descartável.
 
-O baseline versionado em `../../docs/supabase_metadata_2026-07-20.json` inclui relações, colunas, tipos, constraints, índices, grants, policies, funções, trigger, view e bucket. Ele não contém linhas das tabelas nem credenciais.
+O baseline versionado em `../../docs/audits/supabase_metadata_2026-07-20.json` inclui relações, colunas, tipos, constraints, índices, grants, policies, funções, trigger, view e bucket. Ele não contém linhas das tabelas nem credenciais.
 
 Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 
@@ -18,7 +18,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Ciclo autenticado no Supabase de desenvolvimento: editor/Tendência e admin/Flows validados com duas versões, leitura, integridade, rollback e limpeza em 24/07/2026.
 - Reset transacional e policies de manutenção aplicados no desenvolvimento em 24/07/2026; quatro resíduos antigos do smoke foram removidos e o novo ciclo terminou com zero metadados e objetos.
 - O projeto antes chamado de legado, `jmfgegnfctlyuevqadba`, foi confirmado como o alvo atual de produção `Tendência de Obras`.
-- Pacote de snapshots em produção: completo após aplicação manual das migrations de reset e policies em 27/07/2026; inventário agregado em `../../docs/supabase_production_inventory_2026-07-24.md`.
+- Pacote de snapshots em produção: completo após aplicação manual das migrations de reset e policies em 27/07/2026; inventário agregado em `../../docs/audits/supabase_production_inventory_2026-07-24.md`.
 - Backfill em produção: concluído em 27/07/2026; quatro snapshots ativos e quatro objetos privados foram verificados contra os quatro blobs legados, preservados temporariamente para rollback.
 - Frontend em produção: modo `snapshots` publicado e validado em 27/07/2026; janela mínima de estabilidade aberta até 03/08/2026.
 

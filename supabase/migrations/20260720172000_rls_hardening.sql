@@ -1,7 +1,7 @@
 -- ============================================================================
 -- RLS HARDENING - BASELINE AUDITADO EM 20/07/2026
 -- ============================================================================
--- Baseline: docs/supabase_metadata_2026-07-20.json
+-- Baseline: docs/audits/supabase_metadata_2026-07-20.json
 --
 -- Esta migration preserva a leitura publica das tabelas operacionais.
 -- Whitelist, metadados de upload e arquivos exigem autenticacao. Esse contrato

@@ -54,9 +54,9 @@ locais nao versionados.
   project ref de producao confirmado e guardar somente a saida agregada. Nenhuma
   migration deve ser aplicada durante essa etapa.
 - O inventario de producao de 24/07/2026 esta registrado em
-  `docs/supabase_production_inventory_2026-07-24.md`: quatro blobs exigem backfill,
-  e as migrations de reset e policies de limpeza ainda precisam ser aplicadas
-  antes do plano autenticado.
+  `docs/supabase_production_inventory_2026-07-24.md`. As migrations de manutencao
+  e o backfill foram concluidos em 27/07/2026: quatro snapshots ativos e quatro
+  objetos foram verificados, mantendo os quatro blobs legados para rollback.
 - Se o endpoint ainda retornar `PGRST205`, executar
   `supabase/audit/verify_dashboard_datasets_deployment.sql` no SQL Editor e
   confirmar `complete: true`; guardar também o objeto `data_inventory`.
@@ -68,7 +68,9 @@ locais nao versionados.
   dos blobs legados apenas depois de obter `complete: true`. Use primeiro
   `npm run backfill:production:datasets -- ... --mode plan`; o modo `apply` exige
   autorizacao separada. Nao interromper a escrita dupla antes de os snapshots
-  ativos serem lidos corretamente e comparados.
+  ativos serem lidos corretamente e comparados. Este passo foi concluido em
+  producao em 27/07/2026 e nao deve ser repetido enquanto os snapshots estiverem
+  ativos.
 - Depois de comparar contagem, hash e conteudo, alterar
   `VITE_DATASET_PERSISTENCE_MODE` para `snapshots`, publicar e repetir os smokes.
   Se houver falha, restaurar `dual` e publicar novamente antes de investigar.

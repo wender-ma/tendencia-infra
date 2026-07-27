@@ -82,6 +82,82 @@ export const READ_ONLY_QUERIES = Object.freeze({
     from storage.objects
     where bucket_id = 'dashboard-datasets'
   `,
+  operational: `
+    select
+      relation_name,
+      row_count,
+      first_activity_at,
+      last_activity_at,
+      unscoped_row_count
+    from (
+      select
+        'dashboard_config'::text as relation_name,
+        count(*)::bigint as row_count,
+        min(updated_at)::text as first_activity_at,
+        max(updated_at)::text as last_activity_at,
+        0::bigint as unscoped_row_count
+      from public.dashboard_config
+      union all
+      select
+        'editores_permitidos',
+        count(*)::bigint,
+        min(adicionado_em)::text,
+        max(adicionado_em)::text,
+        count(*) filter (
+          where role <> 'admin' and nullif(trim(codigo_obra), '') is null
+        )::bigint
+      from public.editores_permitidos
+      union all
+      select
+        'flow_classifications',
+        count(*)::bigint,
+        min(updated_at)::text,
+        max(updated_at)::text,
+        count(*) filter (where nullif(trim(codigo_obra), '') is null)::bigint
+      from public.flow_classifications
+      union all
+      select
+        'flow_manuals',
+        count(*)::bigint,
+        min(created_at)::text,
+        max(created_at)::text,
+        count(*) filter (where nullif(trim(codigo_obra), '') is null)::bigint
+      from public.flow_manuals
+      union all
+      select
+        'obras',
+        count(*)::bigint,
+        min(criada_em)::text,
+        max(criada_em)::text,
+        count(*) filter (where nullif(trim(codigo_obra), '') is null)::bigint
+      from public.obras
+      union all
+      select
+        'projecao_config',
+        count(*)::bigint,
+        min(updated_at)::text,
+        max(updated_at)::text,
+        count(*) filter (where nullif(trim(codigo_obra), '') is null)::bigint
+      from public.projecao_config
+      union all
+      select
+        'projecao_movimentacoes',
+        count(*)::bigint,
+        min(created_at)::text,
+        max(created_at)::text,
+        count(*) filter (where nullif(trim(codigo_obra), '') is null)::bigint
+      from public.projecao_movimentacoes
+      union all
+      select
+        'upload_history',
+        count(*)::bigint,
+        min(enviado_em)::text,
+        max(enviado_em)::text,
+        count(*) filter (where nullif(trim(codigo_obra), '') is null)::bigint
+      from public.upload_history
+    ) inventory
+    order by relation_name
+  `,
 });
 
 export function parseArguments(argumentsList) {
@@ -193,7 +269,14 @@ function toBoolean(value) {
   return value === true || value === 1 || value === 'true' || value === '1';
 }
 
-export function buildSummary({ project, deployment, legacyRows, snapshotRows, storageRows }) {
+export function buildSummary({
+  project,
+  deployment,
+  legacyRows,
+  snapshotRows,
+  storageRows,
+  operationalRows = [],
+}) {
   const legacyDatasets = legacyRows.map((row) => ({
     scope: row.scope,
     tipo: row.tipo,
@@ -242,6 +325,13 @@ export function buildSummary({ project, deployment, legacyRows, snapshotRows, st
     normalizedDeployment.private_bucket_exists &&
     normalizedDeployment.table_policy_count === 4 &&
     normalizedDeployment.storage_policy_count === 4;
+  const operationalInventory = operationalRows.map((row) => ({
+    relation_name: row.relation_name,
+    row_count: toNumber(row.row_count),
+    first_activity_at: row.first_activity_at || null,
+    last_activity_at: row.last_activity_at || null,
+    unscoped_row_count: toNumber(row.unscoped_row_count),
+  }));
 
   return {
     audited_at: new Date().toISOString(),
@@ -256,6 +346,15 @@ export function buildSummary({ project, deployment, legacyRows, snapshotRows, st
     data_inventory: {
       ...inventory,
       backfill_review_required: inventory.legacy_dataset_key_count > 0,
+    },
+    operational_inventory: {
+      relation_count: operationalInventory.length,
+      row_count: operationalInventory.reduce((total, row) => total + row.row_count, 0),
+      unscoped_row_count: operationalInventory.reduce(
+        (total, row) => total + row.unscoped_row_count,
+        0,
+      ),
+      relations: operationalInventory,
     },
   };
 }
@@ -297,8 +396,18 @@ export async function auditSupabaseInventory({
   const storageRows = deployment.private_bucket_exists
     ? await runReadOnlyQuery(projectRef, READ_ONLY_QUERIES.storage, accessToken)
     : [];
+  const operationalRows = deployment.dashboard_config_exists
+    ? await runReadOnlyQuery(projectRef, READ_ONLY_QUERIES.operational, accessToken)
+    : [];
 
-  return buildSummary({ project, deployment, legacyRows, snapshotRows, storageRows });
+  return buildSummary({
+    project,
+    deployment,
+    legacyRows,
+    snapshotRows,
+    storageRows,
+    operationalRows,
+  });
 }
 
 async function main() {

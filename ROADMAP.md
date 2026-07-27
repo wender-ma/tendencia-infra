@@ -64,7 +64,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Restringir na migration editores às obras atribuídas em `editores_permitidos`.
 - [x] Revisar e endurecer na migration as políticas do bucket privado `uploads-history`.
 - [ ] Confirmar se visualização anônima de dados é permitida pelo negócio.
-- [ ] Auditar logs e dados para identificar alterações indevidas anteriores.
+- [x] Auditar logs e dados para identificar alterações indevidas anteriores; a janela retida não apresentou escrita anônima bem-sucedida e o inventário agregado encontrou zero registros sem escopo obrigatório. Limitações registradas em `docs/supabase_production_log_audit_2026-07-27.md`.
 - [x] Testar a API diretamente como anônimo, usuário rejeitado, editor e administrador.
 - [x] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
 
@@ -345,3 +345,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Migrations de reset e policies de limpeza executadas manualmente em produção; inventário confirmou RPC presente, 4+4 policies, deployment completo e dados legados intactos | `supabase_production_inventory_2026-07-24.md` |
 | 27/07/2026 | Backfill autenticado de produção concluído: quatro snapshots ativos e quatro objetos verificados contra os 974425 bytes legados, sem remover as chaves de rollback | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |
 | 27/07/2026 | Dashboard real validado pelo responsável em modo `dual`; dados e fluxos principais funcionam, com ajustes de formatação de tabelas adiados para P3 | `manual_validation.md`, `adr_dashboard_datasets.md` |
+| 27/07/2026 | Auditoria agregada de logs e dados concluída: zero escritas anônimas bem-sucedidas na retenção disponível e zero registros operacionais sem escopo obrigatório | `supabase_production_log_audit_2026-07-27.md`, `audit_supabase_logs.mjs` |

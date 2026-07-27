@@ -72,6 +72,22 @@ const assert = require('assert');
       },
     ],
     storageRows: [{ object_count: 2 }],
+    operationalRows: [
+      {
+        relation_name: 'flow_manuals',
+        row_count: '3',
+        first_activity_at: '2026-07-20 10:00:00+00',
+        last_activity_at: '2026-07-21 10:00:00+00',
+        unscoped_row_count: '0',
+      },
+      {
+        relation_name: 'upload_history',
+        row_count: 2,
+        first_activity_at: null,
+        last_activity_at: null,
+        unscoped_row_count: 1,
+      },
+    ],
   });
 
   assert.strictEqual(summary.dashboard_datasets_deployment.complete, true);
@@ -79,6 +95,9 @@ const assert = require('assert');
   assert.strictEqual(summary.data_inventory.active_snapshot_count, 2);
   assert.strictEqual(summary.data_inventory.storage_object_count, 2);
   assert.strictEqual(summary.data_inventory.backfill_review_required, true);
+  assert.strictEqual(summary.operational_inventory.relation_count, 2);
+  assert.strictEqual(summary.operational_inventory.row_count, 5);
+  assert.strictEqual(summary.operational_inventory.unscoped_row_count, 1);
   assert(!JSON.stringify(summary).includes('valor'));
 
   const incompleteSummary = buildSummary({

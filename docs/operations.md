@@ -124,6 +124,32 @@ project ref. O script consulta a lista de projetos acessiveis e usa apenas
 dos datasets e agrega chaves por escopo e tipo para nao revelar codigos de obra.
 O resultado informa se o deployment esta completo, quantos blobs legados exigem
 backfill, quantos snapshots existem por status e quantos objetos estao no bucket.
+Tambem retorna um inventario operacional agregado com contagens, primeira/ultima
+atividade e quantidade de registros sem escopo obrigatorio; nenhum valor de
+negocio ou identificador e consultado.
+
+### Auditoria agregada de logs
+
+Para revisar a atividade retida sem baixar eventos brutos, confirme o alvo e
+informe o inicio em ISO-8601:
+
+```bash
+npm run audit:supabase:logs -- \
+  --project-ref <ref-producao> \
+  --confirm-project-ref <ref-producao> \
+  --expected-project-name "<nome-conferido>" \
+  --from 2026-07-20T00:00:00Z
+```
+
+O auditor aceita no maximo 31 dias, divide o periodo em janelas inferiores a 24
+horas, respeita `Retry-After` e usa o endpoint ClickHouse atual. A saida possui
+somente contagens por dia, recurso, status e papel, alem de erros PostgreSQL e
+acoes de autenticacao agregadas. Ela nunca inclui evento bruto, caminho completo,
+IP, email, ID de usuario, codigo de obra, arquivo ou payload. Logs agregados
+ajudam a encontrar sinais, mas nao comprovam autoria ou intencao.
+
+O resultado de producao de 27/07/2026 esta em
+`docs/supabase_production_log_audit_2026-07-27.md`.
 
 ### Snapshots versionados do dashboard
 

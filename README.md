@@ -49,6 +49,7 @@ Dashboard de tendência orçamentária
 - `docs/supabase_security_baseline_2026-07-20.md`: revisão dos metadados administrativos implantados.
 - `docs/supabase_metadata_2026-07-20.json`: baseline de relações, colunas, grants, policies, funções e constraints.
 - `docs/supabase_development_audit_2026-07-23.md`: evidência somente leitura do ambiente de desenvolvimento e estado das migrations.
+- `docs/supabase_production_log_audit_2026-07-27.md`: auditoria agregada de atividade e escopo dos dados de produção, sem identidades ou conteúdo.
 - `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
 - `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
 - `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
@@ -57,6 +58,7 @@ Dashboard de tendência orçamentária
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
 - `scripts/audit_supabase_contract.sh`: valida o contrato anônimo nos perfis `baseline` e `hardened`.
 - `scripts/audit_supabase_inventory.mjs`: inventaria deployment e volume de datasets pela Management API somente leitura, sem retornar conteúdo ou códigos de obra.
+- `scripts/audit_supabase_logs.mjs`: agrega escritas, erros e autenticação em janelas limitadas, sem retornar eventos brutos ou identidades.
 - `scripts/test_rls_migration.sh`: aplica as migrations de RLS e operações administrativas, valida regras e testa os rollbacks em PostgreSQL descartável.
 - `supabase/audit/`: consultas somente leitura para inventariar o ambiente implantado, incluindo exportação em um único JSON.
 - `supabase/drafts/`: SQL em revisão que não deve ser aplicado diretamente.

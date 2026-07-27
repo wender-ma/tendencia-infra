@@ -77,6 +77,17 @@ assert(
   'Card de Tendência deve identificar a reserva e a diferença líquida',
 );
 assert(
+  overview.includes('🎯 Evolução física') &&
+    overview.includes('💰 Evolução financeira') &&
+    overview.includes('overview-adherence-status'),
+  'Card de Aderência deve comparar evoluções e destacar o diagnóstico',
+);
+assert(
+  !overview.includes('overview-adherence-interpretation') &&
+    !overview.includes('Custos indiretos <strong>não</strong> entram'),
+  'Card de Aderência não deve reintroduzir explicações removidas',
+);
+assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),
   'Linhas de comandos e status precisam de estilos próprios',
 );

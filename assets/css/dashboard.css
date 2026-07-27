@@ -1603,14 +1603,6 @@ body:not(.is-admin-geral) [data-admin-control],
   font-size: 13px;
 }
 .overview-adherence-empty-help { font-size: 11.5px; }
-.overview-adherence-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  align-items: baseline;
-  gap: 12px;
-  margin: 10px 0 6px;
-}
-.overview-adherence-metric-label,
 .overview-kpi-overline,
 .overview-breakdown-heading {
   color: var(--text-soft);
@@ -1618,30 +1610,33 @@ body:not(.is-admin-geral) [data-admin-control],
   font-weight: 600;
   text-transform: uppercase;
 }
-.overview-adherence-metric-value { font-size: 22px; font-weight: 700; }
-.overview-adherence-metric-value--theoretical { color: var(--fgr-red-vivid); }
-.overview-adherence-metric-value--financial { color: var(--sem-alerta); }
-.overview-adherence-metric-note { color: var(--text-soft); font-size: 10.5px; }
-.overview-adherence-delta { text-align: right; }
+.overview-adherence-lines {
+  display: grid;
+  gap: 6px;
+}
+.overview-adherence-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-soft);
+  font-size: 12px;
+}
+.overview-adherence-line strong {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+.overview-adherence-value--theoretical { color: var(--fgr-red-vivid); }
+.overview-adherence-value--financial { color: var(--sem-alerta); }
+.overview-adherence-status {
+  color: inherit;
+  font-weight: 700;
+}
 .overview-tone--neutral { color: var(--text-soft); }
 .overview-tone--positive { color: var(--sem-ok); }
 .overview-tone--negative { color: var(--sem-erro); }
 .overview-tone--warning { color: var(--sem-alerta); }
 .overview-tone--purple { color: var(--accent-purple-dark); }
-.overview-adherence-interpretation {
-  margin-top: 6px;
-  padding: 8px 10px;
-  border-radius: 5px;
-  background: var(--bg-page);
-  color: var(--text-medium);
-  font-size: 11.5px;
-}
-.overview-adherence-note {
-  margin-top: 6px;
-  color: var(--text-lighter);
-  font-size: 10.5px;
-  font-style: italic;
-}
 .overview-index-toggle { margin-top: 0; }
 .overview-divider { margin: 10px 0; border: 0; border-top: 1px solid var(--border); }
 .overview-kpi-split {

@@ -113,20 +113,10 @@ function renderCardAderencia() {
     ico = '🔴';
   }
 
-  // Interpretação
-  let interp = '';
-  if (delta != null) {
-    if (delta > 0.5) {
-      interp = `Gastando mais rápido do que executando (financeiro adiantado ${delta.toFixed(2)}pp)`;
-    } else if (delta < -0.5) {
-      interp = `Executando mais rápido do que gastando (físico adiantado ${Math.abs(delta).toFixed(2)}pp)`;
-    } else {
-      interp = 'Físico e financeiro caminhando alinhados';
-    }
-  }
-
-  const fmtPP = (v) => (v == null ? '-' : v.toFixed(2) + 'pp');
-  const fmtPct = (v) => (v == null ? '-' : v.toFixed(2) + '%');
+  const fmtAdherenceNumber = (value) =>
+    value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtPP = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + 'pp');
+  const fmtPct = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + '%');
 
   return `
     <div class="kpi kpi-wide ${semaCls}">
@@ -134,26 +124,21 @@ function renderCardAderencia() {
         <div class="label overview-card-label">🏗️ Aderência Físico-Financeira</div>
         <span class="overview-source-chip" title="Fonte: Prevision (aba TENDÊNCIA). Indiretos não entram nesta conta.">Prevision</span>
       </div>
-      <div class="overview-adherence-grid">
-        <div>
-          <div class="overview-adherence-metric-label">🎯 Teórica</div>
-          <div class="overview-adherence-metric-value overview-adherence-metric-value--theoretical">${fmtPct(teor)}</div>
-          <div class="overview-adherence-metric-note">cronograma físico</div>
+      <hr class="overview-divider">
+      <div class="overview-adherence-lines">
+        <div class="overview-adherence-line">
+          <span>🎯 Evolução física</span>
+          <strong class="overview-adherence-value--theoretical">${fmtPct(teor)}</strong>
         </div>
-        <div>
-          <div class="overview-adherence-metric-label">💰 Financeira</div>
-          <div class="overview-adherence-metric-value overview-adherence-metric-value--financial">${fmtPct(fin)}</div>
-          <div class="overview-adherence-metric-note">% da licitação gasto</div>
-        </div>
-        <div class="overview-adherence-delta">
-          <div class="overview-adherence-metric-label">Δ</div>
-          <div class="overview-adherence-metric-value overview-tone--${semaTone}">${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</div>
-          <div class="overview-adherence-metric-note overview-tone--${semaTone}">${ico} ${semaLabel}</div>
+        <div class="overview-adherence-line">
+          <span>💰 Evolução financeira</span>
+          <strong class="overview-adherence-value--financial">${fmtPct(fin)}</strong>
         </div>
       </div>
-      ${interp ? `<div class="overview-adherence-interpretation">💡 ${interp}</div>` : ''}
-      <div class="overview-adherence-note">
-        ℹ️ Custos indiretos <strong>não</strong> entram nesta comparação (base: obra civil)
+      <hr class="overview-divider">
+      <div class="overview-adherence-line overview-adherence-status overview-tone--${semaTone}">
+        <span>${ico} ${semaLabel}</span>
+        <strong>${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</strong>
       </div>
     </div>`;
 }

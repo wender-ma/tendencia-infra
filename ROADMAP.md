@@ -28,11 +28,11 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Rotina de backup local criada, com publicação atômica, retenção de 12 snapshots e teste de restauração.
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
-- [ ] Confirmar responsável técnico pelas alterações no Supabase.
-- [ ] **BLOQUEADO EM AÇÃO EXTERNA** Isolar desenvolvimento da produção: projetos, credenciais locais, testes e preflight estão isolados. O domínio ainda serve o último deploy bem-sucedido de 23/07 (`e8f11fc`); o deployment de `4be540d`, criado em 27/07, também falhou na Vercel. O build local da revisão atual passou em modo `snapshots`; falta conferir as quatro variáveis de produção na hospedagem e republicar a `main`.
+- [ ] **AÇÃO EXTERNA EXT-01** Confirmar responsável técnico pelas alterações no Supabase.
+- [ ] **BLOQUEADO EXT-02** Isolar desenvolvimento da produção: projetos, credenciais locais, testes e preflight estão isolados. O domínio ainda serve o último deploy bem-sucedido de 23/07 (`e8f11fc`); os deployments posteriores falham na Vercel. O build local da revisão atual passou em modo `snapshots`; falta conferir as quatro variáveis de produção na hospedagem e republicar a `main`.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
-- [ ] Executar as validações externas restantes conforme `docs/manual_validation.md` antes da publicação.
+- [ ] **AÇÃO EXTERNA EXT-03** Executar as validações externas restantes conforme `docs/manual_validation.md` depois que EXT-02 publicar a revisão atual.
 
 ## P0: segurança crítica
 
@@ -63,7 +63,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Restringir na migration administradores pelo papel `admin` ativo.
 - [x] Restringir na migration editores às obras atribuídas em `editores_permitidos`.
 - [x] Revisar e endurecer na migration as políticas do bucket privado `uploads-history`.
-- [ ] Confirmar se visualização anônima de dados é permitida pelo negócio.
+- [ ] **DECISÃO EXTERNA EXT-04** Confirmar se visualização anônima de dados é permitida pelo negócio.
 - [x] Auditar logs e dados para identificar alterações indevidas anteriores; a janela retida não apresentou escrita anônima bem-sucedida e o inventário agregado encontrou zero registros sem escopo obrigatório. Limitações registradas em `docs/supabase_production_log_audit_2026-07-27.md`.
 - [x] Testar a API diretamente como anônimo, usuário rejeitado, editor e administrador.
 - [x] Executar `./scripts/audit_supabase_contract.sh hardened` após aplicar a migration.
@@ -112,7 +112,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Explicar quais dados e arquivos são enviados ao Supabase (implementado em `1cb9096`).
 - [x] Informar quem pode visualizar e editar cada obra.
 - [x] Documentar retenção e exclusão dos backups de upload.
-- [ ] Validar os textos com o responsável pelos dados do projeto.
+- [ ] **AÇÃO EXTERNA EXT-05** Validar os textos com o responsável pelos dados do projeto.
 
 ## P1: confiabilidade e funcionalidade
 
@@ -166,7 +166,7 @@ Critério de conclusão: conteúdo importado como `<img onerror=...>` é exibido
 - [x] Adicionar nomes acessíveis a botões que exibem apenas ícones.
 - [x] Criar estilo global `:focus-visible`.
 - [x] Corrigir contraste de `--text-lighter` nos temas claro e escuro.
-- [ ] Validar os fluxos principais com teclado e leitor de tela (teclado validado; leitor de tela pendente).
+- [ ] **AÇÃO EXTERNA EXT-06** Validar os fluxos principais com leitor de tela (teclado e axe já validados).
 
 Critério de conclusão: os fluxos principais funcionam sem mouse e não apresentam erros graves no axe.
 
@@ -207,7 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento, migrations, backfill e validação funcional do dashboard de produção em modo `dual` concluídos; quatro snapshots ativos e quatro blobs legados permanecem disponíveis. Falta publicar o modo `snapshots` e cumprir a janela de estabilidade antes da limpeza legada.
+- [ ] **EM ANDAMENTO EXT-07** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento, migrations, backfill e validação funcional do dashboard de produção em modo `dual` concluídos; quatro snapshots ativos e quatro blobs legados permanecem disponíveis. Falta EXT-02 publicar o modo `snapshots`, cumprir a janela de estabilidade e autorizar a limpeza legada.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -216,7 +216,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Evitar que `renderAll()` redesenhe abas ocultas após pequenas alterações.
 - [x] Paginar Detalhamento, Flows e Histórico em blocos de 100 linhas.
 - [x] Processar Excel em Web Worker.
-- [ ] Revisar o limite de upload de 50 MB com arquivos reais representativos (política já centralizada e limites automatizados).
+- [ ] **AÇÃO EXTERNA EXT-08** Revisar o limite de upload de 50 MB com arquivos reais representativos (política já centralizada e limites automatizados).
 - [x] Medir tempo de boot, tempo de parsing/renderização e quantidade de nós no DOM.
 - [x] Manter o descarte de instâncias ApexCharts antes de redesenhar.
 
@@ -259,7 +259,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Corrigir inconsistências de formatação observadas em tabelas com conteúdo longo; células quebram texto sem alargar a página, ações permanecem estáveis e o histórico possui rolagem própria em mobile.
 - [x] Adicionar `meta description`.
 - [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
-- [ ] Adicionar Open Graph somente se o produto for público.
+- [ ] **DECISÃO EXTERNA EXT-09** Adicionar Open Graph somente se o produto for declarado público.
 - [x] Revisar impressão e exportação em diferentes navegadores (Chromium, Firefox e WebKit no Playwright/CI).
 
 ## Sequência de entregas
@@ -349,3 +349,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Histórico de deploy revelou que produção ainda serve `e8f11fc` de 23/07 e as revisões posteriores falharam na Vercel; build local atual em `snapshots` passou, isolando o bloqueio na configuração externa | `operations.md`, `verify_production_environment.mjs` |
 | 27/07/2026 | Tabelas estabilizadas para nomes e identificadores extensos sem overflow da página; rolagem e acesso às ações validados em mobile e desktop | `dashboard.css`, `scripts/browser/responsive.spec.js` |
 | 27/07/2026 | Dependência transitiva `brace-expansion` atualizada para `5.0.8` após alerta do CI; auditoria npm voltou a zero vulnerabilidades | `package-lock.json` |
+| 27/07/2026 | Nove pendências externas classificadas por ID, dependência, responsável e aceite; contrato impede novos itens abertos sem classificação | `external_actions.md`, `test_roadmap_contract.js` |

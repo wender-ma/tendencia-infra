@@ -1,5 +1,9 @@
 # Validacao manual de ambientes e dados
 
+O estado, o responsavel e a evidencia esperada de cada etapa humana estao
+centralizados em `docs/external_actions.md`. Este checklist atende principalmente
+EXT-03, EXT-06 e EXT-08.
+
 Esta checklist cobre apenas atividades que nao podem ser executadas de forma segura
 no repositorio: acesso a Supabase, dados reais, decisoes de negocio e tecnologias
 assistivas. Execute-a depois de `npm run check` e `npm run test:browser` estarem

@@ -80,6 +80,9 @@ com o backfill concluido e a correcao das tabelas, falharam na Vercel. O mesmo
 codigo passou localmente por `npm run build:production` com o modo `snapshots`,
 portanto o bloqueio ficou isolado na configuracao da hospedagem.
 
+Esta intervencao esta registrada como EXT-02 em
+`docs/external_actions.md`; nao remova o preflight para contornar a falha.
+
 No painel da Vercel, abra **Settings > Environment Variables** e confirme, com
 escopo **Production**, exatamente:
 

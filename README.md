@@ -53,6 +53,7 @@ Dashboard de tendência orçamentária
 - `docs/innerhtml_inventory_2026-07-21.md`: inventário das renderizações HTML e regras contra regressões de XSS.
 - `docs/operations.md`: execução local, validação, deploy, rollback e retenção.
 - `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
+- `docs/external_actions.md`: registro das decisões e validações humanas que ainda bloqueiam o roadmap.
 - `experiments/preview-modal.html`: protótipo isolado do modal.
 - `backups/`: versões antigas preservadas para consulta.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.

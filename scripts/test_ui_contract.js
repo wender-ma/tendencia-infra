@@ -44,6 +44,14 @@ assert(
   'Comandos devem aparecer acima do status e da identidade',
 );
 assert(
+  html.includes('id="srcHeader_global" data-sources="tendencia,flows"'),
+  'Resumo global de Tendência e Flows deve ficar no cabeçalho',
+);
+assert(
+  !html.includes('id="srcHeader_visao"'),
+  'Visão Geral não deve duplicar o resumo de fontes exibido no cabeçalho',
+);
+assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),
   'Linhas de comandos e status precisam de estilos próprios',
 );

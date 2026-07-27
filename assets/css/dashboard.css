@@ -44,20 +44,20 @@
     border-radius: 6px;
     font-size: 12px;
   }
-  .header-logo { height: 52px; width: auto; margin-right: 18px; flex-shrink: 0; }
+  .header-logo { height: 58px; width: auto; margin-right: 18px; flex-shrink: 0; }
   .header-main { flex: 1; min-width: 0; }
   .header-project-row,
   .panel-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .header-project-row { gap: 10px; }
   .header-project-name { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0; }
   .project-selector {
-    width: min(100%, 500px);
-    padding: 7px 32px 7px 11px;
+    width: min(100%, 440px);
+    padding: 6px 30px 6px 10px;
     border: 1px solid rgba(255,255,255,0.35);
     border-radius: 6px;
     background: rgba(255,255,255,0.15);
     color: var(--text-on-dark);
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     backdrop-filter: blur(3px);
@@ -85,6 +85,24 @@
     background: rgba(180,83,9,0.35);
     border-color: rgba(255,200,100,0.4);
   }
+  .sources-header.header-source-summary {
+    width: fit-content;
+    max-width: 100%;
+    margin: 6px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: rgba(255,255,255,0.76);
+    font-size: 10px;
+  }
+  .sources-header.header-source-summary strong,
+  .sources-header.header-source-summary code,
+  .sources-header.header-source-summary .src-date {
+    color: var(--text-on-dark);
+  }
+  .sources-header.header-source-summary .src-sep { color: rgba(255,255,255,0.38); }
+  .sources-header.header-source-summary .src-empty { color: var(--sem-alerta-bg); }
   .btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
     color: var(--text-on-dark); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .btn:hover { background: rgba(255,255,255,0.3); }
@@ -1746,12 +1764,12 @@ body:not(.is-admin-geral) [data-admin-control],
     border-radius: 8px;
   }
   .header > img {
-    height: 44px;
+    height: 48px;
     margin-right: 4px;
   }
   #obraSelector {
     max-width: 100%;
-    font-size: 14px;
+    font-size: 13px;
   }
   .header-actions {
     width: 100%;

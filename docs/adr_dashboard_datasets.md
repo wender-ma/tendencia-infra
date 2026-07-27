@@ -1,6 +1,6 @@
 # ADR: persistência dos datasets do dashboard
 
-Status: backfill de produção concluído; aguardando validação do dashboard e transição
+Status: dashboard validado em produção no modo dual; aguardando transição
 Data: 23/07/2026
 
 ## Contexto
@@ -43,7 +43,7 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente e no Supabase de desenvolvimento em 24/07/2026.
 4. Executar backfill das chaves atuais para objetos versionados. Dispensado no desenvolvimento em 24/07/2026 por ausência de dados. Concluído em produção em 27/07/2026: quatro blobs e 974425 bytes originaram quatro snapshots ativos e quatro objetos privados, com as chaves legadas preservadas.
 5. Comparar contagem, hash e conteúdo desserializado por tipo e obra. Validado em desenvolvimento com duas versões de Tendência por editor e duas de Flows por admin, incluindo leitura e rollback. Em produção, o runner releu os quatro objetos e verificou hash, tamanho, conteúdo e 6695 linhas antes de concluir.
-6. Interromper a leitura e a escrita dos quatro blobs em `dashboard_config`. O modo configurável `snapshots` está implementado com falha fechada e rollback operacional para `dual`; a ativação em produção permanece pendente do inventário e da transição.
+6. Interromper a leitura e a escrita dos quatro blobs em `dashboard_config`. O dashboard real foi validado em modo `dual` em 27/07/2026. O modo configurável `snapshots` está implementado com falha fechada e rollback operacional para `dual`; resta ativá-lo na hospedagem e repetir a validação funcional.
 7. Após uma janela de estabilidade, remover somente as chaves grandes antigas.
 
 ## Critérios de aceite
@@ -57,4 +57,4 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 
 ## Consequências
 
-O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões, o rollback e o reset transacional foram validados em desenvolvimento. O inventário próprio de produção está registrado em `supabase_production_inventory_2026-07-24.md`; migrations e backfill foram concluídos em 27/07/2026. A transição continua condicionada à validação do dashboard real em modo `dual` antes da publicação do modo `snapshots`.
+O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões, o rollback e o reset transacional foram validados em desenvolvimento. O inventário próprio de produção está registrado em `supabase_production_inventory_2026-07-24.md`; migrations, backfill e validação funcional em modo `dual` foram concluídos em 27/07/2026. Resta publicar o modo `snapshots`, repetir a validação e cumprir a janela de estabilidade.

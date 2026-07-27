@@ -207,7 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento e migrations de produção concluídos; o backfill autenticado criou e verificou quatro snapshots ativos e quatro objetos, preservando os quatro blobs legados. Falta validar o dashboard real em modo `dual`, publicar o modo `snapshots` e cumprir a janela de estabilidade antes da limpeza legada.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento, migrations, backfill e validação funcional do dashboard de produção em modo `dual` concluídos; quatro snapshots ativos e quatro blobs legados permanecem disponíveis. Falta publicar o modo `snapshots` e cumprir a janela de estabilidade antes da limpeza legada.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -256,6 +256,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.
 - [x] Revisar estados vazios, loading e erro de cada aba (componente seguro compartilhado e navegação offline coberta no navegador).
 - [x] Revisar textos e termos técnicos apresentados ao usuário.
+- [ ] Corrigir inconsistências de formatação observadas em algumas tabelas de produção; tratar como polimento visual após a transição de snapshots.
 - [x] Adicionar `meta description`.
 - [x] Adicionar `robots noindex, nofollow` por se tratar de dashboard interno.
 - [ ] Adicionar Open Graph somente se o produto for público.
@@ -343,3 +344,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Inventário read-only de produção confirmou quatro blobs legados, zero snapshots/objetos e ausência das duas migrations de manutenção; runner de backfill seguro preparado sem executar escritas | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |
 | 27/07/2026 | Migrations de reset e policies de limpeza executadas manualmente em produção; inventário confirmou RPC presente, 4+4 policies, deployment completo e dados legados intactos | `supabase_production_inventory_2026-07-24.md` |
 | 27/07/2026 | Backfill autenticado de produção concluído: quatro snapshots ativos e quatro objetos verificados contra os 974425 bytes legados, sem remover as chaves de rollback | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |
+| 27/07/2026 | Dashboard real validado pelo responsável em modo `dual`; dados e fluxos principais funcionam, com ajustes de formatação de tabelas adiados para P3 | `manual_validation.md`, `adr_dashboard_datasets.md` |

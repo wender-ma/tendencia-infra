@@ -214,6 +214,11 @@ chaves antigas continuam disponiveis para rollback. Nao repita o backfill neste
 estado. O proximo gate e validar login, troca de obra e leitura das quatro
 visualizacoes com a hospedagem ainda configurada em `dual`.
 
+Esse gate funcional foi aprovado pelo responsavel em 27/07/2026. O proximo passo
+e alterar somente `VITE_DATASET_PERSISTENCE_MODE` para `snapshots`, publicar a
+mesma revisao e repetir a validacao. As inconsistencias visuais observadas em
+algumas tabelas foram registradas no P3 e nao afetam o contrato dos datasets.
+
 Para validar as contas reais de desenvolvimento sem alterar dados, configure
 `.env.roles.local` a partir de `.env.roles.example` e execute:
 

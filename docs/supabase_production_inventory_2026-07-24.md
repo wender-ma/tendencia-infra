@@ -79,17 +79,34 @@ Uma prova real em `--mode plan` foi interrompida antes do login administrativo,
 como esperado, porque o deployment ainda esta incompleto. Nenhum backfill foi
 executado.
 
+## Verificacao apos migrations - 27/07/2026
+
+As migrations `20260724183000_dashboard_dataset_reset.sql` e
+`20260724190000_dashboard_dataset_cleanup_policies.sql` foram executadas
+manualmente no projeto confirmado. O novo inventario read-only confirmou:
+
+- `reset_rpc_exists: true`;
+- `table_policy_count: 4`;
+- `storage_policy_count: 4`;
+- `complete: true`;
+- os quatro blobs legados permanecem intactos (`974425` bytes);
+- zero snapshots e zero objetos continuam no bucket.
+
+O deployment de snapshots esta pronto para o backfill, mas o modo permanece
+`dual` ate o plano autenticado, a revisao e a autorizacao especifica da escrita.
+
 ## Preflight de aplicacao em 27/07/2026
 
-A Management API confirmou novamente os objetos das tres primeiras migrations:
-funcoes de autorizacao, tres RPCs administrativas e a tabela de snapshots estao
-presentes; a RPC de reset continua ausente. O schema
+A Management API confirmou novamente os objetos das migrations anteriores:
+funcoes de autorizacao, tres RPCs administrativas, a tabela de snapshots e a RPC
+de reset estao presentes. O schema
 `supabase_migrations.schema_migrations` ainda nao existe nesse projeto.
 
 O projeto informou zero backups disponiveis e PITR desabilitado. A tentativa de
 dump logico chegou ao pooler oficial, mas foi recusada antes de ler dados porque a
-senha local configurada pertence ao projeto de desenvolvimento. Nenhuma migration,
-policy, funcao ou dado de producao foi alterado.
+senha local configurada pertence ao projeto de desenvolvimento. Nenhuma migration
+adicional foi aplicada durante esse preflight e nenhum dado de producao foi
+alterado nessa tentativa.
 
 Para continuar, preencha somente
 `SUPABASE_PRODUCTION_DB_PASSWORD` em `.env.production-database.local`. Depois

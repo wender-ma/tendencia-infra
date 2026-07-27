@@ -207,7 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento concluído; produção inventariada com quatro blobs legados, zero snapshots, zero objetos e deployment parcial. O runner de backfill com plano privado, opt-in duplo, comparação e rollback está pronto; faltam aplicar duas migrations, executar o backfill e concluir a transição em produção.
+- [ ] **EM ANDAMENTO** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento concluído; migrations de manutenção de produção aplicadas e deployment completo confirmado. Permanecem quatro blobs legados, zero snapshots e zero objetos; faltam executar o plano/backfill autenticado e concluir a transição.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -341,3 +341,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 24/07/2026 | Auditor remoto passou a usar a Management API somente leitura, confirmação dupla do alvo e inventário agregado sem conteúdo ou códigos de obra; desenvolvimento confirmou deployment completo e backfill dispensado | `audit_supabase_inventory.mjs`, `docs/supabase_development_audit_2026-07-23.md` |
 | 24/07/2026 | Backup local endurecido: templates e fontes recuperáveis, segredos e artefatos regeneráveis omitidos, publicação atômica e retenção coberta por teste real | `backup.sh`, `test_backup_contract.js` |
 | 24/07/2026 | Inventário read-only de produção confirmou quatro blobs legados, zero snapshots/objetos e ausência das duas migrations de manutenção; runner de backfill seguro preparado sem executar escritas | `supabase_production_inventory_2026-07-24.md`, `run_production_dataset_backfill.mjs` |
+| 27/07/2026 | Migrations de reset e policies de limpeza executadas manualmente em produção; inventário confirmou RPC presente, 4+4 policies, deployment completo e dados legados intactos | `supabase_production_inventory_2026-07-24.md` |

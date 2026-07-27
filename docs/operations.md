@@ -162,12 +162,11 @@ servem como rollback enquanto ainda nao tiverem sido removidas.
 
 ### Backfill controlado de producao
 
-O inventario de 24/07/2026 esta em
-`docs/supabase_production_inventory_2026-07-24.md`. Ele confirmou quatro blobs
-legados e deployment incompleto. Antes de usar o runner, aplique as migrations
-`20260724183000_dashboard_dataset_reset.sql` e
-`20260724190000_dashboard_dataset_cleanup_policies.sql`, repita o inventario e
-exija `complete: true`.
+O inventario de 24/07/2026 e a verificacao de 27/07/2026 estao em
+`docs/supabase_production_inventory_2026-07-24.md`. As duas migrations de
+manutencao ja foram aplicadas e o deployment foi confirmado como `complete: true`.
+Continuam existindo quatro blobs legados, que devem ser preservados durante o
+backfill.
 
 Depois desse gate, copie `.env.production-backfill.example` para
 `.env.production-backfill.local` e preencha somente localmente a URL/chave publica

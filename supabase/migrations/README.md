@@ -18,7 +18,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Ciclo autenticado no Supabase de desenvolvimento: editor/Tendência e admin/Flows validados com duas versões, leitura, integridade, rollback e limpeza em 24/07/2026.
 - Reset transacional e policies de manutenção aplicados no desenvolvimento em 24/07/2026; quatro resíduos antigos do smoke foram removidos e o novo ciclo terminou com zero metadados e objetos.
 - O projeto antes chamado de legado, `jmfgegnfctlyuevqadba`, foi confirmado como o alvo atual de produção `Tendência de Obras`.
-- Pacote de snapshots em produção: aplicação parcial. A migration inicial está presente, mas a RPC de reset e as duas policies de manutenção ainda estão ausentes; inventário agregado em `../../docs/supabase_production_inventory_2026-07-24.md`.
+- Pacote de snapshots em produção: completo após aplicação manual das migrations de reset e policies em 27/07/2026; inventário agregado em `../../docs/supabase_production_inventory_2026-07-24.md`.
 - Backfill em produção: necessário para quatro blobs legados e ainda não executado.
 
 Teste local reproduzível:

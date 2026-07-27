@@ -1,6 +1,6 @@
 # ADR: persistência dos datasets do dashboard
 
-Status: validado em desenvolvimento; produção inventariada e aguardando migrations, backfill e transição
+Status: validado em desenvolvimento; migrations de produção aplicadas, aguardando backfill e transição
 Data: 23/07/2026
 
 ## Contexto
@@ -41,7 +41,7 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 1. Criar bucket, tabela, constraints, índices, policies e RPC em desenvolvimento.
 2. Adicionar ao repositório leitura preferencial do snapshot ativo, com fallback para `dashboard_config`. Concluído no frontend.
 3. Implementar escrita dupla temporária e validar rollback de upload. Concluído localmente e no Supabase de desenvolvimento em 24/07/2026.
-4. Executar backfill das chaves atuais para objetos versionados. Dispensado no desenvolvimento em 24/07/2026: a auditoria confirmou zero chaves legadas, snapshots e objetos no bucket. O inventário de produção em 24/07/2026 confirmou quatro blobs legados, 974425 bytes, zero snapshots e zero objetos; o runner seguro foi preparado, mas o backfill aguarda as duas migrations de manutenção.
+4. Executar backfill das chaves atuais para objetos versionados. Dispensado no desenvolvimento em 24/07/2026: a auditoria confirmou zero chaves legadas, snapshots e objetos no bucket. O inventário de produção confirmou quatro blobs legados, 974425 bytes, zero snapshots e zero objetos; as migrations de manutenção foram aplicadas em 27/07/2026 e o runner seguro aguarda o plano autenticado.
 5. Comparar contagem, hash e conteúdo desserializado por tipo e obra. Validado em desenvolvimento com duas versões de Tendência por editor e duas de Flows por admin, incluindo leitura e rollback.
 6. Interromper a leitura e a escrita dos quatro blobs em `dashboard_config`. O modo configurável `snapshots` está implementado com falha fechada e rollback operacional para `dual`; a ativação em produção permanece pendente do inventário e da transição.
 7. Após uma janela de estabilidade, remover somente as chaves grandes antigas.
@@ -57,4 +57,4 @@ Não normalizar as linhas dos quatro datasets nesta etapa. A normalização aume
 
 ## Consequências
 
-O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões, o rollback e o reset transacional foram validados em desenvolvimento. O inventário próprio de produção está registrado em `supabase_production_inventory_2026-07-24.md`; a transição continua condicionada às migrations pendentes, ao backfill e à validação autenticada.
+O carregamento passa a envolver metadados e um objeto do Storage, mas evita blobs grandes em uma tabela de configuração e preserva o modelo de snapshot já usado pela aplicação. A migration, a leitura, a integridade, as permissões, o rollback e o reset transacional foram validados em desenvolvimento. O inventário próprio de produção está registrado em `supabase_production_inventory_2026-07-24.md`; as migrations de manutenção foram confirmadas em 27/07/2026 e a transição continua condicionada ao backfill e à validação autenticada.

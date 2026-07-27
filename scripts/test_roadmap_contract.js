@@ -14,15 +14,16 @@ function assert(condition, message) {
 const pendingLines = roadmap.split('\n').filter((line) => /^- \[ \]/.test(line));
 const classifiedPattern =
   /\*\*(?:AÇÃO EXTERNA|BLOQUEADO|EM ANDAMENTO|DECISÃO EXTERNA) (EXT-\d{2})\*\*/;
-const roadmapIds = pendingLines.map((line) => {
+const pendingIds = pendingLines.map((line) => {
   const match = line.match(classifiedPattern);
   assert(match, `Item pendente sem classificacao externa: ${line}`);
   return match[1];
 });
+const roadmapIds = [...new Set([...roadmap.matchAll(/EXT-\d{2}/g)].map(([id]) => id))];
 
 assert(
-  new Set(roadmapIds).size === roadmapIds.length,
-  'Cada acao externa deve aparecer uma unica vez entre os itens pendentes',
+  pendingLines.every((line) => classifiedPattern.test(line)),
+  'Cada acao externa pendente deve possuir classificacao',
 );
 
 const registerRows = register
@@ -35,7 +36,13 @@ const registerRows = register
       .map((cell) => cell.trim()),
   );
 const registerIds = registerRows.map(([id]) => id);
-const allowedStatuses = new Set(['Aberta', 'Bloqueada', 'Aguardando decisão', 'Diferida']);
+const allowedStatuses = new Set([
+  'Aberta',
+  'Bloqueada',
+  'Concluída',
+  'Aguardando decisão',
+  'Diferida',
+]);
 
 assert(register.includes('Última atualização:'), 'Registro externo sem data de atualizacao');
 assert(registerRows.length === roadmapIds.length, 'Roadmap e registro externo divergem');
@@ -59,5 +66,5 @@ assert(
 );
 
 console.log(
-  `Contrato do roadmap: ${roadmapIds.length} acoes externas classificadas e rastreaveis OK`,
+  `Contrato do roadmap: ${roadmapIds.length} acoes externas rastreaveis; ${pendingLines.length} pendentes classificadas OK`,
 );

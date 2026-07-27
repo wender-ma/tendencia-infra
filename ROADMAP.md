@@ -29,7 +29,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Primeiro commit desta etapa criado.
 - [x] Roadmap persistente criado no projeto.
 - [ ] **AÇÃO EXTERNA EXT-01** Confirmar responsável técnico pelas alterações no Supabase.
-- [ ] **BLOQUEADO EXT-02** Isolar desenvolvimento da produção: projetos, credenciais locais, testes e preflight estão isolados. O domínio ainda serve o último deploy bem-sucedido de 23/07 (`e8f11fc`); os deployments posteriores falham na Vercel. O build local da revisão atual passou em modo `snapshots`; falta conferir as quatro variáveis de produção na hospedagem e republicar a `main`.
+- [x] **EXT-02 concluído** Isolar desenvolvimento da produção: as quatro variáveis de Production foram configuradas na Vercel, o deployment da `main` concluiu e o domínio público respondeu com headers defensivos, boot concluído e sem erro de página em 27/07/2026.
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
 - [ ] **AÇÃO EXTERNA EXT-03** Executar as validações externas restantes conforme `docs/manual_validation.md` depois que EXT-02 publicar a revisão atual.
@@ -207,7 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO EXT-07** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento, migrations, backfill e validação funcional do dashboard de produção em modo `dual` concluídos; quatro snapshots ativos e quatro blobs legados permanecem disponíveis. Falta EXT-02 publicar o modo `snapshots`, cumprir a janela de estabilidade e autorizar a limpeza legada.
+- [ ] **EM ANDAMENTO EXT-07** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento, migrations, backfill e validação funcional de produção em modo `dual` concluídos; EXT-02 publicou o modo `snapshots`, e quatro snapshots ativos e quatro blobs legados permanecem disponíveis. Falta cumprir a janela de estabilidade e autorizar a limpeza legada.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -350,3 +350,4 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Tabelas estabilizadas para nomes e identificadores extensos sem overflow da página; rolagem e acesso às ações validados em mobile e desktop | `dashboard.css`, `scripts/browser/responsive.spec.js` |
 | 27/07/2026 | Dependência transitiva `brace-expansion` atualizada para `5.0.8` após alerta do CI; auditoria npm voltou a zero vulnerabilidades | `package-lock.json` |
 | 27/07/2026 | Nove pendências externas classificadas por ID, dependência, responsável e aceite; contrato impede novos itens abertos sem classificação | `external_actions.md`, `test_roadmap_contract.js` |
+| 27/07/2026 | EXT-02 concluído: variáveis de Production configuradas, deployment publicado e smoke público confirmou HTTP 200, headers defensivos, boot concluído e zero erros de página | `operations.md`, `manual_validation.md` |

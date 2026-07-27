@@ -73,15 +73,12 @@ O deploy do frontend não aplica migrations nem altera o banco. Depois da public
 
 ### Falha de deploy por configuracao
 
-Em 27/07/2026, o historico publico de deployments confirmou que o dominio
-`https://tendencia-infra.vercel.app` ainda servia o ultimo deploy bem-sucedido,
-commit `e8f11fc` de 23/07. Os deploys posteriores, incluindo `4be540d` de 27/07
-com o backfill concluido e a correcao das tabelas, falharam na Vercel. O mesmo
-codigo passou localmente por `npm run build:production` com o modo `snapshots`,
-portanto o bloqueio ficou isolado na configuracao da hospedagem.
-
-Esta intervencao esta registrada como EXT-02 em
-`docs/external_actions.md`; nao remova o preflight para contornar a falha.
+Em 27/07/2026, os primeiros deployments posteriores ao commit `e8f11fc` de 23/07
+falharam porque as variaveis de Production ainda nao estavam configuradas. Depois
+da configuracao, o deployment da `main` concluiu; o dominio respondeu HTTP 200,
+serviu os assets atuais e o smoke tecnico confirmou boot concluido, headers
+defensivos e nenhum erro de pagina. Esta intervencao esta registrada como EXT-02
+concluida em `docs/external_actions.md`.
 
 No painel da Vercel, abra **Settings > Environment Variables** e confirme, com
 escopo **Production**, exatamente:

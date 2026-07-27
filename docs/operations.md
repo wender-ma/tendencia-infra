@@ -71,6 +71,30 @@ local e nao deve receber valores reais versionados.
 
 O deploy do frontend não aplica migrations nem altera o banco. Depois da publicação, confirme o carregamento, login, troca de obra e headers HTTP no domínio final.
 
+### Falha de deploy por configuracao
+
+Em 27/07/2026, o historico publico de deployments confirmou que o dominio
+`https://tendencia-infra.vercel.app` ainda servia o ultimo deploy bem-sucedido,
+commit `e8f11fc` de 23/07. Os deploys posteriores, incluindo a revisao com o
+backfill concluido, falharam na Vercel. O mesmo codigo passou localmente por
+`npm run build:production` com o modo `snapshots`, portanto o bloqueio ficou
+isolado na configuracao da hospedagem.
+
+No painel da Vercel, abra **Settings > Environment Variables** e confirme, com
+escopo **Production**, exatamente:
+
+```text
+VITE_APP_ENV=production
+VITE_SUPABASE_URL=https://jmfgegnfctlyuevqadba.supabase.co
+VITE_SUPABASE_ANON_KEY=<chave publica anon de producao>
+VITE_DATASET_PERSISTENCE_MODE=snapshots
+```
+
+Nao use `/rest/v1` na URL e nao use a chave `service_role`. Depois de salvar,
+republique o commit mais recente da `main`. O deployment deve terminar como
+`Ready`; em seguida, confira os headers, o modo efetivo e os fluxos funcionais
+antes de iniciar a janela de estabilidade.
+
 ## Rollback do frontend
 
 Preferencial: no painel do Vercel, abra **Deployments**, selecione o último deploy estável e promova-o para produção. Isso restaura somente os assets do frontend.

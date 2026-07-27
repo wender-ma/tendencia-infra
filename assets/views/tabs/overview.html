@@ -6,9 +6,22 @@
       <h2>🚦 Status por Grupo <span class="hint">% desvio sobre licitação</span></h2>
       <div id="grupos"></div>
     </div>
-    <div class="card">
+    <div class="card overview-donut-card">
       <h2>🍩 Composição do Desvio <span class="hint">classificação dos aditivos</span></h2>
-      <div id="donutChart" class="overview-donut"></div>
+      <div class="overview-donut-layout">
+        <div class="overview-donut-visual">
+          <div id="donutChart" class="overview-donut"></div>
+          <div id="donutCenter" class="overview-donut-center" aria-live="polite">
+            <strong id="donutTotal"></strong>
+            <span id="donutTotalLabel">total flows</span>
+          </div>
+        </div>
+        <div
+          id="donutLegend"
+          class="overview-donut-legend"
+          aria-label="Categorias da composição do desvio"
+        ></div>
+      </div>
     </div>
   </div>
 

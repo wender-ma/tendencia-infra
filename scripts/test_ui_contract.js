@@ -109,6 +109,15 @@ assert(
   'Barra de aderência precisa representar os níveis e manter o diagnóstico textual neutro',
 );
 assert(
+  html.includes('class="overview-donut-layout"') &&
+    html.includes('id="donutLegend"') &&
+    html.includes('id="donutCenter"') &&
+    overview.includes('overview-donut-legend-item') &&
+    overview.includes('`R$ ${fmtR$k(value)}`') &&
+    overview.includes('legend: {\n      show: false'),
+  'Donut deve usar total central e legenda lateral detalhada',
+);
+assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),
   'Linhas de comandos e status precisam de estilos próprios',
 );

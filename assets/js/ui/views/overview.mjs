@@ -247,10 +247,14 @@ function renderVisao() {
     if (alertEl) alertEl.replaceChildren();
     // Limpar donut e top 10 também
     const donutEl = document.getElementById('donutChart');
+    const donutLegendEl = document.getElementById('donutLegend');
+    const donutCenterEl = document.getElementById('donutCenter');
     const topUpEl = document.getElementById('top10Up');
     const topDownEl = document.getElementById('top10Down');
     if (donutEl)
       renderDashboardState(donutEl, { title: 'Sem composição disponível', compact: true });
+    if (donutLegendEl) donutLegendEl.replaceChildren();
+    if (donutCenterEl) donutCenterEl.hidden = true;
     if (topUpEl)
       renderDashboardState(topUpEl, { title: 'Sem aumentos para comparar', compact: true });
     if (topDownEl)
@@ -635,6 +639,47 @@ function toggleDonutSlice(key) {
   if (APP_STATE.donut.lastTipoSum) renderDonut(APP_STATE.donut.lastTipoSum);
 }
 
+function renderDonutLegend(segments, total) {
+  const legend = document.getElementById('donutLegend');
+  if (!legend) return;
+  const rows = segments
+    .filter((segment) => segment.v > 0)
+    .map((segment) => {
+      const isVisible = !APP_STATE.donut.hidden.has(segment.key);
+      const percentage = total > 0 ? Math.round((segment.v / total) * 100) : 0;
+      return `
+        <button
+          type="button"
+          class="overview-donut-legend-item${isVisible ? '' : ' is-hidden'}"
+          data-click-action="toggleDonutSlice"
+          data-action-mode="arg"
+          data-action-arg="${segment.key}"
+          aria-pressed="${isVisible}"
+          title="${isVisible ? 'Ocultar' : 'Exibir'} ${segment.lbl}"
+        >
+          <span class="overview-donut-legend-swatch overview-donut-legend-swatch--${segment.key}" aria-hidden="true"></span>
+          <span class="overview-donut-legend-copy">
+            <strong>${segment.lbl}:</strong>
+            <span>R$ ${fmtR$(segment.v)}</span>
+            <span class="overview-donut-legend-percentage">(${percentage}%)</span>
+          </span>
+        </button>
+      `;
+    })
+    .join('');
+  replaceWithParsedMarkup(legend, rows);
+}
+
+function renderDonutCenter(value, filtered = false) {
+  const center = document.getElementById('donutCenter');
+  const total = document.getElementById('donutTotal');
+  const label = document.getElementById('donutTotalLabel');
+  if (!center || !total || !label) return;
+  center.hidden = value == null;
+  total.textContent = value == null ? '' : `R$ ${fmtR$k(value)}`;
+  label.textContent = filtered ? 'total filtrado' : 'total flows';
+}
+
 function renderDonut(tipoSum) {
   APP_STATE.donut.lastTipoSum = tipoSum;
   const aum = Math.max(0, tipoSum.aumento_real);
@@ -646,6 +691,8 @@ function renderDonut(tipoSum) {
 
   if (total <= 0) {
     destroyApexChart('donutChart');
+    document.getElementById('donutLegend')?.replaceChildren();
+    renderDonutCenter(null);
     replaceWithParsedMarkup(
       document.getElementById('donutChart'),
       '<div class="overview-donut-empty">Sem aditivos para exibir.</div>',
@@ -654,21 +701,35 @@ function renderDonut(tipoSum) {
   }
 
   const allSegs = [
-    { key: 'aum', v: aum, lbl: 'Aumento real', icon: '🔴' },
-    { key: 'rem', v: rem, lbl: 'ReManejamento', icon: '🔵' },
-    { key: 'eco', v: eco, lbl: 'Economia', icon: '🟢' },
-    { key: 'pen', v: pen, lbl: 'Pendente', icon: '🟡' },
-    { key: 'sem', v: sem, lbl: 'Sem class.', icon: '⚪' },
+    { key: 'aum', v: aum, lbl: 'Aumento real' },
+    { key: 'rem', v: rem, lbl: 'Remanejamento' },
+    { key: 'eco', v: eco, lbl: 'Economia' },
+    { key: 'pen', v: pen, lbl: 'Pendente' },
+    { key: 'sem', v: sem, lbl: 'Sem classificação' },
   ];
 
+  renderDonutLegend(allSegs, total);
   const visibleSegs = allSegs.filter((s) => s.v > 0 && !APP_STATE.donut.hidden.has(s.key));
+  if (visibleSegs.length === 0) {
+    destroyApexChart('donutChart');
+    renderDonutCenter(null);
+    replaceWithParsedMarkup(
+      document.getElementById('donutChart'),
+      '<div class="overview-donut-empty">Nenhuma categoria selecionada.</div>',
+    );
+    return;
+  }
   const series = visibleSegs.map((s) => s.v);
-  const labels = visibleSegs.map((s) => s.icon + ' ' + s.lbl);
+  renderDonutCenter(
+    series.reduce((sum, value) => sum + value, 0),
+    APP_STATE.donut.hidden.size > 0,
+  );
+  const labels = visibleSegs.map((s) => s.lbl);
   const colorMap = {
-    aum: resolveColor('var(--fgr-red-vivid)'),
-    rem: resolveColor('var(--text-medium)'),
-    eco: resolveColor('var(--sem-ok)'),
-    pen: resolveColor('var(--sem-alerta)'),
+    aum: resolveColor('var(--sem-erro-vivid)'),
+    rem: resolveColor('var(--accent-info-vivid)'),
+    eco: resolveColor('var(--sem-ok-vivid)'),
+    pen: resolveColor('var(--sem-alerta-vivid)'),
     sem: resolveColor('var(--text-lighter)'),
   };
   const colors = visibleSegs.map((s) => colorMap[s.key]);
@@ -679,7 +740,7 @@ function renderDonut(tipoSum) {
       type: 'donut',
       height: 320,
       animations: { enabled: true, easing: 'easeinout', speed: 600 },
-      toolbar: { show: true, tools: { download: true, selection: false, zoom: false, pan: false } },
+      toolbar: { show: false },
       events: {
         dataPointSelection: function (event, chartContext, config) {
           const segIndex = config.dataPointIndex;
@@ -694,23 +755,8 @@ function renderDonut(tipoSum) {
     plotOptions: {
       pie: {
         donut: {
-          size: '65%',
-          labels: {
-            show: true,
-            total: {
-              show: true,
-              label: APP_STATE.donut.hidden.size > 0 ? 'Total (filtro ativo)' : 'Total flows',
-              formatter: function (w) {
-                const sum = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
-                return fmtR$k(sum);
-              },
-            },
-            value: {
-              formatter: function (val) {
-                return fmtR$(parseFloat(val));
-              },
-            },
-          },
+          size: '72%',
+          labels: { show: false },
         },
       },
     },
@@ -725,24 +771,11 @@ function renderDonut(tipoSum) {
       },
     },
     legend: {
-      show: true,
-      position: 'bottom',
-      fontSize: '12px',
-      labels: { colors: resolveColor('var(--text-medium)') },
-      itemMargin: { horizontal: 8, vertical: 4 },
+      show: false,
     },
-    stroke: { width: 2, colors: [resolveColor('var(--bg-card)')] },
-    dataLabels: {
-      enabled: true,
-      formatter: function (val) {
-        return val.toFixed(1) + '%';
-      },
-      style: { fontSize: '11px' },
-      dropShadow: { enabled: false },
-    },
-    responsive: [
-      { breakpoint: 480, options: { chart: { height: 260 }, legend: { position: 'bottom' } } },
-    ],
+    stroke: { width: 0 },
+    dataLabels: { enabled: false },
+    responsive: [{ breakpoint: 480, options: { chart: { height: 260 } } }],
   };
 
   renderApexChart('donutChart', options);

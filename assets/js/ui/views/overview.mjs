@@ -239,11 +239,8 @@ function renderVisao() {
   });
   const totCorrigido = APP_STATE.config.correcaoIndice === 'ipca' ? totIpca : totIncc;
   const indiceLabel = APP_STATE.config.correcaoIndice.toUpperCase();
-  const totAltLabel = APP_STATE.config.correcaoIndice === 'ipca' ? 'INCC' : 'IPCA';
-  const totAltVal = APP_STATE.config.correcaoIndice === 'ipca' ? totIncc : totIpca;
   // Diferenças vs licitação
   const inflacaoAbs = totCorrigido - totLicit;
-  const inflacaoPct = totLicit ? (inflacaoAbs / totLicit) * 100 : 0;
   // Estouro bruto (gestão vs licitação)
   const desvioBrutoPct = totLicit ? (totDiff / totLicit) * 100 : 0;
   // ===== Cálculo das tendências (Card 3) =====
@@ -354,19 +351,14 @@ function renderVisao() {
     <div class="kpi kpi-wide">
       <div class="label">📋 Orçamento Licitação</div>
       <div class="value">${fmtR$(totLicit)}</div>
-      <div class="sub">${folhas.length} itens · base original do contrato</div>
       <hr class="overview-divider">
+      <div class="overview-kpi-overline">Corrigido (${indiceLabel})</div>
       <div class="overview-kpi-split">
-        <div>
-          <div class="overview-kpi-overline">Corrigido (${indiceLabel})</div>
-          <div class="overview-kpi-corrected">${fmtR$(totCorrigido)}</div>
-        </div>
+        <div class="overview-kpi-adjustment overview-tone--${signedTone(inflacaoAbs)}">${inflacaoAbs >= 0 ? '+' : ''}${fmtR$(inflacaoAbs)}</div>
         ${toggleHtml}
       </div>
-      <div class="overview-kpi-details">
-        +${fmtR$(inflacaoAbs)} de inflação (${inflacaoPct.toFixed(1)}%)
-        · ${totAltLabel}: ${fmtR$k(totAltVal)}
-      </div>
+      <hr class="overview-divider">
+      <div class="overview-kpi-corrected-total">${fmtR$(totCorrigido)}</div>
     </div>
 
     <!-- Card Fluxo Atual (Gestão) -->

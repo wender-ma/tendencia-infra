@@ -6,6 +6,7 @@ const { loadProjectSources } = require('./load_project_sources');
 
 const root = path.resolve(__dirname, '..');
 const { html } = loadProjectSources();
+const overview = fs.readFileSync(path.join(root, 'assets/js/ui/views/overview.mjs'), 'utf8');
 const css = ['assets/css/base.css', 'assets/css/components.css', 'assets/css/dashboard.css']
   .map((file) => fs.readFileSync(path.join(root, file), 'utf8'))
   .join('\n');
@@ -50,6 +51,16 @@ assert(
 assert(
   !html.includes('id="srcHeader_visao"'),
   'Visão Geral não deve duplicar o resumo de fontes exibido no cabeçalho',
+);
+assert(
+  !overview.includes('itens · base original do contrato') &&
+    !overview.includes('de inflação (${inflacaoPct.toFixed(1)}%)'),
+  'Card de licitação não deve exibir os detalhes removidos',
+);
+assert(
+  overview.indexOf('overview-kpi-adjustment') <
+    overview.indexOf('overview-kpi-corrected-total'),
+  'Card de licitação deve mostrar o acréscimo antes do total corrigido',
 );
 assert(
   css.includes('.header-action-row') && css.includes('.header-status-row'),

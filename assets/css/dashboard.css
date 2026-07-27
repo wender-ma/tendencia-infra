@@ -1789,7 +1789,6 @@ body:not(.is-admin-geral) [data-admin-control],
   font-weight: 600;
   text-transform: uppercase;
 }
-.overview-budget-original-value { margin-top: 2px; }
 .overview-budget-correction-head {
   display: flex;
   align-items: center;

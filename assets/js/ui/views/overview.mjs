@@ -407,9 +407,7 @@ function renderVisao() {
     <!-- Card Licitação + Correção -->
     <div class="kpi kpi-wide overview-budget-card">
       <div class="label">📋 Orçamento Licitação</div>
-      <div class="overview-budget-caption">Valor original</div>
-      <div class="value overview-budget-original-value">${fmtR$(totLicit)}</div>
-      <hr class="overview-divider">
+      <div class="value">${fmtR$(totLicit)}</div>
       <div class="overview-budget-correction-head">
         <div class="overview-kpi-overline">Correção monetária (${indiceLabel})</div>
         ${toggleHtml}

@@ -63,9 +63,9 @@ assert(
 );
 assert(
   overview.includes('overview-budget-bar-svg') &&
-    overview.includes('Valor original') &&
+    !overview.includes('<div class="overview-budget-caption">Valor original</div>') &&
     overview.includes('Total corrigido'),
-  'Card de licitação deve distinguir base, correção e total com apoio visual',
+  'Card de licitação deve distinguir base, correção e total sem repetir o rótulo original',
 );
 assert(
   !overview.includes('<div class="sub">planejamento vigente</div>'),

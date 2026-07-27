@@ -5,5 +5,8 @@ export function parseLocalMarkup(markup, ownerDocument = document) {
 
 export function replaceWithParsedMarkup(element, markup) {
   if (!element) return;
-  element.replaceChildren(...parseLocalMarkup(markup, element.ownerDocument));
+  const range = element.ownerDocument.createRange();
+  range.selectNodeContents(element);
+  const fragment = range.createContextualFragment(String(markup));
+  element.replaceChildren(fragment);
 }

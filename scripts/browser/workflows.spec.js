@@ -63,6 +63,11 @@ test('editor altera status de Flow preservando a obra ativa', async ({ page }) =
   await page.locator('#tab-btn-flows').click();
   await page.getByRole('button', { name: 'Limpar filtros' }).click();
   const status = page.locator('select.refletido-select[data-n="ADT-E2E-1"]');
+  const row = page.locator('#flowTbody tr[data-n="ADT-E2E-1"]');
+  await expect(row).toHaveCount(1);
+  await expect(row.locator(':scope > td')).toHaveCount(10);
+  await expect(row.locator(':scope > td').nth(2)).toContainText('ADT-E2E-1');
+  await expect(row.locator(':scope > td').nth(9)).toContainText('Teste E2E');
   await expect(status).toBeEnabled();
   await status.selectOption('sim');
   await expect

@@ -130,6 +130,10 @@ assert(
   'Montagem das abas estáticas ausente',
 );
 assert(domUi.includes('new DOMParser()'), 'Markup local deve ser montado com parser estruturado');
+assert(
+  domUi.includes('createContextualFragment') && domUi.includes('selectNodeContents(element)'),
+  'Markup dinâmico deve preservar o contexto estrutural do elemento de destino',
+);
 assert(!domUi.includes('installLegacyDomGlobals'), 'Helper DOM voltou a ser publicado globalmente');
 assert(
   flowEditor.includes('export function createFlowEditor'),

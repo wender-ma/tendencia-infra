@@ -147,3 +147,18 @@ A auditoria independente pela Management API, executada em
 Producao deve permanecer em `VITE_DATASET_PERSISTENCE_MODE=dual` ate a validacao
 funcional do dashboard real. Depois dessa validacao, publique o modo `snapshots`,
 monitore a janela de estabilidade e so entao avalie a remocao das chaves legadas.
+
+## Modo snapshots publicado - 27/07/2026
+
+Depois da validacao funcional em `dual`, a Vercel foi configurada com
+`VITE_DATASET_PERSISTENCE_MODE=snapshots`. O deployment concluiu e os smokes
+anonimo e autenticado confirmaram carregamento, recarga, abas, troca de obra e
+administracao. O inventario agregado permaneceu com quatro snapshots ativos,
+quatro objetos privados e quatro blobs legados.
+
+A janela minima de estabilidade foi definida em sete dias corridos, de 27/07 a
+03/08/2026. A auditoria read-only
+`supabase/audit/verify_legacy_dataset_cleanup.sql` e a manutencao transacional
+`supabase/maintenance/cleanup_legacy_dashboard_datasets.sql` foram preparadas,
+mas nao executadas. A limpeza continua condicionada a backup, `cleanup_ready:
+true`, smokes verdes e autorizacao explicita do responsavel tecnico.

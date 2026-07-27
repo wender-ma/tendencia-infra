@@ -1,10 +1,12 @@
 const { defineConfig, devices } = require('@playwright/test');
 
+const previewPort = Number(process.env.PLAYWRIGHT_PORT || 4174);
+
 module.exports = defineConfig({
   testDir: './scripts/browser',
   timeout: 30_000,
   use: {
-    baseURL: 'http://127.0.0.1:4174',
+    baseURL: `http://127.0.0.1:${previewPort}`,
     viewport: { width: 1440, height: 900 },
   },
   projects: [
@@ -24,7 +26,7 @@ module.exports = defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build:test && npm run preview -- --host 127.0.0.1 --port 4174',
+    command: `npm run build:test && npm run preview -- --host 127.0.0.1 --port ${previewPort}`,
     env: {
       ...process.env,
       VITE_APP_ENV: 'test',
@@ -32,7 +34,7 @@ module.exports = defineConfig({
       VITE_SUPABASE_ANON_KEY: 'test-anon-public-key',
       VITE_DATASET_PERSISTENCE_MODE: 'dual',
     },
-    url: 'http://127.0.0.1:4174',
+    url: `http://127.0.0.1:${previewPort}`,
     reuseExistingServer: false,
     timeout: 120_000,
   },

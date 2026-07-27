@@ -203,20 +203,43 @@ Para interromper o uso dos blobs grandes:
 3. compare contagem, hash e conteudo por tipo e obra;
 4. configure `VITE_DATASET_PERSISTENCE_MODE=snapshots` na hospedagem e publique;
 5. valide login, troca de obra, leitura, upload e rollback;
-6. aguarde a janela de estabilidade antes de remover chaves legadas.
+6. aguarde no mínimo sete dias corridos em produção sem regressão antes de remover chaves legadas.
 
 No modo `snapshots`, `dashboard_config` continua armazenando apenas configuracoes
 pequenas, como `gestao_label`. Se o deploy apresentar falha, restaure
 `VITE_DATASET_PERSISTENCE_MODE=dual` e publique novamente. As chaves legadas so
 servem como rollback enquanto ainda nao tiverem sido removidas.
 
+O modo `snapshots` foi publicado em 27/07/2026. A janela de estabilidade termina
+em 03/08/2026 e a limpeza nao deve ocorrer antes dessa data. No fim da janela,
+repita o inventario somente leitura, confirme quatro snapshots ativos e quatro
+objetos integros, execute os smokes anonimo e autenticado e obtenha autorizacao
+explicita do responsavel tecnico antes de remover qualquer chave.
+
+O procedimento final ja esta preparado, mas nao deve ser antecipado:
+
+1. gere e valide um backup/export do banco;
+2. execute `supabase/audit/verify_legacy_dataset_cleanup.sql`;
+3. exija `cleanup_ready: true` e preserve o resultado junto ao deploy;
+4. confirme novamente o project ref e a autorizacao do responsavel;
+5. execute `supabase/maintenance/cleanup_legacy_dashboard_datasets.sql`;
+6. exija `cleanup_complete: true`, `deleted_legacy_key_count: 4` e
+   `remaining_legacy_key_count: 0`;
+7. repita o inventario e os smokes no dominio publicado.
+
+O SQL de manutencao e transacional, bloqueia datas anteriores a 03/08/2026,
+inventario divergente, snapshots em processamento e ausencia de snapshot ou
+objeto ativo. Ele nao remove registros de `dashboard_datasets` nem objetos do
+Storage. Depois do commit, a restauracao dos blobs antigos depende do backup
+feito no primeiro passo.
+
 ### Backfill controlado de producao
 
 O inventario de 24/07/2026 e a verificacao de 27/07/2026 estao em
 `docs/supabase_production_inventory_2026-07-24.md`. As duas migrations de
 manutencao ja foram aplicadas e o deployment foi confirmado como `complete: true`.
-Continuam existindo quatro blobs legados, que devem ser preservados durante o
-backfill.
+Continuam existindo quatro blobs legados, preservados durante o backfill e durante
+a janela de estabilidade do modo `snapshots`.
 
 Depois desse gate, copie `.env.production-backfill.example` para
 `.env.production-backfill.local` e preencha somente localmente a URL/chave publica
@@ -264,10 +287,10 @@ chaves antigas continuam disponiveis para rollback. Nao repita o backfill neste
 estado. O proximo gate e validar login, troca de obra e leitura das quatro
 visualizacoes com a hospedagem ainda configurada em `dual`.
 
-Esse gate funcional foi aprovado pelo responsavel em 27/07/2026. O proximo passo
-e alterar somente `VITE_DATASET_PERSISTENCE_MODE` para `snapshots`, publicar a
-mesma revisao e repetir a validacao. As inconsistencias visuais observadas em
-algumas tabelas foram registradas no P3 e nao afetam o contrato dos datasets.
+Esse gate funcional foi aprovado pelo responsavel em 27/07/2026. Na mesma data,
+`VITE_DATASET_PERSISTENCE_MODE=snapshots` foi publicado e os fluxos foram
+revalidados. A leitura e a escrita dos blobs legados foram interrompidas; eles
+permanecem apenas como rollback ate o fim da janela em 03/08/2026.
 
 Para validar as contas reais de desenvolvimento sem alterar dados, configure
 `.env.roles.local` a partir de `.env.roles.example` e execute:

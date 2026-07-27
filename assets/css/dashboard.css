@@ -122,6 +122,34 @@
     border-radius: 6px;
   }
   .table-wrap > table { min-width: 720px; }
+  .table-wrap > .flows-table {
+    min-width: 1260px;
+    table-layout: fixed;
+  }
+  .details-table {
+    min-width: 1320px;
+    table-layout: fixed;
+  }
+  .details-table th:nth-child(1) { width: 160px; }
+  .details-table th:nth-child(2) { width: 300px; }
+  .details-table th:nth-child(3) { width: 90px; }
+  .details-table th:nth-child(4),
+  .details-table th:nth-child(5),
+  .details-table th:nth-child(6),
+  .details-table th:nth-child(8) { width: 110px; }
+  .details-table th:nth-child(7),
+  .details-table th:nth-child(9),
+  .details-table th:nth-child(10) { width: 80px; }
+  .details-table th:nth-child(11) { width: 90px; }
+  .projection-table > table {
+    min-width: 960px;
+    table-layout: fixed;
+  }
+  .projection-movement-table > table {
+    min-width: 1160px;
+    table-layout: fixed;
+  }
+  #histTbl { min-width: 1050px; }
   .table-wrap :is(th, td),
   .uploads-history-table :is(th, td) {
     overflow-wrap: anywhere;

@@ -89,9 +89,11 @@ Aceite: as politicas RLS bloqueiam papeis indevidos, os snapshots ativos carrega
 os mesmos dados esperados e um rollback mantem o dashboard utilizavel.
 
 Status em 27/07/2026: o responsavel validou login, dados, recarga completa, abas,
-troca de obra e area administrativa no dominio final em modo `snapshots`. Foram
-observadas inconsistencias visuais residuais em algumas tabelas; elas nao
-impediram os fluxos e ficam registradas para um lote posterior de polimento.
+troca de obra e area administrativa no dominio final em modo `snapshots`. A
+estrutura quebrada das tabelas foi reproduzida: o parser generico descartava o
+contexto de `<tbody>` e empilhava todas as celulas na primeira coluna. A revisao
+corretiva preserva o contexto tabular, fixa larguras por tabela e foi validada
+com dados reais em desktop e mobile, sem overflow da pagina.
 
 ## 3. Matriz de permissoes em ambiente real
 

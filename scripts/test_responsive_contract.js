@@ -16,6 +16,24 @@ function assert(condition, message) {
 assert(/<meta\s+name="viewport"\s+content="width=device-width, initial-scale=1(?:\.0)?">/i.test(html), 'Meta viewport ausente');
 assert(/\.table-wrap\s*{[^}]*overflow:\s*auto/s.test(css), 'Tabelas precisam de rolagem própria');
 assert(/\.table-wrap\s*>\s*table\s*{[^}]*min-width:\s*720px/s.test(css), 'Tabelas perderam sua largura estável');
+for (const [selector, width] of [
+  ['.table-wrap > .flows-table', 1260],
+  ['.details-table', 1320],
+  ['.projection-table > table', 960],
+  ['.projection-movement-table > table', 1160],
+  ['#histTbl', 1050],
+]) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert(
+    new RegExp(`${escapedSelector}\\s*\\{[^}]*min-width:\\s*${width}px`, 's').test(css),
+    `Largura estável ausente em ${selector}`,
+  );
+}
+assert(
+  /\.details-table\s*\{[^}]*table-layout:\s*fixed/s.test(css) &&
+    /\.table-wrap\s*>\s*\.flows-table\s*\{[^}]*table-layout:\s*fixed/s.test(css),
+  'Tabelas operacionais precisam preservar as colunas definidas',
+);
 assert(
   /\.table-wrap\s+:is\(th,\s*td\)[^{]*\{[^}]*overflow-wrap:\s*anywhere/s.test(css),
   'Celulas longas precisam quebrar sem expandir a pagina',

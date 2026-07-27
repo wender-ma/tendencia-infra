@@ -207,7 +207,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 
 - [x] Consultar somente configurações necessárias para a obra ativa.
 - [x] Evitar carregar todas as classificações de todas as obras no boot.
-- [ ] **EM ANDAMENTO EXT-07** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: desenvolvimento, migrations, backfill e validação funcional de produção em modo `dual` concluídos; EXT-02 publicou o modo `snapshots`, e quatro snapshots ativos e quatro blobs legados permanecem disponíveis. Falta cumprir a janela de estabilidade e autorizar a limpeza legada.
+- [ ] **EM ANDAMENTO EXT-07** Retirar datasets grandes de `dashboard_config` conforme `docs/adr_dashboard_datasets.md`: modo `snapshots` publicado e validado em 27/07/2026, com quatro snapshots ativos e quatro blobs legados disponíveis para rollback. A janela mínima termina em 03/08/2026; depois dela, falta repetir o inventário e autorizar a limpeza legada.
 - [x] Avaliar tabelas normalizadas ou JSON versionado no Storage; decisão registrada em `docs/adr_dashboard_datasets.md`.
 - [x] Renderizar somente a aba ativa.
 - [x] Carregar SheetJS somente na primeira importação, reativação ou exportação Excel.
@@ -256,7 +256,7 @@ Critério de conclusão: os fluxos principais funcionam sem mouse e não apresen
 - [x] Mostrar progresso real na leitura de uploads grandes e etapas de processamento/sincronização.
 - [x] Revisar estados vazios, loading e erro de cada aba (componente seguro compartilhado e navegação offline coberta no navegador).
 - [x] Revisar textos e termos técnicos apresentados ao usuário.
-- [x] Corrigir inconsistências de formatação observadas em tabelas com conteúdo longo; células quebram texto sem alargar a página, ações permanecem estáveis e o histórico possui rolagem própria em mobile.
+- [x] Corrigir inconsistências de formatação das tabelas: o parser preserva linhas e células no contexto de `<tbody>`, larguras são estáveis por visão e a rolagem permanece interna no mobile sem alargar a página.
 - [x] Adicionar `meta description`.
 - [x] Manter `robots noindex, nofollow` até haver decisão explícita sobre indexação em buscadores.
 - [ ] **DECISÃO EXTERNA EXT-09** Decidir sobre indexação em buscadores e aprovar texto/imagem de Open Graph; o acesso público pelo link já está autorizado.
@@ -353,3 +353,5 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Nove pendências externas classificadas por ID, dependência, responsável e aceite; contrato impede novos itens abertos sem classificação | `external_actions.md`, `test_roadmap_contract.js` |
 | 27/07/2026 | EXT-02 concluído: variáveis de Production configuradas, deployment publicado e smoke público confirmou HTTP 200, headers defensivos, boot concluído e zero erros de página | `operations.md`, `manual_validation.md` |
 | 27/07/2026 | EXT-03 e EXT-04 concluídos: fluxos autenticados validados pelo responsável e leitura operacional pública aprovada; seleção inicial prioriza obra com snapshot e visitante não consulta histórico privado | `project-controller.mjs`, `upload-repository.mjs`, `manual_validation.md` |
+| 27/07/2026 | Parser DOM passou a preservar o contexto de tabelas dinâmicas; 228 linhas reais em cinco visões mantiveram 7–11 células corretas, com larguras estáveis e rolagem interna em desktop/mobile | `ui/dom.mjs`, `dashboard.css`, `workflows.spec.js` |
+| 27/07/2026 | Janela de estabilidade de `snapshots` definida em sete dias corridos, de 27/07 a 03/08/2026; auditoria read-only e limpeza transacional preparadas com gates de data, inventário, concorrência e preservação dos snapshots | `verify_legacy_dataset_cleanup.sql`, `cleanup_legacy_dashboard_datasets.sql` |

@@ -17,7 +17,7 @@ Dashboard de tendência orçamentária
 ├── docs/                   # Documentação e scripts de banco de dados
 ├── experiments/            # Protótipos e telas isoladas
 ├── scripts/                 # Scripts auxiliares do projeto
-├── supabase/                # Auditoria, migrations, rollback e testes SQL
+├── supabase/                # Auditoria, migrations, manutenção, rollback e testes SQL
 ├── ROADMAP.md               # Prioridades e acompanhamento das melhorias
 └── README.md
 ```
@@ -64,6 +64,7 @@ Dashboard de tendência orçamentária
 - `supabase/audit/`: consultas somente leitura para inventariar o ambiente implantado, incluindo exportação em um único JSON.
 - `supabase/drafts/`: SQL em revisão que não deve ser aplicado diretamente.
 - `supabase/migrations/`: migrations incrementais revisadas e testadas localmente.
+- `supabase/maintenance/`: operações destrutivas avulsas, bloqueadas por preflight e autorização.
 - `supabase/rollback/`: recuperação emergencial correspondente às migrations.
 - `supabase/tests/`: fixture e asserções SQL de segurança.
 

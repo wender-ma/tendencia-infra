@@ -229,7 +229,7 @@ function renderFlows() {
   });
   const motArr = Object.entries(byMot)
     .sort((a, b) => Math.abs(b[1].v) - Math.abs(a[1].v))
-    .slice(0, 8);
+    .slice(0, 6);
   const maxM = Math.max(...motArr.map((m) => Math.abs(m[1].v)), 1);
   replaceWithParsedMarkup(
     document.getElementById('flowsByMotivo'),

@@ -65,6 +65,8 @@ function _evolClass(d) {
 
 function renderTable() {
   bindDetailFilters();
+  const emptyState = document.getElementById('detailEmptyState');
+  const tableWrap = document.getElementById('detailTableWrap');
   // atualizar header da coluna Gestão com o APP_STATE.config.gestaoLabel atual
   const thG = document.getElementById('thGestao');
   if (thG && APP_STATE.config.gestaoLabel) {
@@ -75,19 +77,27 @@ function renderTable() {
   // guard sem dados
   if (!obraTemTendencia()) {
     const tbody = document.getElementById('tbody');
-    if (tbody)
-      renderDashboardState(tbody, {
+    tbody?.replaceChildren();
+    if (emptyState) {
+      emptyState.hidden = false;
+      renderDashboardState(emptyState, {
         title: 'Detalhamento sem dados',
         message: 'Envie a planilha de Tendência desta obra para consultar os itens.',
         action: { label: 'Ir para Uploads', tab: 'uploads' },
-        tableColspan: 11,
       });
+    }
+    if (tableWrap) tableWrap.hidden = true;
     const count = document.getElementById('count');
     if (count) count.textContent = '0 itens';
     const emptyPage = paginateRows('detail', [], 'empty');
     renderPaginationControls('detailPagination', 'detail', emptyPage, renderTable);
     return;
   }
+  if (emptyState) {
+    emptyState.hidden = true;
+    emptyState.replaceChildren();
+  }
+  if (tableWrap) tableWrap.hidden = false;
   const q = document.getElementById('search').value.toLowerCase();
   const fg = document.getElementById('filterGrupo').value;
   const fs = document.getElementById('filterStatus').value;

@@ -1241,6 +1241,10 @@ body:not(.is-admin-geral) [data-admin-control],
   .projection-detail-filters { flex-basis: 100%; }
   .projection-control-movement-toolbar { flex-wrap: wrap; white-space: normal; }
   .projection-control-movement-filters { order: 3; flex-basis: 100%; }
+  .details-toolbar,
+  .history-heatmap-toolbar { flex-wrap: wrap; white-space: normal; }
+  .details-filters,
+  .history-heatmap-filters { order: 3; flex-basis: 100%; }
   .flows-filter-toolbar { flex-wrap: wrap; }
 }
 .is-hidden { display: none; }
@@ -1706,6 +1710,63 @@ body:not(.is-admin-geral) [data-admin-control],
 .projection-direction-icon.is-invalid,
 .projection-movement-table .num.is-invalid {
   color: var(--sem-alerta);
+}
+
+/* Detalhamento e Histórico Mensal */
+.details-toolbar,
+.history-heatmap-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  white-space: nowrap;
+}
+.card :is(.details-title, .history-heatmap-title) {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 17px;
+}
+.details-filters,
+.history-heatmap-filters {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  flex-wrap: nowrap;
+}
+.details-filters input[type=search],
+.history-heatmap-filters input[type=search] {
+  min-width: 180px;
+  flex: 1 1 210px;
+}
+.details-filters select { min-width: 130px; }
+.history-heatmap-filters select { min-width: 180px; }
+.details-actions { flex: 0 0 auto; flex-wrap: nowrap; }
+#tab-detalhe .details-table-wrap,
+#tab-historico .history-table-wrap {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+#tab-historico .history-kpis {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+#tab-historico .history-kpis .kpi {
+  min-width: 0;
+  padding: 12px 14px;
+}
+#tab-historico .history-kpis .value { font-size: 18px; }
+#tab-historico .history-kpis .sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-chart-card { margin-bottom: 16px; }
+.history-ranking-grid .card { min-width: 0; }
+.history-heatmap-card { margin-bottom: 0; }
+.history-data-section[hidden] { display: none; }
+
+@media (max-width: 1200px) {
+  #tab-historico .history-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .projection-origin-chip {
   display: inline-block;
@@ -2177,6 +2238,7 @@ body:not(.is-admin-geral) [data-admin-control],
     align-items: flex-end;
   }
   .projection-control-overview-grid { grid-template-columns: minmax(0, 1fr); }
+  #tab-historico .history-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 700px) {
@@ -2199,6 +2261,15 @@ body:not(.is-admin-geral) [data-admin-control],
     overflow-x: auto;
     overflow-y: hidden;
   }
+  .details-toolbar,
+  .history-heatmap-toolbar { align-items: stretch; }
+  .details-title,
+  .history-heatmap-title { width: 100%; }
+  .details-filters,
+  .history-heatmap-filters,
+  .details-actions { width: 100%; flex-wrap: wrap; }
+  .details-actions .btn-sm { flex: 1 1 140px; }
+  #tab-historico .history-kpis { grid-template-columns: minmax(0, 1fr); }
   .page-header {
     position: static;
     padding: 8px 8px 0;

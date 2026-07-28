@@ -46,8 +46,12 @@ function renderHistorico() {
   bindHistoryFilters();
   // v0.58b: filtra pela obra ativa
   const HIST_OBRA = getHistoricoObraAtiva();
+  const dataSections = document.querySelectorAll('#tab-historico .history-data-section');
   // guard com placeholder amigável
   if (!HIST_OBRA || !HIST_OBRA.items || !HIST_OBRA.items.length) {
+    dataSections.forEach((section) => {
+      section.hidden = true;
+    });
     const kpisEl = document.getElementById('histKpis');
     const chartEl = document.getElementById('histChart');
     const heatEl = document.getElementById('histHeatmap');
@@ -69,6 +73,9 @@ function renderHistorico() {
     if (histCount) histCount.textContent = '0 itens';
     return;
   }
+  dataSections.forEach((section) => {
+    section.hidden = false;
+  });
   // Construir cópias que incluam o Orçamento Licitação como ponto zero
   const gestoes = [LIC_LABEL, ...HIST_OBRA.gestoes];
   // Mapa insumo → licitação (a partir da Tendência)

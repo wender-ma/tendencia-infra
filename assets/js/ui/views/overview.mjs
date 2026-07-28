@@ -415,6 +415,11 @@ function renderVisao({ cardsOnly = false } = {}) {
       <div class="overview-kpi-split">
         <div class="overview-kpi-adjustment overview-tone--purple">${inflacaoAbs >= 0 ? '+' : ''}${fmtR$(inflacaoAbs)}</div>
       </div>
+      <hr class="overview-divider">
+      <div class="overview-budget-total">
+        <span class="overview-budget-caption">Total corrigido</span>
+        <strong class="overview-kpi-corrected-total">${fmtR$(totCorrigido)}</strong>
+      </div>
       <div class="overview-budget-bar">
         <svg
           class="overview-budget-bar-svg"
@@ -431,11 +436,6 @@ function renderVisao({ cardsOnly = false } = {}) {
           <span class="overview-budget-bar-key overview-budget-bar-key--base">Base</span>
           <span class="overview-budget-bar-key overview-budget-bar-key--correction">Correção ${indiceLabel}</span>
         </div>
-      </div>
-      <hr class="overview-divider">
-      <div class="overview-budget-total">
-        <span class="overview-budget-caption">Total corrigido</span>
-        <strong class="overview-kpi-corrected-total">${fmtR$(totCorrigido)}</strong>
       </div>
     </div>
 

@@ -295,7 +295,7 @@ function renderFlowTable() {
   const rows = getFlowsObraAtiva().filter((f) => {
     if (q) {
       const txt =
-        `${f.descricao} ${f.justificativa} ${f.motivo} ${f.insumo_planejamento} ${f.insumo_remanejamento} ${f.solicitante || ''}`.toLowerCase();
+        `${f.n_alteracao || ''} ${f.descricao} ${f.justificativa} ${f.motivo} ${f.insumo_planejamento} ${f.insumo_remanejamento} ${f.solicitante || ''}`.toLowerCase();
       if (!txt.includes(q)) return false;
     }
     if (!msMatches('dep', f.dep)) return false;
@@ -421,8 +421,10 @@ function renderFlowTable() {
   );
   const refletidos = rows.filter((r) => (r.refletido_status || '') === 'sim').length;
   const naorefl = rows.filter((r) => (r.refletido_status || '') === 'nao').length;
-  document.getElementById('flowCount').textContent =
-    `${rows.length} aditivos · exibindo ${flowPage.start}–${flowPage.end} · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s, f) => s + (f.custo_flowmaster || 0), 0))}`;
+  const flowCount = document.getElementById('flowCount');
+  if (flowCount) {
+    flowCount.textContent = `${rows.length} aditivos · exibindo ${flowPage.start}–${flowPage.end} · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s, f) => s + (f.custo_flowmaster || 0), 0))}`;
+  }
   renderPaginationControls('flowPagination', 'flows', flowPage, renderFlowTable);
   updateSortHeaderState(
     'th[data-sort-flow]',

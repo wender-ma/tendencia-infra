@@ -16,18 +16,11 @@
 
   <div class="card">
     <h2>📋 Aditivos detalhados</h2>
-    <div class="toolbar">
-      <input type="search" id="flowSearch" aria-label="Buscar aditivos" placeholder="🔍 Buscar descrição, justificativa, motivo, insumo...">
+    <div class="toolbar flows-filter-toolbar">
+      <input type="search" id="flowSearch" aria-label="Buscar aditivos por descrição ou número do Flow" placeholder="🔍 Buscar descrição ou nº do Flow...">
       <div class="ms-wrap" id="ms_dep_wrap"><button type="button" class="ms-btn" id="ms_dep_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="dep">Todos departamentos</button><div class="ms-panel" id="ms_dep_panel"></div></div>
-      <div class="ms-wrap" id="ms_tipo_wrap"><button type="button" class="ms-btn" id="ms_tipo_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="tipo">Todos tipos</button><div class="ms-panel" id="ms_tipo_panel"></div></div>
-      <div class="ms-wrap" id="ms_motivo_wrap"><button type="button" class="ms-btn" id="ms_motivo_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="motivo">Todos motivos</button><div class="ms-panel" id="ms_motivo_panel"></div></div>
-      <span class="toolbar-count" id="flowCount"></span>
-    </div>
-    <div class="toolbar toolbar--secondary">
-      <span class="advanced-filter-title">FILTROS AVANÇADOS:</span>
-      <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="refletido">Refletido: todos</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
+      <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="refletido">Todos status</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
       <div class="ms-wrap" id="ms_solicitante_wrap"><button type="button" class="ms-btn" id="ms_solicitante_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="solicitante">Todos solicitantes</button><div class="ms-panel" id="ms_solicitante_panel"></div></div>
-      <div class="ms-wrap" id="ms_destino_wrap"><button type="button" class="ms-btn" id="ms_destino_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="destino">Destino/Origem: todos</button><div class="ms-panel" id="ms_destino_panel"></div></div>
       <label class="advanced-filter-field">
         📅 De:
         <input type="month" id="flowFilterDataIni" class="flow-filter-control">
@@ -44,10 +37,7 @@
       <button class="btn-sm compact" data-click-action="clearFlowFilters">🧹 Limpar filtros</button>
     </div>
     <div class="classif-bar">
-      <div class="info">
-        ✏️ <strong>Modo edição:</strong> clique nas células <em>Destino</em> ou <em>Origem</em> para reclassificar. As alterações ficam salvas no navegador.
-        <span id="editCount" class="edit-count"></span>
-      </div>
+      <span id="editCount" class="edit-count" aria-live="polite"></span>
       <button class="btn-sm primary" data-editor-only data-click-action="openManualForm" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo manual</button>
       <button class="btn-sm primary" data-click-action="exportarFlowsXLSX" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
       <button class="btn-sm" data-click-action="exportClassifications" title="Baixa CSV apenas com as alterações manuais feitas (edições de INSUMO_*)">📤 Exportar só alterações (CSV)</button>

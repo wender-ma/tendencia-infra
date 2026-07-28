@@ -1208,6 +1208,10 @@ body:not(.is-admin-geral) [data-admin-control],
 
 /* Flows */
 .flows-discarded { margin-top: 10px; }
+.flows-filter-toolbar { flex-wrap: nowrap; }
+.flows-filter-toolbar input[type=search] { min-width: 190px; }
+.flows-filter-toolbar .ms-btn { min-width: 145px; }
+.flows-filter-toolbar > .btn-sm { flex-shrink: 0; white-space: nowrap; }
 .advanced-filter-title { color: var(--text-soft); font-size: 11px; font-weight: 600; }
 .advanced-filter-field {
   display: flex;
@@ -1225,6 +1229,9 @@ body:not(.is-admin-geral) [data-admin-control],
 .flow-filter-number { width: 80px; }
 .edit-count { margin-left: 8px; }
 .selection-checkbox { cursor: pointer; transform: scale(1.15); }
+@media (max-width: 1200px) {
+  .flows-filter-toolbar { flex-wrap: wrap; }
+}
 .is-hidden { display: none; }
 
 /* Tendência de Obra */

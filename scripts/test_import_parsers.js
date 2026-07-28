@@ -16,7 +16,11 @@ function csv(rows) {
 
 async function main() {
   const parsersDirectory = path.resolve(__dirname, '../assets/js/parsers');
-  const [{ parseTendenciaFile }, { parseFlowsFile }, { parseGestoesFile }] = await Promise.all([
+  const [
+    { parseTendenciaFile },
+    { discoverFlowProjectReferences, parseFlowsFile },
+    { discoverGestoesProjectCodes, parseGestoesFile },
+  ] = await Promise.all([
     import(pathToFileURL(path.join(parsersDirectory, 'tendencia-parser.mjs')).href),
     import(pathToFileURL(path.join(parsersDirectory, 'flows-parser.mjs')).href),
     import(pathToFileURL(path.join(parsersDirectory, 'gestoes-parser.mjs')).href),
@@ -45,35 +49,61 @@ async function main() {
     'Vlr_planejamento', 'Departamento', 'Ins. Planej.', 'Ins. Remanej.', 'Refletido',
   ];
   const maliciousText = '<script>alert(1)</script><img src=x onerror=alert(2)>" onmouseover="alert(3) javascript:alert(4)';
-  const flows = parseFlowsFile(csv([
+  const flowsCsv = csv([
     flowHeaders,
     ['101', 'Aprovado', 'Engenharia', 'Obras', '20/07/2026', 'Escopo', maliciousText, 'Aditivo 101', '21O', '2.500,00', '2.450,00', '', 'I001', '-', 'Sim'],
     ['102', 'Aprovado', 'Engenharia', 'Obras', '31/02/2026', 'Escopo', 'Data ruim', 'Aditivo 102', '21O', '10', '10', '', 'I002', '-', 'Não'],
     ['103', 'Aprovado', 'Engenharia', 'Obras', '20/07/2026', 'Escopo', 'Obra ruim', 'Aditivo 103', 'XX', '10', '10', '', 'I003', '-', 'Não'],
-  ]), { projects: [{ codigo_obra: '42-21O' }] });
+  ]);
+  const flows = parseFlowsFile(flowsCsv, { projects: [{ codigo_obra: '42-21O' }] });
   assert(flows.items.length === 1, 'Parser de Flows aceitou linhas inválidas');
   assert(flows.items[0].codigo_obra === '42-21O', 'Sufixo da obra não foi resolvido');
   assert(flows.items[0].justificativa === maliciousText, 'Texto externo foi alterado pelo parser');
   assert(flows.items[0].tipo === 'aumento_real', 'Classificação do Flow incorreta');
   assert(flows.report.rejected === 2, 'Relatório de Flows não contou rejeições');
   assert(flows.unknownProjects.join(',') === 'XX', 'Obra desconhecida não foi reportada');
+  assert(
+    discoverFlowProjectReferences(flowsCsv).join(',') === '21O,XX',
+    'Descoberta de referências de obras em Flows falhou',
+  );
 
   const managementHeaders = [
     'Mês pagamento', 'Key planejamento', 'Descr classificaçãofinanceira',
     'Valor total líquido', 'Descr gestão', 'Serviço', 'Insumo', 'Item',
   ];
   const planningKey = '42-21O-1-31005-S05765-I001-01.02.03';
-  const managements = parseGestoesFile(csv([
-    managementHeaders,
-    ['01/07/2026', planningKey, 'Obra', '1.000,50', 'GESTÃO 06-2026', '', '', ''],
-    ['01/08/2026', planningKey, 'Obra', '1.250,75', 'Atual', '', '', ''],
-    ['01/08/2026', planningKey, 'Administrativo', '500,00', 'Atual', '', '', ''],
-  ]));
+  const managementCsv = csv([
+      managementHeaders,
+      ['01/07/2026', planningKey, 'Obra', '1.000,50', 'GESTÃO 06-2026', '', '', ''],
+      ['01/08/2026', planningKey, 'Obra', '1.250,75', 'Atual', '', '', ''],
+      ['01/08/2026', planningKey, 'Administrativo', '500,00', 'Atual', '', '', ''],
+      [
+        '01/08/2026',
+        '99-XYZ-1-31005-S05765-I001-01.02.03',
+        'Obra',
+        '10,00',
+        'Atual',
+        '',
+        '',
+        '',
+      ],
+    ]);
+  const managements = parseGestoesFile(managementCsv, {
+    projects: [{ codigo_obra: '42-21O' }],
+  });
   assert(managements.history.items.length === 1, 'Gestões não agregou a chave');
   assert(managements.history.items[0].servico === 'S05765', 'Fallback de serviço falhou');
   assert(managements.history.totals['42-21O'].Atual === 1250.75, 'Total por obra incorreto');
   assert(managements.projectionRows[0].mes === '2026-08', 'Projeção mensal incorreta');
   assert(managements.report.accepted === 2 && managements.report.ignored === 1, 'Relatório de Gestões incorreto');
+  assert(
+    managements.unknownProjects.join(',') === '99-XYZ',
+    'Gestões não reportou a obra desconhecida',
+  );
+  assert(
+    discoverGestoesProjectCodes(managementCsv).join(',') === '42-21O,99-XYZ',
+    'Descoberta de obras em Gestões falhou',
+  );
 
   console.log('Parsers de importação: Tendência, Flows, Gestões e payloads XSS preservados como texto OK');
 }

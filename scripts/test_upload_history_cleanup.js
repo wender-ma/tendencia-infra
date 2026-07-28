@@ -6,6 +6,7 @@ const { pathToFileURL } = require('url');
 
 function createClient({ records = [], storageError = null } = {}) {
   const calls = [];
+  let currentRecords = [...records];
 
   class Query {
     constructor(table) {
@@ -32,9 +33,18 @@ function createClient({ records = [], storageError = null } = {}) {
       return this.record('eq', ...args);
     }
 
+    limit(...args) {
+      return this.record('limit', ...args);
+    }
+
     then(resolve, reject) {
-      const response =
-        this.mode === 'delete' ? { data: null, error: null } : { data: records, error: null };
+      let response;
+      if (this.mode === 'delete') {
+        currentRecords = [];
+        response = { data: null, error: null };
+      } else {
+        response = { data: currentRecords, error: null };
+      }
       return Promise.resolve(response).then(resolve, reject);
     }
   }
@@ -93,7 +103,10 @@ function createClient({ records = [], storageError = null } = {}) {
   const databaseDeleteIndex = success.calls.findIndex(
     (call) => call.layer === 'database' && call.method === 'delete',
   );
-  assert(storageIndex < databaseDeleteIndex, 'Storage deve ser limpo antes dos metadados');
+  assert(
+    databaseDeleteIndex < storageIndex,
+    'Metadados devem ser removidos antes do arquivo para evitar referências quebradas',
+  );
   assert(
     success.calls.some(
       (call) =>
@@ -109,13 +122,14 @@ function createClient({ records = [], storageError = null } = {}) {
     records: [{ id: 1, storage_path: 'OBRA-A/tendencia/arquivo.csv' }],
     storageError: new Error('storage offline'),
   });
-  await assert.rejects(
-    repositoryFor(failedStorage.client).clearProjectHistory(),
-    /registros foram mantidos/,
+  assert.strictEqual(
+    await repositoryFor(failedStorage.client).clearProjectHistory(),
+    1,
+    'Falha ao limpar objeto órfão não deve restaurar metadados já removidos',
   );
   assert(
-    !failedStorage.calls.some((call) => call.layer === 'database' && call.method === 'delete'),
-    'Metadados não podem ser apagados após falha no Storage',
+    failedStorage.calls.some((call) => call.layer === 'database' && call.method === 'delete'),
+    'Metadados precisam ser removidos antes da tentativa de limpeza do Storage',
   );
 
   const foreignPath = createClient({

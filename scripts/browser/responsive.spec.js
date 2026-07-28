@@ -52,6 +52,16 @@ for (const viewport of viewports) {
     expect(dialogLayout.top).toBeGreaterThanOrEqual(0);
     expect(dialogLayout.bottom).toBeLessThanOrEqual(dialogLayout.viewportHeight);
     await page.getByRole('button', { name: 'Fechar acesso ao dashboard' }).click();
+    await page.evaluate(() => {
+      Object.assign(window.dashboardServices.auth.state, {
+        user: { email: 'viewer@example.com' },
+        isAdminGeral: false,
+        isEditor: false,
+        isPending: false,
+        editaObras: [],
+      });
+      window.dashboardServices.authUi.updateAuthUI();
+    });
 
     for (const tabName of [
       'visao',

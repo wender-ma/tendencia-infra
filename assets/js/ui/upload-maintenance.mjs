@@ -14,6 +14,10 @@ export function buildResetCacheKeys(projectCode, includeGlobal = false) {
   return includeGlobal ? [...keys, ...GLOBAL_CACHE_KEYS] : keys;
 }
 
+export function buildGlobalResetCacheKeys() {
+  return [...GLOBAL_CACHE_KEYS];
+}
+
 export function createUploadMaintenance({
   dashboardRepository,
   dashboardDatasetRepository,
@@ -22,7 +26,6 @@ export function createUploadMaintenance({
   getProjectInfo,
   requireEditor,
   requireAdmin,
-  isAdmin,
   requestConfirmation,
   toast,
   clearLocalEvolution = () => {},
@@ -33,8 +36,8 @@ export function createUploadMaintenance({
   schedule = (callback, delay) => setTimeout(callback, delay),
   reportError = () => {},
 }) {
-  async function resetCacheDados() {
-    if (!requireEditor?.('resetar cache')) return false;
+  async function resetProjectData() {
+    if (!requireEditor?.('resetar os dados processados desta obra')) return false;
     const project = String(getActiveProject?.() || '').trim();
     if (!project) {
       toast('Nenhuma obra selecionada', 'err', 3000);
@@ -49,25 +52,13 @@ export function createUploadMaintenance({
     );
     if (!confirmed) return false;
 
-    const includeGlobal =
-      isAdmin?.() === true &&
-      (await requestConfirmation(
-        'Apagar também os dados globais?',
-        'Flows, Histórico e Curva S são compartilhados entre TODAS as obras. Confirmar afeta o dashboard de todas; cancelar mantém os dados globais.',
-        { confirmText: 'Apagar globais' },
-      ));
-
-    toast('Limpando cache...', 'info', 2000);
+    toast('Limpando dados da obra...', 'info', 2000);
     try {
-      const datasetReset = await dashboardDatasetRepository?.resetDashboardData(
-        includeGlobal === true,
-      );
+      const datasetReset = await dashboardDatasetRepository?.resetDashboardData();
       const count =
         datasetReset?.available === true
           ? datasetReset.configDeleted + datasetReset.datasetCount
-          : await dashboardRepository.deleteDashboardKeys(
-              buildResetCacheKeys(project, includeGlobal),
-            );
+          : await dashboardRepository.deleteDashboardKeys(buildResetCacheKeys(project));
       clearLocalEvolution();
       toast(`Cache limpo (${count} item(ns)). Recarregando...`, 'ok', 2000);
       schedule(reload, 1500);
@@ -88,11 +79,41 @@ export function createUploadMaintenance({
     }
   }
 
-  async function apagarHistoricoUploads() {
-    if (!requireAdmin?.('apagar o histórico de uploads desta obra')) return false;
+  async function resetGlobalData() {
+    if (!requireAdmin?.('resetar os dados globais')) return false;
     const confirmed = await requestConfirmation(
-      'Apagar histórico de uploads',
-      'Isto vai apagar o histórico de uploads e todos os arquivos armazenados desta obra. Os dados já processados do dashboard não serão afetados.',
+      'Resetar dados globais',
+      'Isto apaga os dados processados de Flows, Histórico Mensal e Curva S de TODAS as obras. Os arquivos originais permanecem disponíveis no histórico.',
+      { confirmText: 'Resetar globais', requireText: 'GLOBAL' },
+    );
+    if (!confirmed) return false;
+    toast('Limpando dados globais...', 'info', 2000);
+    try {
+      const datasetReset = await dashboardDatasetRepository?.resetGlobalDashboardData();
+      const count =
+        datasetReset?.available === true
+          ? datasetReset.configDeleted + datasetReset.datasetCount
+          : await dashboardRepository.deleteDashboardKeys(buildGlobalResetCacheKeys());
+      toast(`Dados globais limpos (${count} item(ns)). Recarregando...`, 'ok', 2200);
+      schedule(reload, 1500);
+      return true;
+    } catch (error) {
+      reportError('Dados globais/limpar', error);
+      if (error?.code === 'DATASET_STORAGE_CLEANUP_PENDING') {
+        toast('Dados globais resetados; há objetos antigos pendentes no Storage.', 'warn', 6000);
+        schedule(reload, 2000);
+        return true;
+      }
+      toast('Não foi possível limpar os dados globais.', 'err', 5000);
+      return false;
+    }
+  }
+
+  async function clearProjectUploadFiles() {
+    if (!requireAdmin?.('apagar os arquivos de Tendência desta obra')) return false;
+    const confirmed = await requestConfirmation(
+      'Apagar arquivos da obra',
+      'Isto apaga o histórico e os arquivos de Tendência da obra selecionada. Os dados já processados do dashboard não serão afetados.',
       { confirmText: 'Apagar tudo', requireText: 'APAGAR' },
     );
     if (!confirmed) return false;
@@ -100,7 +121,7 @@ export function createUploadMaintenance({
     toast('Apagando histórico...', 'info', 2000);
     try {
       const count = await uploadRepository.clearProjectHistory();
-      clearLatestUploads();
+      clearLatestUploads(['tendencia']);
       renderUploads();
       renderSourceHeaders();
       toast(`${count} registro(s) apagado(s)`, 'ok', 3000);
@@ -116,5 +137,35 @@ export function createUploadMaintenance({
     }
   }
 
-  return Object.freeze({ resetCacheDados, apagarHistoricoUploads });
+  async function clearGlobalUploadFiles() {
+    if (!requireAdmin?.('apagar os arquivos globais')) return false;
+    const confirmed = await requestConfirmation(
+      'Apagar arquivos globais',
+      'Isto apaga o histórico e os arquivos de Flows e Gestões compartilhados entre TODAS as obras. Os dados já processados continuarão no dashboard.',
+      { confirmText: 'Apagar globais', requireText: 'GLOBAL' },
+    );
+    if (!confirmed) return false;
+    toast('Apagando arquivos globais...', 'info', 2000);
+    try {
+      const count = await uploadRepository.clearGlobalHistory();
+      clearLatestUploads(['flows', 'gestoes']);
+      renderUploads();
+      renderSourceHeaders();
+      toast(`${count} registro(s) globais apagado(s)`, 'ok', 3000);
+      return true;
+    } catch (error) {
+      reportError('Uploads/apagar histórico global', error);
+      toast('Não foi possível apagar o histórico global.', 'err', 5000);
+      return false;
+    }
+  }
+
+  return Object.freeze({
+    resetProjectData,
+    resetGlobalData,
+    clearProjectUploadFiles,
+    clearGlobalUploadFiles,
+    resetCacheDados: resetProjectData,
+    apagarHistoricoUploads: clearProjectUploadFiles,
+  });
 }

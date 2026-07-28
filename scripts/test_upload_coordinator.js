@@ -15,6 +15,7 @@ const { pathToFileURL } = require('url');
     HISTORICO: 'dados_historico',
     PROJ_RAW: 'dados_projraw',
     GESTAO_LABEL: 'gestao_label',
+    EVOLUTION: 'evol_global',
   };
   const state = {
     tendency: [{ codigo_obra: 'OBRA-A', valor: 1 }],
@@ -22,6 +23,7 @@ const { pathToFileURL } = require('url');
     history: { items: [{ insumo: 'I001' }] },
     projectionRaw: [{ mes: '01-2026' }],
     managementLabel: 'GESTÃO 01-2026',
+    evolution: { teorica: 0.25, financeira: 0.3 },
   };
   const rows = buildUploadDashboardRows(
     state,
@@ -36,6 +38,7 @@ const { pathToFileURL } = require('url');
     [
       'OBRA-A:dados_tendencia',
       'OBRA-A:gestao_label',
+      'OBRA-A:evol_global',
       'dados_flows',
       'dados_historico',
       'dados_projraw',
@@ -94,6 +97,8 @@ const { pathToFileURL } = require('url');
     persistenceMode,
     client,
     saveForUpload = async () => ({ available: true, activations: [] }),
+    enforceRollingRetention = async () => ({ available: true, removed: 0 }),
+    canEditProject,
   }) {
     return createUploadCoordinator({
       getClient: () => client,
@@ -103,6 +108,7 @@ const { pathToFileURL } = require('url');
       getInputOptions: () => [],
       setInputOptions: () => {},
       canEditActiveProject: () => true,
+      ...(canEditProject ? { canEditProject } : {}),
       isAdmin: () => true,
       isGlobalKind: (kind) => kind !== 'tendencia',
       dataKeys: keys,
@@ -110,6 +116,7 @@ const { pathToFileURL } = require('url');
       dashboardDatasetRepository: {
         saveForUpload,
         rollbackSnapshots: async () => {},
+        enforceRollingRetention,
       },
       uploadRepository: {},
       executeTransaction: async () => {},
@@ -124,6 +131,7 @@ const { pathToFileURL } = require('url');
   assert.deepStrictEqual(dualSnapshot.keys, [
     'OBRA-A:dados_tendencia',
     'OBRA-A:gestao_label',
+    'OBRA-A:evol_global',
   ]);
   assert(
     dualClient.calls
@@ -131,9 +139,24 @@ const { pathToFileURL } = require('url');
       .rows.some((row) => row.chave === 'OBRA-A:dados_tendencia'),
     'Modo dual deve manter a escrita do blob legado',
   );
+  let retentionArgs = null;
+  const retentionCoordinator = createCoordinator({
+    persistenceMode: 'snapshots',
+    client: createClient(),
+    enforceRollingRetention: async (...args) => {
+      retentionArgs = args;
+      return { available: true, removed: 2 };
+    },
+  });
+  assert.deepStrictEqual(await retentionCoordinator.enforceDatasetRetention(['flows'], 12), {
+    available: true,
+    removed: 2,
+  });
+  assert.deepStrictEqual(retentionArgs, [['flows'], 12]);
 
   const snapshotClient = createClient([
     { chave: 'OBRA-A:gestao_label', valor: 'GESTÃO ANTERIOR' },
+    { chave: 'OBRA-A:evol_global', valor: '{"teorica":0.2,"financeira":0.2}' },
   ]);
   const snapshotCoordinator = createCoordinator({
     persistenceMode: 'snapshots',
@@ -141,10 +164,10 @@ const { pathToFileURL } = require('url');
   });
   const snapshotState = await snapshotCoordinator.captureDashboardRows(['tendencia']);
   await snapshotCoordinator.saveAllData(['tendencia'], snapshotState);
-  assert.deepStrictEqual(snapshotState.keys, ['OBRA-A:gestao_label']);
+  assert.deepStrictEqual(snapshotState.keys, ['OBRA-A:gestao_label', 'OBRA-A:evol_global']);
   assert.deepStrictEqual(
     snapshotClient.calls.find((call) => call.operation === 'upsert').rows.map((row) => row.chave),
-    ['OBRA-A:gestao_label'],
+    ['OBRA-A:gestao_label', 'OBRA-A:evol_global'],
     'Modo snapshots deve manter somente a configuração pequena',
   );
   assert(
@@ -179,6 +202,32 @@ const { pathToFileURL } = require('url');
     () => createCoordinator({ persistenceMode: 'invalido', client: createClient() }),
     /Modo de persistência de datasets inválido/,
   );
+
+  let scopedSaveArgs = null;
+  const scopedClient = createClient();
+  const scopedCoordinator = createCoordinator({
+    persistenceMode: 'dual',
+    client: scopedClient,
+    canEditProject: (projectCode) => projectCode === 'OBRA-B',
+    saveForUpload: async (...args) => {
+      scopedSaveArgs = args;
+      return { available: true, activations: [] };
+    },
+  });
+  const scopedData = {
+    ...state,
+    tendency: [{ codigo_obra: 'OBRA-B', valor: 2 }],
+    managementLabel: 'GESTÃO 02-2026',
+  };
+  const scopedOptions = { projectCode: 'OBRA-B', dashboardData: scopedData };
+  const scopedSnapshot = await scopedCoordinator.captureDashboardRows(
+    ['tendencia'],
+    scopedOptions,
+  );
+  await scopedCoordinator.saveAllData(['tendencia'], scopedSnapshot, [], scopedOptions);
+  assert(scopedSnapshot.keys.every((key) => key.startsWith('OBRA-B:')));
+  assert.strictEqual(scopedSaveArgs[3], 'OBRA-B');
+  assert.strictEqual(scopedSaveArgs[1], scopedData);
 
   console.log('Coordenador de uploads: modo dual/snapshots, escopo e fallback seguro OK');
 })().catch((error) => {

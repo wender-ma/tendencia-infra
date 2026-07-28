@@ -18,8 +18,10 @@ let sanitizeStoragePath;
 let supaActivateUploadRecord;
 let supaRollbackUploadActivation;
 let supaListUploadsByType;
+let supaListExcelGroups;
 let supaGetDownloadURL;
 let supaEnforceRollingBackup;
+let supaEnforceDatasetRetention;
 let supaCaptureDashboardRows;
 let supaSaveAllData;
 let restoreSavedData;
@@ -29,23 +31,36 @@ let restoreInMemoryUploadState;
 let commitPreparedUpload;
 let SUPA;
 let AUTH;
-let isEditorDaObraAtiva;
 let isAdminGeral;
+let authServiceCanEditProject;
 let requireUploadPermission;
+let requireProjectPermission;
 let APP_STATE;
 let parseTendencia;
+let parseTendenciaFile;
 let parseFlowsValor;
 let parseGestoes;
 let parseCSVRows;
 let validateImportHeaders;
+let discoverFlowProjectReferences;
+let discoverGestoesProjectCodes;
+let IMPORT_REPORTS;
 let aplicarFallbackGestaoDoHistorico;
 let atualizarGestaoLabelPelaHistoria;
+let getProjectInfo;
+let carregarObras;
+let renderObrasDropdown;
 let buildInsumosList;
 let setInputOptions;
 let buildDatalist;
 let applyManuals;
 let loadClassifications;
 let requireAdmin;
+let loadLatestTendencies;
+const PROJECT_TENDENCY_UPLOADS = Object.create(null);
+let projectUploadsLoadKey = '';
+let projectUploadsLoading = false;
+let projectUploadBusy = '';
 
 // ============================================================
 // v0.52 — Upload handler (refatorado pra usar Central de Uploads)
@@ -133,7 +148,7 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
           throw new Error(
-            'Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.',
+            'Aba Gestões não retornou linhas válidas. Verifique a classificação financeira, as chaves de planejamento e os códigos das obras.',
           );
         }
         linhas = parsed.items ? parsed.items.length : 0;
@@ -154,12 +169,18 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         'Upload/limpeza de backups',
         'O upload foi concluído, mas os backups antigos não puderam ser limpos.',
       );
+      await runAsyncSafely(
+        supaEnforceDatasetRetention([kind], UPLOADS_MAX_PER_TYPE),
+        'Upload/limpeza de snapshots',
+        'O upload foi concluído, mas snapshots antigos ficaram pendentes para limpeza.',
+      );
 
       // Usar debounce para evitar múltiplas renderizações
       debouncedRender();
       renderUploadsCentral();
       renderSourcesHeaders();
       authToast('✅ ' + result + ' · 📦 arquivado e sincronizado', 'ok', 3500);
+      showImportReport([kind], file.name);
     } catch (err) {
       console.error(err);
       restoreInMemoryUploadState(memorySnapshot);
@@ -178,12 +199,112 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
   reader.readAsText(file, 'UTF-8');
 }
 
+async function handleProjectTendencyUpload(ev, projectCode) {
+  const project = String(projectCode || '').trim();
+  const input = ev.target;
+  const file = input?.files?.[0];
+  if (!project || !file) return;
+  input.value = '';
+  if (!requireProjectPermission(project, 'enviar a Tendência')) return;
+
+  const isExcel = /\.(xlsx|xlsm|xls)$/i.test(file.name);
+  const validation = validateUploadFile(file, isExcel ? 'excel' : 'csv');
+  if (!validation.valid) {
+    authToast('❌ ' + validation.message, 'err', 5000);
+    return;
+  }
+
+  projectUploadBusy = project;
+  setUploadRuntimeState('tendencia', 'processing', `Processando Tendência de ${project}`);
+  renderUploadsCentral();
+  try {
+    let csv;
+    if (isExcel) {
+      const workbook = await readExcelFile(file);
+      const sheetNames = workbook.sheetNames || [];
+      const detected = _autoDetectSheets(sheetNames).tendencia;
+      const sheetName = detected || (sheetNames.length === 1 ? sheetNames[0] : null);
+      if (!sheetName) {
+        throw new Error('Aba Tendência não encontrada. Renomeie a aba para "Tendência".');
+      }
+      csv = _sheetToCSV(workbook, sheetName);
+      validateImportHeaders('tendencia', parseCSVRows(csv));
+    } else {
+      csv = await file.text();
+      validateImportHeaders('tendencia', parseCSVRows(csv));
+    }
+
+    const parsed = parseTendenciaFile(csv);
+    const dashboardData = {
+      tendency: parsed.items,
+      flows: APP_STATE.dados.flows,
+      history: APP_STATE.dados.historico,
+      projectionRaw: APP_STATE.dados.projRaw,
+      managementLabel: parsed.managementLabel || APP_STATE.config.gestaoLabel,
+      evolution: parsed.evolution,
+      latestUploads: project === APP_STATE.obra.ativa ? APP_STATE.uploads : Object.create(null),
+    };
+    const result = await commitPreparedUpload({
+      file,
+      storageType: 'tendencia',
+      items: [{ kind: 'tendencia', linhas: parsed.items.length }],
+      memorySnapshot: null,
+      projectCode: project,
+      dashboardData,
+      applyToCurrentState: project === APP_STATE.obra.ativa,
+    });
+    const activeRecord = result.records?.[0] || null;
+    if (activeRecord) PROJECT_TENDENCY_UPLOADS[project] = activeRecord;
+
+    if (project === APP_STATE.obra.ativa) {
+      APP_STATE.dados.tendencia = parsed.items;
+      APP_STATE.config.gestaoLabel = parsed.managementLabel || APP_STATE.config.gestaoLabel;
+      APP_STATE.config.evolGlobal = parsed.evolution;
+      APP_STATE.uploads.tendencia = activeRecord;
+      try {
+        setInputOptions(buildInsumosList());
+        buildDatalist();
+      } catch (error) {
+        reportNonFatalError('Upload/reconstruir lista de insumos', error);
+      }
+      aplicarFallbackGestaoDoHistorico();
+      debouncedRender();
+      renderSourcesHeaders();
+    }
+
+    await runAsyncSafely(
+      supaEnforceRollingBackup('tendencia', project),
+      `Upload/limpeza de backups/${project}`,
+      'O upload foi concluído, mas os backups antigos não puderam ser limpos.',
+    );
+    await runAsyncSafely(
+      supaEnforceDatasetRetention(['tendencia'], UPLOADS_MAX_PER_TYPE, project),
+      `Upload/limpeza de snapshots/${project}`,
+      'O upload foi concluído, mas snapshots antigos ficaram pendentes para limpeza.',
+    );
+    authToast(
+      `✅ Tendência de ${getProjectInfo?.(project)?.nome || project}: ${parsed.items.length.toLocaleString('pt-BR')} linhas sincronizadas`,
+      'ok',
+      4500,
+    );
+    IMPORT_REPORTS.tendencia = parsed.report;
+    showImportReport(['tendencia'], file.name);
+  } catch (error) {
+    console.error('[Uploads/Tendência por obra]', error);
+    setUploadRuntimeState('tendencia', 'failed', error.message || String(error));
+    authToast('❌ Upload não concluído: ' + error.message, 'err', 7000);
+  } finally {
+    projectUploadBusy = '';
+    renderUploadsCentral();
+  }
+}
+
 // ============================================================
 // v0.52 — Central de Uploads: renderização + drag-and-drop
 // ============================================================
 // ============================================================
 // v0.54 — EXCEL UPLOAD MODULE
-// Aceita 1 arquivo .xlsx/.xlsm com 3 abas (Tendência, Flows, Gestões)
+// Aceita 1 arquivo .xlsx/.xlsm com as bases globais (Flows e Gestões)
 // e processa cada aba usando os parsers CSV existentes.
 // ============================================================
 
@@ -219,9 +340,9 @@ function _sheetToCSV(workbook, sheetName) {
   return workbook?.csvBySheet?.[sheetName] || '';
 }
 
-function _preflightExcelHeaders(workbook, mapping) {
+function _preflightExcelHeaders(workbook, mapping, kinds = ['tendencia', 'flows', 'gestoes']) {
   const errors = [];
-  for (const kind of ['tendencia', 'flows', 'gestoes']) {
+  for (const kind of kinds) {
     const sheetName = mapping[kind];
     if (!sheetName) continue;
     try {
@@ -262,7 +383,7 @@ async function handleExcelUpload(ev) {
     return;
   }
 
-  const excelKinds = ['tendencia', 'flows', 'gestoes'];
+  const excelKinds = ['flows', 'gestoes'];
   setUploadRuntimeState(excelKinds, 'processing', 'Lendo a planilha Excel');
   _renderExcelProgress('⏳ Lendo arquivo: 0%');
   let workbook;
@@ -284,14 +405,12 @@ async function handleExcelUpload(ev) {
 
   // Tentar auto-detectar
   let mapping = _autoDetectSheets(sheetNames);
-  const missing = Object.entries(mapping)
-    .filter(([_key, value]) => !value)
-    .map(([k]) => k);
+  const missing = excelKinds.filter((kind) => !mapping[kind]);
 
   if (missing.length > 0) {
     // Abrir modal pro usuário mapear manualmente
     _renderExcelProgress(null);
-    const userMapping = await _promptSheetMapping(sheetNames, mapping);
+    const userMapping = await _promptSheetMapping(sheetNames, mapping, excelKinds);
     if (!userMapping) {
       setUploadRuntimeState(excelKinds, 'idle');
       authToast('❌ Upload cancelado', 'warn', 2500);
@@ -299,12 +418,17 @@ async function handleExcelUpload(ev) {
     }
     mapping = userMapping;
   } else {
-    _renderExcelProgress(
-      `✅ Auto-detectadas: 📈 ${mapping.tendencia} · 🔗 ${mapping.flows} · 📅 ${mapping.gestoes}`,
-    );
+    _renderExcelProgress(`✅ Auto-detectadas: 🔗 ${mapping.flows} · 📅 ${mapping.gestoes}`);
   }
 
-  const headerErrors = _preflightExcelHeaders(workbook, mapping);
+  if (excelKinds.some((kind) => !mapping[kind])) {
+    setUploadRuntimeState(excelKinds, 'failed', 'A planilha global exige Gestões e Flows');
+    renderUploadsCentral();
+    authToast('❌ Selecione as abas de Gestões e Flows para continuar.', 'err', 5000);
+    return;
+  }
+
+  const headerErrors = _preflightExcelHeaders(workbook, mapping, excelKinds);
   if (headerErrors.length) {
     setUploadRuntimeState(
       excelKinds,
@@ -319,14 +443,18 @@ async function handleExcelUpload(ev) {
     return;
   }
 
-  // Processar as 3 abas
+  // Processar as duas bases globais
   await _processExcelSheets(workbook, mapping, file);
 }
 
 // ============================================================
 // Modal pra usuário mapear abas manualmente
 // ============================================================
-function _promptSheetMapping(sheetNames, autoDetected) {
+function _promptSheetMapping(
+  sheetNames,
+  autoDetected,
+  allowedKinds = ['tendencia', 'flows', 'gestoes'],
+) {
   return new Promise((resolve) => {
     const modalContent = document.getElementById('modalContent');
     const modalBg = document.getElementById('modalBg');
@@ -344,18 +472,30 @@ function _promptSheetMapping(sheetNames, autoDetected) {
       <h2>🗂️ Mapeamento de abas</h2>
       <div class="meta">Não consegui identificar automaticamente todas as abas. Selecione manualmente qual é cada uma:</div>
       <div class="sheet-mapping-fields">
-        <div class="sheet-mapping-row">
+        ${
+          allowedKinds.includes('tendencia')
+            ? `<div class="sheet-mapping-row">
           <label for="mapSheet_tendencia">📈 Tendência:</label>
           <select id="mapSheet_tendencia">${['<option value="">— nenhuma —</option>', ...sheetNames.map((n) => opt(n, autoDetected.tendencia))].join('')}</select>
-        </div>
-        <div class="sheet-mapping-row">
+        </div>`
+            : ''
+        }
+        ${
+          allowedKinds.includes('flows')
+            ? `<div class="sheet-mapping-row">
           <label for="mapSheet_flows">🔗 Flows:</label>
           <select id="mapSheet_flows">${['<option value="">— nenhuma —</option>', ...sheetNames.map((n) => opt(n, autoDetected.flows))].join('')}</select>
-        </div>
-        <div class="sheet-mapping-row">
+        </div>`
+            : ''
+        }
+        ${
+          allowedKinds.includes('gestoes')
+            ? `<div class="sheet-mapping-row">
           <label for="mapSheet_gestoes">📅 Gestões:</label>
           <select id="mapSheet_gestoes">${['<option value="">— nenhuma —</option>', ...sheetNames.map((n) => opt(n, autoDetected.gestoes))].join('')}</select>
-        </div>
+        </div>`
+            : ''
+        }
         <p class="sheet-mapping-hint">
           💡 Se uma aba não existir na planilha, deixe em "— nenhuma —" e ela não será processada.
         </p>
@@ -370,9 +510,9 @@ function _promptSheetMapping(sheetNames, autoDetected) {
     document.getElementById('mapSheetsCancel').addEventListener('click', () => finish(null));
     document.getElementById('mapSheetsOk').addEventListener('click', () => {
       const r = {
-        tendencia: document.getElementById('mapSheet_tendencia').value || null,
-        flows: document.getElementById('mapSheet_flows').value || null,
-        gestoes: document.getElementById('mapSheet_gestoes').value || null,
+        tendencia: document.getElementById('mapSheet_tendencia')?.value || null,
+        flows: document.getElementById('mapSheet_flows')?.value || null,
+        gestoes: document.getElementById('mapSheet_gestoes')?.value || null,
       };
       if (!r.tendencia && !r.flows && !r.gestoes) {
         authToast('⚠️ Selecione ao menos uma aba pra processar', 'warn', 3000);
@@ -382,9 +522,135 @@ function _promptSheetMapping(sheetNames, autoDetected) {
     });
     openModal({
       onClose: (result) => resolve(result || null),
-      initialFocus: '#mapSheet_tendencia',
+      initialFocus: allowedKinds.includes('tendencia')
+        ? '#mapSheet_tendencia'
+        : allowedKinds.includes('flows')
+          ? '#mapSheet_flows'
+          : '#mapSheet_gestoes',
     });
   });
+}
+
+function isSafeDiscoveredProjectCode(value) {
+  const code = String(value || '').trim();
+  return code.length <= 64 && code.includes('-') && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(code);
+}
+
+function discoverNewProjects(csvByKind) {
+  const existingProjects = APP_STATE.obra.obras || [];
+  const existingCodes = new Set(
+    existingProjects.map((project) =>
+      String(project.codigo_obra || '')
+        .trim()
+        .toLowerCase(),
+    ),
+  );
+  const knownAliases = new Set();
+  for (const project of existingProjects) {
+    const code = String(project.codigo_obra || '').trim();
+    if (!code) continue;
+    knownAliases.add(code.toLowerCase());
+    const parts = code.split('-');
+    if (parts.length >= 2) knownAliases.add(parts.slice(1).join('-').toLowerCase());
+  }
+
+  const candidates = new Map();
+  const addCandidate = (rawCode) => {
+    const code = String(rawCode || '').trim();
+    if (!isSafeDiscoveredProjectCode(code) || existingCodes.has(code.toLowerCase())) return;
+    candidates.set(code.toLowerCase(), code);
+  };
+
+  if (csvByKind.gestoes) {
+    discoverGestoesProjectCodes(csvByKind.gestoes).forEach(addCandidate);
+  }
+
+  const candidateAliases = new Set();
+  for (const code of candidates.values()) {
+    candidateAliases.add(code.toLowerCase());
+    const parts = code.split('-');
+    if (parts.length >= 2) candidateAliases.add(parts.slice(1).join('-').toLowerCase());
+  }
+  if (csvByKind.flows) {
+    for (const reference of discoverFlowProjectReferences(csvByKind.flows)) {
+      const normalized = String(reference || '')
+        .trim()
+        .toLowerCase();
+      if (knownAliases.has(normalized) || candidateAliases.has(normalized)) continue;
+      addCandidate(reference);
+    }
+  }
+
+  return [...candidates.values()]
+    .sort((left, right) => left.localeCompare(right, 'pt-BR'))
+    .map((codigo_obra) => ({ codigo_obra, nome: codigo_obra }));
+}
+
+function promptNewProjects(projects) {
+  return new Promise((resolve) => {
+    const modalContent = document.getElementById('modalContent');
+    if (!modalContent) {
+      resolve(null);
+      return;
+    }
+    replaceWithParsedMarkup(
+      modalContent,
+      `
+        <h2>🏗️ Novas obras encontradas</h2>
+        <div class="meta">Confirme o cadastro antes de continuar o upload. Você pode ajustar os nomes agora ou posteriormente na aba Admin.</div>
+        <form id="newProjectsUploadForm" class="upload-project-preview" data-modal-form>
+          ${projects
+            .map(
+              (project, index) => `
+                <label class="upload-project-preview-row">
+                  <span><strong>${escHtml(project.codigo_obra)}</strong><small>Código detectado</small></span>
+                  <input type="text" data-project-name="${index}" value="${escAttr(project.nome)}" maxlength="160" required aria-label="Nome da obra ${escAttr(project.codigo_obra)}">
+                </label>`,
+            )
+            .join('')}
+          <p class="upload-project-preview-note">As obras serão cadastradas com origem “Upload”. Elas poderão ser desativadas, mas não excluídas permanentemente.</p>
+          <div class="sheet-mapping-actions">
+            <button type="button" class="btn-sm" id="newProjectsCancel">Cancelar upload</button>
+            <button type="submit" class="btn-sm primary">Cadastrar e continuar</button>
+          </div>
+        </form>
+      `,
+    );
+
+    const finish = (result) => closeModal(result);
+    document.getElementById('newProjectsCancel')?.addEventListener('click', () => finish(null));
+    document.getElementById('newProjectsUploadForm')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const confirmed = projects.map((project, index) => ({
+        ...project,
+        nome:
+          document.querySelector(`[data-project-name="${index}"]`)?.value.trim() ||
+          project.codigo_obra,
+      }));
+      finish(confirmed);
+    });
+    openModal({
+      onClose: (result) => resolve(Array.isArray(result) ? result : null),
+      initialFocus: '[data-project-name="0"]',
+    });
+  });
+}
+
+async function registerDiscoveredProjects(projects) {
+  if (!projects.length) return [];
+  const rows = projects.map((project) => ({
+    codigo_obra: project.codigo_obra,
+    nome: project.nome || project.codigo_obra,
+    ativa: true,
+    origem: 'upload',
+    observacao: 'Cadastrada pelo upload global de Gestões + Flows',
+  }));
+  const { data, error } = await SUPA.from('obras').insert(rows).select('*');
+  if (error) throw error;
+  await carregarObras();
+  renderObrasDropdown();
+  projectUploadsLoadKey = '';
+  return data || rows;
 }
 
 // ============================================================
@@ -392,20 +658,54 @@ function _promptSheetMapping(sheetNames, autoDetected) {
 // ============================================================
 async function _processExcelSheets(workbook, mapping, file) {
   if (!requireAdmin('processar a planilha Excel completa')) return;
-  // upload_group_id = todos os 3 registros do mesmo Excel compartilham este UUID
+  // Os registros globais do mesmo Excel compartilham este UUID.
   const groupId = _uuid4();
   const results = {};
   const memorySnapshot = captureInMemoryUploadState();
 
   // 1) Processar todas as abas antes de iniciar qualquer escrita remota.
   const steps = [
-    { kind: 'tendencia', label: 'Tendência', icon: '📈', parser: 'tendencia' },
     { kind: 'flows', label: 'Flows', icon: '🔗', parser: 'flows' },
     { kind: 'gestoes', label: 'Gestões', icon: '📅', parser: 'gestoes' },
   ];
   const selectedKinds = steps.filter((step) => mapping[step.kind]).map((step) => step.kind);
-  setUploadRuntimeState(['tendencia', 'flows', 'gestoes'], 'idle');
+  setUploadRuntimeState(['flows', 'gestoes'], 'idle');
   setUploadRuntimeState(selectedKinds, 'processing', 'Validando todas as abas da planilha');
+  const csvByKind = Object.fromEntries(
+    steps
+      .filter((step) => mapping[step.kind])
+      .map((step) => [step.kind, _sheetToCSV(workbook, mapping[step.kind])]),
+  );
+
+  try {
+    const discoveredProjects = discoverNewProjects(csvByKind);
+    if (discoveredProjects.length) {
+      _renderExcelProgress(
+        `🏗️ ${discoveredProjects.length} nova(s) obra(s) aguardando confirmação...`,
+      );
+      const confirmedProjects = await promptNewProjects(discoveredProjects);
+      if (!confirmedProjects) {
+        setUploadRuntimeState(selectedKinds, 'idle');
+        _renderExcelProgress(null);
+        renderUploadsCentral();
+        authToast('Upload cancelado. Nenhuma obra foi cadastrada.', 'warn', 3500);
+        return;
+      }
+      _renderExcelProgress('🏗️ Cadastrando novas obras...');
+      await registerDiscoveredProjects(confirmedProjects);
+      authToast(
+        `✅ ${confirmedProjects.length} obra(s) cadastrada(s). Continuando o upload...`,
+        'ok',
+        3500,
+      );
+    }
+  } catch (error) {
+    setUploadRuntimeState(selectedKinds, 'failed', error.message || String(error));
+    _renderExcelProgress(null);
+    renderUploadsCentral();
+    authToast('❌ Não foi possível cadastrar as novas obras: ' + error.message, 'err', 7000);
+    return;
+  }
 
   for (const step of steps) {
     const sheetName = mapping[step.kind];
@@ -417,7 +717,7 @@ async function _processExcelSheets(workbook, mapping, file) {
     _renderExcelProgress(`⚙️ Processando aba "${sheetName}" (${step.icon} ${step.label})...`);
     let csv;
     try {
-      csv = _sheetToCSV(workbook, sheetName);
+      csv = csvByKind[step.kind];
     } catch (e) {
       results[step.kind] = { error: 'Falha ao ler aba: ' + e.message };
       continue;
@@ -459,7 +759,7 @@ async function _processExcelSheets(workbook, mapping, file) {
         } else {
           console.warn('[GESTÕES] arquivo/aba veio vazio — mantendo dados anteriores');
           throw new Error(
-            'Aba Gestões não retornou linhas válidas. Filtro esperado: empreendimento=Jardins Zurique, classificação financeira=Obra, chave contendo -21O-. Verifique se está no formato correto.',
+            'Aba Gestões não retornou linhas válidas. Verifique a classificação financeira, as chaves de planejamento e os códigos das obras.',
           );
         }
         linhas = parsed.items ? parsed.items.length : 0;
@@ -532,6 +832,14 @@ async function _processExcelSheets(workbook, mapping, file) {
       ),
     ),
   );
+  await runAsyncSafely(
+    supaEnforceDatasetRetention(
+      processedItems.map((item) => item.kind),
+      UPLOADS_MAX_PER_TYPE,
+    ),
+    'Excel/limpeza de snapshots',
+    'A planilha foi concluída, mas snapshots antigos ficaram pendentes para limpeza.',
+  );
 
   // 2) Re-render apenas depois do commit completo.
   debouncedRender();
@@ -546,6 +854,10 @@ async function _processExcelSheets(workbook, mapping, file) {
   if (ok.length) parts.push(`✅ ${ok.length} aba(s) processada(s)`);
   if (skipped.length) parts.push(`⏭️ ${skipped.length} pulada(s)`);
   authToast('📊 ' + parts.join(' · ') + ' · 📦 sincronizado', 'ok', 5000);
+  showImportReport(
+    processedItems.map((item) => item.kind),
+    file.name,
+  );
 }
 
 // Renderiza mensagem de progresso dentro do card Excel
@@ -586,8 +898,7 @@ function toggleAdvancedUploads() {
   const open = body.classList.toggle('open');
   replaceWithParsedMarkup(
     toggle,
-    (open ? '▼' : '▶') +
-      ' <strong>Modo avançado</strong> — enviar cada CSV individualmente (uso legado)',
+    (open ? '▼' : '▶') + ' <strong>Uploads individuais</strong> — enviar cada base separadamente',
   );
 }
 
@@ -601,18 +912,74 @@ const UPLOAD_META = {
   flows: {
     label: 'FLOWS / ADITIVOS',
     icon: '🔗',
-    desc: 'Alimenta: aba Flows/Aditivos, decomposição do desvio na Visão Geral e Controle de Projeção. Fonte: aba FlowsValor da planilha.',
+    desc: 'Base consolidada compartilhada. Alimenta Flows/Aditivos, a decomposição do desvio e o Controle de Projeção de todas as obras.',
     manualKey: 'flows',
     global: true,
   },
   gestoes: {
     label: 'GESTÕES 🌐',
     icon: '📅',
-    desc: 'Alimenta: Histórico Mensal e curva S da Tendência de Obra. Fonte: aba Gestões da planilha. ⚠️ ARQUIVO COMPARTILHADO: 1 upload afeta TODAS as obras (v0.58b).',
+    desc: 'Base consolidada compartilhada. Alimenta o Histórico Mensal e a Curva S de todas as obras.',
     manualKey: 'gestoes',
     global: true,
   },
 };
+
+function showImportReport(kinds, fileName) {
+  const reports = (Array.isArray(kinds) ? kinds : [kinds])
+    .map((kind) => ({ kind, report: IMPORT_REPORTS?.[kind] }))
+    .filter(({ report }) => report);
+  if (!reports.length) return;
+
+  const rows = reports
+    .map(({ kind, report }) => {
+      const meta = UPLOAD_META[kind];
+      const reasons = Object.entries(report.reasons || {})
+        .sort((left, right) => right[1] - left[1])
+        .map(
+          ([reason, count]) =>
+            `<li><span>${escHtml(reason)}</span><strong>${Number(count).toLocaleString('pt-BR')}</strong></li>`,
+        )
+        .join('');
+      const unknownProjects = Array.isArray(report.unknownProjects)
+        ? report.unknownProjects.filter(Boolean)
+        : [];
+      return `
+        <section class="upload-report-section">
+          <h3>${meta.icon} ${escHtml(meta.label)}</h3>
+          <div class="upload-report-metrics">
+            <span><strong>${Number(report.total || 0).toLocaleString('pt-BR')}</strong>Total</span>
+            <span class="is-success"><strong>${Number(report.accepted || 0).toLocaleString('pt-BR')}</strong>Aceitas</span>
+            <span class="is-warning"><strong>${Number(report.ignored || 0).toLocaleString('pt-BR')}</strong>Ignoradas</span>
+            <span class="is-danger"><strong>${Number(report.rejected || 0).toLocaleString('pt-BR')}</strong>Rejeitadas</span>
+          </div>
+          ${
+            reasons
+              ? `<div class="upload-report-details"><strong>Motivos</strong><ul>${reasons}</ul></div>`
+              : ''
+          }
+          ${
+            unknownProjects.length
+              ? `<div class="upload-report-alert"><strong>Obras não reconhecidas:</strong> ${unknownProjects.map((value) => escHtml(value)).join(', ')}</div>`
+              : ''
+          }
+        </section>`;
+    })
+    .join('');
+
+  replaceWithParsedMarkup(
+    document.getElementById('modalContent'),
+    `
+      <h2>📋 Relatório da importação</h2>
+      <div class="meta">Arquivo: <strong>${escHtml(fileName || 'arquivo importado')}</strong></div>
+      <div class="upload-report">${rows}</div>
+      <div class="sheet-mapping-actions">
+        <button class="btn-sm primary" data-click-action="closeModal">Concluir</button>
+      </div>
+    `,
+  );
+  openModal({ initialFocus: '[data-click-action="closeModal"]' });
+}
 
 function fmtUploadDate(iso) {
   if (!iso) return '';
@@ -656,192 +1023,265 @@ function renderUploadRuntimeBlock(kinds) {
   return '';
 }
 
+function renderUploadSummary(record, emptyText) {
+  if (!record) {
+    return `<div class="upload-card-meta empty">📭 ${escHtml(emptyText)}</div>`;
+  }
+  const details = [
+    record.tamanho_bytes ? fmtBytes(record.tamanho_bytes) : null,
+    record.linhas ? `${record.linhas.toLocaleString('pt-BR')} linhas` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return `
+    <div class="upload-card-meta filled">
+      📁 <strong>${escHtml(record.nome_arquivo)}</strong>${details ? ` <span class="upload-meta-detail">(${details})</span>` : ''}<br>
+      📅 ${escHtml(fmtUploadDate(record.enviado_em))}${record.enviado_por ? ` · ${escHtml(record.enviado_por)}` : ''}
+    </div>`;
+}
+
+async function refreshProjectTendencyUploads(projects) {
+  if (!AUTH?.user || projectUploadsLoading) return;
+  const codes = projects.map((project) => project.codigo_obra).filter(Boolean);
+  const key = `${AUTH.user.id || AUTH.user.email || 'user'}:${codes.join('|')}`;
+  if (!codes.length || key === projectUploadsLoadKey) return;
+  projectUploadsLoadKey = key;
+  projectUploadsLoading = true;
+  try {
+    const latest = await loadLatestTendencies(codes);
+    for (const code of codes) PROJECT_TENDENCY_UPLOADS[code] = latest[code] || null;
+  } finally {
+    projectUploadsLoading = false;
+    renderUploadsCentral();
+  }
+}
+
 function renderUploadsCentral() {
   const root = document.getElementById('uploadsCentral');
   if (!root) return;
-  const kinds = ['tendencia', 'flows', 'gestoes'];
-
-  // ============================================================
-  // Bloco Excel destacado no topo
-  // ============================================================
-  // "Última planilha Excel" = pegar o registro mais recente com upload_group_id
-  // que existe em pelo menos um dos APP_STATE.uploads.
-  const groupCandidates = kinds
-    .map((k) => APP_STATE.uploads[k])
-    .filter((u) => u && u.upload_group_id);
-  const excelRuntimeBlock = renderUploadRuntimeBlock(kinds);
-  const excelProcessing = kinds.some((kind) => UPLOAD_RUNTIME_STATE[kind]?.status === 'processing');
-  let lastExcel = null;
-  if (groupCandidates.length) {
-    // Ordenar por data e pegar o mais recente
-    groupCandidates.sort((a, b) => new Date(b.enviado_em) - new Date(a.enviado_em));
-    const gid = groupCandidates[0].upload_group_id;
-    const relatedKinds = kinds.filter(
-      (k) => APP_STATE.uploads[k] && APP_STATE.uploads[k].upload_group_id === gid,
+  const projects = (APP_STATE.obra.obras || [])
+    .filter((project) => project.ativa)
+    .sort((a, b) =>
+      String(a.nome || a.codigo_obra).localeCompare(String(b.nome || b.codigo_obra), 'pt-BR'),
     );
-    lastExcel = {
-      ...groupCandidates[0],
-      relatedKinds,
-    };
-  }
+  const globalKinds = ['flows', 'gestoes'];
+  const globalRecords = globalKinds.map((kind) => APP_STATE.uploads[kind]).filter(Boolean);
+  const lastGlobal = [...globalRecords].sort(
+    (a, b) => new Date(b.enviado_em) - new Date(a.enviado_em),
+  )[0];
+  const globalProcessing = globalKinds.some(
+    (kind) => UPLOAD_RUNTIME_STATE[kind]?.status === 'processing',
+  );
 
-  const excelMeta = lastExcel
-    ? `
-    <div class="upload-card-meta filled">
-      📁 <strong>${escHtml(lastExcel.nome_arquivo)}</strong>${lastExcel.tamanho_bytes ? ' <span class="upload-meta-detail">(' + fmtBytes(lastExcel.tamanho_bytes) + ')</span>' : ''}<br>
-      📅 Enviado ${lastExcel.enviado_por ? 'por <code>' + escHtml(lastExcel.enviado_por) + '</code> ' : ''}em ${escHtml(fmtUploadDate(lastExcel.enviado_em))}<br>
-      📊 Abas processadas: ${lastExcel.relatedKinds.map((k) => `${UPLOAD_META[k].icon} ${UPLOAD_META[k].label.split(' ')[0]}`).join(' · ')}
-    </div>`
-    : `
-    <div class="upload-card-meta empty">📭 Nenhuma planilha Excel enviada ainda. Você pode enviar 1 arquivo <code>.xlsx</code>/<code>.xlsm</code> com as 3 abas ou usar o modo avançado abaixo.</div>`;
-
-  const excelCard = `
-    <div class="upload-excel-card" id="excelUploadCard">
-      <h3>📊 Upload Completo (Excel) <span class="upload-excel-recommended">RECOMENDADO</span></h3>
-      <p class="subtitle">Envie a planilha inteira (<code>.xlsx</code> ou <code>.xlsm</code>) e o dashboard extrai automaticamente as abas <strong>Tendência</strong>, <strong>FlowsValor</strong> e <strong>Gestões</strong>.</p>
-      ${excelRuntimeBlock}
-      ${excelMeta}
-        <div class="upload-progress" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" hidden></div>
-      <div class="upload-card-actions">
-        <button class="btn-sm primary" data-editor-only data-admin-control ${isAdminGeral() && !excelProcessing ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_excel">
-          📊 ${lastExcel ? 'Substituir planilha' : 'Escolher planilha Excel'}
-        </button>
-        <button class="btn-sm" data-click-action="openUploadsHistory" data-action-mode="arg" data-action-arg="tendencia" title="Ver todos os uploads">📜 Histórico</button>
-        <input type="file" id="fileInput_excel" class="upload-file-input" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar planilha Excel" data-change-action="handleExcelUpload" data-action-mode="event">
-      </div>
-    </div>`;
-
-  // ============================================================
-  // Accordion "modo avançado" — uploads individuais CSV
-  // ============================================================
-  const csvCardsHtml = kinds
-    .map((k) => {
-      const meta = UPLOAD_META[k];
-      const last = APP_STATE.uploads[k];
-      const runtimeBlock = renderUploadRuntimeBlock(k);
-      const isProcessing = UPLOAD_RUNTIME_STATE[k]?.status === 'processing';
-      const permissionAttr = meta.global
-        ? `data-admin-control ${isAdminGeral() ? '' : 'disabled'}`
-        : `data-edit-control ${isEditorDaObraAtiva() ? '' : 'disabled'}`;
-      let metaBlock;
-      if (last) {
-        const detalhes = [
-          last.tamanho_bytes ? fmtBytes(last.tamanho_bytes) : null,
-          last.linhas ? last.linhas + ' linhas' : null,
-        ]
-          .filter(Boolean)
-          .join(' · ');
-        const sourceTag = last.upload_group_id
-          ? ' <span class="upload-source-tag">via Excel</span>'
-          : '';
-        metaBlock = `
-        <div class="upload-card-meta filled">
-          📁 <strong>${escHtml(last.nome_arquivo)}</strong>${sourceTag}${detalhes ? ' <span class="upload-meta-detail">(' + detalhes + ')</span>' : ''}<br>
-          📅 Enviado ${last.enviado_por ? 'por <code>' + escHtml(last.enviado_por) + '</code> ' : ''}em ${escHtml(fmtUploadDate(last.enviado_em))}
-        </div>`;
-      } else {
-        metaBlock = `<div class="upload-card-meta empty">📭 Nenhum arquivo carregado ainda.</div>`;
-      }
+  const projectCards = projects
+    .map((project, index) => {
+      const code = String(project.codigo_obra || '').trim();
+      const name = project.nome || code;
+      const canEdit = authServiceCanEditProject(code);
+      const latest =
+        (canEdit && PROJECT_TENDENCY_UPLOADS[code]) ||
+        (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.tendencia : null);
+      const busy = projectUploadBusy === code;
       return `
-      <div class="upload-card" data-kind="${k}">
-        <div class="upload-card-header">
-          <div>
-            <h3 class="upload-card-title">${meta.icon} ${meta.label}</h3>
-            <p class="upload-card-sub">${escHtml(meta.desc)}</p>
+        <article class="project-tendency-card upload-card" data-kind="tendencia" data-project="${escAttr(code)}">
+          <div class="project-tendency-heading">
+            <div>
+              <h3 class="upload-card-title">🏗️ ${escHtml(name)}</h3>
+              <code>${escHtml(code)}</code>
+            </div>
+            ${code === APP_STATE.obra.ativa ? '<span class="upload-active-project">SELECIONADA</span>' : ''}
           </div>
-        </div>
-        ${runtimeBlock}
-        ${metaBlock}
-        <div class="upload-card-actions">
-          <button class="btn-sm primary" data-editor-only ${permissionAttr} ${isProcessing ? 'disabled' : ''} data-click-action="" data-file-target="fileInput_${k}">
-            📤 ${last ? 'Substituir arquivo' : 'Escolher arquivo'}
-          </button>
-          <button class="btn-sm" data-click-action="openUploadsHistory" data-action-mode="arg" data-action-arg="${k}" title="Ver arquivos enviados anteriormente (últimos ${UPLOADS_MAX_PER_TYPE})">📜 Histórico</button>
-          <button class="btn-sm" data-click-action="showManualText" data-action-mode="arg" data-action-arg="${meta.manualKey}">ℹ️ Como exportar?</button>
-          <input type="file" id="fileInput_${k}" class="upload-file-input" accept=".csv" aria-label="Selecionar arquivo CSV de ${escAttr(meta.label)}" data-change-action="handleUpload" data-action-mode="event-arg" data-action-arg="${k}">
-        </div>
-      </div>`;
+          ${busy ? renderUploadRuntimeBlock('tendencia') : ''}
+          ${renderUploadSummary(latest, 'Nenhuma Tendência enviada para esta obra.')}
+          <div class="upload-card-actions">
+            <button class="btn-sm primary" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_tendencia_${index}">
+              📤 ${latest ? 'Substituir Tendência' : 'Enviar Tendência'}
+            </button>
+            <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectTendencyHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
+              📜 Histórico da obra
+            </button>
+            <input type="file" id="fileInput_tendencia_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls,.csv" aria-label="Selecionar Tendência de ${escAttr(name)}" data-change-action="handleProjectTendencyUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
+          </div>
+        </article>`;
     })
     .join('');
 
   replaceWithParsedMarkup(
     root,
     `
-    ${excelCard}
-    <div id="uploadsAdvancedToggle" class="uploads-advanced-toggle" data-click-action="toggleAdvancedUploads">
-      ▶ <strong>Modo avançado</strong> — enviar cada CSV individualmente (uso legado)
-    </div>
-    <div id="uploadsAdvancedBody" class="uploads-advanced-body">
-      ${csvCardsHtml}
-    </div>
-  `,
+      <section class="upload-global-section">
+        <div class="upload-section-heading">
+          <div>
+            <span class="upload-scope-kicker">BASE COMPARTILHADA</span>
+            <h3>🌐 Gestões + Flows</h3>
+          </div>
+          <span class="upload-global-badge">ADMIN</span>
+        </div>
+        <p>Uma única planilha atualiza as bases consolidadas usadas por todas as obras.</p>
+        <div class="upload-excel-card" id="excelUploadCard">
+          <div class="upload-impact-grid upload-impact-grid--global" aria-label="Escopo da base global">
+            <span><strong>🔗 Flows</strong><small>Todas as obras</small></span>
+            <span><strong>📅 Gestões</strong><small>Todas as obras</small></span>
+          </div>
+          ${renderUploadRuntimeBlock(globalKinds)}
+          ${renderUploadSummary(lastGlobal, 'Nenhuma base global enviada ainda.')}
+          <div class="upload-progress" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true" hidden></div>
+          <div class="upload-card-actions">
+            <button class="btn-sm primary" data-admin-control ${isAdminGeral() && !globalProcessing ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_excel">
+              📊 ${lastGlobal ? 'Substituir base global' : 'Enviar Gestões + Flows'}
+            </button>
+            <button class="btn-sm" data-click-action="openExcelUploadsHistory">📜 Histórico global</button>
+            <input type="file" id="fileInput_excel" class="upload-file-input" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar planilha global com Gestões e Flows" data-change-action="handleExcelUpload" data-action-mode="event">
+          </div>
+        </div>
+      </section>
+      <section class="upload-projects-section">
+        <div class="upload-section-heading">
+          <div>
+            <span class="upload-scope-kicker">TENDÊNCIAS INDIVIDUAIS</span>
+            <h3>🏗️ Obras</h3>
+          </div>
+          <span class="upload-project-count">${projects.length} obra(s)</span>
+        </div>
+        <p>Cada arquivo de Tendência é salvo exclusivamente na obra indicada.</p>
+        <div class="project-tendency-grid">
+          ${projectCards || '<div class="uploads-history-empty">Nenhuma obra ativa cadastrada.</div>'}
+        </div>
+      </section>
+    `,
   );
 
-  // Drag-and-drop no card Excel
-  const excelCardEl = document.getElementById('excelUploadCard');
-  if (excelCardEl) {
-    excelCardEl.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      excelCardEl.classList.add('dragover');
+  const excelCard = root.querySelector('#excelUploadCard');
+  if (excelCard) {
+    excelCard.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      excelCard.classList.add('dragover');
     });
-    excelCardEl.addEventListener('dragleave', (e) => {
-      e.preventDefault();
-      excelCardEl.classList.remove('dragover');
-    });
-    excelCardEl.addEventListener('drop', (e) => {
-      e.preventDefault();
-      excelCardEl.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (!file) return;
-      const fakeEvt = { target: { files: [file], value: '' } };
-      handleExcelUpload(fakeEvt);
+    excelCard.addEventListener('dragleave', () => excelCard.classList.remove('dragover'));
+    excelCard.addEventListener('drop', (event) => {
+      event.preventDefault();
+      excelCard.classList.remove('dragover');
+      const file = event.dataTransfer.files[0];
+      if (file) handleExcelUpload({ target: { files: [file], value: '' } });
     });
   }
 
-  // Drag-and-drop nos cards CSV individuais
-  root.querySelectorAll('.upload-card').forEach((card) => {
-    const kind = card.dataset.kind;
-    card.addEventListener('dragover', (e) => {
-      e.preventDefault();
+  root.querySelectorAll('.project-tendency-card').forEach((card) => {
+    card.addEventListener('dragover', (event) => {
+      event.preventDefault();
       card.classList.add('dragover');
     });
-    card.addEventListener('dragleave', (e) => {
-      e.preventDefault();
+    card.addEventListener('dragleave', () => card.classList.remove('dragover'));
+    card.addEventListener('drop', (event) => {
+      event.preventDefault();
       card.classList.remove('dragover');
-    });
-    card.addEventListener('drop', (e) => {
-      e.preventDefault();
-      card.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (!file) return;
-      const fakeEvt = { target: { files: [file], value: '' } };
-      handleUpload(fakeEvt, kind);
+      const file = event.dataTransfer.files[0];
+      if (file) {
+        handleProjectTendencyUpload({ target: { files: [file], value: '' } }, card.dataset.project);
+      }
     });
   });
+  void refreshProjectTendencyUploads(projects);
 }
 
 // modal com histórico completo de uploads de um tipo
-async function openUploadsHistory(kind) {
+function openProjectTendencyHistory(projectCode) {
+  if (!requireProjectPermission(projectCode, 'consultar o histórico desta obra')) return;
+  return openUploadsHistory('tendencia', projectCode);
+}
+
+async function openUploadsHistory(kind, projectCode = null) {
   const meta = UPLOAD_META[kind];
   if (!meta) return;
+  const project = String(projectCode || APP_STATE.obra.ativa || '').trim();
+  const projectName = getProjectInfo?.(project)?.nome || project;
   const modalContent = document.getElementById('modalContent');
   if (!modalContent) return;
   replaceWithParsedMarkup(
     modalContent,
     `
     <h2>📜 Histórico de uploads — ${meta.icon} ${meta.label}</h2>
-    <div class="meta">Mantemos os últimos <strong>${UPLOADS_MAX_PER_TYPE}</strong> arquivos por tipo (mais antigos são descartados automaticamente).</div>
+    <div class="meta">${meta.global ? 'Histórico global compartilhado entre todas as obras.' : `Histórico exclusivo de ${escHtml(projectName)}.`} Mantemos as últimas <strong>${UPLOADS_MAX_PER_TYPE}</strong> versões.</div>
     <div id="uploadsHistoryList" class="uploads-history-list">⏳ Carregando...</div>
   `,
   );
   openModal();
-  await _renderUploadsHistoryList(kind);
+  await _renderUploadsHistoryList(kind, project);
+}
+
+async function openExcelUploadsHistory() {
+  if (!requireAdmin('consultar o histórico de planilhas completas')) return;
+  const modalContent = document.getElementById('modalContent');
+  if (!modalContent) return;
+  replaceWithParsedMarkup(
+    modalContent,
+    `
+      <h2>📊 Histórico de planilhas completas</h2>
+      <div class="meta">Cada envio aparece uma única vez, com todas as abas processadas e seus escopos.</div>
+      <div id="excelUploadsHistoryList" class="uploads-history-list">⏳ Carregando...</div>
+    `,
+  );
+  openModal();
+  const groups = await supaListExcelGroups(UPLOADS_MAX_PER_TYPE);
+  const box = document.getElementById('excelUploadsHistoryList');
+  if (!box) return;
+  if (!groups.length) {
+    replaceWithParsedMarkup(
+      box,
+      '<div class="uploads-history-empty">Nenhuma planilha completa registrada ainda.</div>',
+    );
+    return;
+  }
+  replaceWithParsedMarkup(
+    box,
+    `
+      <table class="uploads-history-table">
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Arquivo</th>
+            <th>Obra da Tendência</th>
+            <th>Abas processadas</th>
+            <th>Enviado por</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${groups
+            .map((group) => {
+              const tendencyRecord = group.records.find((record) => record.tipo === 'tendencia');
+              const kinds = group.records.map((record) => {
+                const meta = UPLOAD_META[record.tipo];
+                const active = record.is_active ? ' · ativo' : '';
+                return `${meta?.icon || ''} ${meta?.label || record.tipo}${active}`;
+              });
+              return `
+                <tr>
+                  <td>${escHtml(fmtUploadDate(group.enviado_em))}</td>
+                  <td class="uploads-history-file">${escHtml(group.nome_arquivo)}<br><small>${fmtBytes(group.tamanho_bytes)}</small></td>
+                  <td>${escHtml(tendencyRecord?.codigo_obra || 'Não incluída')}</td>
+                  <td>${kinds.map((value) => `<span class="upload-kind-chip">${escHtml(value)}</span>`).join('')}</td>
+                  <td>${escHtml(group.enviado_por || 'não informado')}</td>
+                  <td><button class="btn-sm" data-action="download-upload" data-path="${escAttr(group.storage_path)}" data-filename="${escAttr(group.nome_arquivo)}">📥 Baixar</button></td>
+                </tr>`;
+            })
+            .join('')}
+        </tbody>
+      </table>
+      <div class="uploads-history-help">Para restaurar uma aba específica, abra o histórico de Tendência, Flows ou Gestões e ative a versão desejada.</div>
+    `,
+  );
+  box.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-action="download-upload"]');
+    if (button) downloadUploadFile(button.dataset.path, button.dataset.filename);
+  });
 }
 
 // extraído em função separada pra poder re-renderizar após ações (ativar/excluir)
-async function _renderUploadsHistoryList(kind) {
+async function _renderUploadsHistoryList(kind, projectCode = null) {
   const meta = UPLOAD_META[kind];
-  const list = await supaListUploadsByType(kind, UPLOADS_MAX_PER_TYPE + 5);
+  const project = String(projectCode || APP_STATE.obra.ativa || '').trim();
+  const list = await supaListUploadsByType(kind, UPLOADS_MAX_PER_TYPE + 5, false, project);
   const box = document.getElementById('uploadsHistoryList');
   if (!box) return;
   if (!list.length) {
@@ -851,8 +1291,8 @@ async function _renderUploadsHistoryList(kind) {
     );
     return;
   }
-  const isEditor = isEditorDaObraAtiva();
-  const isGlobal = meta.global === true; // Gestões é compartilhado entre obras
+  const isEditor = authServiceCanEditProject(project);
+  const isGlobal = meta.global === true;
   const canManage = isGlobal ? isAdminGeral() : isEditor;
   replaceWithParsedMarkup(
     box,
@@ -873,28 +1313,30 @@ async function _renderUploadsHistoryList(kind) {
           .map((r) => {
             const isAtivo = !!r.is_active;
             const cleanStoragePath = sanitizeStoragePath(r.storage_path);
-            const safeObra = APP_STATE.obra.ativa
-              ? APP_STATE.obra.ativa.replace(/[^\w.\-]/g, '_')
-              : '';
-            const hasValidStoragePath =
-              !!cleanStoragePath && !!safeObra && cleanStoragePath.startsWith(safeObra + '/');
+            const pathParts = cleanStoragePath.split('/');
+            const pathIsGlobal =
+              pathParts[0] === '_global' || ['excel', 'flows', 'gestoes'].includes(pathParts[1]);
+            const hasValidStoragePath = !!cleanStoragePath;
             const canDownload =
-              hasValidStoragePath && AUTH && AUTH.user && (isGlobal ? isAdminGeral() : isEditor);
+              hasValidStoragePath &&
+              AUTH &&
+              AUTH.user &&
+              (pathIsGlobal || isGlobal ? isAdminGeral() : isEditor);
             const canReativar = canManage && !isAtivo && !!r.storage_path;
             const canExcluir = canManage && !isAtivo; // BLOQUEADO se ativo
             const btnDownload = canDownload
-              ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(cleanStoragePath)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo" aria-label="Baixar ${escAttr(r.nome_arquivo)}">📥</button>`
+              ? `<button class="btn-sm" data-action="download-upload" data-project="${escAttr(project)}" data-path="${escAttr(cleanStoragePath)}" data-filename="${escAttr(r.nome_arquivo)}" title="Baixar arquivo" aria-label="Baixar ${escAttr(r.nome_arquivo)}">📥</button>`
               : cleanStoragePath
-                ? `<span class="uploads-history-unavailable" title="${hasValidStoragePath ? 'Faça login para baixar' : 'Arquivo indisponível para a obra ativa'}">🔒</span>`
+                ? `<span class="uploads-history-unavailable" title="Sem permissão para baixar este arquivo">🔒</span>`
                 : `<span class="uploads-history-unavailable" title="Upload anterior à v0.53, arquivo não foi armazenado">—</span>`;
             const btnAtivar =
               canReativar && hasValidStoragePath
-                ? `<button class="btn-sm primary" data-action="ativar-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
+                ? `<button class="btn-sm primary" data-action="ativar-upload" data-project="${escAttr(project)}" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Usar este arquivo como fonte de dados">⭐ Ativar</button>`
                 : isAtivo
                   ? ''
                   : `<span class="uploads-history-unavailable" title="Arquivo sem storage_path — não pode ser reativado">—</span>`;
             const btnExcluir = canExcluir
-              ? `<button class="btn-sm danger uploads-history-delete" data-action="excluir-upload" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" aria-label="Excluir ${escAttr(r.nome_arquivo)}">🗑️</button>`
+              ? `<button class="btn-sm danger uploads-history-delete" data-action="excluir-upload" data-project="${escAttr(project)}" data-id="${r.id}" data-kind="${escAttr(kind)}" title="Excluir arquivo" aria-label="Excluir ${escAttr(r.nome_arquivo)}">🗑️</button>`
               : isAtivo && canManage
                 ? `<span class="uploads-history-unavailable" title="Ative outro arquivo antes de excluir este">🔒</span>`
                 : '';
@@ -918,7 +1360,7 @@ async function _renderUploadsHistoryList(kind) {
       🗑️ <strong>Excluir:</strong> apaga permanentemente do banco e Storage. Só permitido em arquivos não-ativos.<br>
       📌 <strong>Ativo:</strong> arquivo cujos dados estão sendo usados no dashboard agora.<br>
       🔄 <strong>Rolling backup:</strong> mantém apenas os últimos ${UPLOADS_MAX_PER_TYPE} arquivos. Ativo nunca é descartado automaticamente.
-      ${isGlobal ? '<br>🌐 <strong>Gestões é compartilhado:</strong> trocar o ativo afeta TODAS as obras.' : ''}
+      ${isGlobal ? `<br>🌐 <strong>${escHtml(meta.label)} é compartilhado:</strong> trocar o ativo afeta TODAS as obras.` : ''}
     </div>
   `,
   );
@@ -930,16 +1372,17 @@ async function _renderUploadsHistoryList(kind) {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
       const action = btn.dataset.action;
-      if (action === 'download-upload') downloadUploadFile(btn.dataset.path, btn.dataset.filename);
+      if (action === 'download-upload')
+        downloadUploadFile(btn.dataset.path, btn.dataset.filename, btn.dataset.project);
       else if (action === 'ativar-upload')
-        marcarUploadComoAtivo(parseInt(btn.dataset.id, 10), btn.dataset.kind);
+        marcarUploadComoAtivo(parseInt(btn.dataset.id, 10), btn.dataset.kind, btn.dataset.project);
       else if (action === 'excluir-upload')
-        excluirUpload(parseInt(btn.dataset.id, 10), btn.dataset.kind);
+        excluirUpload(parseInt(btn.dataset.id, 10), btn.dataset.kind, btn.dataset.project);
     });
   }
 }
 
-async function downloadUploadFile(storagePath, filename) {
+async function downloadUploadFile(storagePath, filename, projectCode = null) {
   if (!AUTH || !AUTH.user) {
     authToast('🔑 Faça login para baixar arquivos', 'warn', 3500);
     return;
@@ -950,7 +1393,7 @@ async function downloadUploadFile(storagePath, filename) {
     return;
   }
   authToast('⏳ Gerando link de download...', 'info', 2000);
-  const url = await supaGetDownloadURL(cleanPath);
+  const url = await supaGetDownloadURL(cleanPath, projectCode);
   if (!url) {
     authToast('❌ Arquivo indisponível ou fora da obra ativa', 'err', 4500);
     return;
@@ -971,15 +1414,21 @@ async function downloadUploadFile(storagePath, filename) {
 
 // Marca um upload específico como ativo (desativa os anteriores do mesmo obra+tipo)
 // Depois: baixa o arquivo do Storage, re-parseia e substitui os dados no Supabase.
-async function marcarUploadComoAtivo(uploadId, kind) {
-  if (!requireUploadPermission(kind, 'trocar este arquivo ativo')) return;
+async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
   const meta = UPLOAD_META[kind];
   const isGlobal = meta && meta.global === true;
+  const project = String(projectCode || APP_STATE.obra.ativa || '').trim();
+  if (
+    isGlobal
+      ? !requireUploadPermission(kind, 'trocar este arquivo ativo')
+      : !requireProjectPermission(project, 'trocar este arquivo ativo')
+  )
+    return;
   // Aviso especial pra Gestões (global)
   if (isGlobal) {
     const confirmed = await confirmModal(
-      'Ativar arquivo global de Gestões',
-      'Trocar o arquivo ativo atualizará o Histórico Mensal e a Curva S de TODAS as obras.',
+      `Ativar base global de ${meta.label}`,
+      `Trocar o arquivo ativo de ${meta.label} atualizará os dados de TODAS as obras cadastradas.`,
       { confirmText: 'Ativar arquivo', destructive: false },
     );
     if (!confirmed) return;
@@ -998,6 +1447,8 @@ async function marcarUploadComoAtivo(uploadId, kind) {
   let dashboardPersisted = false;
   let activation = null;
   let alvo = null;
+  let parsedTendency = null;
+  let scopedDashboardData = null;
   setUploadRuntimeState(kind, 'processing', 'Validando e ativando arquivo do histórico');
   try {
     // 1) Buscar o registro alvo
@@ -1007,14 +1458,14 @@ async function marcarUploadComoAtivo(uploadId, kind) {
       .maybeSingle();
     alvo = targetRecord;
     if (readErr || !alvo) throw new Error('Arquivo não encontrado no banco');
-    if (alvo.codigo_obra !== APP_STATE.obra.ativa)
-      throw new Error('Arquivo fora do escopo da obra ativa');
+    if (!isGlobal && alvo.codigo_obra !== project)
+      throw new Error('Arquivo fora do escopo da obra informada');
     if (!alvo.storage_path)
       throw new Error(
         'Arquivo não tem cópia no Storage (upload muito antigo). Impossível reativar.',
       );
     // 2) Baixar o arquivo do Storage
-    const url = await supaGetDownloadURL(alvo.storage_path);
+    const url = await supaGetDownloadURL(alvo.storage_path, project);
     if (!url) throw new Error('Falha ao gerar link de download do arquivo');
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('Falha ao baixar arquivo: HTTP ' + resp.status);
@@ -1026,18 +1477,41 @@ async function marcarUploadComoAtivo(uploadId, kind) {
       const sheetNames = wb.sheetNames || [];
       const mapping = _autoDetectSheets(sheetNames);
       // Só processa a aba correspondente ao tipo
-      const sheetName = mapping[kind];
+      const sheetName =
+        mapping[kind] || (kind === 'tendencia' && sheetNames.length === 1 ? sheetNames[0] : null);
       if (!sheetName) throw new Error(`Aba correspondente a "${kind}" não encontrada no Excel`);
       const csv = _sheetToCSV(wb, sheetName);
-      _parsearECarregar(kind, csv);
+      if (kind === 'tendencia') {
+        parsedTendency = parseTendenciaFile(csv);
+      } else {
+        _parsearECarregar(kind, csv);
+      }
     } else {
       // CSV direto
       const csv = await resp.text();
-      _parsearECarregar(kind, csv);
+      if (kind === 'tendencia') {
+        parsedTendency = parseTendenciaFile(csv);
+      } else {
+        _parsearECarregar(kind, csv);
+      }
+    }
+    if (parsedTendency) {
+      scopedDashboardData = {
+        tendency: parsedTendency.items,
+        flows: APP_STATE.dados.flows,
+        history: APP_STATE.dados.historico,
+        projectionRaw: APP_STATE.dados.projRaw,
+        managementLabel: parsedTendency.managementLabel || APP_STATE.config.gestaoLabel,
+        evolution: parsedTendency.evolution,
+        latestUploads: project === APP_STATE.obra.ativa ? APP_STATE.uploads : Object.create(null),
+      };
     }
     // 4) Persistir antes de ativar; ambos possuem compensação em caso de falha.
-    dashboardSnapshot = await supaCaptureDashboardRows([kind]);
-    dashboardPersistence = await supaSaveAllData([kind], dashboardSnapshot, [alvo]);
+    const scope = scopedDashboardData
+      ? { projectCode: project, dashboardData: scopedDashboardData }
+      : {};
+    dashboardSnapshot = await supaCaptureDashboardRows([kind], scope);
+    dashboardPersistence = await supaSaveAllData([kind], dashboardSnapshot, [alvo], scope);
     dashboardPersisted = true;
     activation = await supaActivateUploadRecord(alvo);
   } catch (e) {
@@ -1057,7 +1531,9 @@ async function marcarUploadComoAtivo(uploadId, kind) {
         cleanupErrors.push('dados anteriores: ' + cleanupError.message);
       }
     }
-    restoreInMemoryUploadState(memorySnapshot);
+    if (!parsedTendency || project === APP_STATE.obra.ativa) {
+      restoreInMemoryUploadState(memorySnapshot);
+    }
     setUploadRuntimeState(kind, 'failed', e.message || String(e));
     renderUploadsCentral();
     authToast('❌ Erro ao ativar: ' + e.message, 'err', 5000);
@@ -1067,12 +1543,29 @@ async function marcarUploadComoAtivo(uploadId, kind) {
     return;
   }
 
-  APP_STATE.uploads[kind] = activation.active;
+  if (kind === 'tendencia') {
+    PROJECT_TENDENCY_UPLOADS[project] = activation.active;
+    if (project === APP_STATE.obra.ativa && parsedTendency) {
+      APP_STATE.dados.tendencia = parsedTendency.items;
+      APP_STATE.config.gestaoLabel = parsedTendency.managementLabel || APP_STATE.config.gestaoLabel;
+      APP_STATE.config.evolGlobal = parsedTendency.evolution;
+      APP_STATE.uploads.tendencia = activation.active;
+      try {
+        setInputOptions(buildInsumosList());
+        buildDatalist();
+      } catch (error) {
+        reportNonFatalError('Histórico/reconstruir lista de insumos', error);
+      }
+      aplicarFallbackGestaoDoHistorico();
+    }
+  } else {
+    APP_STATE.uploads[kind] = activation.active;
+  }
   setUploadRuntimeState(kind, 'active');
   debouncedRender();
   renderUploadsCentral();
   renderSourcesHeaders();
-  await _renderUploadsHistoryList(kind);
+  await _renderUploadsHistoryList(kind, project);
   authToast(`✅ Arquivo ativado: ${alvo.nome_arquivo}`, 'ok', 3500);
 }
 
@@ -1129,8 +1622,15 @@ function _parsearECarregar(kind, csv) {
 }
 
 // Exclui um upload específico (bloqueado se for o ativo — check no HTML)
-async function excluirUpload(uploadId, kind) {
-  if (!requireUploadPermission(kind, 'excluir este arquivo')) return;
+async function excluirUpload(uploadId, kind, projectCode = null) {
+  const isGlobal = UPLOAD_META[kind]?.global === true;
+  const project = String(projectCode || APP_STATE.obra.ativa || '').trim();
+  if (
+    isGlobal
+      ? !requireUploadPermission(kind, 'excluir este arquivo')
+      : !requireProjectPermission(project, 'excluir este arquivo')
+  )
+    return;
   try {
     // Buscar pra confirmar que não é o ativo
     const { data: rec, error: readErr } = await SUPA.from('upload_history')
@@ -1138,8 +1638,8 @@ async function excluirUpload(uploadId, kind) {
       .eq('id', uploadId)
       .maybeSingle();
     if (readErr || !rec) throw new Error('Arquivo não encontrado');
-    if (rec.codigo_obra !== APP_STATE.obra.ativa)
-      throw new Error('Arquivo fora do escopo da obra ativa');
+    if (!isGlobal && rec.codigo_obra !== project)
+      throw new Error('Arquivo fora do escopo da obra informada');
     if (rec.is_active) {
       authToast('🔒 Não é possível excluir o arquivo ativo. Ative outro primeiro.', 'warn', 4500);
       return;
@@ -1157,7 +1657,6 @@ async function excluirUpload(uploadId, kind) {
     if (cleanStoragePath) {
       const { data: otherReferences, error: referenceError } = await SUPA.from('upload_history')
         .select('id')
-        .eq('codigo_obra', APP_STATE.obra.ativa)
         .eq('storage_path', cleanStoragePath)
         .neq('id', uploadId)
         .limit(1);
@@ -1165,10 +1664,9 @@ async function excluirUpload(uploadId, kind) {
       removeStoredFile = !otherReferences?.length;
     }
     // Remove primeiro o metadata para nunca deixar o histórico apontando para arquivo ausente.
-    const { error: dbErr } = await SUPA.from('upload_history')
-      .delete()
-      .eq('codigo_obra', APP_STATE.obra.ativa)
-      .eq('id', uploadId);
+    let deleteQuery = SUPA.from('upload_history').delete().eq('id', uploadId);
+    if (!isGlobal) deleteQuery = deleteQuery.eq('codigo_obra', project);
+    const { error: dbErr } = await deleteQuery;
     if (dbErr) throw dbErr;
     if (removeStoredFile) {
       const { error: sErr } = await SUPA.storage.from(UPLOADS_BUCKET).remove([cleanStoragePath]);
@@ -1181,7 +1679,7 @@ async function excluirUpload(uploadId, kind) {
       }
     }
     // Re-render do modal
-    await _renderUploadsHistoryList(kind);
+    await _renderUploadsHistoryList(kind, project);
     authToast(`✅ Arquivo excluído`, 'ok', 3000);
   } catch (e) {
     console.error('[v0.60] excluirUpload:', e);
@@ -1204,6 +1702,13 @@ function renderSourcesHeaders() {
       const meta = UPLOAD_META[k];
       const last = APP_STATE.uploads[k];
       if (!last) {
+        const hasPublishedData =
+          (k === 'tendencia' && APP_STATE.dados.tendencia?.length) ||
+          (k === 'flows' && APP_STATE.dados.flows?.length) ||
+          (k === 'gestoes' && APP_STATE.dados.historico?.items?.length);
+        if (!AUTH?.user && hasPublishedData) {
+          return `<span class="src-item"><strong>${meta?.icon || ''} ${meta?.label || k}:</strong> dados publicados</span>`;
+        }
         return `<span class="src-item src-empty" title="Nenhum arquivo enviado ainda para ${meta ? meta.label : k}">${meta ? meta.icon : ''} ${meta ? meta.label : k}: (sem dados)</span>`;
       }
       const tip = `${last.nome_arquivo} · ${fmtUploadDate(last.enviado_em)}${last.enviado_por ? ' · ' + last.enviado_por : ''}`;
@@ -1246,8 +1751,11 @@ export function createUploadView({
   supaActivateUploadRecord = uploadRepository.activateRecord;
   supaRollbackUploadActivation = uploadRepository.rollbackActivation;
   supaListUploadsByType = uploadRepository.listByType;
+  supaListExcelGroups = uploadRepository.listExcelGroups;
+  loadLatestTendencies = uploadRepository.loadLatestTendencies;
   supaGetDownloadURL = uploadRepository.getDownloadUrl;
   supaEnforceRollingBackup = uploadRepository.enforceRollingBackup;
+  supaEnforceDatasetRetention = uploadCoordinator.enforceDatasetRetention;
   supaCaptureDashboardRows = uploadCoordinator.captureDashboardRows;
   supaSaveAllData = uploadCoordinator.saveAllData;
   restoreSavedData = uploadCoordinator.restoreSavedData;
@@ -1257,18 +1765,26 @@ export function createUploadView({
   commitPreparedUpload = uploadCoordinator.commitPreparedUpload;
   SUPA = supabaseClient;
   AUTH = authService.state;
-  isEditorDaObraAtiva = authService.canEditActiveProject;
   isAdminGeral = authService.isAdmin;
+  authServiceCanEditProject = authService.canEditProject;
   requireUploadPermission = authUi.requireUploadPermission;
+  requireProjectPermission = authUi.requireEditorForProject;
   requireAdmin = authUi.requireAdmin;
   APP_STATE = state;
   parseTendencia = parsers.applyTendency;
+  parseTendenciaFile = parsers.parseTendencia;
   parseFlowsValor = parsers.applyFlows;
   parseGestoes = parsers.applyManagements;
   parseCSVRows = parsers.parseDelimitedRows;
   validateImportHeaders = parsers.validateImportHeaders;
+  discoverFlowProjectReferences = parsers.discoverFlowProjectReferences;
+  discoverGestoesProjectCodes = parsers.discoverGestoesProjectCodes;
+  IMPORT_REPORTS = parsers.reports;
   aplicarFallbackGestaoDoHistorico = projectController.aplicarFallbackGestaoDoHistorico;
   atualizarGestaoLabelPelaHistoria = projectController.atualizarGestaoLabelPelaHistoria;
+  getProjectInfo = projectController.getProjectInfo;
+  carregarObras = projectController.carregarObras;
+  renderObrasDropdown = projectController.renderObrasDropdown;
   buildInsumosList = flowEditor.buildInsumosList;
   setInputOptions = flowEditor.setInputOptions;
   buildDatalist = flowEditor.buildDatalist;
@@ -1278,8 +1794,11 @@ export function createUploadView({
     renderUploadsCentral,
     renderSourcesHeaders,
     handleUpload,
+    handleProjectTendencyUpload,
     handleExcelUpload,
     toggleAdvancedUploads,
     openUploadsHistory,
+    openProjectTendencyHistory,
+    openExcelUploadsHistory,
   });
 }

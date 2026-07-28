@@ -1,5 +1,7 @@
+import { isGlobalUploadKind as isGlobalUploadKindFromRepository } from '../services/upload-repository.mjs';
+
 export function isGlobalUploadKind(kind) {
-  return kind === 'excel' || kind === 'flows' || kind === 'gestoes';
+  return isGlobalUploadKindFromRepository(kind);
 }
 
 export function friendlySignInError(error) {
@@ -63,6 +65,7 @@ export function createAuthUi({
 
     root.body.classList.toggle('is-editor', authService.canEditActiveProject());
     root.body.classList.toggle('is-admin-geral', !!state.isAdminGeral);
+    root.body.classList.toggle('is-authenticated', Boolean(state.user));
     syncEditingControls();
 
     if (!state.ready) {
@@ -75,6 +78,9 @@ export function createAuthUi({
 
     button.hidden = false;
     if (!state.user) {
+      if (root.getElementById('tab-btn-uploads')?.classList.contains('active')) {
+        root.getElementById('tab-btn-visao')?.click();
+      }
       badge.className = 'auth-badge viewer';
       badge.textContent = '👁️ Visualização';
       badge.title =
@@ -142,6 +148,24 @@ export function createAuthUi({
       toast(`🔑 Faça login para ${actionDescription || 'editar'}`, 'warn', 3500);
     } else if (state.isEditor) {
       toast(`🚫 Sua conta não pode ${actionDescription || 'editar'} nesta obra.`, 'err', 4500);
+    } else {
+      toast('🚫 Sua conta não tem permissão para editar. Fale com o admin.', 'err', 4500);
+    }
+    return false;
+  }
+
+  function requireEditorForProject(projectCode, actionDescription) {
+    if (authService.canEditProject(projectCode)) return true;
+    if (!state.ready) {
+      toast('⏳ Aguarde a verificação da sua sessão.', 'warn', 2500);
+    } else if (!state.user) {
+      toast(`🔑 Faça login para ${actionDescription || 'editar'}`, 'warn', 3500);
+    } else if (state.isEditor) {
+      toast(
+        `🚫 Sua conta não pode ${actionDescription || 'editar'} na obra ${projectCode || 'informada'}.`,
+        'err',
+        4500,
+      );
     } else {
       toast('🚫 Sua conta não tem permissão para editar. Fale com o admin.', 'err', 4500);
     }
@@ -330,6 +354,7 @@ export function createAuthUi({
     requireAdmin,
     requireEditor: requireEditorForActiveProject,
     requireEditorForActiveProject,
+    requireEditorForProject,
     requireUploadPermission,
     switchLoginTab,
     syncEditingControls,

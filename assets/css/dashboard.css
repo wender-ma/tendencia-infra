@@ -830,6 +830,9 @@ body:not(.is-editor) [data-editor-only] {
 body:not(.is-admin-geral) [data-admin-only] {
   display: none;
 }
+body:not(.is-authenticated) [data-authenticated-only] {
+  display: none;
+}
 body:not(.is-editor) [data-edit-control],
 body:not(.is-admin-geral) [data-admin-control],
 [data-edit-control]:disabled,
@@ -845,7 +848,7 @@ body:not(.is-admin-geral) [data-admin-control],
 }
 .upload-card {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 14px 16px;
   background: var(--bg-card);
   transition: box-shadow .15s, border-color .15s;
@@ -923,9 +926,9 @@ body:not(.is-admin-geral) [data-admin-control],
 
 /* ==== v0.54: Excel upload + accordeon avançado ==== */
 .upload-excel-card {
-  background: linear-gradient(135deg, var(--sem-ok-soft) 0%, var(--sem-ok-bg) 100%);
+  background: var(--sem-ok-soft);
   border: 2px solid var(--sem-ok);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 18px 20px;
   margin-bottom: 18px;
   transition: box-shadow .2s, border-color .2s, transform .1s;
@@ -957,6 +960,35 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--sem-ok);
   margin: 0 0 12px;
 }
+.upload-impact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.upload-impact-grid--global {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.upload-impact-grid > span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--sem-ok) 30%, var(--border));
+  border-radius: 6px;
+  background: var(--bg-card);
+}
+.upload-impact-grid strong {
+  overflow-wrap: anywhere;
+  color: var(--text-strong);
+  font-size: 12px;
+}
+.upload-impact-grid small {
+  overflow-wrap: anywhere;
+  color: var(--text-soft);
+  font-size: 10.5px;
+}
 .uploads-advanced-toggle {
   display: block;
   cursor: pointer;
@@ -973,6 +1005,121 @@ body:not(.is-admin-geral) [data-admin-control],
 .uploads-advanced-toggle:hover { background: var(--border-strong); color: var(--text-strong); }
 .uploads-advanced-body { display: none; margin-top: 4px; }
 .uploads-advanced-body.open { display: block; }
+.upload-global-section,
+.upload-projects-section {
+  min-width: 0;
+}
+.upload-projects-section {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.upload-global-section > p,
+.upload-projects-section > p {
+  margin: 4px 0 12px;
+  color: var(--text-soft);
+  font-size: 11.5px;
+}
+.upload-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.upload-section-heading h3 {
+  margin: 2px 0 0;
+  color: var(--text-strong);
+  font-size: 16px;
+}
+.upload-project-count {
+  color: var(--text-soft);
+  font-size: 11px;
+}
+.project-tendency-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.project-tendency-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.project-tendency-card .upload-card-meta {
+  flex: 1;
+}
+.project-tendency-heading {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.project-tendency-heading > div {
+  min-width: 0;
+}
+.project-tendency-heading code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--text-soft);
+  font-size: 10.5px;
+}
+.upload-active-project {
+  flex: none;
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-soft);
+  font-size: 9px;
+  font-weight: 700;
+}
+.upload-scope-section {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.upload-scope-section:first-child { border-top: 0; }
+.upload-scope-section > p {
+  margin: 4px 0 12px;
+  color: var(--text-soft);
+  font-size: 11.5px;
+}
+.upload-scope-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.upload-scope-heading h3 {
+  margin: 1px 0 0;
+  color: var(--text-strong);
+  font-size: 15px;
+}
+.upload-scope-heading code {
+  color: var(--text-medium);
+  font-size: 11px;
+}
+.upload-scope-kicker {
+  color: var(--text-soft);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.upload-global-badge {
+  padding: 3px 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text-medium);
+  font-size: 9.5px;
+  font-weight: 700;
+}
+.uploads-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.uploads-scope-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 760px;
+}
 
 /* Modal de mapeamento manual de abas */
 .sheet-mapping-row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
@@ -1048,6 +1195,101 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-soft);
   font-size: 11.5px;
   line-height: 1.5;
+}
+.upload-kind-chip {
+  display: block;
+  color: var(--text-medium);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.upload-report {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.upload-report-section {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.upload-report-section h3 {
+  margin: 0 0 10px;
+  color: var(--text-strong);
+  font-size: 13px;
+}
+.upload-report-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.upload-report-metrics span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 8px;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
+  font-size: 10px;
+}
+.upload-report-metrics strong {
+  color: var(--text-strong);
+  font-size: 16px;
+}
+.upload-report-metrics .is-success strong { color: var(--sem-ok); }
+.upload-report-metrics .is-warning strong { color: var(--sem-alerta); }
+.upload-report-metrics .is-danger strong { color: var(--sem-erro); }
+.upload-report-details { margin-top: 10px; color: var(--text-medium); font-size: 11px; }
+.upload-report-details ul { margin: 5px 0 0; padding: 0; list-style: none; }
+.upload-report-details li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.upload-report-alert {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-left: 3px solid var(--sem-alerta);
+  background: var(--sem-alerta-bg);
+  color: var(--sem-alerta);
+  font-size: 11px;
+}
+.upload-project-preview {
+  display: grid;
+  gap: 10px;
+}
+.upload-project-preview-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.45fr) minmax(180px, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-page);
+}
+.upload-project-preview-row span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.upload-project-preview-row strong {
+  overflow-wrap: anywhere;
+  color: var(--text-strong);
+  font-family: monospace;
+}
+.upload-project-preview-row small {
+  color: var(--text-soft);
+  font-size: 10px;
+}
+.upload-project-preview-row input {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-card);
+  color: var(--text-strong);
+}
+.upload-project-preview-note {
+  margin: 2px 0;
+  color: var(--text-soft);
+  font-size: 11px;
 }
 
 /* ApexCharts — tema customizado */
@@ -1174,6 +1416,12 @@ body:not(.is-admin-geral) [data-admin-control],
 .admin-project-checkbox { width: 16px; height: 16px; cursor: pointer; }
 .admin-project-option-code { color: var(--text-soft); font-size: 11px; }
 .admin-project-option-name { font-size: 13px; }
+#tab-admin .table-wrap {
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior: auto;
+}
 .table-col-50 { width: 50px; }
 .table-col-24 { width: 24px; }
 .table-col-30 { width: 30px; }
@@ -1218,7 +1466,7 @@ body:not(.is-admin-geral) [data-admin-control],
 #tab-flows .table-wrap {
   max-height: none;
   overflow-x: visible;
-  overflow-y: visible;
+  overflow-y: clip;
 }
 .advanced-filter-title { color: var(--text-soft); font-size: 11px; font-weight: 600; }
 .advanced-filter-field {
@@ -1689,11 +1937,20 @@ body:not(.is-admin-geral) [data-admin-control],
   place-items: center;
 }
 .projection-chart-lock-symbol { font-size: 13px; line-height: 1; }
-.projection-chart-is-locked .projection-chart-lock-toggle {
+.projection-chart-is-locked .projection-chart-lock-toggle,
+.history-chart-is-locked .projection-chart-lock-toggle {
   border-radius: 3px;
   background: var(--bg-soft);
 }
 .projection-chart-is-locked :is(
+  .apexcharts-zoomin-icon,
+  .apexcharts-zoomout-icon,
+  .apexcharts-zoom-icon,
+  .apexcharts-selection-icon,
+  .apexcharts-pan-icon,
+  .apexcharts-reset-icon
+),
+.history-chart-is-locked :is(
   .apexcharts-zoomin-icon,
   .apexcharts-zoomout-icon,
   .apexcharts-zoom-icon,
@@ -1745,7 +2002,7 @@ body:not(.is-admin-geral) [data-admin-control],
 #tab-historico .history-table-wrap {
   max-height: none;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
 }
 #tab-historico .history-kpis {
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1851,6 +2108,43 @@ body:not(.is-admin-geral) [data-admin-control],
 .uploads-maintenance-title { color: var(--sem-erro); font-size: 13px; }
 .uploads-maintenance-copy { margin: 4px 0 10px; color: var(--sem-erro-text); font-size: 11.5px; }
 .uploads-maintenance-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.uploads-maintenance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.uploads-maintenance-grid > div {
+  padding: 10px;
+  border: 1px solid var(--sem-erro-border);
+  border-radius: 6px;
+  background: var(--bg-card);
+}
+.uploads-maintenance-grid > div > strong {
+  display: block;
+  color: var(--text-strong);
+  font-size: 12px;
+}
+.uploads-maintenance-grid > div > span {
+  display: block;
+  min-height: 32px;
+  margin: 3px 0 8px;
+  color: var(--text-soft);
+  font-size: 10.5px;
+}
+@media (max-width: 700px) {
+  .upload-impact-grid,
+  .uploads-scope-grid,
+  .uploads-maintenance-grid,
+  .project-tendency-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .upload-report-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .upload-project-preview-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 /* Gráficos estáticos */
 .history-chart { position: relative; height: 320px; }

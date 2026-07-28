@@ -8,7 +8,9 @@ const { pathToFileURL } = require('url');
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/ui/upload-maintenance.mjs'),
   );
-  const { buildResetCacheKeys, createUploadMaintenance } = await import(moduleUrl.href);
+  const { buildGlobalResetCacheKeys, buildResetCacheKeys, createUploadMaintenance } = await import(
+    moduleUrl.href
+  );
 
   assert.deepStrictEqual(buildResetCacheKeys(' OBRA-A '), [
     'OBRA-A:dados_tendencia',
@@ -22,9 +24,14 @@ const { pathToFileURL } = require('url');
     'dados_projraw',
   ]);
   assert.deepStrictEqual(buildResetCacheKeys(''), []);
+  assert.deepStrictEqual(buildGlobalResetCacheKeys(), [
+    'dados_flows',
+    'dados_historico',
+    'dados_projraw',
+  ]);
 
   const events = [];
-  const confirmations = [true, true, true];
+  const confirmations = [true, true, true, true];
   const service = createUploadMaintenance({
     dashboardRepository: {
       async deleteDashboardKeys(keys) {
@@ -33,22 +40,29 @@ const { pathToFileURL } = require('url');
       },
     },
     dashboardDatasetRepository: {
-      async resetDashboardData(includeGlobal) {
-        events.push(['reset-datasets', includeGlobal]);
+      async resetDashboardData() {
+        events.push(['reset-datasets']);
         return { available: true, configDeleted: 7, datasetCount: 2 };
+      },
+      async resetGlobalDashboardData() {
+        events.push(['reset-global-datasets']);
+        return { available: true, configDeleted: 3, datasetCount: 3 };
       },
     },
     uploadRepository: {
       async clearProjectHistory() {
-        events.push(['delete-history']);
+        events.push(['delete-project-history']);
         return 4;
+      },
+      async clearGlobalHistory() {
+        events.push(['delete-global-history']);
+        return 8;
       },
     },
     getActiveProject: () => 'OBRA-A',
     getProjectInfo: () => ({ nome: 'Obra A' }),
     requireEditor: () => true,
     requireAdmin: () => true,
-    isAdmin: () => true,
     requestConfirmation: async () => confirmations.shift(),
     toast: (...args) => events.push(['toast', ...args]),
     clearLocalEvolution: () => events.push(['clear-local']),
@@ -62,16 +76,22 @@ const { pathToFileURL } = require('url');
     },
   });
 
-  assert.strictEqual(await service.resetCacheDados(), true);
-  assert.deepStrictEqual(events.find(([name]) => name === 'reset-datasets'), [
-    'reset-datasets',
-    true,
-  ]);
+  assert.strictEqual(await service.resetProjectData(), true);
+  assert.deepStrictEqual(
+    events.find(([name]) => name === 'reset-datasets'),
+    ['reset-datasets'],
+  );
   assert(!events.some(([name]) => name === 'delete-cache'));
   assert(events.some(([name]) => name === 'clear-local'));
   assert(events.some(([name]) => name === 'reload'));
 
-  assert.strictEqual(await service.apagarHistoricoUploads(), true);
+  assert.strictEqual(await service.resetGlobalData(), true);
+  assert(events.some(([name]) => name === 'reset-global-datasets'));
+
+  assert.strictEqual(await service.clearProjectUploadFiles(), true);
+  assert(events.some(([name]) => name === 'delete-project-history'));
+  assert.strictEqual(await service.clearGlobalUploadFiles(), true);
+  assert(events.some(([name]) => name === 'delete-global-history'));
   assert(events.some(([name]) => name === 'clear-latest'));
   assert(events.some(([name]) => name === 'render-uploads'));
   assert(events.some(([name]) => name === 'render-headers'));
@@ -93,12 +113,11 @@ const { pathToFileURL } = require('url');
     getActiveProject: () => 'OBRA-A',
     getProjectInfo: () => ({ nome: 'Obra A' }),
     requireEditor: () => true,
-    isAdmin: () => false,
     requestConfirmation: async () => true,
     toast: () => {},
     schedule: () => {},
   });
-  assert.strictEqual(await fallbackService.resetCacheDados(), true);
+  assert.strictEqual(await fallbackService.resetProjectData(), true);
   assert.strictEqual(fallbackEvents[0].length, 4);
 
   console.log('Manutenção de uploads: reset transacional, fallback e confirmações OK');

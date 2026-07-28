@@ -83,6 +83,24 @@ export function buildDatasetEntries(dashboardData, kinds, activeProject, records
   return entries;
 }
 
+export function datasetRetentionScopes(kinds, activeProject) {
+  const requested = new Set(Array.isArray(kinds) ? kinds : ['tendencia', 'flows', 'gestoes']);
+  const scopes = [];
+  if (requested.has('tendencia')) {
+    scopes.push({ type: 'tendencia', ...datasetScope('tendencia', activeProject) });
+  }
+  if (requested.has('flows')) {
+    scopes.push({ type: 'flows', ...datasetScope('flows', activeProject) });
+  }
+  if (requested.has('gestoes')) {
+    scopes.push(
+      { type: 'historico', ...datasetScope('historico', activeProject) },
+      { type: 'projecao_raw', ...datasetScope('projecao_raw', activeProject) },
+    );
+  }
+  return scopes;
+}
+
 function assertDatasetValue(entry) {
   const valid =
     entry.type === 'historico'
@@ -329,12 +347,12 @@ export function createDashboardDatasetRepository({
     if (errors.length) throw new AggregateError(errors, 'Falha ao reverter snapshots versionados');
   }
 
-  async function saveForUpload(kinds, dashboardData, records = []) {
+  async function saveForUpload(kinds, dashboardData, records = [], projectCode = null) {
     if (!(await checkAvailability())) return { available: false, activations: [] };
     const entries = buildDatasetEntries(
       dashboardData,
       kinds,
-      String(getActiveProject?.() || '').trim(),
+      String(projectCode || getActiveProject?.() || '').trim(),
       records,
     );
     const activations = [];
@@ -347,29 +365,49 @@ export function createDashboardDatasetRepository({
     }
   }
 
-  async function resetDashboardData(includeGlobal = false) {
-    const supabase = client();
-    const project = String(getActiveProject?.() || '').trim();
-    if (!supabase) throw new Error('Supabase indisponível para resetar os datasets');
-    if (!project) throw new Error('Nenhuma obra ativa para resetar os datasets');
+  async function enforceRollingRetention(kinds, maxVersions = 12, projectCode = null) {
+    if (!(await checkAvailability())) return { available: false, removed: 0 };
+    const project = String(projectCode || getActiveProject?.() || '').trim();
+    const limit = Math.max(1, Number(maxVersions) || 12);
+    let removed = 0;
 
-    const { data, error } = await supabase.rpc('reset_dashboard_datasets', {
-      p_codigo_obra: project,
-      p_include_global: includeGlobal === true,
-    });
-    if (error) {
-      if (allowLegacyFallback && isDatasetResetRpcUnavailable(error)) {
-        warn('Datasets/reset ainda não implantado; usando limpeza legada', error);
-        return { available: false, configDeleted: 0, datasetCount: 0 };
+    for (const scope of datasetRetentionScopes(kinds, project)) {
+      let query = client()
+        .from(TABLE)
+        .select(METADATA_COLUMNS)
+        .eq('tipo', scope.type)
+        .in('status', ['active', 'superseded'])
+        .order('versao', { ascending: false })
+        .limit(250);
+      query = scope.codigoObra
+        ? query.eq('codigo_obra', scope.codigoObra)
+        : query.is('codigo_obra', null);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const stale = (data || [])
+        .slice(limit)
+        .filter((metadata) => metadata.status === 'superseded');
+      for (const metadata of stale) {
+        await removeMetadata(metadata.id);
+        try {
+          await removeObject(metadata.storage_path);
+        } catch (error) {
+          warn(`Datasets/retencao/objeto orfao/${scope.type}`, error);
+        }
+        removed += 1;
       }
-      throw error;
     }
 
+    return { available: true, removed };
+  }
+
+  async function removeResetObjects(data) {
     const datasets = Array.isArray(data?.datasets) ? data.datasets : [];
     const paths = [...new Set(datasets.map((item) => item?.storage_path).filter(Boolean))];
     if (paths.length) {
-      const { data: removedObjects, error: storageError } = await supabase.storage
-        .from(DASHBOARD_DATASET_BUCKET)
+      const { data: removedObjects, error: storageError } = await client()
+        .storage.from(DASHBOARD_DATASET_BUCKET)
         .remove(paths);
       if (
         storageError ||
@@ -384,13 +422,47 @@ export function createDashboardDatasetRepository({
         throw cleanupError;
       }
     }
-
     return {
       available: true,
       configDeleted: Number(data?.config_deleted || 0),
       datasetCount: datasets.length,
       storageObjectsRemoved: paths.length,
     };
+  }
+
+  async function resetDashboardData() {
+    const supabase = client();
+    const project = String(getActiveProject?.() || '').trim();
+    if (!supabase) throw new Error('Supabase indisponível para resetar os datasets');
+    if (!project) throw new Error('Nenhuma obra ativa para resetar os datasets');
+
+    const { data, error } = await supabase.rpc('reset_dashboard_datasets', {
+      p_codigo_obra: project,
+      p_include_global: false,
+    });
+    if (error) {
+      if (allowLegacyFallback && isDatasetResetRpcUnavailable(error)) {
+        warn('Datasets/reset ainda não implantado; usando limpeza legada', error);
+        return { available: false, configDeleted: 0, datasetCount: 0 };
+      }
+      throw error;
+    }
+
+    return removeResetObjects(data);
+  }
+
+  async function resetGlobalDashboardData() {
+    const supabase = client();
+    if (!supabase) throw new Error('Supabase indisponível para resetar os datasets globais');
+    const { data, error } = await supabase.rpc('reset_global_dashboard_datasets');
+    if (error) {
+      if (allowLegacyFallback && isDatasetResetRpcUnavailable(error)) {
+        warn('Datasets/reset global ainda não implantado; usando limpeza legada', error);
+        return { available: false, configDeleted: 0, datasetCount: 0 };
+      }
+      throw error;
+    }
+    return removeResetObjects(data);
   }
 
   return Object.freeze({
@@ -400,8 +472,10 @@ export function createDashboardDatasetRepository({
     loadSnapshot,
     loadForDashboard,
     saveForUpload,
+    enforceRollingRetention,
     rollbackSnapshots,
     resetDashboardData,
+    resetGlobalDashboardData,
     get availability() {
       return availability;
     },

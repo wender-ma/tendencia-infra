@@ -62,11 +62,15 @@ export function createAuthService({
     return !!supabaseClient?.auth;
   }
 
-  function canEditActiveProject() {
+  function canEditProject(projectCode) {
     if (!state.isEditor) return false;
     if (state.isAdminGeral) return true;
-    const activeProject = getActiveProject();
-    return !!activeProject && state.editaObras.includes(activeProject);
+    const project = String(projectCode || '').trim();
+    return !!project && state.editaObras.includes(project);
+  }
+
+  function canEditActiveProject() {
+    return canEditProject(getActiveProject());
   }
 
   function isAdmin() {
@@ -247,6 +251,7 @@ export function createAuthService({
     state,
     applySession,
     canEditActiveProject,
+    canEditProject,
     checkEditorPermission,
     dispose,
     init,

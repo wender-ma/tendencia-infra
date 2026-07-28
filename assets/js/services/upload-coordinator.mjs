@@ -3,7 +3,7 @@ function projectKey(key, project) {
 }
 
 export function buildUploadDashboardRows(
-  { tendency, flows, history, projectionRaw, managementLabel },
+  { tendency, flows, history, projectionRaw, managementLabel, evolution },
   kinds,
   project,
   date = new Date(),
@@ -18,6 +18,12 @@ export function buildUploadDashboardRows(
     }
     values.set(projectKey(dataKeys.DATA_T, project), JSON.stringify(tendency));
     values.set(projectKey(dataKeys.GESTAO_LABEL, project), String(managementLabel || ''));
+    if (dataKeys.EVOLUTION) {
+      values.set(
+        projectKey(dataKeys.EVOLUTION, project),
+        JSON.stringify(evolution || { teorica: null, financeira: null }),
+      );
+    }
   }
   if (requested.includes('flows')) {
     if (!Array.isArray(flows) || !flows.length) {
@@ -46,6 +52,7 @@ export function createUploadCoordinator({
   getInputOptions,
   setInputOptions,
   canEditActiveProject,
+  canEditProject = null,
   isAdmin,
   isGlobalKind,
   dataKeys,
@@ -70,21 +77,33 @@ export function createUploadCoordinator({
   const client = () => getClient?.() || null;
   const activeProject = () => String(getActiveProject?.() || '').trim();
 
-  function rowsFor(kinds) {
-    return buildUploadDashboardRows(getDashboardData(), kinds, activeProject(), now(), dataKeys);
+  function resolveScope(options = {}) {
+    return {
+      projectCode: String(options.projectCode || activeProject()).trim(),
+      dashboardData: options.dashboardData || getDashboardData(),
+    };
   }
 
-  function persistenceRowsFor(kinds) {
-    const rows = rowsFor(kinds);
+  function rowsFor(kinds, options = {}) {
+    const scope = resolveScope(options);
+    return buildUploadDashboardRows(scope.dashboardData, kinds, scope.projectCode, now(), dataKeys);
+  }
+
+  function persistenceRowsFor(kinds, options = {}) {
+    const scope = resolveScope(options);
+    const rows = rowsFor(kinds, scope);
     if (persistenceMode === 'dual') return rows;
-    const managementKey = projectKey(dataKeys.GESTAO_LABEL, activeProject());
-    return rows.filter((row) => row.chave === managementKey);
+    const retainedKeys = new Set([
+      projectKey(dataKeys.GESTAO_LABEL, scope.projectCode),
+      projectKey(dataKeys.EVOLUTION, scope.projectCode),
+    ]);
+    return rows.filter((row) => retainedKeys.has(row.chave));
   }
 
-  async function captureDashboardRows(kinds) {
+  async function captureDashboardRows(kinds, options = {}) {
     const supabase = client();
     if (!supabase) throw new Error('Supabase indisponível');
-    const keys = persistenceRowsFor(kinds).map((row) => row.chave);
+    const keys = persistenceRowsFor(kinds, options).map((row) => row.chave);
     if (!keys.length) return { keys: [], rows: [] };
     const { data, error } = await supabase
       .from('dashboard_config')
@@ -114,18 +133,22 @@ export function createUploadCoordinator({
     }
   }
 
-  async function saveAllData(kinds, previousRows = null, records = []) {
+  async function saveAllData(kinds, previousRows = null, records = [], options = {}) {
     const supabase = client();
+    const scope = resolveScope(options);
     if (!supabase) throw new Error('Supabase indisponível');
-    if (!canEditActiveProject?.()) {
-      throw new Error('Sem permissão para persistir dados da obra ativa');
+    const canEditScope = canEditProject
+      ? canEditProject(scope.projectCode)
+      : scope.projectCode === activeProject() && canEditActiveProject?.();
+    if (!canEditScope) {
+      throw new Error(`Sem permissão para persistir dados da obra ${scope.projectCode}`);
     }
     if ((!Array.isArray(kinds) || kinds.some(isGlobalKind)) && !isAdmin?.()) {
       throw new Error('Apenas administradores podem persistir dados globais');
     }
-    if (!activeProject()) throw new Error('Nenhuma obra ativa para persistência');
+    if (!scope.projectCode) throw new Error('Nenhuma obra informada para persistência');
 
-    const rows = persistenceRowsFor(kinds);
+    const rows = persistenceRowsFor(kinds, scope);
     if (rows.length) {
       const { error } = await supabase
         .from('dashboard_config')
@@ -137,7 +160,12 @@ export function createUploadCoordinator({
     }
     let datasets;
     try {
-      datasets = await dashboardDatasetRepository.saveForUpload(kinds, getDashboardData(), records);
+      datasets = await dashboardDatasetRepository.saveForUpload(
+        kinds,
+        scope.dashboardData,
+        records,
+        scope.projectCode,
+      );
       if (persistenceMode === 'snapshots' && !datasets?.available) {
         throw new Error('Snapshots versionados indisponíveis; upload não foi persistido');
       }
@@ -171,6 +199,12 @@ export function createUploadCoordinator({
     }
     if (errors.length)
       throw new AggregateError(errors, 'Rollback da persistência do dashboard falhou');
+  }
+
+  async function enforceDatasetRetention(kinds, maxVersions = 12, projectCode = null) {
+    return projectCode
+      ? dashboardDatasetRepository.enforceRollingRetention?.(kinds, maxVersions, projectCode)
+      : dashboardDatasetRepository.enforceRollingRetention?.(kinds, maxVersions);
   }
 
   function setRuntimeState(kinds, status, message = '') {
@@ -207,12 +241,17 @@ export function createUploadCoordinator({
     items,
     groupId = null,
     memorySnapshot,
+    projectCode = null,
+    dashboardData = null,
+    applyToCurrentState = true,
   }) {
+    const scope = resolveScope({ projectCode, dashboardData });
     return executeTransaction(
       { file, storageType, items, groupId, memorySnapshot },
       {
-        captureDashboardRows,
-        uploadFile: uploadRepository.uploadFile,
+        captureDashboardRows: (kinds) => captureDashboardRows(kinds, scope),
+        uploadFile: (kind, selectedFile) =>
+          uploadRepository.uploadFile(kind, selectedFile, scope.projectCode),
         createRecord: (item) =>
           uploadRepository.createRecord(
             item.kind,
@@ -221,8 +260,10 @@ export function createUploadCoordinator({
             item.rows,
             item.storagePath,
             item.groupId,
+            scope.projectCode,
           ),
-        saveAllData,
+        saveAllData: (kinds, previousRows, records) =>
+          saveAllData(kinds, previousRows, records, scope),
         restoreSavedData,
         activateRecord: uploadRepository.activateRecord,
         rollbackActivation: uploadRepository.rollbackActivation,
@@ -230,13 +271,15 @@ export function createUploadCoordinator({
         markRecordsFailed: uploadRepository.markRecordsFailed,
         removeStoredUpload: uploadRepository.removeStoredUpload,
         deleteRecords: uploadRepository.deleteRecords,
-        restoreMemoryState,
+        restoreMemoryState: applyToCurrentState ? restoreMemoryState : () => {},
         setRuntimeState,
         onActive: (activeRecords) => {
-          const data = getDashboardData();
-          activeRecords.forEach((record) => {
-            data.latestUploads[record.tipo] = record;
-          });
+          if (applyToCurrentState) {
+            const data = getDashboardData();
+            activeRecords.forEach((record) => {
+              data.latestUploads[record.tipo] = record;
+            });
+          }
         },
         reportCleanupError,
       },
@@ -250,6 +293,7 @@ export function createUploadCoordinator({
     restoreDashboardRows,
     saveAllData,
     restoreSavedData,
+    enforceDatasetRetention,
     setRuntimeState,
     captureMemoryState,
     restoreMemoryState,

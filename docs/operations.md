@@ -121,6 +121,13 @@ Migrations ficam em `supabase/migrations/` e não são executadas pelo CI nem pe
 
 Rollback de frontend não reverte banco, Storage ou registros de upload.
 
+A migration `20260728193000_global_upload_history.sql` deve ser aplicada depois
+das migrations de RLS e datasets. Ela normaliza Flows e Gestões como históricos
+globais, preserva Tendência por obra e adiciona `reset_global_dashboard_datasets`.
+Depois da execução, rode
+`supabase/tests/assert_global_upload_history.sql`; todos os campos do JSON
+retornado devem ser `true`.
+
 Nunca use apenas o nome visual do projeto para escolher o alvo: confirme o project
 ref exibido por `npm run env:target`. Uma migration aplicada no projeto incorreto
 nao deve ser revertida automaticamente; primeiro registre o estado e avalie o

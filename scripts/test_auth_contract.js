@@ -37,8 +37,9 @@ assert(
   'Callback de auth deve sair da trava interna do SDK antes de consultar a whitelist',
 );
 assert(
-  authService.includes('state.editaObras.includes(activeProject)'),
-  'Autorizacao por obra ativa ausente',
+  authService.includes('state.editaObras.includes(project)') &&
+    authService.includes('return canEditProject(getActiveProject())'),
+  'Autorizacao por obra ausente',
 );
 assert(
   authService.includes('state.ready && state.user && state.isAdminGeral'),

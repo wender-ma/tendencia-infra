@@ -4,6 +4,7 @@ export const DASHBOARD_DATA_KEYS = Object.freeze({
   HISTORICO: 'dados_historico',
   PROJ_RAW: 'dados_projraw',
   GESTAO_LABEL: 'gestao_label',
+  EVOLUTION: 'evol_global',
 });
 
 const CLASSIFICATION_FIELDS = new Set([

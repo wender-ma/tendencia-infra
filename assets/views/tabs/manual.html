@@ -20,7 +20,7 @@
       <ul class="manual-list">
         <li><strong>Sem login</strong> — qualquer pessoa com o link consegue visualizar os dados de todas as obras. Botões de edição ficam escondidos ou desabilitados.</li>
         <li><strong>Editor ativo</strong> — pode editar somente as obras atribuídas ao seu email. Nas demais obras continua em modo de leitura.</li>
-        <li><strong>Administrador</strong> — pode editar todas as obras, gerenciar usuários/obras e executar uploads globais de Gestões.</li>
+        <li><strong>Administrador</strong> — pode editar todas as obras, gerenciar usuários/obras e executar uploads globais de Flows e Gestões.</li>
         <li><strong>Conta pendente, rejeitada ou sem permissão</strong> — consegue visualizar, mas não editar.</li>
       </ul>
       <p class="manual-spaced"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header e use Google ou email e senha. Contas novas por email ficam aguardando aprovação.</p>
@@ -31,32 +31,34 @@
 
     <h3 class="manual-heading purple">📤 Como atualizar os dados</h3>
     <div class="manual-section purple">
-      <p>Todas as atualizações ficam na aba <strong>📤 Uploads</strong> (só editores). Dois modos disponíveis:</p>
-      <p class="manual-spaced"><strong>📊 Upload Completo (Excel) — recomendado:</strong></p>
+      <p>Todas as atualizações ficam na aba <strong>📤 Uploads</strong> (só editores). As bases globais e as Tendências são enviadas separadamente:</p>
+      <p class="manual-spaced"><strong>🌐 Gestões + Flows:</strong></p>
       <ul class="manual-list">
-        <li>Envie <strong>1 arquivo</strong> <code>.xlsx</code> ou <code>.xlsm</code> contendo as 3 abas (Tendência, FlowsValor, Gestões)</li>
+        <li>O administrador envia <strong>1 arquivo</strong> <code>.xlsx</code> ou <code>.xlsm</code> contendo as abas FlowsValor e Gestões</li>
         <li>O dashboard identifica as abas automaticamente pelos nomes</li>
         <li>Se algum nome for diferente, aparece um modal pra você mapear manualmente</li>
-        <li>As 3 fontes de dados são atualizadas de uma vez só</li>
+        <li>Novos códigos de obra são exibidos para confirmação e cadastro antes da importação</li>
+        <li>Essas duas fontes são compartilhadas por todas as obras</li>
       </ul>
-      <p class="manual-spaced"><strong>⚙️ Modo avançado (CSV individual — uso legado):</strong></p>
+      <p class="manual-spaced"><strong>🏗️ Tendência por obra:</strong></p>
       <ul class="manual-list">
-        <li>Clique no toggle <em>"Modo avançado"</em> pra expandir os 3 cards separados</li>
-        <li>Envie cada CSV independentemente (útil se atualizou só uma parte dos dados)</li>
+        <li>Cada obra possui seu próprio bloco de upload e histórico</li>
+        <li>Envie a planilha de Tendência diretamente no bloco da obra correta</li>
+        <li>Administradores podem atualizar qualquer obra; editores veem habilitadas somente as obras permitidas</li>
       </ul>
-      <p class="manual-spaced">Em ambos os modos, cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
+      <p class="manual-spaced">Cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
       <p class="manual-spaced">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
       <p class="manual-note green">
-        📦 <strong>Retenção de uploads:</strong> cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém os <strong>12 arquivos mais recentes por tipo</strong>; ao entrar o 13º, o mais antigo é removido. Arquivos inativos podem ser excluídos por usuários autorizados. O arquivo ativo precisa ser substituído antes da exclusão. Administradores podem limpar todo o histórico. Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code>.
+        📦 <strong>Retenção de uploads:</strong> cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém as <strong>12 versões mais recentes por tipo</strong>, tanto dos arquivos originais quanto dos snapshots processados. Arquivos inativos podem ser excluídos por usuários autorizados. O arquivo ativo precisa ser substituído antes da exclusão. Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code>.
       </p>
     </div>
 
     <h3 class="manual-heading amber">🔄 Fluxo mensal recomendado</h3>
     <div class="manual-section amber">
       <ol class="manual-list">
-        <li>No começo de cada mês, exporte os 3 CSVs da planilha (TENDÊNCIA, FlowsValor, Gestões)</li>
+        <li>No começo de cada mês, prepare a base global de FlowsValor + Gestões e a Tendência de cada obra</li>
         <li>Faça login no dashboard</li>
-        <li>Vá em <strong>📤 Uploads</strong> e substitua os 3 arquivos (não precisa ser tudo de uma vez)</li>
+        <li>Vá em <strong>📤 Uploads</strong>, atualize a base global e depois cada obra necessária</li>
         <li>Confira nos cabeçalhos das outras abas se todas estão apontando pra data certa</li>
         <li>Reveja as novas classificações de aditivos que apareceram na aba <strong>🔗 Flows</strong></li>
       </ol>

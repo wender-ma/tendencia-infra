@@ -21,13 +21,26 @@ function detailsFromKey(planningKey) {
   };
 }
 
+export function discoverGestoesProjectCodes(text) {
+  const rows = parseDelimitedRows(text);
+  const columns = resolveImportColumns('gestoes', rows);
+  const projects = new Set();
+  for (let index = 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (String(row[columns.financialClassification] || '').trim() !== 'Obra') continue;
+    const projectCode = extractProjectCode(row[columns.planningKey]);
+    if (projectCode) projects.add(projectCode);
+  }
+  return [...projects];
+}
+
 function managementSortKey(management) {
   if (management === 'Atual') return [9999, 99];
   const match = management.match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
   return match ? [Number(match[2]), Number(match[1])] : [0, 0];
 }
 
-export function parseGestoesFile(text) {
+export function parseGestoesFile(text, options = {}) {
   const rows = parseDelimitedRows(text);
   const columns = resolveImportColumns('gestoes', rows);
   if (rows.length < 2) throw new Error('GESTÕES: arquivo sem linhas de dados.');
@@ -36,6 +49,10 @@ export function parseGestoesFile(text) {
   const aggregated = new Map();
   const managementNames = new Set();
   const projectionRows = [];
+  const knownProjects = new Set(
+    (options.projects || []).map((project) => String(project?.codigo_obra || '')).filter(Boolean),
+  );
+  const unknownProjects = new Set();
 
   for (let index = 1; index < rows.length; index += 1) {
     const row = rows[index];
@@ -49,6 +66,11 @@ export function parseGestoesFile(text) {
     const projectCode = extractProjectCode(planningKey);
     if (!planningKey || !management || !projectCode) {
       rejectRow(report, 'chave, gestão ou obra ausente');
+      continue;
+    }
+    if (knownProjects.size && !knownProjects.has(projectCode)) {
+      unknownProjects.add(projectCode);
+      rejectRow(report, 'obra não cadastrada');
       continue;
     }
 
@@ -105,6 +127,7 @@ export function parseGestoesFile(text) {
   });
 
   if (!items.length) throw new Error('GESTÕES: nenhuma linha válida encontrada.');
+  report.unknownProjects = [...unknownProjects];
   const totals = {};
   for (const item of items) {
     totals[item.codigo_obra] ||= {};
@@ -119,5 +142,6 @@ export function parseGestoesFile(text) {
     history: { gestoes: managements, items, totals },
     projectionRows,
     report,
+    unknownProjects: [...unknownProjects],
   };
 }

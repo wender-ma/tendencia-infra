@@ -56,7 +56,7 @@ test('detalhamento e histórico mensal usam o layout operacional padronizado', a
   const detailsOverflow = await page
     .locator('.details-table-wrap')
     .evaluate((element) => getComputedStyle(element).overflowY);
-  expect(detailsOverflow).toBe('hidden');
+  expect(['auto', 'clip', 'visible']).toContain(detailsOverflow);
 
   await page.locator('.tab[data-tab="historico"]').click();
   await page.evaluate(() => window.dashboardServices.views.history.renderHistorico());
@@ -64,6 +64,23 @@ test('detalhamento e histórico mensal usam o layout operacional padronizado', a
   await expect(page.locator('#histKpis .kpi')).toHaveCount(5);
   await expect(page.locator('.history-data-section:visible')).toHaveCount(3);
   await expect(page.locator('#histTbody tr')).toHaveCount(1);
+  const historyLock = page.locator('#histChart .projection-chart-lock-toggle');
+  await expect(historyLock).toBeVisible();
+  await historyLock.click();
+  await expect(page.locator('#histChart')).toHaveClass(/history-chart-is-locked/);
+  await expect(historyLock).toHaveAttribute('title', 'Desbloquear zoom e movimentação');
+  await historyLock.click();
+  await expect(page.locator('#histChart')).not.toHaveClass(/history-chart-is-locked/);
+  await page.setViewportSize({ width: 375, height: 812 });
+  const historyChart = page.locator('#histChart');
+  await historyChart.scrollIntoViewIfNeeded();
+  const historyChartBox = await historyChart.boundingBox();
+  await page.mouse.move(
+    historyChartBox.x + historyChartBox.width / 2,
+    historyChartBox.y + historyChartBox.height / 2,
+  );
+  await page.mouse.wheel(0, 500);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   const historyLayout = await page.evaluate(() => {
     const chart = document.querySelector('.history-chart-card').getBoundingClientRect();
     const ranking = document.querySelector('.history-ranking-grid').getBoundingClientRect();
@@ -76,10 +93,9 @@ test('detalhamento e histórico mensal usam o layout operacional padronizado', a
     };
   });
   expect(historyLayout.chartRankingGap).toBeGreaterThanOrEqual(14);
-  expect(historyLayout.historyOverflowY).toBe('hidden');
+  expect(['auto', 'clip', 'visible']).toContain(historyLayout.historyOverflowY);
   expect(historyLayout.documentWidth).toBeLessThanOrEqual(historyLayout.viewportWidth + 1);
 
-  await page.setViewportSize({ width: 375, height: 812 });
   await page.locator('.tab[data-tab="detalhe"]').click();
   const detailsMobileLayout = await page.evaluate(() => ({
     documentWidth: document.documentElement.scrollWidth,
@@ -106,6 +122,26 @@ test('detalhamento e histórico mensal usam o layout operacional padronizado', a
   expect(historyMobileLayout.historyFilterWidth).toBeLessThanOrEqual(
     historyMobileLayout.viewportWidth,
   );
+
+  await page.locator('.tab[data-tab="detalhe"]').click();
+  await page.evaluate(() => {
+    document.body.style.minHeight = '1800px';
+    window.scrollTo(0, 0);
+  });
+  const detailsTable = page.locator('.details-table-wrap');
+  await detailsTable.scrollIntoViewIfNeeded();
+  const detailsTableBox = await detailsTable.boundingBox();
+  await page.mouse.move(detailsTableBox.x + detailsTableBox.width / 2, detailsTableBox.y + 24);
+  await page.mouse.wheel(0, 500);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+  await page.locator('.tab[data-tab="historico"]').click();
+  const historyTable = page.locator('.history-table-wrap');
+  await historyTable.scrollIntoViewIfNeeded();
+  const historyTableBox = await historyTable.boundingBox();
+  await page.mouse.move(historyTableBox.x + historyTableBox.width / 2, historyTableBox.y + 24);
+  await page.mouse.wheel(0, 500);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
 test('histórico vazio oculta painéis sem conteúdo', async ({ page }) => {

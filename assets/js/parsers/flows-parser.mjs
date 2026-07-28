@@ -30,6 +30,19 @@ function normalizeReflected(value) {
   return 'pendente';
 }
 
+export function discoverFlowProjectReferences(text) {
+  const rows = parseDelimitedRows(text);
+  const columns = resolveImportColumns('flows', rows);
+  const references = new Set();
+  for (let index = 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    const amendment = String(row[columns.amendment] || '').trim();
+    const project = String(row[columns.project] || '').trim();
+    if (/^\d+$/.test(amendment) && project) references.add(project);
+  }
+  return [...references];
+}
+
 export function parseFlowsFile(text, options = {}) {
   const rows = parseDelimitedRows(text);
   const columns = resolveImportColumns('flows', rows);
@@ -110,5 +123,6 @@ export function parseFlowsFile(text, options = {}) {
   }
 
   if (!items.length) throw new Error('FLOWS: nenhum aditivo válido encontrado.');
+  report.unknownProjects = [...unknownProjects];
   return { items, report, unknownProjects: [...unknownProjects] };
 }

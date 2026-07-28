@@ -498,9 +498,19 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     'signupEmailForm:prevenido',
   ]);
 
+  await page.evaluate(() => {
+    Object.assign(window.dashboardServices.auth.state, {
+      user: { email: 'viewer@example.com' },
+      isAdminGeral: false,
+      isEditor: false,
+      isPending: false,
+      editaObras: [],
+    });
+    window.dashboardServices.authUi.updateAuthUI();
+  });
   await page.getByRole('tab', { name: /Uploads/ }).click();
-  await page.locator('#uploadsAdvancedToggle').click();
-  await expect(page.locator('#uploadsAdvancedBody')).toHaveClass(/open/);
+  await expect(page.locator('.upload-global-section')).toBeVisible();
+  await expect(page.locator('.upload-projects-section')).toBeVisible();
 
   await page.getByRole('tab', { name: /Flows \/ Aditivos/ }).click();
   await expect(page.locator('#tab-flows')).toHaveClass(/active/);
@@ -521,7 +531,7 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     await expect(page.locator(`#tab-${tab} .view-state`).first()).toBeVisible();
   }
   await page.getByRole('tab', { name: /Uploads/ }).click();
-  await expect(page.locator('#tab-uploads')).toContainText('Nenhuma planilha Excel enviada ainda');
+  await expect(page.locator('#tab-uploads')).toContainText('Nenhuma base global enviada ainda');
   await page.getByRole('tab', { name: /Manual/ }).click();
   await expect(page.locator('#tab-manual')).toContainText('Sobre a versão online');
 

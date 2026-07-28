@@ -35,7 +35,13 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
       return { data: removed, error: null };
     }
     const selected = rows.filter((row) =>
-      filters.every(([key, value]) => (value === null ? row[key] == null : row[key] === value)),
+      filters.every(([key, value, operator = 'eq']) =>
+        operator === 'in'
+          ? value.includes(row[key])
+          : value === null
+            ? row[key] == null
+            : row[key] === value,
+      ),
     );
     selected.sort((a, b) => Number(b.versao) - Number(a.versao));
     return { data: limit ? selected.slice(0, limit) : selected, error: null };
@@ -69,6 +75,10 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
       },
       is(key, value) {
         state.filters.push([key, value]);
+        return query;
+      },
+      in(key, values) {
+        state.filters.push([key, values, 'in']);
         return query;
       },
       order() {
@@ -125,6 +135,22 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
       return {
         data: {
           config_deleted: params.p_include_global ? 7 : 4,
+          datasets: removed.map(({ id, codigo_obra, tipo, storage_path }) => ({
+            id,
+            codigo_obra,
+            tipo,
+            storage_path,
+          })),
+        },
+        error: null,
+      };
+    }
+    if (name === 'reset_global_dashboard_datasets') {
+      const removed = rows.filter((row) => row.codigo_obra == null);
+      removed.forEach((row) => rows.splice(rows.indexOf(row), 1));
+      return {
+        data: {
+          config_deleted: 3,
           datasets: removed.map(({ id, codigo_obra, tipo, storage_path }) => ({
             id,
             codigo_obra,
@@ -226,7 +252,7 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     available: false,
     activations: [],
   });
-  assert.deepStrictEqual(await missingRepository.resetDashboardData(false), {
+  assert.deepStrictEqual(await missingRepository.resetDashboardData(), {
     available: false,
     configDeleted: 0,
     datasetCount: 0,
@@ -241,7 +267,7 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     /Snapshots versionados indisponíveis/,
   );
   await assert.rejects(
-    strictMissingRepository.resetDashboardData(false),
+    strictMissingRepository.resetDashboardData(),
     (error) => error?.code === 'PGRST202',
   );
 
@@ -283,6 +309,21 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   const global = await repository.saveForUpload(['flows'], dashboardData);
   assert.strictEqual(global.activations[0].current.codigo_obra, null);
   assert.deepStrictEqual((await repository.loadForDashboard()).flows, dashboardData.flows);
+  supabase.rows.push({
+    id: '10000000-0000-0000-0000-000000000000',
+    codigo_obra: null,
+    tipo: 'flows',
+    versao: '1',
+    storage_path: '_global/flows/old.json',
+    status: 'superseded',
+  });
+  supabase.objects.set('_global/flows/old.json', new Blob(['[]']));
+  assert.deepStrictEqual(await repository.enforceRollingRetention(['flows'], 1), {
+    available: true,
+    removed: 1,
+  });
+  assert(!supabase.rows.some((row) => row.storage_path === '_global/flows/old.json'));
+  assert(!supabase.objects.has('_global/flows/old.json'));
 
   const globalPath = global.activations[0].current.storage_path;
   supabase.objects.set(globalPath, new Blob(['[{"alterado":true}]']));
@@ -301,7 +342,7 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     /Integridade inválida para o dataset flows/,
     'Modo snapshots não pode ocultar corrupção usando dados legados',
   );
-  const projectReset = await repository.resetDashboardData(false);
+  const projectReset = await repository.resetDashboardData();
   assert.deepStrictEqual(projectReset, {
     available: true,
     configDeleted: 4,
@@ -311,7 +352,7 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   assert(supabase.rows.every((row) => row.codigo_obra == null));
   assert.strictEqual(supabase.objects.size, 1);
 
-  const globalReset = await repository.resetDashboardData(true);
+  const globalReset = await repository.resetGlobalDashboardData();
   assert.strictEqual(globalReset.datasetCount, 1);
   assert.strictEqual(supabase.rows.length, 0);
   assert.strictEqual(supabase.objects.size, 0);

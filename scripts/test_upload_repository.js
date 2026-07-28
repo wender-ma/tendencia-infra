@@ -11,8 +11,15 @@ function assert(condition, message) {
   const moduleUrl = pathToFileURL(
     path.resolve(__dirname, '../assets/js/services/upload-repository.mjs'),
   );
-  const { buildUploadStoragePath, createUploadRepository, sanitizeStoragePath, UPLOADS_BUCKET } =
-    await import(moduleUrl.href);
+  const {
+    buildScopedUploadStoragePath,
+    buildUploadStoragePath,
+    createUploadRepository,
+    isGlobalUploadKind,
+    sanitizeStoragePath,
+    uploadHistoryScope,
+    UPLOADS_BUCKET,
+  } = await import(moduleUrl.href);
 
   assert(
     sanitizeStoragePath('/OBRA/tendencia/file.csv') === 'OBRA/tendencia/file.csv',
@@ -39,6 +46,26 @@ function assert(condition, message) {
     pathAtFixedDate === 'OBRA_01/tend_ncia/20260721_123456_arquivo_final.csv',
     `Caminho de upload inesperado: ${pathAtFixedDate}`,
   );
+  assert(
+    JSON.stringify(uploadHistoryScope('tendencia', 'OBRA-A')) ===
+      JSON.stringify({ codigoObra: 'OBRA-A', storageRoot: 'OBRA-A' }),
+    'Escopo da Tendência está incorreto',
+  );
+  assert(
+    JSON.stringify(uploadHistoryScope('flows', 'OBRA-A')) ===
+      JSON.stringify({ codigoObra: null, storageRoot: '_global' }),
+    'Escopo global de Flows está incorreto',
+  );
+  assert(isGlobalUploadKind('flows') && isGlobalUploadKind('gestoes'));
+  assert(
+    buildScopedUploadStoragePath(
+      'OBRA-A',
+      'gestoes',
+      'gestoes.csv',
+      new Date(2026, 6, 21, 12, 34, 56),
+    ) === '_global/gestoes/20260721_123456_gestoes.csv',
+    'Upload global não foi direcionado ao prefixo _global',
+  );
 
   assert(UPLOADS_BUCKET === 'uploads-history', 'Bucket do serviço está incorreto');
 
@@ -63,9 +90,7 @@ function assert(condition, message) {
   );
   assert(privateReadCount === 0, 'Visitante tentou consultar tabelas privadas de upload');
 
-  console.log(
-    'Repositório de uploads: caminhos seguros, leitura privada e API encapsulada OK',
-  );
+  console.log('Repositório de uploads: caminhos seguros, leitura privada e API encapsulada OK');
 })().catch((error) => {
   console.error(error);
   process.exit(1);

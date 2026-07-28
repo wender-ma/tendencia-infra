@@ -127,6 +127,9 @@ const uploadRepository = createUploadRepository({
   canManageKind: (kind) =>
     isGlobalUploadKind(kind) ? authService.isAdmin() : authService.canEditActiveProject(),
   requirePermission: (kind, description) => authUi.requireUploadPermission(kind, description),
+  canEditProject: (projectCode) => authService.canEditProject(projectCode),
+  requireProjectPermission: (projectCode, description) =>
+    authUi.requireEditorForProject(projectCode, description),
   retry: (operation) => supabaseService.retry(operation),
   maxPerType: DASHBOARD_CONFIG.max_uploads_por_tipo,
   onMutation: (error, context) => syncStatusService.recordMutation(error, context),
@@ -152,6 +155,7 @@ const dashboardRepository = createDashboardRepository({
   getActiveProject: () => appState.obra.ativa,
   getCurrentUser: () => authService.state.user,
   canEditActiveProject: () => authService.canEditActiveProject(),
+  canEditProject: (projectCode) => authService.canEditProject(projectCode),
   isAdmin: () => authService.isAdmin(),
   retry: (operation) => supabaseService.retry(operation),
   onMutation: (error) => syncStatusService.recordMutation(error, 'Dados'),
@@ -256,6 +260,7 @@ const uploadCoordinator = createUploadCoordinator({
   getInputOptions: () => ui.flowEditor?.getInputOptions() || [],
   setInputOptions: (options) => ui.flowEditor?.setInputOptions(options),
   canEditActiveProject: () => authService.canEditActiveProject(),
+  canEditProject: (projectCode) => authService.canEditProject(projectCode),
   isAdmin: () => authService.isAdmin(),
   isGlobalKind: (kind) => isGlobalUploadKind(kind),
   dataKeys: DASHBOARD_DATA_KEYS,
@@ -452,8 +457,8 @@ Promise.resolve()
       clearLocalEvolution: () => {
         storageService.remove(STORAGE_KEYS.evolution);
       },
-      clearLatestUploads: () => {
-        for (const kind of Object.keys(appState.uploads)) appState.uploads[kind] = null;
+      clearLatestUploads: (kinds = Object.keys(appState.uploads)) => {
+        for (const kind of kinds) appState.uploads[kind] = null;
       },
       renderUploads: () => ui.uploads.renderUploadsCentral(),
       renderSourceHeaders: () => ui.uploads.renderSourcesHeaders(),

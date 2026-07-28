@@ -1,24 +1,36 @@
 <div class="card">
     <h2>📤 Central de Uploads</h2>
     <p class="uploads-intro">
-      Todas as atualizações de dados do dashboard em um lugar só. A partir da <strong>v0.54</strong> a forma recomendada é enviar
-      <strong>uma planilha Excel completa</strong> (<code>.xlsx</code>/<code>.xlsm</code>) contendo as 3 abas — o dashboard extrai tudo automaticamente.
-      Se preferir, uploads individuais por CSV continuam disponíveis em <em>Modo avançado</em>.
+      Atualize Gestões e Flows em uma base global ou envie a Tendência diretamente para cada obra.
     </p>
     <div id="uploadsCentral" class="uploads-central"></div>
     <div class="uploads-info">
-      💡 <strong>Dica:</strong> Envios ficam registrados no histórico. Clique em <strong>📜 Histórico</strong> em qualquer bloco pra ver os últimos arquivos enviados e <strong>baixá-los novamente</strong>. Mantemos automaticamente os <strong>últimos 12 arquivos por tipo</strong> (rolling backup) — mais antigos são descartados. Download só para usuários logados (link temporário de 60 segundos).
+      <strong>Histórico e retenção:</strong> mantemos as 12 versões mais recentes de cada base e seus snapshots processados. Arquivos ativos não são descartados automaticamente. Downloads usam links privados temporários de 60 segundos.
     </div>
 
     <!-- v0.57: Zona de manutenção -->
     <div class="uploads-maintenance">
       <strong class="uploads-maintenance-title">🛠️ Manutenção</strong>
       <p class="uploads-maintenance-copy">
-        Use se os dados estiverem inconsistentes ou você quiser forçar um reset do que está persistido na nuvem.
+        Dados processados alimentam o dashboard. Arquivos originais servem para histórico e restauração. Escolha exatamente qual camada e escopo deseja limpar.
       </p>
-      <div class="uploads-maintenance-actions">
-        <button class="btn-sm warning-soft" data-editor-only data-click-action="resetCacheDados" title="Apaga os dados parseados salvos no Supabase. Próximo upload vai reconstruir do zero.">🧹 Resetar cache de dados</button>
-        <button class="btn-sm danger-soft" data-editor-only data-click-action="apagarHistoricoUploads" title="Apaga todo o histórico de uploads (metadados + arquivos no Storage). Ação irreversível.">🗑️ Limpar histórico de uploads</button>
+      <div class="uploads-maintenance-grid">
+        <div>
+          <strong>Dados processados</strong>
+          <span>Remove o que aparece no dashboard, preservando os arquivos originais.</span>
+          <div class="uploads-maintenance-actions">
+            <button class="btn-sm warning-soft" data-editor-only data-click-action="resetProjectData">🧹 Dados desta obra</button>
+            <button class="btn-sm warning-soft" data-admin-only data-click-action="resetGlobalData">🌐 Dados globais</button>
+          </div>
+        </div>
+        <div>
+          <strong>Arquivos e histórico</strong>
+          <span>Remove originais armazenados, preservando os dados já processados.</span>
+          <div class="uploads-maintenance-actions">
+            <button class="btn-sm danger-soft" data-admin-only data-click-action="clearProjectUploadFiles">🗑️ Arquivos desta obra</button>
+            <button class="btn-sm danger-soft" data-admin-only data-click-action="clearGlobalUploadFiles">🌐 Arquivos globais</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

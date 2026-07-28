@@ -1,6 +1,7 @@
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { escAttr, escHtml, formatDate } from '../formatters.mjs';
 import {
+  bindPageWheelToPageScroll,
   bindSortableHeaders,
   isTableRowActivation,
   updateSortHeaderState,
@@ -354,6 +355,7 @@ export function createDetailsView({ runtime, pagination, viewStates, modals, sta
   openModal = modals.open;
   APP_STATE = state;
   obraTemTendencia = overview.hasTendency;
+  bindPageWheelToPageScroll('#tab-detalhe .details-table-wrap');
   const api = Object.freeze({
     updateSortHeaderState,
     bindSortableHeaders,

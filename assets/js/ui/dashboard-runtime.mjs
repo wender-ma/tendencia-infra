@@ -1,3 +1,5 @@
+import { bindPageWheelToPageScroll } from './table-interactions.mjs';
+
 export const LICENSE_LABEL = 'Orç. Licitação';
 
 function escapeText(value) {
@@ -122,6 +124,7 @@ export function createDashboardRuntime({
     const container = documentRef.getElementById(containerId);
     if (!container) return null;
     container.replaceChildren();
+    bindPageWheelToPageScroll(container);
     try {
       const ApexCharts = await ensureApexCharts();
       if (chartVersions.get(containerId) !== version || !container.isConnected) return null;

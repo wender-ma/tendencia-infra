@@ -1,5 +1,5 @@
-import { parseFlowsFile } from './flows-parser.mjs';
-import { parseGestoesFile } from './gestoes-parser.mjs';
+import { discoverFlowProjectReferences, parseFlowsFile } from './flows-parser.mjs';
+import { discoverGestoesProjectCodes, parseGestoesFile } from './gestoes-parser.mjs';
 import { parseTendenciaFile } from './tendencia-parser.mjs';
 import {
   classifyFlow,
@@ -58,7 +58,12 @@ export function createImportParserService({
         justificationLimit: options.justificationLimit ?? config.max_justificativa_flow,
       }),
     );
-  const parseManagements = (text) => measured('gestoes', () => parseGestoesFile(text));
+  const parseManagements = (text, options = {}) =>
+    measured('gestoes', () =>
+      parseGestoesFile(text, {
+        projects: options.projects ?? state.obra.obras,
+      }),
+    );
 
   function applyTendency(text) {
     const result = parseTendency(text);
@@ -102,6 +107,8 @@ export function createImportParserService({
     parseTendencia: parseTendency,
     parseFlows,
     parseGestoes: parseManagements,
+    discoverFlowProjectReferences,
+    discoverGestoesProjectCodes,
     applyTendency,
     applyFlows,
     applyManagements,

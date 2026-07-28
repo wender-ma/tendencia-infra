@@ -31,3 +31,32 @@ export function bindSortableHeaders(selector, dataAttribute, getState, activateS
 export function isTableRowActivation(event) {
   return event.type === 'click' || event.key === 'Enter' || event.key === ' ';
 }
+
+export function bindPageWheelToPageScroll(target) {
+  const elements =
+    typeof target === 'string' ? [...document.querySelectorAll(target)] : target ? [target] : [];
+  elements.forEach((scrollContainer) => {
+    if (scrollContainer.dataset.pageWheelBound === 'true') return;
+    scrollContainer.dataset.pageWheelBound = 'true';
+    scrollContainer.addEventListener(
+      'wheel',
+      (event) => {
+        if (!event.deltaY) return;
+        const canScrollTableVertically =
+          scrollContainer.scrollHeight > scrollContainer.clientHeight + 1 &&
+          ((event.deltaY < 0 && scrollContainer.scrollTop > 0) ||
+            (event.deltaY > 0 &&
+              scrollContainer.scrollTop + scrollContainer.clientHeight <
+                scrollContainer.scrollHeight - 1));
+        if (canScrollTableVertically) return;
+
+        const page = document.scrollingElement;
+        if (!page) return;
+        const previousTop = page.scrollTop;
+        page.scrollTop += event.deltaY;
+        if (page.scrollTop !== previousTop) event.preventDefault();
+      },
+      { capture: true, passive: false },
+    );
+  });
+}

@@ -1,6 +1,7 @@
 import { DASHBOARD_CONFIG } from '../../config.js';
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { escAttr, escHtml } from '../formatters.mjs';
+import { bindPageWheelToPageScroll } from '../table-interactions.mjs';
 import {
   debounce,
   formatCompactNumber as fmtR$k,
@@ -17,10 +18,33 @@ let paginateRows;
 let renderPaginationControls;
 let renderDashboardState;
 let APP_STATE;
+let historyChartLocked = false;
 
 const CENT_TOLERANCE = DASHBOARD_CONFIG.tolerancia_centavos; // R$ 1,00
 const isFlat = (delta) => Math.abs(delta) < CENT_TOLERANCE;
 let filtersBound = false;
+
+function syncHistoryChartLockUi() {
+  const container = document.getElementById('histChart');
+  if (!container) return;
+  container.classList.toggle('history-chart-is-locked', historyChartLocked);
+  const control = container.querySelector('.projection-chart-lock-toggle');
+  const button = container.querySelector('.projection-chart-lock-button');
+  const symbol = container.querySelector('.projection-chart-lock-symbol');
+  const label = historyChartLocked
+    ? 'Desbloquear zoom e movimentação'
+    : 'Bloquear zoom e movimentação';
+  if (control) control.title = label;
+  if (button) button.setAttribute('aria-label', label);
+  if (symbol) symbol.textContent = historyChartLocked ? '🔒' : '🔓';
+}
+
+function toggleHistoryChartLock() {
+  const nextLocked = !historyChartLocked;
+  if (nextLocked) document.querySelector('#histChart .apexcharts-zoom-icon')?.click();
+  historyChartLocked = nextLocked;
+  syncHistoryChartLockUi();
+}
 
 function bindHistoryFilters() {
   if (filtersBound) return;
@@ -172,9 +196,50 @@ function renderHistChart(gestoes, totals) {
       animations: { enabled: true, easing: 'easeinout', speed: 800 },
       toolbar: {
         show: true,
-        tools: { download: true, selection: true, zoom: true, pan: true, reset: true },
+        tools: {
+          download: true,
+          selection: true,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true,
+          customIcons: [
+            {
+              icon: `<button type="button" class="projection-chart-lock-button" aria-label="${historyChartLocked ? 'Desbloquear zoom e movimentação' : 'Bloquear zoom e movimentação'}"><span class="projection-chart-lock-symbol" aria-hidden="true">${historyChartLocked ? '🔒' : '🔓'}</span></button>`,
+              index: 2,
+              title: historyChartLocked
+                ? 'Desbloquear zoom e movimentação'
+                : 'Bloquear zoom e movimentação',
+              class: 'projection-chart-lock-toggle',
+              click: toggleHistoryChartLock,
+            },
+          ],
+        },
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+      events: {
+        mounted: syncHistoryChartLockUi,
+        updated: syncHistoryChartLockUi,
+        beforeZoom: (chartContext, { xaxis }) =>
+          historyChartLocked
+            ? {
+                xaxis: {
+                  min: chartContext.w.globals.minX,
+                  max: chartContext.w.globals.maxX,
+                },
+              }
+            : { xaxis },
+        beforeResetZoom: (chartContext) =>
+          historyChartLocked
+            ? {
+                xaxis: {
+                  min: chartContext.w.globals.minX,
+                  max: chartContext.w.globals.maxX,
+                },
+              }
+            : undefined,
+      },
     },
     themePalette: ['var(--chart-primary)'],
     colors: [resolveColor('var(--chart-primary)')],
@@ -413,5 +478,6 @@ export function createHistoryView({ runtime, pagination, viewStates, state }) {
   renderPaginationControls = pagination.renderControls;
   renderDashboardState = viewStates.render;
   APP_STATE = state;
+  bindPageWheelToPageScroll('#tab-historico .history-table-wrap');
   return Object.freeze({ renderHistorico });
 }

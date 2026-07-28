@@ -276,10 +276,21 @@ async function cleanupDeletedObraStorage(codigo, rawPaths) {
         .filter((path) => path && path.startsWith(safePrefix)),
     ),
   ];
+  const unreferencedPaths = [];
+  for (const path of paths) {
+    const { data, error } = await SUPA.from('upload_history')
+      .select('id')
+      .eq('storage_path', path)
+      .limit(1);
+    if (error) {
+      return { total: 0, failedBatches: [{ paths: [path], error }] };
+    }
+    if (!data?.length) unreferencedPaths.push(path);
+  }
   const failedBatches = [];
 
-  for (let i = 0; i < paths.length; i += 100) {
-    const batch = paths.slice(i, i + 100);
+  for (let i = 0; i < unreferencedPaths.length; i += 100) {
+    const batch = unreferencedPaths.slice(i, i + 100);
     try {
       const { error } = await SUPA.storage.from(UPLOADS_BUCKET).remove(batch);
       if (error) failedBatches.push({ paths: batch, error });
@@ -288,7 +299,7 @@ async function cleanupDeletedObraStorage(codigo, rawPaths) {
     }
   }
 
-  return { total: paths.length, failedBatches };
+  return { total: unreferencedPaths.length, failedBatches };
 }
 
 function clearDeletedActiveObra() {

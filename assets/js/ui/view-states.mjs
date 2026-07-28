@@ -39,6 +39,7 @@ export function createViewStateService({ documentRef = document } = {}) {
       button.dataset.clickAction = 'irParaAba';
       button.dataset.actionMode = 'arg';
       button.dataset.actionArg = action.tab;
+      if (action.tab === 'uploads') button.dataset.authenticatedOnly = '';
       state.appendChild(button);
     }
 

@@ -422,10 +422,12 @@ function updateEditCount() {
   const n = Object.keys(map).length;
   const m = loadManuals().length;
   const el = document.getElementById('editCount');
-  if (!el) return;
+  const statusBar = document.getElementById('editStatusBar');
+  if (!el || !statusBar) return;
   const parts = [];
   if (n > 0) parts.push(`<span class="badge purple">✏️ ${n} editado(s)</span>`);
   if (m > 0) parts.push(`<span class="badge-manual">✋ ${m} manual(is)</span>`);
+  statusBar.classList.toggle('is-hidden', parts.length === 0);
   replaceWithParsedMarkup(
     el,
     parts.length
@@ -563,6 +565,7 @@ const MS_EXCLUDED = {
   solicitante: new Set(),
   refletido: new Set(),
   destino: new Set(),
+  origem: new Set(),
 };
 const MS_TIPO_OPTS = [
   { v: 'aumento_real', l: '🔴 Aumento real' },
@@ -588,9 +591,9 @@ const MS_DESTINO_OPTS = [
 function msGetAllValues(key) {
   if (key === 'tipo') return MS_TIPO_OPTS.map((o) => o.v);
   if (key === 'refletido') return MS_REFLETIDO_OPTS.map((o) => o.v);
-  if (key === 'destino') return MS_DESTINO_OPTS.map((o) => o.v);
   if (!getFlowsObraAtiva() || !getFlowsObraAtiva().length) return [];
-  const field = key === 'solicitante' ? 'solicitante' : key;
+  const field =
+    key === 'destino' ? 'insumo_planejamento' : key === 'origem' ? 'insumo_remanejamento' : key;
   return [
     ...new Set(
       getFlowsObraAtiva()
@@ -607,10 +610,6 @@ function msLabelFor(key, value) {
   }
   if (key === 'refletido') {
     const o = MS_REFLETIDO_OPTS.find((x) => x.v === value);
-    return o ? o.l : value;
-  }
-  if (key === 'destino') {
-    const o = MS_DESTINO_OPTS.find((x) => x.v === value);
     return o ? o.l : value;
   }
   return value;
@@ -648,19 +647,9 @@ function msRenderPanel(key) {
       const v = f.refletido_status || 'pendente';
       counts[v] = (counts[v] || 0) + 1;
     });
-  } else if (key === 'destino') {
-    const isReal = (v) =>
-      v &&
-      !['', '-', 'Não encontrado!', 'VERIFICAR'].includes(v) &&
-      !String(v).toUpperCase().includes('VERIFICAR');
-    getFlowsObraAtiva().forEach((f) => {
-      if (isReal(f.insumo_planejamento)) counts['com_destino'] = (counts['com_destino'] || 0) + 1;
-      else counts['sem_destino'] = (counts['sem_destino'] || 0) + 1;
-      if (isReal(f.insumo_remanejamento)) counts['com_origem'] = (counts['com_origem'] || 0) + 1;
-      else counts['sem_origem'] = (counts['sem_origem'] || 0) + 1;
-    });
   } else {
-    const field = key === 'solicitante' ? 'solicitante' : key;
+    const field =
+      key === 'destino' ? 'insumo_planejamento' : key === 'origem' ? 'insumo_remanejamento' : key;
     getFlowsObraAtiva().forEach((f) => {
       const v = f[field];
       if (v != null && v !== '') counts[v] = (counts[v] || 0) + 1;
@@ -766,7 +755,8 @@ function msUpdateBtn(key) {
     motivo: 'motivos',
     solicitante: 'solicitantes',
     refletido: 'status',
-    destino: 'tipos destino/origem',
+    destino: 'destinos',
+    origem: 'origens',
   };
   if (excluded === 0) {
     btn.textContent = `Todos ${baseLabels[key]}`;
@@ -857,12 +847,14 @@ function updateMassBar() {
   if (!isEditorDaObraAtiva()) {
     MASS_SELECTED.clear();
     bar.hidden = true;
+    bar.className = 'is-hidden';
     bar.replaceChildren();
     return;
   }
   const n = MASS_SELECTED.size;
   if (n === 0) {
     bar.hidden = true;
+    bar.className = 'is-hidden';
     bar.replaceChildren();
     return;
   }

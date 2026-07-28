@@ -1208,10 +1208,13 @@ body:not(.is-admin-geral) [data-admin-control],
 
 /* Flows */
 .flows-discarded { margin-top: 10px; }
+.detail-heading { gap: 12px; }
+.detail-actions { margin-left: auto; flex-shrink: 0; min-width: 0; }
 .flows-filter-toolbar { flex-wrap: nowrap; }
 .flows-filter-toolbar input[type=search] { min-width: 190px; }
 .flows-filter-toolbar .ms-btn { min-width: 145px; }
 .flows-filter-toolbar > .btn-sm { flex-shrink: 0; white-space: nowrap; }
+.flows-date-filter-toolbar { margin-top: -2px; }
 .advanced-filter-title { color: var(--text-soft); font-size: 11px; font-weight: 600; }
 .advanced-filter-field {
   display: flex;
@@ -2030,6 +2033,15 @@ body:not(.is-admin-geral) [data-admin-control],
   .toolbar-count {
     width: 100%;
     margin-left: 0;
+  }
+  .detail-actions {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+  .detail-actions .btn-sm {
+    flex: 1 1 140px;
+    min-width: 0;
   }
   .classif-bar > .btn-sm { flex: 1 1 180px; }
   .modal-bg,

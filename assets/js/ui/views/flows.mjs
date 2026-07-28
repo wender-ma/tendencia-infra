@@ -246,7 +246,7 @@ function renderFlows() {
   );
 
   // Filtros multi-select: apenas atualizar labels dos botões (panel é renderizado on-demand)
-  ['dep', 'tipo', 'motivo', 'solicitante', 'refletido', 'destino'].forEach((k) => msUpdateBtn(k));
+  ['refletido', 'dep', 'destino', 'origem'].forEach((k) => msUpdateBtn(k));
 
   renderFlowTable();
 }
@@ -287,11 +287,6 @@ function renderFlowTable() {
   const fvmax = parseFloat(document.getElementById('flowFilterValMax')?.value);
   const editDisabled = isEditorDaObraAtiva() ? '' : ' disabled';
 
-  const isRealVal = (v) =>
-    v &&
-    !['', '-', 'Não encontrado!', 'VERIFICAR'].includes(v) &&
-    !String(v).toUpperCase().includes('VERIFICAR');
-
   const rows = getFlowsObraAtiva().filter((f) => {
     if (q) {
       const txt =
@@ -299,28 +294,11 @@ function renderFlowTable() {
       if (!txt.includes(q)) return false;
     }
     if (!msMatches('dep', f.dep)) return false;
-    if (!msMatches('tipo', f.tipo)) return false;
-    if (!msMatches('motivo', f.motivo)) return false;
-    if (!msMatches('solicitante', f.solicitante)) return false;
     // Refletido: status do aditivo (precisa default 'pendente')
     const fStat = f.refletido_status || 'pendente';
     if (!msMatches('refletido', fStat)) return false;
-    // Destino/Origem: precisa testar SE pelo menos uma das categorias marcadas bate
-    // Esquema: para cada valor MS_DESTINO_OPTS, vejo se está selecionado E se este flow se enquadra.
-    // Se não há nada excluído, passa. Se algum value tipo "com_destino" está EXCLUÍDO, e o flow tem destino, falha.
-    const excludedDest = MS_EXCLUDED['destino'];
-    if (excludedDest.size > 0) {
-      const tags = {
-        com_destino: isRealVal(f.insumo_planejamento),
-        sem_destino: !isRealVal(f.insumo_planejamento),
-        com_origem: isRealVal(f.insumo_remanejamento),
-        sem_origem: !isRealVal(f.insumo_remanejamento),
-      };
-      // Se TODAS as tags ativas do flow estão excluídas, ele cai fora
-      // Mais simples: se há qualquer tag ativa NÃO excluída → passa
-      const algumPassa = Object.keys(tags).some((k) => tags[k] && !excludedDest.has(k));
-      if (!algumPassa) return false;
-    }
+    if (!msMatches('destino', f.insumo_planejamento)) return false;
+    if (!msMatches('origem', f.insumo_remanejamento)) return false;
     if (!flowMatchesDate(f, fdi, fdf)) return false;
     const v = f.custo_flowmaster || 0;
     if (!isNaN(fvmin) && v < fvmin) return false;

@@ -15,12 +15,23 @@
   </div>
 
   <div class="card">
-    <h2>📋 Aditivos detalhados</h2>
+    <h2 class="detail-heading">
+      <span>📋 Aditivos detalhados</span>
+      <span class="panel-actions detail-actions">
+        <button class="btn-sm primary" data-editor-only data-click-action="openManualForm" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo</button>
+        <button class="btn-sm primary" data-click-action="exportarFlowsXLSX" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
+        <button class="btn-sm" data-click-action="exportClassifications" title="Baixa CSV apenas com as alterações manuais feitas (edições de INSUMO_*)">📤 Exportar alterações</button>
+        <button class="btn-sm" data-click-action="reloadClassifications" title="Recarrega do navegador">⤴️ Recarregar</button>
+      </span>
+    </h2>
     <div class="toolbar flows-filter-toolbar">
-      <input type="search" id="flowSearch" aria-label="Buscar aditivos por descrição ou número do Flow" placeholder="🔍 Buscar descrição ou nº do Flow...">
-      <div class="ms-wrap" id="ms_dep_wrap"><button type="button" class="ms-btn" id="ms_dep_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="dep">Todos departamentos</button><div class="ms-panel" id="ms_dep_panel"></div></div>
+      <input type="search" id="flowSearch" aria-label="Buscar aditivos por descrição ou número do Flow" placeholder="🔍 Descrição ou nº Flow...">
       <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="refletido">Todos status</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
-      <div class="ms-wrap" id="ms_solicitante_wrap"><button type="button" class="ms-btn" id="ms_solicitante_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="solicitante">Todos solicitantes</button><div class="ms-panel" id="ms_solicitante_panel"></div></div>
+      <div class="ms-wrap" id="ms_dep_wrap"><button type="button" class="ms-btn" id="ms_dep_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="dep">Todos departamentos</button><div class="ms-panel" id="ms_dep_panel"></div></div>
+      <div class="ms-wrap" id="ms_destino_wrap"><button type="button" class="ms-btn" id="ms_destino_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="destino">Todos destinos</button><div class="ms-panel" id="ms_destino_panel"></div></div>
+      <div class="ms-wrap" id="ms_origem_wrap"><button type="button" class="ms-btn" id="ms_origem_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="origem">Todas origens</button><div class="ms-panel" id="ms_origem_panel"></div></div>
+    </div>
+    <div class="toolbar flows-date-filter-toolbar">
       <label class="advanced-filter-field">
         📅 De:
         <input type="month" id="flowFilterDataIni" class="flow-filter-control">
@@ -36,13 +47,8 @@
       </label>
       <button class="btn-sm compact" data-click-action="clearFlowFilters">🧹 Limpar filtros</button>
     </div>
-    <div class="classif-bar">
+    <div id="editStatusBar" class="classif-bar is-hidden" role="status" aria-live="polite">
       <span id="editCount" class="edit-count" aria-live="polite"></span>
-      <button class="btn-sm primary" data-editor-only data-click-action="openManualForm" title="Adiciona um item que ainda não existe em Flow">➕ Novo aditivo manual</button>
-      <button class="btn-sm primary" data-click-action="exportarFlowsXLSX" title="Exporta a tabela completa de aditivos em Excel">💾 Exportar Excel</button>
-      <button class="btn-sm" data-click-action="exportClassifications" title="Baixa CSV apenas com as alterações manuais feitas (edições de INSUMO_*)">📤 Exportar só alterações (CSV)</button>
-      <button class="btn-sm" data-click-action="reloadClassifications" title="Recarrega do navegador">⤴️ Recarregar salvas</button>
-      <button class="btn-sm danger" data-editor-only data-click-action="clearClassifications" title="Apaga edições deste navegador">🗑️ Limpar alterações</button>
     </div>
     <div id="massBar" class="is-hidden"></div>
     <div class="table-wrap">

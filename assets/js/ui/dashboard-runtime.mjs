@@ -67,6 +67,7 @@ export function createDashboardRuntime({
 }) {
   const charts = new Map();
   const chartVersions = new Map();
+  const chartThemeMetadata = new Map();
   let renderTimeout = null;
 
   function reportNonFatalError(context, error, userMessage) {
@@ -101,7 +102,10 @@ export function createDashboardRuntime({
     return windowRef.getComputedStyle(root).getPropertyValue(variable).trim() || value;
   }
 
+  const isDarkTheme = () => documentRef.body?.classList?.contains('dark') === true;
+
   async function renderApexChart(containerId, options) {
+    const { themePalette = [], themeMarkerPalette = [], ...apexOptions } = options;
     const version = (chartVersions.get(containerId) || 0) + 1;
     chartVersions.set(containerId, version);
     const previous = charts.get(containerId);
@@ -112,6 +116,7 @@ export function createDashboardRuntime({
         reportNonFatalError('ApexCharts/destruir', error);
       }
       charts.delete(containerId);
+      chartThemeMetadata.delete(containerId);
     }
 
     const container = documentRef.getElementById(containerId);
@@ -121,24 +126,63 @@ export function createDashboardRuntime({
       const ApexCharts = await ensureApexCharts();
       if (chartVersions.get(containerId) !== version || !container.isConnected) return null;
       const chart = new ApexCharts(container, {
-        ...options,
+        ...apexOptions,
         chart: {
-          ...options.chart,
+          ...apexOptions.chart,
           foreColor: resolveColor('var(--chart-text)'),
           background: 'transparent',
         },
         theme: {
-          mode: documentRef.body?.classList.contains('dark') ? 'dark' : 'light',
-          ...options.theme,
+          mode: isDarkTheme() ? 'dark' : 'light',
+          ...apexOptions.theme,
         },
       });
       await chart.render();
       charts.set(containerId, chart);
+      chartThemeMetadata.set(containerId, {
+        palette: [...themePalette],
+        markerPalette: [...themeMarkerPalette],
+      });
       return chart;
     } catch (error) {
       reportNonFatalError(`ApexCharts/renderizar/${containerId}`, error);
       return null;
     }
+  }
+
+  async function refreshApexTheme() {
+    const chartText = resolveColor('var(--chart-text)');
+    const mode = isDarkTheme() ? 'dark' : 'light';
+    const updates = [];
+    for (const [containerId, chart] of charts) {
+      const container = documentRef.getElementById(containerId);
+      if (!container?.isConnected) continue;
+      const metadata = chartThemeMetadata.get(containerId) || {};
+      const nextOptions = {
+        chart: { foreColor: chartText, background: 'transparent' },
+        theme: { mode },
+        tooltip: { theme: mode },
+        grid: { borderColor: resolveColor('var(--chart-grid)') },
+        xaxis: { labels: { style: { colors: chartText } } },
+        yaxis: { labels: { style: { colors: chartText } } },
+        legend: { labels: { colors: chartText } },
+        dataLabels: { style: { colors: [chartText] } },
+      };
+      if (metadata.palette?.length) {
+        nextOptions.colors = metadata.palette.map((color) => resolveColor(color));
+      }
+      if (metadata.markerPalette?.length) {
+        nextOptions.markers = {
+          colors: metadata.markerPalette.map((color) => resolveColor(color)),
+        };
+      }
+      updates.push(
+        Promise.resolve(chart.updateOptions(nextOptions, false, false, false)).catch((error) => {
+          reportNonFatalError(`ApexCharts/atualizar tema/${containerId}`, error);
+        }),
+      );
+    }
+    await Promise.all(updates);
   }
 
   function destroyApexChart(containerId) {
@@ -151,6 +195,7 @@ export function createDashboardRuntime({
       reportNonFatalError('ApexCharts/destruir', error);
     }
     charts.delete(containerId);
+    chartThemeMetadata.delete(containerId);
   }
 
   function filterByActiveProject(rows, field = 'codigo_obra') {
@@ -266,6 +311,7 @@ export function createDashboardRuntime({
     createKpi,
     resolveColor,
     renderApexChart,
+    refreshApexTheme,
     destroyApexChart,
     filterByActiveProject,
     getActiveHistory,

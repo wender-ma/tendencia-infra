@@ -281,6 +281,7 @@ const dashboardShell = createDashboardShell({
   authorizeAdmin: () => authUi.requireAdmin('acessar esta função administrativa'),
   isAdmin: () => authService.isAdmin(),
   renderTab: (tabName) => dashboardRuntime.renderTab(tabName),
+  refreshCharts: () => dashboardRuntime.refreshApexTheme(),
   renderAdmin: () => {
     ui.admin?.renderPendentesAdmin();
     ui.admin?.renderObrasAdmin();

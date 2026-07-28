@@ -169,6 +169,7 @@ function renderHistChart(gestoes, totals) {
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
     },
+    themePalette: ['var(--chart-primary)'],
     colors: [resolveColor('var(--chart-primary)')],
     stroke: { curve: 'smooth', width: 2.5 },
     fill: {

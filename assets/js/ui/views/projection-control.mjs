@@ -436,11 +436,10 @@ function renderProjCtrlChart(movs) {
 
   const categories = pontos.map((p) => (p.data ? p.data.slice(0, 7) : ''));
   const seriesData = pontos.map((p) => p.saldo);
-  const dotColors = pontos.map((p) =>
-    p.mov.direcao === 'entrada'
-      ? resolveColor('var(--sem-ok)')
-      : resolveColor('var(--fgr-red-vivid)'),
+  const dotColorTokens = pontos.map((p) =>
+    p.mov.direcao === 'entrada' ? 'var(--sem-ok)' : 'var(--fgr-red-vivid)',
   );
+  const dotColors = dotColorTokens.map(resolveColor);
 
   const options = {
     series: [{ name: 'Saldo acumulado', data: seriesData }],
@@ -454,6 +453,8 @@ function renderProjCtrlChart(movs) {
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
     },
+    themePalette: ['var(--accent-purple-strong)'],
+    themeMarkerPalette: dotColorTokens,
     colors: [resolveColor('var(--accent-purple-strong)')],
     stroke: { curve: 'smooth', width: 2.5 },
     fill: {

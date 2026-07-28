@@ -486,6 +486,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
     },
+    themePalette: ['var(--chart-primary)', 'var(--sem-alerta)'],
     colors: [resolveColor('var(--chart-primary)'), resolveColor('var(--sem-alerta)')],
     stroke: { curve: 'smooth', width: [2.5, 2.5] },
     fill: {
@@ -1524,6 +1525,7 @@ function openProjDrill(servico, insumo) {
       animations: { enabled: true, easing: 'easeinout', speed: 600 },
       toolbar: { show: false },
     },
+    themePalette: ['var(--chart-primary)', 'var(--sem-alerta)'],
     colors: [resolveColor('var(--chart-primary)'), resolveColor('var(--sem-alerta)')],
     stroke: { curve: 'smooth', width: [2.5, 2.5] },
     fill: {

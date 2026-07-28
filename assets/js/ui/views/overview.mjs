@@ -582,7 +582,8 @@ function renderVisao({ cardsOnly = false } = {}) {
       return;
     }
 
-    const barColor = isUp ? resolveColor('var(--fgr-red-vivid)') : resolveColor('var(--sem-ok)');
+    const barColorToken = isUp ? 'var(--fgr-red-vivid)' : 'var(--sem-ok)';
+    const barColor = resolveColor(barColorToken);
     const categories = arr.map((d) => (d.item.length > 35 ? d.item.slice(0, 32) + '...' : d.item));
     const seriesData = arr.map((d) => Math.abs(d.delta));
 
@@ -594,6 +595,7 @@ function renderVisao({ cardsOnly = false } = {}) {
         animations: { enabled: true, easing: 'easeinout', speed: 600 },
         toolbar: { show: true, tools: { download: true, zoom: false, pan: false, reset: false } },
       },
+      themePalette: [barColorToken],
       colors: [barColor],
       plotOptions: {
         bar: {
@@ -725,14 +727,15 @@ function renderDonut(tipoSum) {
     APP_STATE.donut.hidden.size > 0,
   );
   const labels = visibleSegs.map((s) => s.lbl);
-  const colorMap = {
-    aum: resolveColor('var(--sem-erro-vivid)'),
-    rem: resolveColor('var(--accent-info-vivid)'),
-    eco: resolveColor('var(--sem-ok-vivid)'),
-    pen: resolveColor('var(--sem-alerta-vivid)'),
-    sem: resolveColor('var(--chart-neutral)'),
+  const colorTokenMap = {
+    aum: 'var(--sem-erro-vivid)',
+    rem: 'var(--accent-info-vivid)',
+    eco: 'var(--sem-ok-vivid)',
+    pen: 'var(--sem-alerta-vivid)',
+    sem: 'var(--chart-neutral)',
   };
-  const colors = visibleSegs.map((s) => colorMap[s.key]);
+  const themePalette = visibleSegs.map((s) => colorTokenMap[s.key]);
+  const colors = themePalette.map(resolveColor);
 
   const options = {
     series: series,
@@ -751,6 +754,7 @@ function renderDonut(tipoSum) {
       },
     },
     labels: labels,
+    themePalette,
     colors: colors,
     plotOptions: {
       pie: {

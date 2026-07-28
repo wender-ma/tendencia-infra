@@ -1,3 +1,10 @@
+import {
+  getProjectionMovementAmount,
+  getProjectionMovementSignedValue,
+  PROJECTION_MOVEMENT_DIRECTIONS,
+  resolveProjectionMovementDirection,
+} from './projection-control-accounting.mjs';
+
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
 const DASHBOARD_VERSION = 'v0.63.3';
 
@@ -100,17 +107,28 @@ export function buildProjectionExportRows(projectionControl = {}) {
   }
 
   for (const movement of orderedMovements) {
-    const value = movement.valor || 0;
-    const isEntry = ['aporte', 'devolucao'].includes(movement.tipo);
-    balance += isEntry ? value : -value;
+    const direction = resolveProjectionMovementDirection(movement, projectionControl.insumo || '');
+    const normalizedMovement = {
+      ...movement,
+      valor: getProjectionMovementAmount(movement.valor),
+      direcao: direction,
+    };
+    const signedValue = getProjectionMovementSignedValue(normalizedMovement);
+    balance += signedValue;
     rows.push({
       ID: movement.id || '',
       Tipo: typeLabels[movement.tipo] || movement.tipo || '',
+      Direção:
+        direction === PROJECTION_MOVEMENT_DIRECTIONS.ENTRY
+          ? 'Entrada'
+          : direction === PROJECTION_MOVEMENT_DIRECTIONS.EXIT
+            ? 'Saída'
+            : 'Inválida',
       Data: movement.data || '',
       'Data (BR)': movement.data_br || '',
       'Origem/Descrição': movement.origem || movement.descricao || '',
       Destino: movement.destino || '',
-      'Valor (R$)': isEntry ? value : -value,
+      'Valor (R$)': signedValue,
       'Saldo acumulado (R$)': balance,
       Responsável: movement.responsavel || '',
       Justificativa: movement.justificativa || '',

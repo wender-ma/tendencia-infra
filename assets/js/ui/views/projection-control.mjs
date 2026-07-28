@@ -1,6 +1,13 @@
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { DASHBOARD_CONFIG, STORAGE_KEYS } from '../../config.js';
 import { parseNumber } from '../../parsers/shared.mjs';
+import {
+  calculateProjectionBalance,
+  getProjectionMovementAmount,
+  getProjectionMovementSignedValue,
+  PROJECTION_MOVEMENT_DIRECTIONS,
+  resolveProjectionMovementDirection,
+} from '../../services/projection-control-accounting.mjs';
 import { escAttr, escHtml, formatDate } from '../formatters.mjs';
 import {
   debounce,
@@ -108,6 +115,39 @@ function nextMovId() {
 }
 
 let _projCtrlListenersAttached = false;
+let _projCtrlInsumoOptionsSignature = '';
+
+function syncProjCtrlInsumoOptions(select) {
+  if (!select) return;
+  const currentValue = (PROJ_CTRL_STATE.insumo || 'I011890').trim();
+  const availableInputs = new Map();
+  (APP_STATE.dados.tendencia || []).forEach((item) => {
+    if (item.is_folha && item.cod_insumo && !availableInputs.has(item.cod_insumo)) {
+      availableInputs.set(item.cod_insumo, item.item || '');
+    }
+  });
+  const options = [...availableInputs.entries()].sort(([left], [right]) =>
+    left.localeCompare(right, 'pt-BR'),
+  );
+  const signature = JSON.stringify([currentValue, options]);
+
+  if (_projCtrlInsumoOptionsSignature !== signature) {
+    const currentIsAvailable = availableInputs.has(currentValue);
+    const missingOption = currentIsAvailable
+      ? ''
+      : `<option value="${escAttr(currentValue)}" disabled>${escHtml(currentValue)} — não encontrado na obra</option>`;
+    const availableOptions = options
+      .map(
+        ([code, description]) =>
+          `<option value="${escAttr(code)}">${escHtml(code)}${description ? ` — ${escHtml(description)}` : ''}</option>`,
+      )
+      .join('');
+    replaceWithParsedMarkup(select, missingOption + availableOptions);
+    _projCtrlInsumoOptionsSignature = signature;
+  }
+
+  select.value = currentValue;
+}
 
 // v0.60.5 — aplica o estado dos cadeados aos inputs e botões da UI
 function applyLocksToUI() {
@@ -128,7 +168,7 @@ function applyLocksToUI() {
     const trancado = !!locks[m.key];
     if (inp) {
       inp.readOnly = trancado || !canEdit;
-      inp.disabled = !canEdit;
+      inp.disabled = !canEdit || (inp.tagName === 'SELECT' && trancado);
       inp.classList.toggle('is-locked', trancado || !canEdit);
     }
     if (btn) {
@@ -159,6 +199,7 @@ function initProjCtrl() {
     const elIns = document.getElementById('projCtrlInsumo');
 
     // Preencher campos com valores salvos
+    syncProjCtrlInsumoOptions(elIns);
     if (elSaldo) {
       if (PROJ_CTRL_STATE.saldo_inicial != null) {
         elSaldo.value = fmt(PROJ_CTRL_STATE.saldo_inicial);
@@ -272,7 +313,7 @@ function getAllMovimentacoes() {
         descricao: f.descricao || '',
         justificativa: f.justificativa || '',
         responsavel: f.solicitante || '',
-        valor: f.custo_flowmaster || 0,
+        valor: getProjectionMovementAmount(f.custo_flowmaster),
         direcao,
         origem_dado: 'flow',
         flow_n: f.n_alteracao,
@@ -282,12 +323,10 @@ function getAllMovimentacoes() {
 
   // Movimentações manuais
   PROJ_CTRL_STATE.movimentacoes.forEach((m) => {
-    let direcao;
-    if (m.destino === insumo) direcao = 'entrada';
-    else if (m.origem === insumo) direcao = 'saida';
-    else direcao = 'entrada'; // fallback
+    const direcao = resolveProjectionMovementDirection(m, insumo);
     out.push({
       ...m,
+      valor: getProjectionMovementAmount(m.valor),
       direcao,
       origem_dado: 'manual',
       bloqueada: false,
@@ -315,16 +354,11 @@ function getAllMovimentacoes() {
 }
 
 function renderProjCtrl() {
+  syncProjCtrlInsumoOptions(document.getElementById('projCtrlInsumo'));
   const movs = getAllMovimentacoes();
 
   // Calcula KPIs
-  const totalEntradas = movs
-    .filter((m) => m.direcao === 'entrada')
-    .reduce((s, m) => s + (m.valor || 0), 0);
-  const totalSaidas = movs
-    .filter((m) => m.direcao === 'saida')
-    .reduce((s, m) => s + (m.valor || 0), 0);
-  const saldoAtual = totalEntradas - totalSaidas;
+  const saldoAtual = calculateProjectionBalance(movs);
 
   // ===== CONFERÊNCIA COM SISTEMA (TENDÊNCIA) =====
   // Busca o valor atual do insumo controlado na aba TENDÊNCIA
@@ -346,30 +380,32 @@ function renderProjCtrl() {
     else confStatus = 'divergente';
   }
 
-  const saldoCls = saldoAtual > 0 ? 'green' : saldoAtual < 0 ? 'red' : '';
-  const confCls = confStatus === 'ok' ? 'green' : confStatus === 'divergente' ? 'red' : '';
-
-  replaceWithParsedMarkup(
-    document.getElementById('projCtrlKpis'),
-    `
-    <div class="kpi ${confCls}"><div class="label">🔍 Valor no Sistema</div><div class="value">${valorSistema != null ? fmtR$(valorSistema) : '—'}</div><div class="sub">${valorSistema != null ? `Tendência · insumo ${escHtml(insumoCtrl)}` : 'insumo não encontrado na Tendência'}</div></div>
-    <div class="kpi ${saldoCls} kpi-wide"><div class="label">📊 Saldo Controlado</div><div class="value">${fmtR$(saldoAtual)}</div>
-      <div class="projection-balance-breakdown">
-        <div class="projection-balance-row is-entry">
-          <span>⬆️ Entradas (aportes)</span>
-          <strong>+${fmt(totalEntradas)}</strong>
-        </div>
-        <div class="projection-balance-row is-exit">
-          <span>⬇️ Saídas (verba utilizada)</span>
-          <strong>−${fmt(totalSaidas)}</strong>
-        </div>
+  const summaryPanel = document.getElementById('projCtrlSummary');
+  if (summaryPanel) {
+    summaryPanel.classList.toggle('is-balanced', confStatus === 'ok');
+    summaryPanel.classList.toggle('is-divergent', confStatus === 'divergente');
+    const diffIcon = confStatus === 'ok' ? '✅' : confStatus === 'divergente' ? '⚠️' : '➖';
+    const diffValue = confDiff == null ? '—' : `${confDiff > 0 ? '+' : ''}${fmtR$(confDiff)}`;
+    replaceWithParsedMarkup(
+      summaryPanel,
+      `
+      <div class="projection-control-summary-row">
+        <span>📊 Saldo Controlado</span>
+        <strong>${fmtR$(saldoAtual)}</strong>
       </div>
-    </div>
-    <div class="kpi ${confCls}"><div class="label">${confStatus === 'ok' ? '✅ Conferido' : confStatus === 'divergente' ? '⚠️ Não identificado' : '— Conferência'}</div><div class="value">${confDiff != null ? (Math.abs(confDiff) <= TOL_CONF ? 'OK' : (confDiff >= 0 ? '+' : '') + fmtR$(confDiff)) : '—'}</div><div class="sub">${confStatus === 'ok' ? 'tudo confere' : confStatus === 'divergente' ? 'sistema − controlado' : 'sem comparação possível'}</div></div>
-  `,
-  );
+      <div class="projection-control-summary-row">
+        <span>🔍 Valor no Sistema</span>
+        <strong>${valorSistema != null ? fmtR$(valorSistema) : '—'}</strong>
+      </div>
+      <div class="projection-control-summary-row projection-control-summary-row--difference">
+        <span>${diffIcon} Diferença</span>
+        <strong>${diffValue}</strong>
+      </div>
+    `,
+    );
+  }
 
-  // ===== BANNER de conferência (com a equação) =====
+  // ===== BANNER de conferência =====
   const elBanner = document.getElementById('projCtrlConfBanner');
   if (elBanner) {
     if (valorSistema == null) {
@@ -381,39 +417,29 @@ function renderProjCtrl() {
         </div>`,
       );
     } else if (confStatus === 'ok') {
-      replaceWithParsedMarkup(
-        elBanner,
-        `
-        <div class="projection-conf-alert projection-conf-alert--success">
-          ✅ <strong>Conferido!</strong> Saldo controlado (${fmtR$(saldoAtual)}) = Valor no sistema (${fmtR$(valorSistema)}). Diferença: ${fmtR$(confDiff)} (dentro da tolerância de R$ ${TOL_CONF.toFixed(2)}).
-        </div>`,
-      );
+      elBanner.replaceChildren();
     } else {
       const sinal = confDiff >= 0 ? 'a mais' : 'a menos';
       replaceWithParsedMarkup(
         elBanner,
         `
         <div class="projection-conf-alert projection-conf-alert--error">
-          ⚠️ <strong>Divergência identificada:</strong> existem ${fmtR$(Math.abs(confDiff))} ${sinal} no sistema do que o controlado.
-          <div class="projection-conf-details">
-            <span>📊 Saldo controlado: <strong>${fmtR$(saldoAtual)}</strong></span>
-            <span>🔍 Valor no sistema (Tendência): <strong>${fmtR$(valorSistema)}</strong></span>
-            <span>❓ Não identificado: <strong>${confDiff >= 0 ? '+' : ''}${fmtR$(confDiff)}</strong></span>
-          </div>
-          <div class="projection-conf-note">
-            💡 Isso significa que há movimentações no sistema (Tendência) que ainda não foram registradas neste controle. Adicione uma movimentação manual ou ajuste o saldo inicial.
-          </div>
+          ⚠️ <strong>${fmtR$(Math.abs(confDiff))} ${sinal} no sistema.</strong>
+          Registre a movimentação correspondente ou ajuste o saldo inicial.
         </div>`,
       );
     }
   }
 
   renderProjCtrlChart(movs);
-  renderMovTable(movs, saldoAtual);
+  renderMovTable(movs);
 }
 
 function renderProjCtrlChart(movs) {
-  if (!movs.length) {
+  const validMovements = movs.filter(
+    (movement) => movement.direcao !== PROJECTION_MOVEMENT_DIRECTIONS.INVALID,
+  );
+  if (!validMovements.length) {
     renderDashboardState('projCtrlChart', {
       title: 'Nenhuma movimentação registrada',
       message: 'Defina o saldo inicial ou adicione uma movimentação para começar o controle.',
@@ -423,8 +449,8 @@ function renderProjCtrlChart(movs) {
 
   // Saldo cumulativo ao longo do tempo
   let saldo = 0;
-  const pontos = movs.map((m) => {
-    saldo += (m.direcao === 'entrada' ? 1 : -1) * (m.valor || 0);
+  const pontos = validMovements.map((m) => {
+    saldo += getProjectionMovementSignedValue(m);
     const isoData =
       m.data ||
       (() => {
@@ -445,7 +471,7 @@ function renderProjCtrlChart(movs) {
     series: [{ name: 'Saldo acumulado', data: seriesData }],
     chart: {
       type: 'area',
-      height: 300,
+      height: 280,
       animations: { enabled: true, easing: 'easeinout', speed: 800 },
       toolbar: {
         show: true,
@@ -536,7 +562,7 @@ function renderProjCtrlChart(movs) {
   renderApexChart('projCtrlChart', options);
 }
 
-function renderMovTable(movs, saldoFinal) {
+function renderMovTable(movs) {
   const q = (document.getElementById('movSearch')?.value || '').toLowerCase();
   const ft = document.getElementById('movFilterTipo')?.value || '';
   const fd = document.getElementById('movFilterDirecao')?.value || '';
@@ -545,7 +571,7 @@ function renderMovTable(movs, saldoFinal) {
   // (movs já vem ordenado ASC por getAllMovimentacoes, e o saldo_inicial é a 1ª pseudo-movimentação)
   let saldoAcum = 0;
   const movsWithSaldo = movs.map((m) => {
-    saldoAcum += (m.direcao === 'entrada' ? 1 : -1) * (m.valor || 0);
+    saldoAcum += getProjectionMovementSignedValue(m);
     return { ...m, _saldo: saldoAcum };
   });
 
@@ -561,12 +587,7 @@ function renderMovTable(movs, saldoFinal) {
     return true;
   });
 
-  // Ordenar exibição: mais recente primeiro (não altera saldoAcum, que usa ordem cronológica)
-  filtered.sort((a, b) => {
-    const da = a.data || a.data_br || '';
-    const db = b.data || b.data_br || '';
-    return db.localeCompare(da);
-  });
+  // A exibição preserva a ordem cronológica usada no cálculo do saldo acumulado.
   const tipoBadge = {
     aditivo: '<span class="badge blue">🔵 Aditivo</span>',
     remanejamento: '<span class="badge purple">🟣 Remanejamento</span>',
@@ -592,9 +613,12 @@ function renderMovTable(movs, saldoFinal) {
           const dirIcon =
             m.direcao === 'entrada'
               ? '<span class="projection-direction-icon is-entry" title="Entrada (recebeu verba)">⬅️</span>'
-              : '<span class="projection-direction-icon is-exit" title="Saída (liberou verba)">➡️</span>';
-          const valCls = m.direcao === 'entrada' ? 'pos' : 'neg';
-          const valSign = m.direcao === 'entrada' ? '+' : '-';
+              : m.direcao === 'saida'
+                ? '<span class="projection-direction-icon is-exit" title="Saída (liberou verba)">➡️</span>'
+                : '<span class="projection-direction-icon is-invalid" title="Movimentação inválida: informe o insumo controlado na origem ou no destino">⚠️</span>';
+          const valCls =
+            m.direcao === 'entrada' ? 'pos' : m.direcao === 'saida' ? 'neg' : 'is-invalid';
+          const valSign = m.direcao === 'entrada' ? '+' : m.direcao === 'saida' ? '-' : '';
 
           // Chips para origem do dado
           let chips = '';
@@ -637,7 +661,9 @@ function renderMovTable(movs, saldoFinal) {
     );
 
   document.getElementById('movCount').textContent =
-    `${filtered.length} de ${movs.length} mov. · Saldo final: ${fmtR$(saldoFinal)}`;
+    filtered.length === movs.length
+      ? `${movs.length} movimentações`
+      : `${filtered.length} de ${movs.length} movimentações`;
 }
 
 function clearMovFilters() {
@@ -649,6 +675,52 @@ function clearMovFilters() {
 }
 
 // (Listeners dos filtros agora ficam em initProjCtrl)
+
+function formatCurrencyInputWhileTyping(input) {
+  const rawValue = input.value;
+  const caret = input.selectionStart ?? rawValue.length;
+  const valueBeforeCaret = rawValue.slice(0, caret);
+  const negative = /^\s*-/.test(rawValue);
+  const hasDecimalSeparator = rawValue.includes(',');
+  const sanitized = rawValue.replace(/[^\d,]/g, '');
+  const [integerPart = '', decimalPart = ''] = sanitized.split(',');
+  const integerDigits = integerPart.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  const decimalDigits = decimalPart.replace(/\D/g, '').slice(0, 2);
+
+  if (!integerDigits && !hasDecimalSeparator) {
+    input.value = negative ? '-' : '';
+    input.setSelectionRange(input.value.length, input.value.length);
+    return;
+  }
+
+  const formattedInteger = Number(integerDigits || 0).toLocaleString('pt-BR', {
+    maximumFractionDigits: 0,
+  });
+  const formattedValue = `${negative ? '-' : ''}${formattedInteger}${hasDecimalSeparator ? `,${decimalDigits}` : ''}`;
+  const commaBeforeCaret = valueBeforeCaret.includes(',');
+  const digitsBeforeCaret = valueBeforeCaret.replace(/\D/g, '').length;
+  let nextCaret = negative ? 1 : 0;
+
+  if (commaBeforeCaret) {
+    const decimalDigitsBeforeCaret = valueBeforeCaret
+      .split(',')
+      .slice(1)
+      .join('')
+      .replace(/\D/g, '').length;
+    nextCaret = formattedValue.indexOf(',') + 1 + decimalDigitsBeforeCaret;
+  } else {
+    let countedDigits = 0;
+    for (let index = nextCaret; index < formattedValue.length; index += 1) {
+      if (!/\d/.test(formattedValue[index])) continue;
+      countedDigits += 1;
+      nextCaret = index + 1;
+      if (countedDigits >= digitsBeforeCaret) break;
+    }
+  }
+
+  input.value = formattedValue;
+  input.setSelectionRange(nextCaret, nextCaret);
+}
 
 // Formulário de nova/editar movimentação
 function openMovForm(editingId) {
@@ -699,7 +771,7 @@ function openMovForm(editingId) {
       </div>
       <div>
       <label for="mov_valor">Valor (R$)</label>
-        <input type="text" id="mov_valor" required value="${m && m.valor != null ? fmt(m.valor) : ''}" placeholder="ex: 12.500,00">
+        <input type="text" id="mov_valor" required inputmode="decimal" autocomplete="off" value="${m && m.valor != null ? fmt(m.valor) : ''}" placeholder="ex: 12.500,00">
       </div>
       <div class="full">
       <label for="mov_just">Justificativa (opcional)</label>
@@ -711,11 +783,32 @@ function openMovForm(editingId) {
       <button type="submit" class="btn-sm primary" data-action="save-mov" data-id="${escAttr(editingId || '')}">💾 Salvar</button>
     </div>
     <div class="projection-movement-form-note">
-      💡 A direção (entrada/saída) é calculada automaticamente: se o insumo controlado (${escHtml(insumo)}) aparecer no campo <strong>Destino</strong>, é uma entrada. Se aparecer em <strong>Origem</strong>, é uma saída.
+      💡 <strong>Aporte</strong> entra no saldo e <strong>Devolução</strong> sai do saldo. Em Remanejamento ou Aditivo, o insumo controlado (${escHtml(insumo)}) no <strong>Destino</strong> indica entrada; na <strong>Origem</strong>, saída.
     </div>
     </form>
   `,
   );
+  const valueInput = document.getElementById('mov_valor');
+  const typeInput = document.getElementById('mov_tipo');
+  const originInput = document.getElementById('mov_origem');
+  const destinationInput = document.getElementById('mov_destino');
+  typeInput?.addEventListener('change', () => {
+    const controlledDisplay = displayForValue(insumo);
+    if (typeInput.value === 'aporte') {
+      if (valueFromDisplay(originInput.value) === insumo) originInput.value = '';
+      destinationInput.value = controlledDisplay;
+    } else if (typeInput.value === 'devolucao') {
+      originInput.value = controlledDisplay;
+      if (valueFromDisplay(destinationInput.value) === insumo) destinationInput.value = '';
+    } else if (!originInput.value && !destinationInput.value) {
+      originInput.value = controlledDisplay;
+    }
+  });
+  valueInput?.addEventListener('input', () => formatCurrencyInputWhileTyping(valueInput));
+  valueInput?.addEventListener('blur', () => {
+    const parsed = parseNumber(valueInput.value);
+    if (parsed != null) valueInput.value = fmt(parsed);
+  });
   openModal({ initialFocus: '#mov_tipo' });
 }
 
@@ -724,8 +817,8 @@ async function saveMovForm(editingId) {
   const get = (id) => document.getElementById(id).value.trim();
   const tipo = get('mov_tipo');
   const data = get('mov_data');
-  const origem = valueFromDisplay(get('mov_origem'));
-  const destino = valueFromDisplay(get('mov_destino'));
+  let origem = valueFromDisplay(get('mov_origem'));
+  let destino = valueFromDisplay(get('mov_destino'));
   const desc = get('mov_desc');
   const resp = get('mov_resp');
   const valor = parseNumber(get('mov_valor'));
@@ -735,41 +828,58 @@ async function saveMovForm(editingId) {
     authToast('⚠️ Descrição é obrigatória.', 'warn', 3000);
     return;
   }
-  if (valor == null || valor === 0) {
-    authToast('⚠️ Valor é obrigatório (e diferente de zero).', 'warn', 3000);
-    return;
-  }
-  if (!origem && !destino) {
-    authToast('⚠️ Informe pelo menos Origem ou Destino.', 'warn', 3000);
+  if (valor == null || valor <= 0) {
+    authToast('⚠️ Informe um valor maior que zero.', 'warn', 3000);
     return;
   }
 
   const insumo = PROJ_CTRL_STATE.insumo || 'I011890';
-  if (origem !== insumo && destino !== insumo) {
-    const confirmed = await confirmModal(
-      'Insumo controlado não encontrado',
-      'Nem Origem (' +
-        origem +
-        ') nem Destino (' +
-        destino +
-        ') é o insumo controlado (' +
-        insumo +
-        ').\nSalvar mesmo assim?',
-      { confirmText: 'Salvar', destructive: false },
-    );
-    if (!confirmed) return;
+  if (tipo === 'aporte') {
+    destino = insumo;
+  } else if (tipo === 'devolucao') {
+    origem = insumo;
+  } else {
+    if (origem === insumo && destino === insumo) {
+      authToast('⚠️ Origem e Destino não podem ser o mesmo insumo controlado.', 'warn', 3500);
+      return;
+    }
+    if (origem !== insumo && destino !== insumo) {
+      authToast(
+        `⚠️ Informe o insumo controlado (${insumo}) na Origem ou no Destino.`,
+        'warn',
+        4000,
+      );
+      return;
+    }
   }
 
   // tentar converter data dd/mm/aaaa em ISO
   let iso = '';
   let dataBr = data;
-  const mDt = data.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  if (mDt) iso = `${mDt[3]}-${mDt[2]}-${mDt[1]}`;
-  else {
-    const m2 = data.match(/(\d{2})\/(\d{4})/);
+  const mDt = data.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (mDt) {
+    const parsedDate = new Date(Date.UTC(Number(mDt[3]), Number(mDt[2]) - 1, Number(mDt[1])));
+    if (
+      parsedDate.getUTCFullYear() !== Number(mDt[3]) ||
+      parsedDate.getUTCMonth() !== Number(mDt[2]) - 1 ||
+      parsedDate.getUTCDate() !== Number(mDt[1])
+    ) {
+      authToast('⚠️ Informe uma data válida no formato dd/mm/aaaa.', 'warn', 3500);
+      return;
+    }
+    iso = `${mDt[3]}-${mDt[2]}-${mDt[1]}`;
+  } else {
+    const m2 = data.match(/^(\d{2})\/(\d{4})$/);
     if (m2) {
+      if (Number(m2[1]) < 1 || Number(m2[1]) > 12) {
+        authToast('⚠️ Informe um mês válido no formato mm/aaaa.', 'warn', 3500);
+        return;
+      }
       iso = `${m2[2]}-${m2[1]}-01`;
       dataBr = `01/${m2[1]}/${m2[2]}`;
+    } else {
+      authToast('⚠️ Use o formato mm/aaaa ou dd/mm/aaaa.', 'warn', 3500);
+      return;
     }
   }
 

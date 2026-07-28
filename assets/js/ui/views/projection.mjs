@@ -666,6 +666,9 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
           strokeDashArray: 2,
           label: {
             text: 'Fim: ' + formatMonthLabel(dataFim),
+            orientation: 'vertical',
+            position: 'bottom',
+            offsetY: -10,
             style: {
               color: resolveColor('var(--text-on-dark)'),
               background: resolveColor('var(--chart-neutral)'),

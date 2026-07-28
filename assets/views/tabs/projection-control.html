@@ -1,57 +1,106 @@
-<div class="sources-header" id="srcHeader_projecao_ctrl" data-sources="tendencia,flows"></div>
-  <div class="card">
-    <h2>📦 Controle da Verba de Projeção de Gastos <span class="hint">insumo I011890</span></h2>
-    <p class="projection-control-intro">
-      Controle de <strong>todas as entradas e saídas</strong> da Verba de Projeção, incluindo movimentações que não passam por aditivo (remanejamentos básicos, aportes manuais, devoluções).
-      Aditivos marcados como <strong>✅ Refletido</strong> que tocam o insumo I011890 são importados automaticamente.
-    </p>
-
-    <div class="projection-control-grid">
-      <div>
+<div class="projection-control-overview-grid">
+  <div class="card projection-control-settings">
+    <h2>📦 Controle da Verba de Projeção</h2>
+    <div class="projection-control-fields">
+      <div class="projection-control-field-row">
         <label for="projCtrlSaldoInicial" class="field-label">💰 Saldo inicial</label>
-        <div class="field-control-row">
-          <input type="text" id="projCtrlSaldoInicial" class="projection-balance-input" data-edit-control placeholder="ex: 4.541.431,52">
-          <button type="button" id="lockBtnSaldo" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="saldo" title="Travar / destravar edição" aria-label="Travar ou destravar edição do saldo inicial" class="field-lock-button">🔓</button>
+        <div>
+          <div class="field-control-row">
+            <input
+              type="text"
+              id="projCtrlSaldoInicial"
+              class="projection-balance-input"
+              data-edit-control
+              placeholder="ex: 4.541.431,52"
+            />
+            <button
+              type="button"
+              id="lockBtnSaldo"
+              data-editor-only
+              data-click-action="toggleLockCampo"
+              data-action-mode="arg"
+              data-action-arg="saldo"
+              title="Travar / destravar edição"
+              aria-label="Travar ou destravar edição do saldo inicial"
+              class="field-lock-button"
+            >
+              🔓
+            </button>
+          </div>
+          <div class="field-help">Verba inicial da Projeção de Gastos</div>
         </div>
-        <div class="field-help">Verba inicial da Projeção de Gastos</div>
       </div>
-      <div>
+      <div class="projection-control-field-row">
         <label for="projCtrlDataRef" class="field-label">📅 Data de referência</label>
-        <div class="field-control-row">
-          <input type="month" id="projCtrlDataRef" data-edit-control class="field-control">
-          <button type="button" id="lockBtnData" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="data" title="Travar / destravar edição" aria-label="Travar ou destravar edição da data de referência" class="field-lock-button">🔓</button>
+        <div>
+          <div class="field-control-row">
+            <input type="month" id="projCtrlDataRef" data-edit-control class="field-control" />
+            <button
+              type="button"
+              id="lockBtnData"
+              data-editor-only
+              data-click-action="toggleLockCampo"
+              data-action-mode="arg"
+              data-action-arg="data"
+              title="Travar / destravar edição"
+              aria-label="Travar ou destravar edição da data de referência"
+              class="field-lock-button"
+            >
+              🔓
+            </button>
+          </div>
+          <div class="field-help">Mês em que o saldo inicial foi aportado</div>
         </div>
-        <div class="field-help">Mês em que o saldo inicial foi aportado</div>
       </div>
-      <div>
+      <div class="projection-control-field-row">
         <label for="projCtrlInsumo" class="field-label">📌 Insumo controlado</label>
-        <div class="field-control-row">
-          <input type="text" id="projCtrlInsumo" data-edit-control value="I011890" class="field-control">
-          <button type="button" id="lockBtnInsumo" data-editor-only data-click-action="toggleLockCampo" data-action-mode="arg" data-action-arg="insumo" title="Travar / destravar edição" aria-label="Travar ou destravar edição do insumo controlado" class="field-lock-button">🔓</button>
+        <div>
+          <div class="field-control-row">
+            <select id="projCtrlInsumo" data-edit-control class="field-control">
+              <option value="I011890">I011890</option>
+            </select>
+            <button
+              type="button"
+              id="lockBtnInsumo"
+              data-editor-only
+              data-click-action="toggleLockCampo"
+              data-action-mode="arg"
+              data-action-arg="insumo"
+              title="Travar / destravar edição"
+              aria-label="Travar ou destravar edição do insumo controlado"
+              class="field-lock-button"
+            >
+              🔓
+            </button>
+          </div>
+          <div class="field-help">Insumos disponíveis na obra ativa</div>
         </div>
-        <div class="field-help">Padrão: I011890 (Verba Viabilidade)</div>
       </div>
     </div>
   </div>
 
-  <div class="kpis" id="projCtrlKpis"></div>
-  <div id="projCtrlConfBanner" class="projection-control-banner"></div>
+  <div class="card projection-control-summary-panel" id="projCtrlSummary"></div>
+</div>
+<div id="projCtrlConfBanner" class="projection-control-banner"></div>
 
-  <div class="card">
-    <h2>📊 Evolução do saldo <span class="hint">aportes − consumos ao longo do tempo</span></h2>
-    <div id="projCtrlChart" class="projection-control-chart"></div>
-  </div>
+<div class="card projection-control-chart-card">
+  <h2 class="detail-heading">
+    <span>📊 Evolução do saldo</span>
+    <span class="hint">aportes − consumos ao longo do tempo</span>
+  </h2>
+  <div id="projCtrlChart" class="projection-control-chart"></div>
+</div>
 
-  <div class="card">
-    <h2>📋 Movimentações
-      <span class="panel-actions">
-        <button class="btn-sm primary" data-editor-only data-click-action="openMovForm">➕ Nova movimentação</button>
-        <button class="btn-sm" data-click-action="exportarControleProjXLSX" title="Exporta movimentações + saldo acumulado em Excel">💾 Exportar Excel</button>
-      </span>
-    </h2>
-
-    <div class="toolbar">
-      <input type="search" id="movSearch" aria-label="Buscar movimentações" placeholder="🔍 Buscar descrição, insumo, responsável...">
+<div class="card projection-control-movements-card">
+  <div class="projection-control-movement-toolbar">
+    <h2 class="projection-control-movement-title">📋 Movimentações</h2>
+    <div class="toolbar projection-control-movement-filters">
+      <input
+        type="search"
+        id="movSearch"
+        aria-label="Buscar movimentações"
+        placeholder="🔍 Buscar movimentações..."
+      />
       <select id="movFilterTipo" aria-label="Filtrar movimentações por tipo">
         <option value="">Todos tipos</option>
         <option value="aditivo">🔵 Aditivo</option>
@@ -63,33 +112,41 @@
         <option value="">Todas direções</option>
         <option value="entrada">⬅️ Só entradas</option>
         <option value="saida">➡️ Só saídas</option>
+        <option value="invalida">⚠️ Só inválidas</option>
       </select>
       <button class="btn-sm compact" data-click-action="clearMovFilters">🧹 Limpar</button>
       <span class="toolbar-count" id="movCount"></span>
     </div>
-
-    <div class="table-wrap table-wrap-medium projection-movement-table">
-      <table>
-        <thead>
-          <tr>
-            <th class="table-col-90">Data</th>
-            <th class="table-col-130">Tipo</th>
-            <th class="table-col-50-center">↔</th>
-            <th class="table-col-130">Origem (saiu de)</th>
-            <th class="table-col-130">Destino (foi para)</th>
-            <th>Descrição / Justificativa</th>
-            <th class="table-col-120">Responsável</th>
-            <th class="num table-col-130">Valor (R$)</th>
-            <th class="num table-col-130">Saldo após</th>
-          </tr>
-        </thead>
-        <tbody id="movTbody"></tbody>
-      </table>
-    </div>
-
-    <div class="table-note">
-      💡 <strong>Entrada</strong> ⬅️ = o insumo controlado recebeu verba (origem é outro insumo).
-      <strong>Saída</strong> ➡️ = o insumo controlado liberou verba (destino é outro insumo).
-      Movimentações <strong>via Flow</strong> são importadas automaticamente dos aditivos marcados como ✅ Refletido — para editá-las ou desfazer, vá na aba "🔗 Flows".
-    </div>
+    <span class="panel-actions projection-control-movement-actions">
+      <button class="btn-sm primary" data-editor-only data-click-action="openMovForm">
+        ➕ Nova movimentação
+      </button>
+      <button
+        class="btn-sm"
+        data-click-action="exportarControleProjXLSX"
+        title="Exporta movimentações + saldo acumulado em Excel"
+      >
+        💾 Exportar Excel
+      </button>
+    </span>
   </div>
+
+  <div class="table-wrap projection-movement-table">
+    <table>
+      <thead>
+        <tr>
+          <th class="table-col-90">Data</th>
+          <th class="table-col-130">Tipo</th>
+          <th class="table-col-50-center">↔</th>
+          <th class="table-col-130">Origem (saiu de)</th>
+          <th class="table-col-130">Destino (foi para)</th>
+          <th>Descrição / Justificativa</th>
+          <th class="table-col-120">Responsável</th>
+          <th class="num table-col-130">Valor (R$)</th>
+          <th class="num table-col-130">Saldo após</th>
+        </tr>
+      </thead>
+      <tbody id="movTbody"></tbody>
+    </table>
+  </div>
+</div>

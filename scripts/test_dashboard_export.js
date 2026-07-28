@@ -36,16 +36,42 @@ const { pathToFileURL } = require('url');
   const projection = buildProjectionExportRows({
     saldo_inicial: 100,
     data_ref: '2026-07-01',
+    insumo: 'I011890',
     movimentacoes: [
-      { id: 'saida', tipo: 'aditivo', data: '2026-07-03', valor: 30 },
-      { id: 'entrada', tipo: 'aporte', data: '2026-07-02', valor: 20 },
+      {
+        id: 'saida',
+        tipo: 'aditivo',
+        data: '2026-07-03',
+        origem: 'I011890',
+        destino: 'I000001',
+        valor: 30,
+      },
+      {
+        id: 'entrada',
+        tipo: 'aporte',
+        data: '2026-07-02',
+        origem: 'EXTERNO',
+        destino: 'I011890',
+        valor: 20,
+      },
+      {
+        id: 'devolucao',
+        tipo: 'devolucao',
+        data: '2026-07-04',
+        origem: 'I011890',
+        valor: 10,
+      },
     ],
   });
   assert.deepStrictEqual(
     projection.rows.map((row) => row.ID),
-    ['(inicial)', 'entrada', 'saida'],
+    ['(inicial)', 'entrada', 'saida', 'devolucao'],
   );
-  assert.strictEqual(projection.finalBalance, 90);
+  assert.strictEqual(projection.finalBalance, 80);
+  assert.deepStrictEqual(
+    projection.rows.slice(1).map((row) => row.Direção),
+    ['Entrada', 'Saída', 'Saída'],
+  );
 
   let downloadedFilename = '';
   const fakeXlsx = {

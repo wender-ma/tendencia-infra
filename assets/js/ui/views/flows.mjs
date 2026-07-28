@@ -80,7 +80,7 @@ function renderFlows() {
   bindFlowInteractions();
   // guard sem dados de Flows
   if (!Array.isArray(getFlowsObraAtiva()) || getFlowsObraAtiva().length === 0) {
-    const flowSummary = document.getElementById('flowSummary');
+    const flowSummary = document.getElementById('flowSummaryBars');
     const flowsByTipo = document.getElementById('flowsByTipo');
     const flowsTbody = document.getElementById('flowTbody');
     if (flowSummary)
@@ -128,16 +128,53 @@ function renderFlows() {
     tipoSums['cancelado'] = { n: cancelados.length, v: sumFm(cancelados) };
   }
   const descartados = getFlowsObraAtiva().filter(isNaoRefletir);
+  const totalValue = sumFm(getFlowsObraAtiva());
+  const finalizedRows = getFlowsObraAtiva().filter((f) => f.dep === 'Finalizado');
+  const inProgressRows = getFlowsObraAtiva().filter(
+    (f) => !['Cancelado', 'Finalizado'].includes(f.dep),
+  );
+  const canceledRows = getFlowsObraAtiva().filter((f) => f.dep === 'Cancelado');
+  const summaryRows = [
+    { key: 'total', label: '📋 Total de aditivos', count: total, value: totalValue },
+    {
+      key: 'finalizado',
+      label: '✅ Finalizados',
+      count: byDep.Finalizado || 0,
+      value: sumFm(finalizedRows),
+    },
+    {
+      key: 'andamento',
+      label: '🟡 Em andamento',
+      count: inProgressRows.length,
+      value: sumFm(inProgressRows),
+    },
+    {
+      key: 'cancelado',
+      label: '⚪ Cancelados',
+      count: byDep.Cancelado || 0,
+      value: sumFm(canceledRows),
+    },
+    {
+      key: 'aumento-real',
+      label: '🔴 Aumento real',
+      count: tipoSums.aumento_real.n,
+      value: tipoSums.aumento_real.v,
+    },
+  ];
+  const summaryMax = Math.max(...summaryRows.map((row) => Math.abs(row.value)), 1);
 
   replaceWithParsedMarkup(
-    document.getElementById('flowSummary'),
-    `
-    <div class="flow-card"><div class="lbl">Total Aditivos</div><div class="v">${total}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva()))} flowmaster total</div></div>
-    <div class="flow-card green"><div class="lbl">Finalizados</div><div class="v">${byDep.Finalizado || 0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter((f) => f.dep === 'Finalizado')))}</div></div>
-    <div class="flow-card amber"><div class="lbl">Em andamento</div><div class="v">${(byDep.Projeto || 0) + (byDep.Planejamento || 0) + (byDep.Orçamento || 0) + (byDep.Obra || 0)}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter((f) => !['Cancelado', 'Finalizado'].includes(f.dep))))}</div></div>
-    <div class="flow-card gray"><div class="lbl">Cancelados</div><div class="v">${byDep.Cancelado || 0}</div><div class="sub">${fmtR$(sumFm(getFlowsObraAtiva().filter((f) => f.dep === 'Cancelado')))} (descartado)</div></div>
-    <div class="flow-card purple"><div class="lbl">Aumento Real</div><div class="v">${fmtR$(tipoSums.aumento_real.v)}</div><div class="sub">${tipoSums.aumento_real.n} aditivos</div></div>
-  `,
+    document.getElementById('flowSummaryBars'),
+    summaryRows
+      .map(
+        (row) => `
+    <div class="top-item flow-summary-item">
+      <div class="name">${row.label} <span class="top-item-count">(${row.count})</span></div>
+      <div class="val">${fmtR$(row.value)}</div>
+      <progress class="top-bar-progress top-bar-progress--summary-${row.key}" max="${summaryMax}" value="${Math.abs(row.value)}">${Math.abs(row.value)}</progress>
+    </div>`,
+      )
+      .join(''),
   );
 
   // Tipos com barras

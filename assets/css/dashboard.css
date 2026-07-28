@@ -103,6 +103,14 @@
   }
   .sources-header.header-source-summary .src-sep { color: rgba(255,255,255,0.38); }
   .sources-header.header-source-summary .src-empty { color: var(--sem-alerta-bg); }
+  body.dark .sources-header.header-source-summary,
+  body.dark .sources-header.header-source-summary strong,
+  body.dark .sources-header.header-source-summary code,
+  body.dark .sources-header.header-source-summary .src-date,
+  body.dark .sources-header.header-source-summary .src-sep,
+  body.dark .sources-header.header-source-summary .src-empty {
+    color: var(--text-on-dark);
+  }
   .btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
     color: var(--text-on-dark); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
   .btn:hover { background: rgba(255,255,255,0.3); }

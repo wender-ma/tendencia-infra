@@ -1,5 +1,6 @@
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { PROJECTION_CATALOG } from '../../data/projection-catalog.mjs';
+import { STORAGE_KEYS } from '../../config.js';
 import { escAttr, escHtml, formatDate } from '../formatters.mjs';
 import {
   bindSortableHeaders,
@@ -11,13 +12,13 @@ import {
   formatNumber as fmt,
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
+import { parseNumber } from '../../parsers/shared.mjs';
 
 const HIERARQUIA = PROJECTION_CATALOG.hierarchy;
 const SERVICOS_META = PROJECTION_CATALOG.services;
 const INSUMOS_META = PROJECTION_CATALOG.inputs;
 
 let reportNonFatalError;
-let uiCriarKpi;
 let resolveColor;
 let renderApexChart;
 let getProjRawObraAtiva;
@@ -31,6 +32,11 @@ let renderAderenciaProj;
 let acharUltimaGestaoCronologica;
 let getProjectionControlState;
 let renderVisao;
+let SafeStorage;
+let projectionSettingsProject = null;
+let projectionChartLocked = false;
+
+const PROJECTION_SETTINGS_KEY = STORAGE_KEYS.projectionSettings;
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
@@ -52,6 +58,43 @@ function defaultDataFim() {
     .map((r) => r.mes)
     .sort()
     .slice(-1)[0];
+}
+
+function activeProjectionProjectKey() {
+  return String(APP_STATE?.obra?.ativa || '__global__');
+}
+
+function readProjectionSettings() {
+  try {
+    const parsed = JSON.parse(SafeStorage?.get(PROJECTION_SETTINGS_KEY, '{}') || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function savedDataFim() {
+  const value = readProjectionSettings()[activeProjectionProjectKey()]?.dataFim;
+  return typeof value === 'string' && /^\d{4}-\d{2}$/.test(value) ? value : '';
+}
+
+function saveDataFim(value) {
+  if (!/^\d{4}-\d{2}$/.test(value)) return;
+  const settings = readProjectionSettings();
+  const projectKey = activeProjectionProjectKey();
+  settings[projectKey] = { ...(settings[projectKey] || {}), dataFim: value };
+  SafeStorage?.set(PROJECTION_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function syncProjectionInputs() {
+  const projectKey = activeProjectionProjectKey();
+  const dfInput = document.getElementById('projDataFim');
+  const dcInput = document.getElementById('projDataCorte');
+  if (projectKey !== projectionSettingsProject && dfInput) {
+    dfInput.value = savedDataFim() || defaultDataFim();
+    projectionSettingsProject = projectKey;
+  }
+  if (dcInput) dcInput.value = defaultDataCorte();
 }
 
 // Metadados de serviço (descrição + grupo) — pré-carregado da Tendência
@@ -76,10 +119,7 @@ function initProjecao() {
   }
   const ultimo = defaultDataFim();
   document.getElementById('projUltimoMes').textContent = formatMonthLabel(ultimo);
-  const dfInput = document.getElementById('projDataFim');
-  if (!dfInput.value) dfInput.value = ultimo;
-  const dcInput = document.getElementById('projDataCorte');
-  if (!dcInput.value) dcInput.value = defaultDataCorte();
+  syncProjectionInputs();
   // popular filtro de grupos
   const fg = document.getElementById('projFilterGrupo');
   if (fg && fg.options.length <= 1) {
@@ -132,6 +172,19 @@ function formatMonthLabel(yyyy_mm) {
     'dez',
   ];
   return `${meses[parseInt(m) - 1]}/${y}`;
+}
+
+function formatEditableNumber(value) {
+  return Number(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function normalizeToleranciaInput(input) {
+  if (!input || !String(input.value).trim()) return;
+  const value = parseNumber(input.value);
+  if (value != null) input.value = formatEditableNumber(value);
 }
 
 function monthsBetween(start, end) {
@@ -257,6 +310,30 @@ function calcStatus(diff, planejado, tolerancia) {
   return 'sobra';
 }
 
+function syncProjectionChartLockUi() {
+  const container = document.getElementById('projChart');
+  if (!container) return;
+  container.classList.toggle('projection-chart-is-locked', projectionChartLocked);
+  const control = container.querySelector('.projection-chart-lock-toggle');
+  const button = container.querySelector('.projection-chart-lock-button');
+  const symbol = container.querySelector('.projection-chart-lock-symbol');
+  const label = projectionChartLocked
+    ? 'Desbloquear zoom e movimentação'
+    : 'Bloquear zoom e movimentação';
+  if (control) control.title = label;
+  if (button) button.setAttribute('aria-label', label);
+  if (symbol) symbol.textContent = projectionChartLocked ? '🔒' : '🔓';
+}
+
+function toggleProjectionChartLock(_chartContext) {
+  const nextLocked = !projectionChartLocked;
+  if (nextLocked) {
+    document.querySelector('#projChart .apexcharts-zoom-icon')?.click();
+  }
+  projectionChartLocked = nextLocked;
+  syncProjectionChartLockUi();
+}
+
 function renderProjecao() {
   // v0.58b: filtra APP_STATE.dados.projRaw pela obra ativa
   const PROJ_OBRA = getProjRawObraAtiva();
@@ -264,10 +341,11 @@ function renderProjecao() {
     initProjecao();
     return;
   }
+  syncProjectionInputs();
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
-  const tolerancia = parseFloat(document.getElementById('projTolerancia').value) || 0;
+  const tolerancia = parseNumber(document.getElementById('projTolerancia').value) ?? 0;
 
   // Agregar por serviço e por insumo
   const porServico = {};
@@ -321,16 +399,8 @@ function renderProjecao() {
   const totRealizado = projServicos.reduce((s, l) => s + l.realizado, 0);
   const totPlanejado = projServicos.reduce((s, l) => s + l.planejado_total, 0);
   const totExtrap = projServicos.reduce((s, l) => s + l.extrapolacao, 0);
-  const totTendencia = projServicos.reduce((s, l) => s + l.tendencia, 0);
-  const totDiff = totTendencia - totPlanejado;
-  const pctExecutado = totPlanejado ? (totRealizado / totPlanejado) * 100 : 0;
-  const diffCls = totDiff > tolerancia ? 'red' : totDiff < -tolerancia ? 'green' : '';
-  const diffLabel =
-    totDiff > tolerancia
-      ? 'Vai precisar planejar mais'
-      : totDiff < -tolerancia
-        ? 'Vai sobrar verba'
-        : 'No esperado';
+  const saldoPlanejamento = totPlanejado - totRealizado;
+  const pctSaldoPlanejamento = totPlanejado ? (saldoPlanejamento / totPlanejado) * 100 : 0;
 
   // Quebrar a "extrapolação" entre o que é obra estendida (só Indiretos) e flows pendentes (qualquer grupo)
   // totExtrap (calculado acima) = só extrapolação clássica (obra estendida em Indiretos)
@@ -344,42 +414,50 @@ function renderProjecao() {
     (flowsPendByGrupo['Outros'] || 0);
   const totIndiretosTend = totExtrap + flowsPendInd;
   const totDiretosTend = flowsPendDir;
+  const totImpactoTendencia = totIndiretosTend + totDiretosTend;
+  const pctImpactoTendencia = totPlanejado ? (totImpactoTendencia / totPlanejado) * 100 : 0;
+  const totTendencia = totPlanejado + totIndiretosTend + totDiretosTend;
+  const totDiff = totTendencia - totPlanejado;
+  const diffCls = totDiff > tolerancia ? 'red' : totDiff < -tolerancia ? 'green' : '';
+  const saldoPctLabel = pctSaldoPlanejamento.toFixed(2).replace('.', ',');
+  const tendenciaPctLabel = pctImpactoTendencia.toFixed(2).replace('.', ',');
 
   replaceWithParsedMarkup(
     document.getElementById('projKpis'),
-    [
-      uiCriarKpi({
-        titulo: `Realizado (até ${formatMonthLabel(dataCorte)})`,
-        valor: fmtR$(totRealizado),
-        subtitulo: `${pctExecutado.toFixed(1)}% do planejado total`,
-      }),
-      uiCriarKpi({
-        titulo: 'Planejado Total (CSV)',
-        valor: fmtR$(totPlanejado),
-        subtitulo: 'passado + futuro planejado',
-      }),
-      uiCriarKpi({
-        titulo: 'Tend. Indiretos',
-        valor: fmtR$(totIndiretosTend),
-        subtitulo: `obra estendida ${fmtR$k(totExtrap)} + flows pendentes ${fmtR$k(flowsPendInd)}`,
-        cor: 'purple',
-        icon: '🏗️',
-      }),
-      uiCriarKpi({
-        titulo: 'Tend. Diretos',
-        valor: fmtR$(totDiretosTend),
-        subtitulo: `${fmtR$(totDiretosTend)} em flows pendentes (Diretos/Civis)`,
-        cor: 'amber',
-        icon: '🧱',
-      }),
-      uiCriarKpi({
-        titulo: 'Tendência Total',
-        valor: fmtR$(totTendencia),
-        subtitulo: `${diffLabel} (${totDiff >= 0 ? '+' : ''}${fmtR$(totDiff)})`,
-        cor: diffCls,
-        icon: '🔮',
-      }),
-    ].join(''),
+    `<div class="kpi projection-summary-card projection-execution-card">
+      <h3 class="projection-summary-title">💰 Execução Orçamentária</h3>
+      <div class="projection-summary-row projection-summary-row--no-divider">
+        <span>📋 Valor total planejado</span>
+        <strong>${fmtR$(totPlanejado)}</strong>
+      </div>
+      <div class="projection-summary-row">
+        <span>✅ Realizado até ${formatMonthLabel(addMonths(dataCorte, -1))}</span>
+        <strong>${fmtR$(totRealizado)}</strong>
+      </div>
+      <div class="projection-summary-row projection-summary-row--total">
+        <span>💧 Saldo de planejamento ${saldoPctLabel}%</span>
+        <strong>${fmtR$(saldoPlanejamento)}</strong>
+      </div>
+    </div>
+    <div class="kpi projection-summary-card projection-trend-card ${diffCls}">
+      <h3 class="projection-summary-title">🔮 Tendência Projetada</h3>
+      <div class="projection-summary-row projection-summary-row--no-divider">
+        <span>🏗️ Tendência · Indiretos</span>
+        <strong>${totIndiretosTend >= 0 ? '+' : ''}${fmtR$(totIndiretosTend)}</strong>
+      </div>
+      <div class="projection-summary-row">
+        <span>🧱 Tendência · Diretos</span>
+        <strong>${totDiretosTend >= 0 ? '+' : ''}${fmtR$(totDiretosTend)}</strong>
+      </div>
+      <div class="projection-summary-row">
+        <span>📈 Tendência Total - ${tendenciaPctLabel}%</span>
+        <strong>${totImpactoTendencia >= 0 ? '+' : ''}${fmtR$(totImpactoTendencia)}</strong>
+      </div>
+      <div class="projection-summary-row projection-summary-row--total">
+        <span>🎯 Total Tendência</span>
+        <strong>${fmtR$(totTendencia)}</strong>
+      </div>
+    </div>`,
   );
 
   // Gráfico curva S geral
@@ -394,6 +472,39 @@ function renderProjecao() {
 
   // Tabela hierárquica
   renderProjTable(porGrupo, projServicos, projInsumos, tolerancia);
+}
+
+function createProjectionCurveTooltip(categories, planData, tendData) {
+  return ({ dataPointIndex }) => {
+    if (dataPointIndex < 0) return '';
+    const planejado = planData[dataPointIndex] || 0;
+    const tendencia = tendData[dataPointIndex] || 0;
+    const diferenca = tendencia - planejado;
+    const diferencaTexto =
+      Math.abs(diferenca) < 0.005 ? '0,00' : `${diferenca > 0 ? '+' : ''}${fmtR$(diferenca)}`;
+    const diferencaClasse =
+      diferenca > 0
+        ? 'projection-curve-tooltip-value--increase'
+        : diferenca < 0
+          ? 'projection-curve-tooltip-value--reduction'
+          : '';
+
+    return `<div class="projection-chart-tooltip projection-curve-tooltip">
+      <strong class="projection-curve-tooltip-title">${escHtml(categories[dataPointIndex])}</strong>
+      <div class="projection-curve-tooltip-row">
+        <span><i class="projection-curve-tooltip-mark projection-curve-tooltip-mark--plan"></i>Planejado acumulado</span>
+        <strong>${fmtR$(planejado)}</strong>
+      </div>
+      <div class="projection-curve-tooltip-row">
+        <span><i class="projection-curve-tooltip-mark projection-curve-tooltip-mark--trend"></i>Tendência projetada</span>
+        <strong>${fmtR$(tendencia)}</strong>
+      </div>
+      <div class="projection-curve-tooltip-row projection-curve-tooltip-row--difference">
+        <span>Δ Diferença</span>
+        <strong class="${diferencaClasse}">${diferencaTexto}</strong>
+      </div>
+    </div>`;
+  };
 }
 
 function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
@@ -482,9 +593,42 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
           zoomout: true,
           pan: true,
           reset: true,
+          customIcons: [
+            {
+              icon: `<button type="button" class="projection-chart-lock-button" aria-label="${projectionChartLocked ? 'Desbloquear zoom e movimentação' : 'Bloquear zoom e movimentação'}"><span class="projection-chart-lock-symbol" aria-hidden="true">${projectionChartLocked ? '🔒' : '🔓'}</span></button>`,
+              index: 2,
+              title: projectionChartLocked
+                ? 'Desbloquear zoom e movimentação'
+                : 'Bloquear zoom e movimentação',
+              class: 'projection-chart-lock-toggle',
+              click: toggleProjectionChartLock,
+            },
+          ],
         },
       },
       zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+      events: {
+        mounted: syncProjectionChartLockUi,
+        updated: syncProjectionChartLockUi,
+        beforeZoom: (chartContext, { xaxis }) =>
+          projectionChartLocked
+            ? {
+                xaxis: {
+                  min: chartContext.w.globals.minX,
+                  max: chartContext.w.globals.maxX,
+                },
+              }
+            : { xaxis },
+        beforeResetZoom: (chartContext) =>
+          projectionChartLocked
+            ? {
+                xaxis: {
+                  min: chartContext.w.globals.minX,
+                  max: chartContext.w.globals.maxX,
+                },
+              }
+            : undefined,
+      },
     },
     themePalette: ['var(--chart-primary)', 'var(--sem-alerta)'],
     colors: [resolveColor('var(--chart-primary)'), resolveColor('var(--sem-alerta)')],
@@ -536,7 +680,7 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
       enabled: true,
       shared: true,
       theme: document.body.classList.contains('dark') ? 'dark' : 'light',
-      y: { formatter: (val) => fmtR$(val) },
+      custom: createProjectionCurveTooltip(categories, planData, tendData),
     },
     legend: {
       show: true,
@@ -931,6 +1075,9 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       } else if (projSortKey === 'tendencia') {
         leftValue = (left.proj?.valor_gestao || 0) + (left.proj?.extrapolacao || 0);
         rightValue = (right.proj?.valor_gestao || 0) + (right.proj?.extrapolacao || 0);
+      } else if (projSortKey === 'saldo') {
+        leftValue = (left.proj?.valor_gestao || 0) - (left.proj?.realizado || 0);
+        rightValue = (right.proj?.valor_gestao || 0) - (right.proj?.realizado || 0);
       } else {
         leftValue = left.proj?.[projSortKey] ?? 0;
         rightValue = right.proj?.[projSortKey] ?? 0;
@@ -950,7 +1097,6 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     const expanded = projExpanded.has(key);
     const st = nodeStatus(n);
     const depth = Math.min(level, 6);
-    const dV = p.diff || 0;
     const ex = p.extrapolacao || 0;
     const rowClasses = ['projection-tree-row', `projection-tree-row--${n.tipo}`];
     if (n.tipo === 'insumo' && p.empty) rowClasses.push('is-empty');
@@ -975,15 +1121,6 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       const chip = flowChip(flowsPorInsumo(n.cod_insumo));
       labelHtml = `<span class="projection-input-code">${escHtml(n.cod_insumo)}</span> · ${escHtml(n.item)}${chip}`;
     }
-
-    // Texto da ação
-    const acao = p.empty
-      ? ''
-      : dV > tolerancia
-        ? `<span class="projection-action projection-action--plan">+${fmtR$k(dV)} a planejar</span>`
-        : dV < -tolerancia
-          ? `<span class="projection-action projection-action--surplus">sobram ${fmtR$k(-dV)}</span>`
-          : '';
 
     // Cores adaptadas ao fundo
     const isDark = n.tipo === 'raiz' || n.tipo === 'grupo';
@@ -1030,6 +1167,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     // Tendência exibida = Valor Gestão + Extrapolação (consistente com o que a tabela mostra)
     const _vg = p.valor_gestao || 0;
     const _tendUI = _vg + (p.extrapolacao || 0);
+    const saldo = _vg - (p.realizado || 0);
     const vgEmpty = valuesEmpty && _vg === 0;
 
     html += `<tr class="${rowClasses.join(' ')}" ${actionAttrs}>
@@ -1037,9 +1175,10 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       <td class="projection-tree-label projection-tree-depth-${depth}">${labelHtml}</td>
       <td class="num">${vgEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(_vg)}</td>
       <td class="num">${fmtVal(p.realizado)}</td>
+      <td class="num">${vgEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(saldo)}</td>
       <td class="num">${extrapTxt}</td>
       <td class="num">${vgEmpty && Math.abs(p.extrapolacao || 0) < 0.01 ? '<span class="projection-empty-value">—</span>' : '<strong>' + fmtR$(_tendUI) + '</strong>'}</td>
-      <td>${statusBadge[st] || ''} ${acao}</td>
+      <td>${statusBadge[st] || ''}</td>
     </tr>`;
     count++;
 
@@ -1116,7 +1255,7 @@ async function exportarProjecaoDetalhada() {
     const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
     const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
     const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
-    const tolerancia = parseFloat(document.getElementById('projTolerancia').value) || 50000;
+    const tolerancia = parseNumber(document.getElementById('projTolerancia').value) ?? 50000;
 
     // Re-executa o pipeline pra pegar projServicos e projInsumos SEM depender do render (não muda estado)
     // Reagrupa APP_STATE.dados.projRaw por (servico, insumo, mes)
@@ -1317,6 +1456,7 @@ async function exportarProjecaoDetalhada() {
       else if (n.cod_servico) label = `${n.cod_servico} · ${n.item || ''}`;
       else label = `${n.cod || ''} · ${n.item || ''}`;
       const tendUI = (p.valor_gestao || 0) + (p.extrapolacao || 0);
+      const saldo = (p.valor_gestao || 0) - (p.realizado || 0);
       linhas.push({
         Nível: nivel,
         Tipo: n.tipo,
@@ -1325,8 +1465,9 @@ async function exportarProjecaoDetalhada() {
         'Cod. Insumo': n.cod_insumo || '',
         Grupo: grupo,
         Descrição: prefixo + label,
-        'Valor Gestão (R$)': Math.round((p.valor_gestao || 0) * 100) / 100,
+        'Valor Planejado (R$)': Math.round((p.valor_gestao || 0) * 100) / 100,
         'Realizado (R$)': Math.round((p.realizado || 0) * 100) / 100,
+        'Saldo (R$)': Math.round(saldo * 100) / 100,
         'Planejado Total (R$)': Math.round((p.planejado_total || 0) * 100) / 100,
         'Planejado Futuro (R$)': Math.round((p.planejado_futuro || 0) * 100) / 100,
         'Extrapolação (R$)': Math.round((p.extrapolacao || 0) * 100) / 100,
@@ -1368,6 +1509,7 @@ async function exportarProjecaoDetalhada() {
       { wch: 60 },
       { wch: 16 },
       { wch: 16 },
+      { wch: 16 },
       { wch: 18 },
       { wch: 18 },
       { wch: 16 },
@@ -1380,13 +1522,13 @@ async function exportarProjecaoDetalhada() {
       { wch: 16 },
     ];
     // aplicar format code Excel nas colunas numéricas monetárias
-    // Colunas H..P (índices 7..15) = Valor Gestão, Realizado, Planejado Total, Planejado Futuro,
-    //   Extrapolação, Flows Pendentes, Tendência, Δ vs Planejado, Ritmo Histórico
+    // Colunas H..Q (índices 7..16) = Valor Planejado, Realizado, Saldo, Planejado Total,
+    //   Planejado Futuro, Extrapolação, Flows Pendentes, Tendência, Δ vs Planejado, Ritmo Histórico
     const FMT_NUM = '#,##0.00;-#,##0.00;"-"'; // SheetJS interpreta e converte pro locale do Excel do usuário
     const range1 = XLSX.utils.decode_range(ws1['!ref']);
     for (let R = range1.s.r + 1; R <= range1.e.r; R++) {
       // pula header
-      for (let C = 7; C <= 15; C++) {
+      for (let C = 7; C <= 16; C++) {
         const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
         const cell = ws1[cellRef];
         if (cell && typeof cell.v === 'number') {
@@ -1470,6 +1612,11 @@ function openProjDrill(servico, insumo) {
   const categories = extended.map((m) => formatMonthLabel(m));
   const planData = planAcum.map((p) => p.valor);
   const tendData = tendAcum.map((p) => p.valor);
+  const saldoPlanejado = proj.planejado_total - proj.realizado;
+  const extrapolacaoTexto =
+    Math.abs(proj.extrapolacao) < 0.005
+      ? '—'
+      : `${proj.extrapolacao > 0 ? '+' : ''}${fmtR$(proj.extrapolacao)}`;
 
   const findIdx = (m) => {
     let i = 0;
@@ -1485,25 +1632,39 @@ function openProjDrill(servico, insumo) {
     <h2>🔮 Projeção · ${escHtml(titulo)}</h2>
     <div class="meta">${escHtml(subtitulo)} · Grupo: <strong>${escHtml(proj.grupo)}</strong> ${grupoExtrapola(proj.grupo) ? '<span class="badge purple">extrapola</span>' : '<span class="badge gray">não extrapola</span>'}</div>
     <div class="kpis kpi-2col projection-modal-kpis">
-      <div class="kpi kpi-wide">
-        <div class="label">📊 Planejado vs Realizado</div>
-        <div class="value">${fmtR$(proj.planejado_total)}</div>
-        <div class="sub">Planejado Total · até ${proj.ultimo_mes_planejado ? formatMonthLabel(proj.ultimo_mes_planejado) : '-'}</div>
+      <div class="kpi kpi-wide projection-modal-card">
+        <h3 class="projection-modal-card-title">📊 Planejado</h3>
+        <div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Planejado Total</div>
+          <strong class="projection-modal-metric-value">${fmtR$(proj.planejado_total)}</strong>
+        </div>
+        <div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Realizado</div>
+          <strong class="projection-modal-metric-value">${fmtR$(proj.realizado)}</strong>
+        </div>
         <hr class="border-top-soft projection-modal-divider">
-        <div>
-          <div class="section-label">Realizado (até ${formatMonthLabel(dataCorte)})</div>
-          <div class="kpi-value-md projection-modal-kpi-value">${fmtR$(proj.realizado)}</div>
+        <div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Saldo</div>
+          <strong class="projection-modal-metric-value">${fmtR$(saldoPlanejado)}</strong>
         </div>
       </div>
-      <div class="kpi kpi-wide ${proj.diff > 0 ? 'red' : proj.diff < 0 ? 'green' : ''}">
-        <div class="label">🔮 Extrapolação</div>
-        <div class="value">${proj.extrapolacao > 0 ? '+' + fmtR$(proj.extrapolacao) : '—'}</div>
-        <div class="sub">${proj.meses_gap > 0 ? `${proj.meses_gap} meses × R$${fmt(proj.ritmo_historico, 0)}/m` : 'sem gap'}</div>
+      <div class="kpi kpi-wide projection-modal-card ${proj.diff > 0 ? 'red' : proj.diff < 0 ? 'green' : ''}">
+        <h3 class="projection-modal-card-title">🔮 Extrapolação</h3>
+        <div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Saldo</div>
+          <strong class="projection-modal-metric-value">${fmtR$(saldoPlanejado)}</strong>
+        </div>
+        <div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Extrapolação</div>
+          <div class="projection-modal-extrapolation-line">
+            <strong class="projection-modal-metric-value">${extrapolacaoTexto}</strong>
+            <span class="projection-modal-calculation">- ${proj.meses_gap > 0 ? `${proj.meses_gap} meses × R$ ${fmt(proj.ritmo_historico, 0)}/m` : 'Sem meses adicionais'}</span>
+          </div>
+        </div>
         <hr class="border-top-soft projection-modal-divider">
-        <div>
-          <div class="section-label">Tendência Final</div>
-          <div class="kpi-value-md projection-modal-kpi-value">${fmtR$(proj.tendencia)}</div>
-          <div class="sub">Δ ${proj.diff >= 0 ? '+' : ''}${fmtR$(proj.diff)}</div>
+        <div class="projection-modal-metric projection-modal-metric--total">
+          <div class="projection-modal-metric-label">Tendência Final</div>
+          <strong class="projection-modal-metric-value">${fmtR$(proj.tendencia)}</strong>
         </div>
       </div>
     </div>
@@ -1576,7 +1737,7 @@ function openProjDrill(servico, insumo) {
       enabled: true,
       shared: true,
       theme: document.body.classList.contains('dark') ? 'dark' : 'light',
-      y: { formatter: (val) => fmtR$(val) },
+      custom: createProjectionCurveTooltip(categories, planData, tendData),
     },
     legend: {
       show: true,
@@ -1840,6 +2001,7 @@ function renderFlowsRefletidosSection(servico, insumo) {
 export function createProjectionView({
   runtime,
   loadXlsx,
+  storage,
   feedback,
   modals,
   viewStates,
@@ -1849,7 +2011,6 @@ export function createProjectionView({
   projectionControl,
 }) {
   reportNonFatalError = runtime.reportNonFatalError;
-  uiCriarKpi = runtime.createKpi;
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
   getProjRawObraAtiva = runtime.getActiveProjection;
@@ -1861,6 +2022,7 @@ export function createProjectionView({
   APP_STATE = state;
   renderAderenciaProj = overview.renderAderenciaProj;
   renderVisao = overview.renderVisao;
+  SafeStorage = storage;
   acharUltimaGestaoCronologica = projectController.findLatestManagement;
   getProjectionControlState = projectionControl.getState;
   const api = {
@@ -1889,8 +2051,12 @@ export function createProjectionView({
   [...sharedParameterIds, 'projSearch', 'projFilterStatus', 'projFilterGrupo'].forEach((id) => {
     const element = document.getElementById(id);
     if (!element) return;
-    const handler = () => {
+    const handler = (event) => {
+      if (id === 'projTolerancia' && event.type === 'change') {
+        normalizeToleranciaInput(element);
+      }
       try {
+        if (id === 'projDataFim') saveDataFim(element.value);
         renderProjecao();
       } catch (error) {
         reportNonFatalError('Projeção/renderizar após filtro', error);
@@ -1904,6 +2070,8 @@ export function createProjectionView({
     };
     element.addEventListener('input', handler);
     element.addEventListener('change', handler);
+    if (id === 'projTolerancia')
+      element.addEventListener('blur', () => normalizeToleranciaInput(element));
   });
 
   bindSortableHeaders(

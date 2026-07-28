@@ -45,7 +45,6 @@ let setInputOptions;
 let buildDatalist;
 let applyManuals;
 let loadClassifications;
-let updateEditCount;
 let requireAdmin;
 
 // ============================================================
@@ -160,7 +159,6 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
       debouncedRender();
       renderUploadsCentral();
       renderSourcesHeaders();
-      updateEditCount();
       authToast('✅ ' + result + ' · 📦 arquivado e sincronizado', 'ok', 3500);
     } catch (err) {
       console.error(err);
@@ -539,7 +537,6 @@ async function _processExcelSheets(workbook, mapping, file) {
   debouncedRender();
   renderUploadsCentral();
   renderSourcesHeaders();
-  updateEditCount();
   _renderExcelProgress(null);
 
   // 3) Toast de resumo
@@ -1194,10 +1191,15 @@ async function excluirUpload(uploadId, kind) {
 
 function renderSourcesHeaders() {
   document.querySelectorAll('.sources-header').forEach((el) => {
-    const kinds = (el.dataset.sources || '')
+    const configuredKinds = (el.dataset.sources || '')
       .split(',')
       .map((k) => k.trim())
       .filter(Boolean);
+    const headKinds = (el.dataset.headSources || '')
+      .split(',')
+      .map((k) => k.trim())
+      .filter(Boolean);
+    const kinds = [...headKinds, ...configuredKinds];
     const parts = kinds.map((k) => {
       const meta = UPLOAD_META[k];
       const last = APP_STATE.uploads[k];
@@ -1272,7 +1274,6 @@ export function createUploadView({
   buildDatalist = flowEditor.buildDatalist;
   applyManuals = flowEditor.applyManuals;
   loadClassifications = flowEditor.loadClassifications;
-  updateEditCount = flowEditor.updateEditCount;
   return Object.freeze({
     renderUploadsCentral,
     renderSourcesHeaders,

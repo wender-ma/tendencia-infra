@@ -369,11 +369,6 @@ function syncAllViewsFromFlows() {
   } catch (e) {
     reportNonFatalError('Flows/renderizar agregados', e);
   }
-  try {
-    if (typeof updateEditCount === 'function') updateEditCount();
-  } catch (e) {
-    reportNonFatalError('Flows/atualizar contador', e);
-  }
 }
 
 function onClassifChange(sel) {
@@ -415,25 +410,6 @@ function onClassifChange(sel) {
     // marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
   }
-}
-
-function updateEditCount() {
-  const map = readClassificationMap();
-  const n = Object.keys(map).length;
-  const m = loadManuals().length;
-  const el = document.getElementById('editCount');
-  const statusBar = document.getElementById('editStatusBar');
-  if (!el || !statusBar) return;
-  const parts = [];
-  if (n > 0) parts.push(`<span class="badge purple">✏️ ${n} editado(s)</span>`);
-  if (m > 0) parts.push(`<span class="badge-manual">✋ ${m} manual(is)</span>`);
-  statusBar.classList.toggle('is-hidden', parts.length === 0);
-  replaceWithParsedMarkup(
-    el,
-    parts.length
-      ? parts.join(' ') + ' <span class="flow-edit-reminder">— não esqueça de exportar</span>'
-      : '',
-  );
 }
 
 // Helper: re-renderiza só os agregados da aba flows (cards e gráficos), preservando a tabela
@@ -1391,7 +1367,6 @@ export function createFlowEditor({
     ttRow,
     ttDiv,
     syncAllViewsFromFlows,
-    updateEditCount,
     renderFlowsAggregates,
     msMatches,
     msResetAll,

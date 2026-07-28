@@ -412,6 +412,7 @@ Promise.resolve()
     ui.projection = createProjectionView({
       runtime: dashboardRuntime,
       loadXlsx: ensureXlsx,
+      storage: storageService,
       feedback: feedbackService,
       modals: modalService,
       viewStates: viewStateService,
@@ -481,7 +482,6 @@ Promise.resolve()
       buildDatalist: () => ui.flowEditor.buildDatalist(),
       applyManuals: () => ui.flowEditor.applyManuals(),
       loadClassifications: () => ui.flowEditor.loadClassifications(),
-      updateEditCount: () => ui.flowEditor.updateEditCount(),
       restoreFilters: () => ui.details.restaurarFiltros(),
       toast: (...args) => feedbackService.toast(...args),
       reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),

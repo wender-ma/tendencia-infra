@@ -1,5 +1,3 @@
-<div class="sources-header" id="srcHeader_projecao" data-sources="gestoes,tendencia"></div>
-
   <div class="card">
     <h2>⚙️ Parâmetros da Projeção</h2>
     <div class="projection-settings-grid">
@@ -9,9 +7,9 @@
         <div class="field-help">Último mês planejado no CSV: <span id="projUltimoMes"></span></div>
       </div>
       <div>
-        <label for="projDataCorte" class="field-label">✂️ Data de corte (hoje)</label>
-        <input type="month" id="projDataCorte" class="field-control">
-        <div class="field-help">Antes = realizado · depois = futuro planejado</div>
+        <label for="projDataCorte" class="field-label">✂️ Data de corte (mês atual)</label>
+        <input type="month" id="projDataCorte" class="field-control" readonly aria-readonly="true" disabled>
+        <div class="field-help">Atualizada automaticamente · antes = realizado · depois = futuro planejado</div>
       </div>
       <div>
         <label for="projMetodo" class="field-label">📊 Janela do ritmo histórico</label>
@@ -24,16 +22,9 @@
       </div>
       <div>
         <label for="projTolerancia" class="field-label">🎯 Tolerância (R$)</label>
-        <input type="number" id="projTolerancia" value="10000" step="1000" class="field-control">
+        <input type="text" id="projTolerancia" value="10.000,00" inputmode="decimal" autocomplete="off" class="field-control">
         <div class="field-help">Abaixo dessa diferença = "no esperado"</div>
       </div>
-    </div>
-    <div class="projection-note">
-      💡 <strong>Como funciona a projeção:</strong> Mantemos o seu planejado já feito como referência. Se a obra terminar <strong>depois</strong> do último mês planejado de um serviço, extrapolamos:
-      <ul>
-        <li><strong>Custos Indiretos</strong> → extrapola com o ritmo histórico (obra ativa = custos fixos contínuos)</li>
-        <li><strong>Custos Diretos / Obras Civis / Outros</strong> → não extrapola (contratos fechados; empreiteiro absorve atrasos)</li>
-      </ul>
     </div>
   </div>
 
@@ -51,15 +42,9 @@
   </div>
 
   <div class="card">
-    <h2>🔍 Projeção Detalhada
-      <span class="panel-actions">
-        <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
-        <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
-        <button class="btn-sm compact" data-click-action="exportarProjecaoDetalhada" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
-        <span class="hint edit-count">clique em uma linha para ver a curva individual</span>
-      </span>
-    </h2>
-    <div class="toolbar">
+    <div class="projection-detail-toolbar">
+      <h2 class="projection-detail-title">🔍 Projeção Detalhada</h2>
+      <div class="toolbar projection-detail-filters">
       <input type="search" id="projSearch" aria-label="Buscar na projeção" placeholder="🔍 Buscar por descrição ou código...">
       <select id="projFilterStatus" aria-label="Filtrar projeção por status">
         <option value="">Todos os status</option>
@@ -73,6 +58,12 @@
         <option value="">Todos os grupos</option>
       </select>
       <span class="toolbar-count" id="projCount"></span>
+      </div>
+      <div class="panel-actions projection-detail-actions">
+        <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
+        <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
+        <button class="btn-sm compact" data-click-action="exportarProjecaoDetalhada" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
+      </div>
     </div>
     <div class="table-wrap projection-table">
       <table>
@@ -80,17 +71,18 @@
           <tr>
             <th class="table-col-24"></th>
             <th class="table-col-min-240" data-sort-proj="label" aria-sort="none">Grupo / Serviço / Insumo</th>
-            <th class="num table-col-130" data-sort-proj="valor_gestao" aria-sort="none" title="Total da última gestão fechada (do HISTORICO)">Valor Gestão</th>
+            <th class="num table-col-130" data-sort-proj="valor_gestao" aria-sort="none" title="Total planejado da última gestão fechada (HISTORICO)">Valor Planejado</th>
             <th class="num table-col-120" data-sort-proj="realizado" aria-sort="none">Realizado</th>
+            <th class="num table-col-120" data-sort-proj="saldo" aria-sort="none">Saldo</th>
             <th class="num table-col-120" data-sort-proj="extrapolacao" aria-sort="none">Extrapolação</th>
             <th class="num table-col-130" data-sort-proj="tendencia" aria-sort="none">Tendência</th>
-            <th class="table-col-170">Status / Ação</th>
+            <th class="table-col-120">Status</th>
           </tr>
         </thead>
         <tbody id="projTbody"></tbody>
       </table>
     </div>
     <div class="table-note">
-      💡 <strong>Valor Gestão</strong>: total da última gestão fechada (HISTORICO) · <strong>Realizado</strong>: soma até a data de corte · <strong>Extrapolação</strong>: valor adicional projetado quando obra ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos) · <strong>Tendência</strong>: Valor Gestão + Extrapolação · clique em qualquer linha para ver a curva individual
+      💡 <strong>Valor Planejado</strong>: total da última gestão fechada (HISTORICO) · <strong>Realizado</strong>: soma até a data de corte · <strong>Saldo</strong>: Valor Planejado − Realizado · <strong>Extrapolação</strong>: valor adicional projetado quando a obra ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos) · <strong>Tendência</strong>: Valor Planejado + Extrapolação
     </div>
   </div>

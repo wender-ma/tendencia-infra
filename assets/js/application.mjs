@@ -16,7 +16,6 @@ export function createApplication({
   buildDatalist = () => {},
   applyManuals = () => {},
   loadClassifications = () => 0,
-  updateEditCount = () => {},
   restoreFilters = () => {},
   toast = () => {},
   reportError = () => {},
@@ -73,7 +72,6 @@ export function createApplication({
     }
 
     dashboardRuntime.renderAll();
-    updateEditCount();
     dashboardShell.restaurarAbaAtiva();
     restoreFilters();
     performanceMonitor.completeBoot();

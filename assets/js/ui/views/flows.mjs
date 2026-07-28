@@ -8,8 +8,6 @@ const STORAGE_KEY = STORAGE_KEYS.classifications;
 
 let runAsyncSafely;
 let getFlowsObraAtiva;
-let paginateRows;
-let renderPaginationControls;
 let SafeStorage;
 let renderDashboardState;
 let supaPatchClassification;
@@ -20,7 +18,6 @@ let deleteManual;
 let msUpdateBtn;
 let msResetAll;
 let msMatches;
-let MS_EXCLUDED;
 let MASS_SELECTED;
 let renderInsumoSelect;
 let syncSelectAllHeader;
@@ -100,8 +97,6 @@ function renderFlows() {
     document.getElementById('flowsDescartados')?.replaceChildren();
     const flowCount = document.getElementById('flowCount');
     if (flowCount) flowCount.textContent = '0 aditivos';
-    const emptyPage = paginateRows('flows', [], 'empty');
-    renderPaginationControls('flowPagination', 'flows', emptyPage, renderFlowTable);
     return;
   }
   const total = getFlowsObraAtiva().length;
@@ -336,23 +331,7 @@ function renderFlowTable() {
     Orçamento: 'blue',
     Obra: 'amber',
   };
-  const flowPage = paginateRows(
-    'flows',
-    rows,
-    JSON.stringify([
-      q,
-      fdi,
-      fdf,
-      Number.isNaN(fvmin) ? '' : fvmin,
-      Number.isNaN(fvmax) ? '' : fvmax,
-      APP_STATE.sort.keyF,
-      APP_STATE.sort.dirF,
-      APP_STATE.obra.ativa,
-      ...Object.keys(MS_EXCLUDED)
-        .sort()
-        .map((key) => `${key}:${[...MS_EXCLUDED[key]].sort().join(',')}`),
-    ]),
-  );
+  const flowPage = { items: rows, start: rows.length ? 1 : 0, end: rows.length };
 
   replaceWithParsedMarkup(
     document.getElementById('flowTbody'),
@@ -397,13 +376,6 @@ function renderFlowTable() {
       })
       .join(''),
   );
-  const refletidos = rows.filter((r) => (r.refletido_status || '') === 'sim').length;
-  const naorefl = rows.filter((r) => (r.refletido_status || '') === 'nao').length;
-  const flowCount = document.getElementById('flowCount');
-  if (flowCount) {
-    flowCount.textContent = `${rows.length} aditivos · exibindo ${flowPage.start}–${flowPage.end} · ✅ ${refletidos} · ❌ ${naorefl} · Σ ${fmtR$(rows.reduce((s, f) => s + (f.custo_flowmaster || 0), 0))}`;
-  }
-  renderPaginationControls('flowPagination', 'flows', flowPage, renderFlowTable);
   updateSortHeaderState(
     'th[data-sort-flow]',
     'data-sort-flow',
@@ -456,7 +428,6 @@ function onRefletidoChange(sel) {
 
 export function createFlowsView({
   runtime,
-  pagination,
   storage,
   viewStates,
   dashboardRepository,
@@ -467,8 +438,6 @@ export function createFlowsView({
 }) {
   runAsyncSafely = runtime.runAsyncSafely;
   getFlowsObraAtiva = runtime.getActiveFlows;
-  paginateRows = pagination.paginate;
-  renderPaginationControls = pagination.renderControls;
   SafeStorage = storage;
   renderDashboardState = viewStates.render;
   supaPatchClassification = dashboardRepository.patchClassification;
@@ -479,7 +448,6 @@ export function createFlowsView({
   msUpdateBtn = flowEditor.msUpdateBtn;
   msResetAll = flowEditor.msResetAll;
   msMatches = flowEditor.msMatches;
-  MS_EXCLUDED = flowEditor.getExcludedFilters();
   MASS_SELECTED = flowEditor.getMassSelection();
   renderInsumoSelect = flowEditor.renderInsumoSelect;
   syncSelectAllHeader = flowEditor.syncSelectAllHeader;

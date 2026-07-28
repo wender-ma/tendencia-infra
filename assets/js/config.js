@@ -43,6 +43,7 @@ export const STORAGE_KEYS = Object.freeze({
   classifications: 'jzurique_flow_classifications_v1',
   manuals: 'jzurique_flow_manuals_v1',
   projectionControl: 'jzurique_proj_ctrl_v1',
+  projectionSettings: 'jzurique_proj_settings_v1',
   activeProject: 'jzurique_obra_ativa',
   evolution: 'jzurique_evol_global',
   cardMode: 'jzurique_card3_modo',

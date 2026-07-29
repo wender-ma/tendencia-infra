@@ -118,10 +118,14 @@ select pg_temp.assert_true(
 
 insert into public.obras (codigo_obra, nome, origem)
 values ('OBRA-DELETE', 'Obra descartavel', 'manual');
-insert into public.flow_classifications values ('OBRA-DELETE', 'CLASS-1');
-insert into public.flow_manuals values ('OBRA-DELETE', 'MANUAL-1');
-insert into public.projecao_config values ('OBRA-DELETE');
-insert into public.projecao_movimentacoes values ('MOV-DELETE', 'OBRA-DELETE');
+insert into public.flow_classifications (codigo_obra, n_alteracao)
+values ('OBRA-DELETE', 'CLASS-1');
+insert into public.flow_manuals (codigo_obra, n_alteracao)
+values ('OBRA-DELETE', 'MANUAL-1');
+insert into public.projecao_config (codigo_obra)
+values ('OBRA-DELETE');
+insert into public.projecao_movimentacoes (id, codigo_obra)
+values ('MOV-DELETE', 'OBRA-DELETE');
 insert into public.dashboard_config (chave, valor) values
   ('OBRA-DELETE:dados_tendencia', '{}'),
   ('header_title', 'Global preservado');

@@ -88,9 +88,17 @@ const assert = require('assert');
         unscoped_row_count: 1,
       },
     ],
+    releaseHardening: {
+      register_rpc_exists: true,
+      rollback_rpc_exists: true,
+      required_policy_count: 4,
+      anon_select_column_count: 59,
+      anon_sensitive_columns_blocked: true,
+    },
   });
 
   assert.strictEqual(summary.dashboard_datasets_deployment.complete, true);
+  assert.strictEqual(summary.release_hardening_deployment.complete, true);
   assert.strictEqual(summary.data_inventory.legacy_dataset_key_count, 2);
   assert.strictEqual(summary.data_inventory.active_snapshot_count, 2);
   assert.strictEqual(summary.data_inventory.storage_object_count, 2);
@@ -122,12 +130,20 @@ const assert = require('assert');
     legacyRows: [],
     snapshotRows: [],
     storageRows: [],
+    releaseHardening: {
+      register_rpc_exists: false,
+      rollback_rpc_exists: false,
+      required_policy_count: 0,
+      anon_select_column_count: 74,
+      anon_sensitive_columns_blocked: false,
+    },
   });
   assert.strictEqual(incompleteSummary.dashboard_datasets_deployment.dashboard_config_exists, true);
   assert.strictEqual(incompleteSummary.dashboard_datasets_deployment.table_exists, false);
   assert.strictEqual(incompleteSummary.dashboard_datasets_deployment.fail_rpc_exists, false);
   assert.strictEqual(incompleteSummary.dashboard_datasets_deployment.private_bucket_exists, false);
   assert.strictEqual(incompleteSummary.dashboard_datasets_deployment.complete, false);
+  assert.strictEqual(incompleteSummary.release_hardening_deployment.complete, false);
 
   const source = require('fs').readFileSync(
     require('path').join(__dirname, 'audit_supabase_inventory.mjs'),

@@ -23,6 +23,7 @@ export function friendlySignUpError(error) {
 
 export function createAuthUi({
   authService,
+  allowSelfSignup = false,
   root = document,
   locationRef = window.location,
   modalService,
@@ -199,7 +200,7 @@ export function createAuthUi({
   }
 
   function switchLoginTab(mode) {
-    const login = mode === 'login';
+    const login = mode === 'login' || !allowSelfSignup;
     const loginTab = root.getElementById('loginTabLogin');
     const signupTab = root.getElementById('loginTabSignup');
     loginTab.classList.toggle('active', login);
@@ -210,6 +211,13 @@ export function createAuthUi({
     signupTab.tabIndex = login ? -1 : 0;
     root.getElementById('loginPanelLogin').hidden = !login;
     root.getElementById('loginPanelSignup').hidden = login;
+  }
+
+  function syncSignupAvailability() {
+    const signupTab = root.getElementById('loginTabSignup');
+    const signupPanel = root.getElementById('loginPanelSignup');
+    if (signupTab) signupTab.hidden = !allowSelfSignup;
+    if (signupPanel && !allowSelfSignup) signupPanel.hidden = true;
   }
 
   function openLoginModal(mode = 'login') {
@@ -276,6 +284,14 @@ export function createAuthUi({
   }
 
   async function doSignUpEmail() {
+    if (!allowSelfSignup) {
+      toast(
+        'Criação pública de contas desativada. Solicite acesso ao administrador.',
+        'warn',
+        4500,
+      );
+      return;
+    }
     const form = root.getElementById('signupEmailForm');
     const email = root.getElementById('signupEmail').value.trim().toLowerCase();
     const password = root.getElementById('signupSenha').value;
@@ -291,8 +307,8 @@ export function createAuthUi({
       errorElement.textContent = 'Email inválido.';
       return;
     }
-    if (password.length < 6) {
-      errorElement.textContent = 'Senha precisa ter no mínimo 6 caracteres.';
+    if (password.length < 12) {
+      errorElement.textContent = 'Senha precisa ter no mínimo 12 caracteres.';
       return;
     }
     if (password !== confirmation) {
@@ -341,6 +357,8 @@ export function createAuthUi({
     const { error } = await authService.signOut();
     if (error) toast(`Erro ao sair: ${error.message}`, 'err');
   }
+
+  syncSignupAvailability();
 
   return Object.freeze({
     closeLoginModal,

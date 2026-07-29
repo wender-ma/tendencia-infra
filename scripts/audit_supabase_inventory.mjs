@@ -46,6 +46,107 @@ export const READ_ONLY_QUERIES = Object.freeze({
           and policy.policyname like 'dashboard_datasets_storage_%'
       ) as storage_policy_count
   `,
+  releaseHardening: `
+    with public_contract(table_name, columns) as (
+      values
+        ('obras', array['codigo_obra', 'nome', 'ativa']::text[]),
+        (
+          'flow_classifications',
+          array[
+            'codigo_obra', 'n_alteracao', 'insumo_planejamento',
+            'insumo_remanejamento', 'custo_flowmaster', 'refletido_status'
+          ]::text[]
+        ),
+        (
+          'flow_manuals',
+          array[
+            'codigo_obra', 'n_alteracao', 'n_adt', 'dep', 'descricao', 'data_br',
+            'data', 'aprovador_dep', 'aprovador', 'solicitante_dep', 'solicitante',
+            'custo_flowmaster', 'custo_planejamento', 'motivo', 'justificativa',
+            'insumo_planejamento', 'insumo_remanejamento', 'obs'
+          ]::text[]
+        ),
+        (
+          'projecao_config',
+          array[
+            'codigo_obra', 'insumo_controlado', 'saldo_inicial', 'data_ref',
+            'locked_saldo', 'locked_data', 'locked_insumo'
+          ]::text[]
+        ),
+        (
+          'projecao_movimentacoes',
+          array[
+            'id', 'codigo_obra', 'tipo', 'data', 'data_br', 'origem', 'destino',
+            'descricao', 'justificativa', 'responsavel', 'valor', 'created_at'
+          ]::text[]
+        ),
+        ('dashboard_config', array['chave', 'valor']::text[]),
+        (
+          'dashboard_datasets',
+          array[
+            'id', 'codigo_obra', 'tipo', 'versao', 'storage_path', 'sha256',
+            'linhas', 'bytes', 'status', 'created_at', 'activated_at'
+          ]::text[]
+        )
+    ),
+    expected_columns as (
+      select table_name, unnest(columns) as column_name
+      from public_contract
+    )
+    select
+      to_regprocedure('public.admin_register_upload_projects(jsonb)') is not null
+        as register_rpc_exists,
+      to_regprocedure('public.admin_rollback_upload_projects(text[])') is not null
+        as rollback_rpc_exists,
+      (
+        select count(*)::integer
+        from pg_policies
+        where schemaname = 'public'
+          and (
+            (tablename = 'obras' and policyname in (
+              'obras_read_anon_active',
+              'obras_read_authenticated'
+            ))
+            or (
+              tablename = 'dashboard_config'
+              and policyname in (
+                'dashboard_config_read_anon_safe',
+                'dashboard_config_read_authenticated'
+              )
+            )
+          )
+      ) as required_policy_count,
+      (
+        select count(*)::integer
+        from expected_columns expected
+        where has_column_privilege(
+          'anon',
+          format('public.%I', expected.table_name),
+          expected.column_name,
+          'SELECT'
+        )
+      ) as anon_select_column_count,
+      not exists (
+        select 1
+        from information_schema.columns available
+        where available.table_schema = 'public'
+          and available.table_name in (
+            select table_name from public_contract
+          )
+          and not exists (
+            select 1
+            from expected_columns expected
+            where expected.table_name = available.table_name
+              and expected.column_name = available.column_name
+          )
+          and has_column_privilege(
+            'anon',
+            format('public.%I', available.table_name),
+            available.column_name,
+            'SELECT'
+          )
+      ) as anon_sensitive_columns_blocked
+  `,
   legacy: `
     select
       case
@@ -276,6 +377,7 @@ export function buildSummary({
   snapshotRows,
   storageRows,
   operationalRows = [],
+  releaseHardening = {},
 }) {
   const legacyDatasets = legacyRows.map((row) => ({
     scope: row.scope,
@@ -332,6 +434,19 @@ export function buildSummary({
     last_activity_at: row.last_activity_at || null,
     unscoped_row_count: toNumber(row.unscoped_row_count),
   }));
+  const normalizedReleaseHardening = {
+    register_rpc_exists: toBoolean(releaseHardening.register_rpc_exists),
+    rollback_rpc_exists: toBoolean(releaseHardening.rollback_rpc_exists),
+    required_policy_count: toNumber(releaseHardening.required_policy_count),
+    anon_select_column_count: toNumber(releaseHardening.anon_select_column_count),
+    anon_sensitive_columns_blocked: toBoolean(releaseHardening.anon_sensitive_columns_blocked),
+  };
+  normalizedReleaseHardening.complete =
+    normalizedReleaseHardening.register_rpc_exists &&
+    normalizedReleaseHardening.rollback_rpc_exists &&
+    normalizedReleaseHardening.required_policy_count === 4 &&
+    normalizedReleaseHardening.anon_select_column_count === 59 &&
+    normalizedReleaseHardening.anon_sensitive_columns_blocked;
 
   return {
     audited_at: new Date().toISOString(),
@@ -343,6 +458,7 @@ export function buildSummary({
       region: project.region,
     },
     dashboard_datasets_deployment: normalizedDeployment,
+    release_hardening_deployment: normalizedReleaseHardening,
     data_inventory: {
       ...inventory,
       backfill_review_required: inventory.legacy_dataset_key_count > 0,
@@ -401,6 +517,11 @@ export async function auditSupabaseInventory({
   const operationalRows = deployment.dashboard_config_exists
     ? await runReadOnlyQuery(projectRef, READ_ONLY_QUERIES.operational, accessToken)
     : [];
+  const releaseHardeningRows = await runReadOnlyQuery(
+    projectRef,
+    READ_ONLY_QUERIES.releaseHardening,
+    accessToken,
+  );
 
   return buildSummary({
     project,
@@ -409,6 +530,7 @@ export async function auditSupabaseInventory({
     snapshotRows,
     storageRows,
     operationalRows,
+    releaseHardening: releaseHardeningRows[0] || {},
   });
 }
 

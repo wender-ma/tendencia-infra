@@ -5,6 +5,7 @@ const previewPort = Number(process.env.PLAYWRIGHT_PORT || 4174);
 module.exports = defineConfig({
   testDir: './scripts/browser',
   timeout: 30_000,
+  workers: process.env.CI ? 1 : undefined,
   use: {
     baseURL: `http://127.0.0.1:${previewPort}`,
     viewport: { width: 1440, height: 900 },
@@ -33,6 +34,7 @@ module.exports = defineConfig({
       VITE_SUPABASE_URL: 'https://test.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'test-anon-public-key',
       VITE_DATASET_PERSISTENCE_MODE: 'dual',
+      VITE_ALLOW_SELF_SIGNUP: 'true',
     },
     url: `http://127.0.0.1:${previewPort}`,
     reuseExistingServer: false,

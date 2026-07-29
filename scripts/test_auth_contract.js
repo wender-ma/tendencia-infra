@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, '..');
 const authService = fs.readFileSync(path.join(root, 'assets/js/services/auth-service.js'), 'utf8');
 const authUi = fs.readFileSync(path.join(root, 'assets/js/ui/auth-ui.mjs'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
+const config = fs.readFileSync(path.join(root, 'assets/js/config.js'), 'utf8');
+const dialogs = fs.readFileSync(path.join(root, 'assets/views/dialogs.html'), 'utf8');
 const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
 
 function assert(condition, message) {
@@ -74,5 +76,14 @@ assert(!authUi.includes('installLegacyAuthUi'), 'Interface de auth voltou ao esc
 assert(bootstrap.includes('createAuthService({'), 'Bootstrap nao cria o servico de autenticacao');
 assert(bootstrap.includes('createAuthUiActions(authUi)'), 'Bootstrap não registra ações de auth');
 assert(bootstrap.includes('auth: authService'), 'Registro central de servicos nao expoe auth');
+assert(
+  config.includes("readEnvironment('VITE_ALLOW_SELF_SIGNUP', 'false')") &&
+    bootstrap.includes('allowSelfSignup: AUTH_CONFIG.allowSelfSignup'),
+  'autocadastro deve ficar desativado por padrao e ser configurado explicitamente',
+);
+assert(
+  authUi.includes('password.length < 12') && dialogs.includes('minlength="12"'),
+  'novas senhas devem exigir no minimo 12 caracteres',
+);
 
 console.log('Contrato de auth: sessao, whitelist e autorizacao separadas do legado OK');

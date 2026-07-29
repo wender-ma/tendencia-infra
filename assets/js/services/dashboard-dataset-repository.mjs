@@ -2,7 +2,7 @@ export const DASHBOARD_DATASET_BUCKET = 'dashboard-datasets';
 
 const TABLE = 'dashboard_datasets';
 const METADATA_COLUMNS =
-  'id,codigo_obra,tipo,versao,storage_path,sha256,linhas,bytes,status,upload_history_id,created_at,created_by,activated_at';
+  'id,codigo_obra,tipo,versao,storage_path,sha256,linhas,bytes,status,created_at,activated_at';
 
 export function isDatasetSchemaUnavailable(error) {
   const code = String(error?.code || '');

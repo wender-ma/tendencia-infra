@@ -11,6 +11,7 @@ const requestedDatasetPersistenceMode = readEnvironment(
   'VITE_DATASET_PERSISTENCE_MODE',
   'dual',
 ).toLowerCase();
+const allowSelfSignup = readEnvironment('VITE_ALLOW_SELF_SIGNUP', 'false').toLowerCase() === 'true';
 const datasetPersistenceMode = ['dual', 'snapshots'].includes(requestedDatasetPersistenceMode)
   ? requestedDatasetPersistenceMode
   : 'dual';
@@ -36,6 +37,10 @@ export const DATASET_PERSISTENCE_CONFIG = Object.freeze({
   mode: datasetPersistenceMode,
   configurationStatus:
     datasetPersistenceMode === requestedDatasetPersistenceMode ? 'ready' : 'invalid-mode',
+});
+
+export const AUTH_CONFIG = Object.freeze({
+  allowSelfSignup,
 });
 
 export const STORAGE_KEYS = Object.freeze({

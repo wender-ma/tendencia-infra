@@ -1,0 +1,32 @@
+name: Production database backup
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  encrypted-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create encrypted database backup
+        run: ./scripts/backup_database.sh
+        env:
+          SUPABASE_PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+          BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+      - name: Verify encrypted database backup
+        run: ./scripts/verify_database_backup.sh
+        env:
+          BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v7
+        with:
+          name: tendencia-production-database-${{ github.run_id }}
+          path: backups/database/*.dump.enc
+          retention-days: 14
+          if-no-files-found: error

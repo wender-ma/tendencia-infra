@@ -5,6 +5,7 @@
 backups/snapshots/
 backups/database/
 backups/backup.log
+backups/.backup-watch.lock
 node_modules/
 dist/
 playwright-report/

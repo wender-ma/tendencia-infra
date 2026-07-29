@@ -28,10 +28,7 @@ versionada nao estiver disponivel.
 Antes de publicar:
 
 ```bash
-npm run check
-npm run test:browser
-npm run test:lighthouse
-npm audit --audit-level=high
+npm run release:check
 ```
 
 `npm run check` executa lint, verificacao de formatacao, contratos e build. O teste
@@ -70,6 +67,10 @@ branch publicada. O template `config/env/.env.production.example` serve apenas c
 local e nao deve receber valores reais versionados.
 
 O deploy do frontend não aplica migrations nem altera o banco. Depois da publicação, confirme o carregamento, login, troca de obra e headers HTTP no domínio final.
+
+O CI valida a `main` e somente depois promove o mesmo SHA para a branch
+`production`. Na Vercel, configure **Settings > Git > Production Branch** como
+`production`; assim um commit com CI vermelho não vira deployment de produção.
 
 ### Falha de deploy por configuracao
 
@@ -127,6 +128,46 @@ globais, preserva Tendência por obra e adiciona `reset_global_dashboard_dataset
 Depois da execução, rode
 `supabase/tests/assert_global_upload_history.sql`; todos os campos do JSON
 retornado devem ser `true`.
+
+A migration `20260728235000_release_hardening.sql` vem por último. Ela mantém o
+painel público, mas expõe ao papel `anon` somente as colunas consumidas pela
+interface, oculta obras inativas e blobs legados, e publica as RPCs
+administrativas usadas pelo cadastro transacional de obras encontradas no Excel.
+Seu rollback pareado está em `supabase/rollback/`.
+Depois de aplicá-la, execute a auditoria somente leitura
+`supabase/audit/verify_release_hardening_deployment.sql` e exija
+`complete: true`.
+
+## Backup do banco de produção
+
+O snapshot de fonte não contém dados do Supabase. Para um backup lógico diário:
+
+1. copie `config/env/.env.production-database.example` para o equivalente
+   `.local`;
+2. em **Supabase > Connect**, copie a URI do **Session pooler** e substitua a
+   senha do banco;
+3. gere uma senha longa e exclusiva para `BACKUP_ENCRYPTION_PASSWORD`;
+4. execute `npm run backup:database` e `npm run backup:database:verify`;
+5. guarde a senha de criptografia em um gerenciador separado dos artefatos.
+
+No GitHub, cadastre `SUPABASE_PRODUCTION_DB_URL` e
+`BACKUP_ENCRYPTION_PASSWORD` em **Settings > Secrets and variables > Actions**.
+O workflow `production-backup.yml` roda diariamente, valida o catálogo do dump e
+retém cada artefato criptografado por 14 dias. Uma senha perdida torna os backups
+irrecuperáveis; uma senha exposta exige rotação e uma nova cadeia de backups.
+
+## Monitoramento
+
+`production-smoke.yml` consulta o domínio publicado a cada 30 minutos, valida
+HTML, asset principal, `robots.txt` e headers defensivos. Também pode ser iniciado
+manualmente em **Actions > Production smoke > Run workflow**. Falhas ficam
+visíveis no histórico do GitHub Actions; habilite as notificações de workflows
+do repositório para receber o alerta.
+
+Com o servidor local de produção aberto e dados reais, execute
+`npm run smoke:local-release`. O smoke percorre as abas públicas, troca de obra,
+alterna o tema, confirma que o autocadastro está oculto e rejeita erros de página
+ou rede sem imprimir conteúdo de negócio.
 
 Nunca use apenas o nome visual do projeto para escolher o alvo: confirme o project
 ref exibido por `npm run env:target`. Uma migration aplicada no projeto incorreto
@@ -367,9 +408,18 @@ frequentes do código.
 
 Para um dump de produção, mantenha a senha separada das credenciais de
 desenvolvimento: copie `config/env/.env.production-database.example` para
-`config/env/.env.production-database.local` e preencha
-`SUPABASE_PRODUCTION_DB_PASSWORD`. O arquivo local é ignorado pelo Git, pelos
-snapshots de código e por commits.
+`config/env/.env.production-database.local`, preencha a URI do Session pooler em
+`SUPABASE_PRODUCTION_DB_URL` e defina `BACKUP_ENCRYPTION_PASSWORD`. A senha do
+banco faz parte da URI; a senha de criptografia deve ser diferente. O arquivo
+local é ignorado pelo Git, pelos snapshots de código e por commits.
+
+## Cadastro de contas
+
+O frontend de produção oculta e bloqueia o autocadastro por padrão. Para impedir
+também chamadas diretas à API de autenticação, desative **Allow new users to sign
+up** em **Supabase > Authentication > Sign In / Providers > Email**. Login por
+senha e Google continuam disponíveis para contas existentes; a whitelist da
+aplicação segue definindo quem pode editar.
 
 ## Retenção de uploads
 

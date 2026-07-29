@@ -1,0 +1,23 @@
+name: Production smoke
+
+on:
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Check published application
+        run: node scripts/run_public_healthcheck.mjs
+        env:
+          PUBLIC_APP_URL: https://tendencia-infra.vercel.app/

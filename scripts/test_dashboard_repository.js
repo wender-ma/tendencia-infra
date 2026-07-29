@@ -129,7 +129,11 @@ class Query {
 
   const movements = await repository.loadMovements();
   assert.strictEqual(movements[0].created_at, '2026-07-21T12:00:00Z');
-  assert.strictEqual(movements[0].created_by, 'editor@example.com');
+  assert.strictEqual(movements[0].created_by, undefined);
+  const movementSelect = calls.find(
+    (call) => call.table === 'projecao_movimentacoes' && call.method === 'select',
+  );
+  assert(!movementSelect.args[0].includes('created_by'));
 
   await repository.loadDashboardConfig();
   const dualKeys = calls

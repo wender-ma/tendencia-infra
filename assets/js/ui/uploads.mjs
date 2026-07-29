@@ -637,20 +637,37 @@ function promptNewProjects(projects) {
 }
 
 async function registerDiscoveredProjects(projects) {
-  if (!projects.length) return [];
+  if (!projects.length) return { requestedCodes: [], createdCodes: [] };
   const rows = projects.map((project) => ({
     codigo_obra: project.codigo_obra,
     nome: project.nome || project.codigo_obra,
-    ativa: true,
-    origem: 'upload',
-    observacao: 'Cadastrada pelo upload global de Gestões + Flows',
   }));
-  const { data, error } = await SUPA.from('obras').insert(rows).select('*');
+  const { data, error } = await SUPA.rpc('admin_register_upload_projects', {
+    p_projects: rows,
+  });
   if (error) throw error;
   await carregarObras();
   renderObrasDropdown();
   projectUploadsLoadKey = '';
-  return data || rows;
+  return {
+    requestedCodes: data?.requested_codes || rows.map((project) => project.codigo_obra),
+    createdCodes: data?.created_codes || [],
+  };
+}
+
+async function rollbackDiscoveredProjects(codes) {
+  if (!codes.length) return { deletedCodes: [], skippedCodes: [] };
+  const { data, error } = await SUPA.rpc('admin_rollback_upload_projects', {
+    p_codes: codes,
+  });
+  if (error) throw error;
+  await carregarObras();
+  renderObrasDropdown();
+  projectUploadsLoadKey = '';
+  return {
+    deletedCodes: data?.deleted_codes || [],
+    skippedCodes: data?.skipped_codes || [],
+  };
 }
 
 // ============================================================
@@ -662,6 +679,9 @@ async function _processExcelSheets(workbook, mapping, file) {
   const groupId = _uuid4();
   const results = {};
   const memorySnapshot = captureInMemoryUploadState();
+  const projectCatalogSnapshot = APP_STATE.obra.obras;
+  let confirmedProjects = [];
+  let registeredProjectCodes = [];
 
   // 1) Processar todas as abas antes de iniciar qualquer escrita remota.
   const steps = [
@@ -677,34 +697,31 @@ async function _processExcelSheets(workbook, mapping, file) {
       .map((step) => [step.kind, _sheetToCSV(workbook, mapping[step.kind])]),
   );
 
-  try {
-    const discoveredProjects = discoverNewProjects(csvByKind);
-    if (discoveredProjects.length) {
-      _renderExcelProgress(
-        `🏗️ ${discoveredProjects.length} nova(s) obra(s) aguardando confirmação...`,
-      );
-      const confirmedProjects = await promptNewProjects(discoveredProjects);
-      if (!confirmedProjects) {
-        setUploadRuntimeState(selectedKinds, 'idle');
-        _renderExcelProgress(null);
-        renderUploadsCentral();
-        authToast('Upload cancelado. Nenhuma obra foi cadastrada.', 'warn', 3500);
-        return;
-      }
-      _renderExcelProgress('🏗️ Cadastrando novas obras...');
-      await registerDiscoveredProjects(confirmedProjects);
-      authToast(
-        `✅ ${confirmedProjects.length} obra(s) cadastrada(s). Continuando o upload...`,
-        'ok',
-        3500,
-      );
+  const discoveredProjects = discoverNewProjects(csvByKind);
+  if (discoveredProjects.length) {
+    _renderExcelProgress(
+      `🏗️ ${discoveredProjects.length} nova(s) obra(s) aguardando confirmação...`,
+    );
+    confirmedProjects = (await promptNewProjects(discoveredProjects)) || [];
+    if (!confirmedProjects.length) {
+      setUploadRuntimeState(selectedKinds, 'idle');
+      _renderExcelProgress(null);
+      renderUploadsCentral();
+      authToast('Upload cancelado. Nenhuma obra foi cadastrada.', 'warn', 3500);
+      return;
     }
-  } catch (error) {
-    setUploadRuntimeState(selectedKinds, 'failed', error.message || String(error));
-    _renderExcelProgress(null);
-    renderUploadsCentral();
-    authToast('❌ Não foi possível cadastrar as novas obras: ' + error.message, 'err', 7000);
-    return;
+
+    // Os parsers precisam reconhecer os novos codigos, mas o banco so e
+    // alterado depois que todas as abas passarem na validacao.
+    APP_STATE.obra.obras = [
+      ...projectCatalogSnapshot,
+      ...confirmedProjects.map((project) => ({
+        ...project,
+        ativa: true,
+        origem: 'upload',
+        hasActiveTendency: false,
+      })),
+    ];
   }
 
   for (const step of steps) {
@@ -773,6 +790,8 @@ async function _processExcelSheets(workbook, mapping, file) {
 
   const parseErrors = Object.entries(results).filter(([, value]) => value.error);
   if (parseErrors.length) {
+    APP_STATE.obra.obras = projectCatalogSnapshot;
+    renderObrasDropdown();
     restoreInMemoryUploadState(memorySnapshot);
     const summary = parseErrors.map(([kind, value]) => `${kind}: ${value.error}`).join(' · ');
     setUploadRuntimeState(selectedKinds, 'failed', summary);
@@ -794,6 +813,8 @@ async function _processExcelSheets(workbook, mapping, file) {
     .filter(([, value]) => value.ok)
     .map(([kind, value]) => ({ kind, linhas: value.linhas }));
   if (!processedItems.length) {
+    APP_STATE.obra.obras = projectCatalogSnapshot;
+    renderObrasDropdown();
     restoreInMemoryUploadState(memorySnapshot);
     setUploadRuntimeState(
       selectedKinds,
@@ -806,6 +827,11 @@ async function _processExcelSheets(workbook, mapping, file) {
   }
 
   try {
+    if (confirmedProjects.length) {
+      _renderExcelProgress('🏗️ Cadastrando novas obras validadas...');
+      const registration = await registerDiscoveredProjects(confirmedProjects);
+      registeredProjectCodes = registration.createdCodes;
+    }
     _renderExcelProgress('📤 Sincronizando arquivo, dados e histórico...');
     await commitPreparedUpload({
       file,
@@ -816,11 +842,37 @@ async function _processExcelSheets(workbook, mapping, file) {
     });
   } catch (error) {
     restoreInMemoryUploadState(memorySnapshot);
+    if (registeredProjectCodes.length) {
+      try {
+        const rollback = await rollbackDiscoveredProjects(registeredProjectCodes);
+        if (rollback.skippedCodes.length) {
+          authToast(
+            `⚠️ O upload falhou e ${rollback.skippedCodes.length} obra(s) não puderam ser desfeitas automaticamente.`,
+            'warn',
+            7000,
+          );
+        }
+      } catch (rollbackError) {
+        reportNonFatalError('Upload/desfazer cadastro de obras', rollbackError);
+        authToast(
+          '⚠️ O upload falhou e o cadastro das novas obras precisa ser revisado no Admin.',
+          'warn',
+          7000,
+        );
+      }
+    } else if (confirmedProjects.length) {
+      APP_STATE.obra.obras = projectCatalogSnapshot;
+      renderObrasDropdown();
+    }
     setUploadRuntimeState(selectedKinds, 'failed', error.message || String(error));
     _renderExcelProgress(null);
     renderUploadsCentral();
     authToast('❌ Upload da planilha não concluído: ' + error.message, 'err', 8000);
     return;
+  }
+
+  if (confirmedProjects.length) {
+    authToast(`✅ ${confirmedProjects.length} obra(s) confirmada(s) no cadastro.`, 'ok', 3500);
   }
 
   await Promise.all(
@@ -1040,6 +1092,32 @@ function renderUploadSummary(record, emptyText) {
     </div>`;
 }
 
+function refreshProjectTendencyUploadCards(projects) {
+  const root = document.getElementById('uploadsCentral');
+  if (!root) return;
+
+  const cards = [...root.querySelectorAll('.project-tendency-card')];
+  for (const project of projects) {
+    const code = String(project.codigo_obra || '').trim();
+    const card = cards.find((item) => item.dataset.project === code);
+    if (!card) continue;
+
+    const canEdit = authServiceCanEditProject(code);
+    const latest =
+      (canEdit && PROJECT_TENDENCY_UPLOADS[code]) ||
+      (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.tendencia : null);
+    replaceWithParsedMarkup(
+      card.querySelector('.project-tendency-upload-summary'),
+      renderUploadSummary(latest, 'Nenhuma Tendência enviada para esta obra.'),
+    );
+
+    const uploadButton = card.querySelector('[data-file-target]');
+    if (uploadButton) {
+      uploadButton.textContent = `📤 ${latest ? 'Substituir Tendência' : 'Enviar Tendência'}`;
+    }
+  }
+}
+
 async function refreshProjectTendencyUploads(projects) {
   if (!AUTH?.user || projectUploadsLoading) return;
   const codes = projects.map((project) => project.codigo_obra).filter(Boolean);
@@ -1052,7 +1130,7 @@ async function refreshProjectTendencyUploads(projects) {
     for (const code of codes) PROJECT_TENDENCY_UPLOADS[code] = latest[code] || null;
   } finally {
     projectUploadsLoading = false;
-    renderUploadsCentral();
+    refreshProjectTendencyUploadCards(projects);
   }
 }
 
@@ -1092,7 +1170,9 @@ function renderUploadsCentral() {
             ${code === APP_STATE.obra.ativa ? '<span class="upload-active-project">SELECIONADA</span>' : ''}
           </div>
           ${busy ? renderUploadRuntimeBlock('tendencia') : ''}
-          ${renderUploadSummary(latest, 'Nenhuma Tendência enviada para esta obra.')}
+          <div class="project-tendency-upload-summary">
+            ${renderUploadSummary(latest, 'Nenhuma Tendência enviada para esta obra.')}
+          </div>
           <div class="upload-card-actions">
             <button class="btn-sm primary" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_tendencia_${index}">
               📤 ${latest ? 'Substituir Tendência' : 'Enviar Tendência'}

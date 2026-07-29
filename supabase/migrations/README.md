@@ -1,6 +1,6 @@
 # Migrations do Supabase
 
-Este diretório contém apenas migrations incrementais revisadas. As cinco migrations foram validadas em sequência, com seus rollbacks, em PostgreSQL 15 descartável.
+Este diretório contém apenas migrations incrementais revisadas. As migrations são validadas em sequência, com seus rollbacks, em PostgreSQL 15 descartável.
 
 O baseline versionado em `../../docs/audits/supabase_metadata_2026-07-20.json` inclui relações, colunas, tipos, constraints, índices, grants, policies, funções, trigger, view e bucket. Ele não contém linhas das tabelas nem credenciais.
 
@@ -21,6 +21,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Pacote de snapshots em produção: completo após aplicação manual das migrations de reset e policies em 27/07/2026; inventário agregado em `../../docs/audits/supabase_production_inventory_2026-07-24.md`.
 - Backfill em produção: concluído em 27/07/2026; quatro snapshots ativos e quatro objetos privados foram verificados contra os quatro blobs legados, preservados temporariamente para rollback.
 - Frontend em produção: modo `snapshots` publicado e validado em 27/07/2026; janela mínima de estabilidade aberta até 03/08/2026.
+- Hardening de lançamento: limita o contrato público às colunas consumidas pelo painel, oculta obras inativas e blobs legados, e adiciona cadastro transacional de obras por upload.
 
 Teste local reproduzível:
 
@@ -36,6 +37,14 @@ supabase/audit/verify_dashboard_datasets_deployment.sql
 
 O resultado deve indicar `complete: true`.
 
+Depois da migration de hardening de lançamento, execute:
+
+```text
+supabase/audit/verify_release_hardening_deployment.sql
+```
+
+Essa consulta não altera dados e deve retornar `complete: true`.
+
 Ordem de aplicação:
 
 1. `20260720172000_rls_hardening.sql`
@@ -43,6 +52,8 @@ Ordem de aplicação:
 3. `20260721211500_dashboard_datasets.sql`
 4. `20260724183000_dashboard_dataset_reset.sql`
 5. `20260724190000_dashboard_dataset_cleanup_policies.sql`
+6. `20260728193000_global_upload_history.sql`
+7. `20260728235000_release_hardening.sql`
 
 Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
 URL do SQL Editor.

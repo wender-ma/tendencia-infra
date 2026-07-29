@@ -6,6 +6,8 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
+const watcher = fs.readFileSync(path.join(root, 'scripts', 'backup_watch.sh'), 'utf8');
+const gitignore = fs.readFileSync(path.join(root, '.gitignore'), 'utf8');
 const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'tendencia-backup-'));
 const fixtureScripts = path.join(fixtureRoot, 'scripts');
 const fixtureBackups = path.join(fixtureRoot, 'backups', 'snapshots');
@@ -13,6 +15,14 @@ const fixtureBackups = path.join(fixtureRoot, 'backups', 'snapshots');
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+assert(
+  watcher.includes('SOURCE_BACKUP_INTERVAL_SECONDS:-1800') &&
+    watcher.includes('flock -n') &&
+    watcher.includes('scripts/backup.sh'),
+  'Watcher deve executar backup a cada 30 minutos com trava contra duplicidade',
+);
+assert(gitignore.includes('backups/.backup-watch.lock'), 'Lock do watcher nao deve entrar no Git');
 
 function write(relativePath, content = relativePath) {
   const target = path.join(fixtureRoot, relativePath);

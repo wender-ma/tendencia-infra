@@ -20,7 +20,7 @@ export function createProjectRepository({ getClient, warn = () => {} }) {
     if (!client) return [];
     try {
       const [{ data, error }, availableProjects] = await Promise.all([
-        client.from('obras').select('*').order('nome', { ascending: true }),
+        client.from('obras').select('codigo_obra,nome,ativa').order('nome', { ascending: true }),
         activeTendencyProjects(client),
       ]);
       if (error) throw error;

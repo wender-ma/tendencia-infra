@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 27/07/2026
+Última atualização: 28/07/2026
 
 ## Como acompanhar
 
@@ -33,6 +33,10 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Criar obra e usuários de teste sem dados confidenciais; `admin`, `editor` e `rejected` validados no Supabase de desenvolvimento em 24/07/2026.
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
 - [x] **EXT-03 concluído** Validar o domínio publicado: o responsável confirmou dados, recarga, abas, troca de obra e administração sem erros funcionais em 27/07/2026.
+- [x] **EXT-10 concluído** Aplicar `20260728235000_release_hardening.sql` no Supabase de produção; auditoria remota confirmou o contrato público e as duas RPCs em 29/07/2026.
+- [ ] **AÇÃO EXTERNA EXT-11** Cadastrar os dois secrets do backup de banco no GitHub Actions e executar o primeiro workflow manual.
+- [ ] **AÇÃO EXTERNA EXT-12** Alterar a Production Branch da Vercel de `main` para `production` antes do próximo push; a branch já aponta para o release estável atual.
+- [x] **EXT-13 concluído** Desativar novos cadastros no Supabase Auth; Management API confirmou `disable_signup: true` e login por Email/Google ativo em 29/07/2026.
 
 ## P0: segurança crítica
 
@@ -353,6 +357,9 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 27/07/2026 | Nove pendências externas classificadas por ID, dependência, responsável e aceite; contrato impede novos itens abertos sem classificação | `external_actions.md`, `test_roadmap_contract.js` |
 | 27/07/2026 | EXT-02 concluído: variáveis de Production configuradas, deployment publicado e smoke público confirmou HTTP 200, headers defensivos, boot concluído e zero erros de página | `operations.md`, `manual_validation.md` |
 | 27/07/2026 | EXT-03 e EXT-04 concluídos: fluxos autenticados validados pelo responsável e leitura operacional pública aprovada; seleção inicial prioriza obra com snapshot e visitante não consulta histórico privado | `project-controller.mjs`, `upload-repository.mjs`, `manual_validation.md` |
+| 28/07/2026 | Revisão de lançamento: contrato público mínimo, upload de obras transacional, autocadastro fechado, release promovido apenas após CI, healthcheck e backup diário criptografado preparados | `20260728235000_release_hardening.sql`, `ci.yml`, `production-smoke.yml`, `production-backup.yml` |
+| 29/07/2026 | EXT-10 concluído: hardening de produção auditado em modo somente leitura com 59 colunas públicas, nenhuma coluna extra, quatro policies e duas RPCs | `audit_supabase_inventory.mjs`, `verify_release_hardening_deployment.sql` |
+| 29/07/2026 | EXT-13 concluído: autocadastro bloqueado no frontend e no Supabase Auth, preservando Email e Google para contas existentes | `auth-ui.mjs`, `config.js`, `external_actions.md` |
 | 27/07/2026 | Parser DOM passou a preservar o contexto de tabelas dinâmicas; 228 linhas reais em cinco visões mantiveram 7–11 células corretas, com larguras estáveis e rolagem interna em desktop/mobile | `ui/dom.mjs`, `dashboard.css`, `workflows.spec.js` |
 | 27/07/2026 | Janela de estabilidade de `snapshots` definida em sete dias corridos, de 27/07 a 03/08/2026; auditoria read-only e limpeza transacional preparadas com gates de data, inventário, concorrência e preservação dos snapshots | `verify_legacy_dataset_cleanup.sql`, `cleanup_legacy_dashboard_datasets.sql` |
 | 27/07/2026 | Inventário pós-deploy confirmou produção saudável, deployment completo, policies `4 + 4`, quatro snapshots/objetos ativos, quatro blobs de rollback e zero registros operacionais sem escopo | `supabase_production_inventory_2026-07-24.md` |

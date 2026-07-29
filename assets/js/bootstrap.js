@@ -1,5 +1,6 @@
 import { createApplication } from './application.mjs';
 import {
+  AUTH_CONFIG,
   DASHBOARD_CONFIG,
   DATASET_PERSISTENCE_CONFIG,
   STORAGE_KEYS,
@@ -58,6 +59,12 @@ function showBootstrapError(error) {
 
 mountStaticViews();
 const logger = createLogger();
+window.addEventListener('error', (event) => {
+  logger.error('Runtime/erro global', event.error || event.message || 'Erro desconhecido');
+});
+window.addEventListener('unhandledrejection', (event) => {
+  logger.error('Runtime/promessa rejeitada', event.reason || 'Rejeicao sem detalhe');
+});
 const actionRegistry = createActionRegistry();
 const ui = {};
 actionRegistry.register({ print: () => window.print() });
@@ -103,6 +110,7 @@ const authService = createAuthService({
 });
 const authUi = createAuthUi({
   authService,
+  allowSelfSignup: AUTH_CONFIG.allowSelfSignup,
   modalService,
   toast: (...args) => feedbackService.toast(...args),
   requestConfirmation: (...args) => modalService.confirm(...args),

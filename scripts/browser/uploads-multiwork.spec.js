@@ -8,6 +8,10 @@ async function openOfflineDashboard(page) {
     () => window.dashboardServices?.performance.snapshot().boot.completed === true,
   );
   await page.waitForFunction(() => window.dashboardServices?.auth.state.ready === true);
+  await page.evaluate(async () => {
+    window.dashboardServices.auth.dispose();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 test('uploads ficam privados e separam bases globais das Tendências por obra', async ({
@@ -163,7 +167,11 @@ test('upload global apresenta novas obras e permite cancelar sem cadastrar', asy
 
   let projectWrites = 0;
   page.on('request', (request) => {
-    if (request.method() === 'POST' && request.url().includes('/rest/v1/obras')) {
+    if (
+      request.method() === 'POST' &&
+      (request.url().includes('/rest/v1/obras') ||
+        request.url().includes('/rest/v1/rpc/admin_register_upload_projects'))
+    ) {
       projectWrites += 1;
     }
   });
@@ -173,7 +181,9 @@ test('upload global apresenta novas obras e permite cancelar sem cadastrar', asy
     buffer: XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
   });
 
-  await expect(page.getByRole('heading', { name: 'Novas obras encontradas' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Novas obras encontradas' })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.locator('.upload-project-preview')).toContainText('88-NEW');
   await expect(page.locator('[data-project-name="0"]')).toHaveValue('88-NEW');
   await page.getByRole('button', { name: 'Cancelar upload' }).click();

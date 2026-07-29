@@ -14,8 +14,9 @@ Dashboard de tendência orçamentária
 │   └── images/             # Imagens e capturas de tela
 ├── config/env/             # Templates e ambientes locais ignorados
 ├── backups/                # Cópias de segurança locais
-│   ├── legacy/             # Backups manuais antigos
-│   └── snapshots/          # Backups automáticos compactados
+│   ├── database/           # Dumps criptografados e ignorados pelo Git
+│   ├── legacy/             # Referência aos monolitos preservados no histórico Git
+│   └── snapshots/          # Backups automáticos compactados da fonte
 ├── docs/                   # Guias, decisões e referências do projeto
 │   └── audits/             # Inventários e evidências somente leitura
 ├── experiments/            # Protótipos e telas isoladas
@@ -55,7 +56,7 @@ Dashboard de tendência orçamentária
 - `docs/manual_validation.md`: checklist de Supabase real, dados, acessibilidade e publicação.
 - `docs/external_actions.md`: registro das decisões e validações humanas que ainda bloqueiam o roadmap.
 - `experiments/archive/preview-modal.html`: protótipo isolado do modal, preservado fora do fluxo ativo.
-- `backups/`: versões antigas e snapshots automáticos preservados para consulta.
+- `backups/`: snapshots da fonte e dumps criptografados do banco, ambos fora do Git.
 - `ROADMAP.md`: plano priorizado e checklist de evolução do projeto.
 - `scripts/audit_supabase_contract.sh`: valida o contrato anônimo nos perfis `baseline` e `hardened`.
 - `scripts/audit_supabase_inventory.mjs`: inventaria deployment e volume de datasets pela Management API somente leitura, sem retornar conteúdo ou códigos de obra.
@@ -248,6 +249,9 @@ Para criar um backup manual:
 ./scripts/backup.sh
 ```
 
+Durante uma sessão local, `npm run backup:watch` mantém a rotina ativa a cada 30
+minutos e usa uma trava para impedir processos duplicados.
+
 Para agendar um backup automático a cada 30 minutos no cron:
 
 ```bash
@@ -255,3 +259,17 @@ Para agendar um backup automático a cada 30 minutos no cron:
 ```
 
 Com esse agendamento, serão preservadas aproximadamente as últimas 6 horas de backups.
+
+O banco de produção possui uma rotina separada, diária e criptografada. Crie
+`config/env/.env.production-database.local` a partir do template, preencha a URI
+do Session Pooler e uma senha exclusiva de criptografia, então execute:
+
+```bash
+npm run backup:database
+npm run backup:database:verify
+```
+
+O GitHub Actions usa os mesmos nomes como secrets, verifica o catálogo com
+`pg_restore` e mantém os artefatos criptografados por 14 dias. O comando
+`npm run backup:health` confere a idade do snapshot local; use
+`npm run backup:health -- --require-database` depois de configurar os dumps.

@@ -65,29 +65,72 @@ values
   ('inactive@example.test', 'OBRA-A', 'editor', 'rejected');
 
 create table public.flow_classifications (
-  codigo_obra text not null references public.obras(codigo_obra),
   n_alteracao text not null,
+  insumo_planejamento text,
+  insumo_remanejamento text,
+  custo_flowmaster numeric,
+  refletido_status text,
+  updated_at timestamptz default now(),
+  updated_by text,
+  codigo_obra text not null references public.obras(codigo_obra),
   primary key (codigo_obra, n_alteracao)
 );
 
 create table public.flow_manuals (
-  codigo_obra text not null references public.obras(codigo_obra),
   n_alteracao text not null,
+  n_adt text,
+  dep text,
+  descricao text,
+  data_br text,
+  data text,
+  aprovador_dep text,
+  aprovador text,
+  solicitante_dep text,
+  solicitante text,
+  custo_flowmaster numeric,
+  custo_planejamento numeric,
+  motivo text,
+  justificativa text,
+  insumo_planejamento text,
+  insumo_remanejamento text,
+  obs text,
+  created_at timestamptz default now(),
+  created_by text,
+  codigo_obra text not null references public.obras(codigo_obra),
   primary key (codigo_obra, n_alteracao)
 );
 
 create table public.projecao_config (
-  codigo_obra text primary key references public.obras(codigo_obra)
+  insumo_controlado text default 'I011890',
+  saldo_inicial numeric,
+  data_ref text,
+  updated_at timestamptz default now(),
+  codigo_obra text primary key references public.obras(codigo_obra),
+  locked_saldo boolean not null default false,
+  locked_data boolean not null default false,
+  locked_insumo boolean not null default false
 );
 
 create table public.projecao_movimentacoes (
   id text primary key,
+  tipo text,
+  data text,
+  data_br text,
+  origem text,
+  destino text,
+  descricao text,
+  justificativa text,
+  responsavel text,
+  valor numeric,
+  created_at timestamptz default now(),
+  created_by text,
   codigo_obra text references public.obras(codigo_obra)
 );
 
 create table public.dashboard_config (
   chave text primary key,
-  valor text
+  valor text,
+  updated_at timestamptz default now()
 );
 
 create table public.upload_history (

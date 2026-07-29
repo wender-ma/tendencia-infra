@@ -26,6 +26,33 @@ const RESETTABLE_GLOBAL_KEYS = new Set([
   DASHBOARD_DATA_KEYS.PROJ_RAW,
 ]);
 
+const MANUAL_PUBLIC_COLUMNS = [
+  'codigo_obra',
+  'n_alteracao',
+  'n_adt',
+  'dep',
+  'descricao',
+  'data_br',
+  'data',
+  'aprovador_dep',
+  'aprovador',
+  'solicitante_dep',
+  'solicitante',
+  'custo_flowmaster',
+  'custo_planejamento',
+  'motivo',
+  'justificativa',
+  'insumo_planejamento',
+  'insumo_remanejamento',
+  'obs',
+].join(',');
+
+const PROJECTION_CONFIG_PUBLIC_COLUMNS =
+  'codigo_obra,insumo_controlado,saldo_inicial,data_ref,locked_saldo,locked_data,locked_insumo';
+
+const MOVEMENT_PUBLIC_COLUMNS =
+  'id,codigo_obra,tipo,data,data_br,origem,destino,descricao,justificativa,responsavel,valor,created_at';
+
 function classificationMap(rows = []) {
   return Object.fromEntries(
     rows.map((row) => [
@@ -81,7 +108,6 @@ function movementFromRow(row) {
     responsavel: row.responsavel,
     valor: row.valor,
     created_at: row.created_at,
-    created_by: row.created_by,
   };
 }
 
@@ -188,7 +214,7 @@ export function createDashboardRepository({
     const project = activeProject();
     if (!supabase || !project) return null;
     const rows = await read('Manuais/carregar', null, () =>
-      supabase.from('flow_manuals').select('*').eq('codigo_obra', project),
+      supabase.from('flow_manuals').select(MANUAL_PUBLIC_COLUMNS).eq('codigo_obra', project),
     );
     return rows ? rows.map(manualFromRow) : null;
   }
@@ -242,7 +268,11 @@ export function createDashboardRepository({
     const project = activeProject();
     if (!supabase || !project) return null;
     return read('Projeção/carregar configuração', null, () =>
-      supabase.from('projecao_config').select('*').eq('codigo_obra', project).maybeSingle(),
+      supabase
+        .from('projecao_config')
+        .select(PROJECTION_CONFIG_PUBLIC_COLUMNS)
+        .eq('codigo_obra', project)
+        .maybeSingle(),
     );
   }
 
@@ -273,7 +303,10 @@ export function createDashboardRepository({
     const project = activeProject();
     if (!supabase || !project) return null;
     const rows = await read('Projeção/carregar movimentações', null, () =>
-      supabase.from('projecao_movimentacoes').select('*').eq('codigo_obra', project),
+      supabase
+        .from('projecao_movimentacoes')
+        .select(MOVEMENT_PUBLIC_COLUMNS)
+        .eq('codigo_obra', project),
     );
     return rows ? rows.map(movementFromRow) : null;
   }

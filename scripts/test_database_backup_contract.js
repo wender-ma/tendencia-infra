@@ -32,8 +32,9 @@ assert(
 assert(
   workflow.includes('schedule:') &&
     workflow.includes('retention-days: 14') &&
-    workflow.includes('secrets.SUPABASE_PRODUCTION_DB_URL'),
-  'workflow deve executar diariamente, reter 14 dias e usar segredo de conexao',
+    workflow.includes('secrets.SUPABASE_PRODUCTION_DB_URL') &&
+    workflow.includes("POSTGRES_BACKUP_FORCE_DOCKER: 'true'"),
+  'workflow deve executar diariamente, reter 14 dias e usar cliente PostgreSQL compativel',
 );
 assert(gitignore.includes('backups/database/'), 'dumps nao podem ser versionados');
 

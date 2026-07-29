@@ -4,6 +4,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKUP_DIR="$PROJECT_DIR/backups/database"
 POSTGRES_IMAGE="${POSTGRES_BACKUP_IMAGE:-postgres:17-alpine}"
+FORCE_DOCKER="${POSTGRES_BACKUP_FORCE_DOCKER:-false}"
 
 : "${BACKUP_ENCRYPTION_PASSWORD:?Defina BACKUP_ENCRYPTION_PASSWORD para verificar o backup}"
 
@@ -22,6 +23,15 @@ if [[ -z "$BACKUP_FILE" || ! -s "$BACKUP_FILE" ]]; then
 fi
 
 list_dump() {
+  if [[ "$FORCE_DOCKER" == "true" ]]; then
+    if ! command -v docker >/dev/null 2>&1; then
+      echo "Erro: Docker nao esta disponivel para o cliente PostgreSQL solicitado." >&2
+      return 1
+    fi
+    docker run --rm --interactive "$POSTGRES_IMAGE" pg_restore --list -
+    return
+  fi
+
   if command -v pg_restore >/dev/null 2>&1; then
     pg_restore --list -
     return

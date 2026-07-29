@@ -8,6 +8,7 @@ TIMESTAMP="$(date -u +"%Y%m%d-%H%M%S")"
 BACKUP_FILE="$BACKUP_DIR/tendencia-production-$TIMESTAMP.dump.enc"
 TEMP_FILE="$BACKUP_FILE.tmp.$$"
 POSTGRES_IMAGE="${POSTGRES_BACKUP_IMAGE:-postgres:17-alpine}"
+FORCE_DOCKER="${POSTGRES_BACKUP_FORCE_DOCKER:-false}"
 
 : "${SUPABASE_PRODUCTION_DB_URL:?Defina SUPABASE_PRODUCTION_DB_URL com a URI direta ou do pooler}"
 : "${BACKUP_ENCRYPTION_PASSWORD:?Defina BACKUP_ENCRYPTION_PASSWORD com uma senha forte e exclusiva}"
@@ -25,6 +26,18 @@ cleanup_temp() {
 trap cleanup_temp EXIT
 
 dump_database() {
+  if [[ "$FORCE_DOCKER" == "true" ]]; then
+    if ! command -v docker >/dev/null 2>&1; then
+      echo "Erro: Docker nao esta disponivel para o cliente PostgreSQL solicitado." >&2
+      return 1
+    fi
+    docker run --rm \
+      --env DATABASE_URL="$SUPABASE_PRODUCTION_DB_URL" \
+      "$POSTGRES_IMAGE" \
+      sh -c 'pg_dump --dbname="$DATABASE_URL" --format=custom --no-owner --no-acl'
+    return
+  fi
+
   if command -v pg_dump >/dev/null 2>&1; then
     pg_dump \
       --dbname="$SUPABASE_PRODUCTION_DB_URL" \

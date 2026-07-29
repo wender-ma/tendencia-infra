@@ -19,10 +19,12 @@ jobs:
         env:
           SUPABASE_PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
           BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+          POSTGRES_BACKUP_FORCE_DOCKER: 'true'
       - name: Verify encrypted database backup
         run: ./scripts/verify_database_backup.sh
         env:
           BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+          POSTGRES_BACKUP_FORCE_DOCKER: 'true'
       - name: Upload encrypted backup
         uses: actions/upload-artifact@v7
         with:

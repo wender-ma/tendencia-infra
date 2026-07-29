@@ -1,6 +1,6 @@
 {
   "name": "tendencia-infra",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "scripts": {
     "env:target": "node scripts/show_supabase_target.js",

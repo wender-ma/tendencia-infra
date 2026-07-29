@@ -222,7 +222,7 @@ async function handleProjectTendencyUpload(ev, projectCode) {
     if (isExcel) {
       const workbook = await readExcelFile(file);
       const sheetNames = workbook.sheetNames || [];
-      const detected = _autoDetectSheets(sheetNames).tendencia;
+      const detected = autoDetectExcelSheets(sheetNames).tendencia;
       const sheetName = detected || (sheetNames.length === 1 ? sheetNames[0] : null);
       if (!sheetName) {
         throw new Error('Aba Tendência não encontrada. Renomeie a aba para "Tendência".');
@@ -308,27 +308,32 @@ async function handleProjectTendencyUpload(ev, projectCode) {
 // e processa cada aba usando os parsers CSV existentes.
 // ============================================================
 
-// Padrões de nome de aba (case-insensitive, sem acentos)
+// Padrões aplicados depois de normalizar acentos e separadores.
 const EXCEL_SHEET_PATTERNS = {
-  tendencia: [/^tend[eê]ncia$/i, /^tendencia$/i, /tend/i],
+  tendencia: [/(?:^|\s)tendencia(?:\s|$)/],
   flows: [
-    /^aditivos[_\s-]*flowmaster$/i,
-    /aditivos.*flowmaster/i,
-    /^flows?\s*valor$/i,
-    /^flows_valor$/i,
-    /flows.*valor/i,
-    /flowsvalor/i,
+    /(?:^|\s)aditivos?\s+flow\s*master(?:\s|$)/,
+    /(?:^|\s)flow\s*master(?:\s|$)/,
+    /(?:^|\s)flows?\s*valor(?:\s|$)/,
+    /(?:^|\s)flows?(?:\s|$)/,
+    /(?:^|\s)fluxos?(?:\s|$)/,
+    /(?:^|\s)aditivos?(?:\s|$)/,
   ],
-  gestoes: [/^gest[oõ]es$/i, /^gestoes$/i, /^gest[aã]o$/i, /gest/i],
+  gestoes: [/(?:^|\s)gestao(?:\s|$)/, /(?:^|\s)gestoes(?:\s|$)/],
 };
 
 function _normalizeSheetName(name) {
-  return String(name || '').trim();
+  return String(name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 // Tenta identificar automaticamente cada tipo pelo nome da aba.
 // Retorna { tendencia: 'nomeAba' | null, flows: ..., gestoes: ... }
-function _autoDetectSheets(sheetNames) {
+export function autoDetectExcelSheets(sheetNames) {
   const result = { tendencia: null, flows: null, gestoes: null };
   for (const kind of Object.keys(EXCEL_SHEET_PATTERNS)) {
     for (const pattern of EXCEL_SHEET_PATTERNS[kind]) {
@@ -411,7 +416,7 @@ async function handleExcelUpload(ev) {
   _renderExcelProgress(`📋 ${sheetNames.length} aba(s) encontrada(s): ${sheetNames.join(', ')}`);
 
   // Tentar auto-detectar
-  let mapping = _autoDetectSheets(sheetNames);
+  let mapping = autoDetectExcelSheets(sheetNames);
   const missing = excelKinds.filter((kind) => !mapping[kind]);
 
   if (missing.length > 0) {
@@ -1614,7 +1619,7 @@ async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
       const buf = await resp.arrayBuffer();
       const wb = await readExcelBuffer(buf);
       const sheetNames = wb.sheetNames || [];
-      const mapping = _autoDetectSheets(sheetNames);
+      const mapping = autoDetectExcelSheets(sheetNames);
       // Só processa a aba correspondente ao tipo
       const sheetName =
         mapping[kind] || (kind === 'tendencia' && sheetNames.length === 1 ? sheetNames[0] : null);

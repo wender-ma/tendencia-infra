@@ -292,7 +292,7 @@ export function resolveImportColumns(kind, rows) {
   if (missing.length) {
     throw new Error(
       `${rules.label}: cabeçalho inválido (ausentes: ${missing.join(', ')}). ` +
-        'Nenhum dado foi importado. Confirme o layout e exporte o arquivo em CSV UTF-8.',
+        'Nenhum dado foi importado. Confirme a aba selecionada, o layout e os cabeçalhos do arquivo.',
     );
   }
 

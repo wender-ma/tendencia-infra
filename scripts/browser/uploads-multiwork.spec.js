@@ -14,9 +14,7 @@ async function openOfflineDashboard(page) {
   });
 }
 
-test('uploads ficam privados e separam bases globais das Tendências por obra', async ({
-  page,
-}) => {
+test('uploads ficam privados e separam bases globais das Tendências por obra', async ({ page }) => {
   await openOfflineDashboard(page);
   await expect(page.locator('#tab-btn-uploads')).toBeHidden();
 
@@ -88,6 +86,72 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   );
   expect(hasOverflow).toBe(false);
+});
+
+test('Tendência multiaba identifica cabeçalhos e pede confirmação', async ({ page }) => {
+  await openOfflineDashboard(page);
+  await page.evaluate(() => {
+    window.dashboardServices.state.obra.obras = [
+      { codigo_obra: 'OBRA-A', nome: 'Obra Alfa', ativa: true },
+    ];
+    window.dashboardServices.state.obra.ativa = 'OBRA-A';
+    Object.assign(window.dashboardServices.auth.state, {
+      ready: true,
+      user: { email: 'admin@example.com' },
+      isAdminGeral: true,
+      isEditor: true,
+      isPending: false,
+      editaObras: [],
+    });
+    window.dashboardServices.authUi.updateAuthUI();
+  });
+  await page.locator('#tab-btn-uploads').click();
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([
+      ['Indicador', 'Valor'],
+      ['Atualização', 'Julho'],
+    ]),
+    'Resumo',
+  );
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([
+      [
+        'Item',
+        'Código',
+        'Serviço',
+        'Insumo',
+        'Orçamento Licitação',
+        'IPCA',
+        'INCC',
+        'Gestão 07-2026',
+        'Diferença',
+        'Evolução Teórica',
+        'Evolução Financeira',
+      ],
+      ['1', '01', 'Serviço', 'I001', '100', '0', '0', '100', '0', '50%', '50%'],
+    ]),
+    'Base de orçamento',
+  );
+
+  await page.locator('#fileInput_tendencia_0').setInputFiles({
+    name: 'tendencia-obra.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
+  });
+
+  await expect(page.getByRole('heading', { name: 'Mapeamento de abas' })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.locator('#mapSheet_tendencia')).toHaveValue('Base de orçamento');
+  await expect(page.locator('#modalContent')).toContainText(
+    'identificadas pelo nome ou pelos cabeçalhos',
+  );
+  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Mapeamento de abas' })).toBeHidden();
 });
 
 test('upload global apresenta novas obras e permite cancelar sem cadastrar', async ({ page }) => {
@@ -210,6 +274,8 @@ test('upload global apresenta novas obras e permite cancelar sem cadastrar', asy
   await expect(page.getByRole('heading', { name: 'Novas obras encontradas' })).toBeHidden();
   expect(projectWrites).toBe(0);
   expect(
-    await page.evaluate(() => window.dashboardServices.state.obra.obras.map((obra) => obra.codigo_obra)),
+    await page.evaluate(() =>
+      window.dashboardServices.state.obra.obras.map((obra) => obra.codigo_obra),
+    ),
   ).toEqual(['42-21O', '66-JDFMO']);
 });

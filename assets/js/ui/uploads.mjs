@@ -222,10 +222,21 @@ async function handleProjectTendencyUpload(ev, projectCode) {
     if (isExcel) {
       const workbook = await readExcelFile(file);
       const sheetNames = workbook.sheetNames || [];
-      const detected = autoDetectExcelSheets(sheetNames).tendencia;
-      const sheetName = detected || (sheetNames.length === 1 ? sheetNames[0] : null);
+      const detected = _resolveExcelSheetMapping(workbook, ['tendencia']);
+      let sheetName = detected.tendencia || (sheetNames.length === 1 ? sheetNames[0] : null);
+
+      if (sheetNames.length > 1) {
+        const confirmed = await _promptSheetMapping(sheetNames, detected, ['tendencia']);
+        if (!confirmed) {
+          setUploadRuntimeState('tendencia', 'idle');
+          authToast('Upload de Tendência cancelado.', 'warn', 2500);
+          return;
+        }
+        sheetName = confirmed.tendencia;
+      }
+
       if (!sheetName) {
-        throw new Error('Aba Tendência não encontrada. Renomeie a aba para "Tendência".');
+        throw new Error('Selecione a aba que contém os dados de Tendência.');
       }
       csv = _sheetToCSV(workbook, sheetName);
       validateImportHeaders('tendencia', parseCSVRows(csv));
@@ -310,7 +321,7 @@ async function handleProjectTendencyUpload(ev, projectCode) {
 
 // Padrões aplicados depois de normalizar acentos e separadores.
 const EXCEL_SHEET_PATTERNS = {
-  tendencia: [/(?:^|\s)tendencia(?:\s|$)/],
+  tendencia: [/(?:^|\s)tendencia/, /(?:^|\s)tend(?:\s|$)/],
   flows: [
     /(?:^|\s)aditivos?\s+flow\s*master(?:\s|$)/,
     /(?:^|\s)flow\s*master(?:\s|$)/,
@@ -345,6 +356,39 @@ export function autoDetectExcelSheets(sheetNames) {
     }
   }
   return result;
+}
+
+function _sheetHasValidHeaders(workbook, sheetName, kind) {
+  try {
+    validateImportHeaders(kind, parseCSVRows(_sheetToCSV(workbook, sheetName)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function _resolveExcelSheetMapping(workbook, kinds) {
+  const sheetNames = workbook?.sheetNames || [];
+  const mapping = autoDetectExcelSheets(sheetNames);
+  const used = new Set();
+
+  for (const kind of kinds) {
+    const sheetName = mapping[kind];
+    if (sheetName && _sheetHasValidHeaders(workbook, sheetName, kind)) used.add(sheetName);
+    else mapping[kind] = null;
+  }
+
+  for (const kind of kinds) {
+    if (mapping[kind]) continue;
+    const matches = sheetNames.filter(
+      (sheetName) => !used.has(sheetName) && _sheetHasValidHeaders(workbook, sheetName, kind),
+    );
+    if (matches.length === 1) {
+      mapping[kind] = matches[0];
+      used.add(matches[0]);
+    }
+  }
+  return mapping;
 }
 
 // Obtém o CSV preparado pelo Worker (os parsers existentes continuam independentes do Excel).
@@ -415,8 +459,8 @@ async function handleExcelUpload(ev) {
   const sheetNames = workbook.sheetNames || [];
   _renderExcelProgress(`📋 ${sheetNames.length} aba(s) encontrada(s): ${sheetNames.join(', ')}`);
 
-  // Tentar auto-detectar
-  let mapping = autoDetectExcelSheets(sheetNames);
+  // Identifica primeiro pelo nome da aba e confirma a opção pelos cabeçalhos.
+  let mapping = _resolveExcelSheetMapping(workbook, excelKinds);
   const missing = excelKinds.filter((kind) => !mapping[kind]);
 
   if (missing.length > 0) {
@@ -482,7 +526,7 @@ function _promptSheetMapping(
       modalContent,
       `
       <h2>🗂️ Mapeamento de abas</h2>
-      <div class="meta">Não consegui identificar automaticamente todas as abas. Selecione manualmente qual é cada uma:</div>
+      <div class="meta">Confirme qual aba corresponde a cada fonte. As opções identificadas pelo nome ou pelos cabeçalhos já aparecem selecionadas.</div>
       <div class="sheet-mapping-fields">
         ${
           allowedKinds.includes('tendencia')

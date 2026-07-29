@@ -20,7 +20,9 @@ assert(
   'backup de banco deve usar pg_dump e criptografia',
 );
 assert(
-  verify.includes('pg_restore --list') && verify.includes('openssl enc -d'),
+  verify.includes('pg_restore --list') &&
+    !verify.includes('pg_restore --list -') &&
+    verify.includes('openssl enc -d'),
   'backup deve ser verificado por descriptografia e leitura do catalogo',
 );
 assert(

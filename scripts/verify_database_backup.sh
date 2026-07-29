@@ -28,17 +28,17 @@ list_dump() {
       echo "Erro: Docker nao esta disponivel para o cliente PostgreSQL solicitado." >&2
       return 1
     fi
-    docker run --rm --interactive "$POSTGRES_IMAGE" pg_restore --list -
+    docker run --rm --interactive "$POSTGRES_IMAGE" pg_restore --list
     return
   fi
 
   if command -v pg_restore >/dev/null 2>&1; then
-    pg_restore --list -
+    pg_restore --list
     return
   fi
 
   if command -v docker >/dev/null 2>&1; then
-    docker run --rm --interactive "$POSTGRES_IMAGE" pg_restore --list -
+    docker run --rm --interactive "$POSTGRES_IMAGE" pg_restore --list
     return
   fi
 

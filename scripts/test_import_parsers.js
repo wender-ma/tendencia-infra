@@ -67,6 +67,55 @@ async function main() {
     'Descoberta de referências de obras em Flows falhou',
   );
 
+  const currentFlowHeaders = [
+    'Descr_etiqueta', 'Cod_aditivo', 'Descr_setorcriacao', 'Data_criacao',
+    'Vlr_estimado', 'Descr_motivo', 'Descr_observacao_motivo',
+    'Descr_areaatual', 'Descr_descricaoaditivo', 'Cod_obra',
+    'Descr_usuariocriacao', 'Descr_status', 'Valor Aprovado ou Solicitado',
+    'Vlr_planejamento',
+  ];
+  const currentFlows = parseFlowsFile(csv([
+    currentFlowHeaders,
+    ['Em aprovação', '201', 'Obra', '8/19/24 8:37', '2,965.53', 'Escopo', '', 'Orçamento', 'Aditivo 201', '21O', 'Usuário', 'Ativo', '2,965.53', ''],
+    ['Em aprovação', '202', 'Obra', '8/9/24 9:04', '100.00', 'Escopo', '', 'Fora da Esteira de Aprovação', 'Aditivo 202', '21O', 'Usuário', 'Finalizado', '', ''],
+    ['Em aprovação', '203', 'Obra', '9/10/24 9:04', '350.00', 'Escopo', '', 'Orçamento', 'Aditivo 203', '21O', 'Usuário', 'Ativo', '', ''],
+  ]), {
+    projects: [{ codigo_obra: '42-21O' }],
+    previousFlows: [
+      {
+        codigo_obra: '42-21O',
+        n_alteracao: '202',
+        custo_flowmaster: -250,
+      },
+    ],
+  });
+  assert(currentFlows.items.length === 3, 'Parser rejeitou o novo modelo de Flows');
+  assert(currentFlows.items[0].data === '2024-08-19', 'Data americana não foi reconhecida');
+  assert(currentFlows.items[1].data === '2024-08-09', 'Data americana ambígua foi invertida');
+  assert(currentFlows.items[0].dep === 'Orçamento', 'Departamento não usou a área atual');
+  assert(
+    currentFlows.items[1].dep === 'Finalizado',
+    'Departamento fora da esteira não usou o status',
+  );
+  assert(
+    currentFlows.items[1].custo_flowmaster === -250,
+    'Valor anterior assinado não foi preservado',
+  );
+  assert(
+    currentFlows.items[2].custo_flowmaster === 350,
+    'Aditivo novo sem valor aprovado não usou o valor estimado',
+  );
+  assert(
+    currentFlows.report.preservedFlowValues === 1 &&
+      currentFlows.report.estimatedValueFallbacks === 1,
+    'Relatório não contabilizou a reconciliação de valores',
+  );
+  assert(
+    currentFlows.items[0].tipo === 'sem_classificacao' &&
+      currentFlows.items[0].refletido_status === 'pendente',
+    'Campos gerenciados pelo dashboard não receberam os padrões corretos',
+  );
+
   const managementHeaders = [
     'Mês pagamento', 'Key planejamento', 'Descr classificaçãofinanceira',
     'Valor total líquido', 'Descr gestão', 'Serviço', 'Insumo', 'Item',

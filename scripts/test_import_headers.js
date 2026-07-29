@@ -47,23 +47,28 @@ async function main() {
   assert(tendencyColumns.code === 3, 'Código foi confundido com código de serviço');
 
   const flows = [
+    'Descr_etiqueta',
     '\ufeffCod_aditivo',
-    'Descr_status',
-    'Descr_areaatual',
     'Descr_setorcriacao',
     'Data_criacao',
+    'Vlr_estimado',
     'Descr_motivo',
     'Descr_observacao_motivo',
+    'Descr_areaatual',
     'Descr_descricaoaditivo',
     'Cod_obra',
+    'Descr_usuariocriacao',
+    'Descr_status',
     'Valor Aprovado ou Solicitado',
     'Vlr_planejamento',
-    'Departamento',
-    'Ins. Planej.',
-    'Ins. Remanej.',
-    'Refletido',
   ];
   validateImportHeaders('flows', [flows]);
+  const flowColumns = resolveImportColumns('flows', [flows]);
+  assert(flowColumns.department === -1, 'Departamento novo deveria ser opcional');
+  assert(flowColumns.planningInput === -1, 'Destino novo deveria ser opcional');
+  assert(flowColumns.reallocationInput === -1, 'Origem nova deveria ser opcional');
+  assert(flowColumns.reflected === -1, 'Refletido novo deveria ser opcional');
+  assert(flowColumns.estimatedValue === 4, 'Valor estimado novo não foi mapeado');
 
   const gestoes = [
     'Mês pagamento',

@@ -441,7 +441,7 @@
           <section>
             <h3>📅 Atualização mensal</h3>
             <ol class="manual-timeline">
-              <li><span>1</span><p>Prepare a planilha global com as abas <b>Gestões</b> e <b>FlowsValor</b>.</p></li>
+              <li><span>1</span><p>Prepare a planilha global com as abas <b>Gestões</b> e <b>Aditivos_flowmaster</b>.</p></li>
               <li><span>2</span><p>Prepare a planilha de <b>Tendência</b> de cada obra atualizada.</p></li>
               <li><span>3</span><p>O administrador envia primeiro a base global em Uploads.</p></li>
               <li><span>4</span><p>Envie a Tendência no bloco correspondente a cada obra.</p></li>
@@ -479,7 +479,7 @@
             <h3>🌐 Gestões + Flows</h3>
             <ol class="manual-steps manual-steps--compact">
               <li><span>1</span><div><strong>Abra Uploads</strong><p>Entre como administrador.</p></div></li>
-              <li><span>2</span><div><strong>Selecione o arquivo</strong><p>Use um <code>.xlsx</code> ou <code>.xlsm</code> com Gestões e FlowsValor.</p></div></li>
+              <li><span>2</span><div><strong>Selecione o arquivo</strong><p>Use um <code>.xlsx</code> ou <code>.xlsm</code> com Gestões e Aditivos_flowmaster.</p></div></li>
               <li><span>3</span><div><strong>Revise o mapeamento</strong><p>Se os nomes não forem reconhecidos, indique qual aba corresponde a cada fonte.</p></div></li>
               <li><span>4</span><div><strong>Confirme novas obras</strong><p>Códigos ainda não cadastrados aparecem para revisão antes da criação.</p></div></li>
               <li><span>5</span><div><strong>Leia o relatório</strong><p>Confira linhas aceitas, ignoradas e rejeitadas.</p></div></li>
@@ -569,7 +569,7 @@
             <summary>A obra ou uma aba aparece sem dados</summary>
             <div>
               <p>Confirme a obra selecionada e veja no cabeçalho se a fonte necessária está ativa.</p>
-              <p>Visão Geral e Detalhamento dependem da Tendência; Histórico e Curva S dependem também de Gestões; Flows depende de FlowsValor.</p>
+              <p>Visão Geral e Detalhamento dependem da Tendência; Histórico e Curva S dependem também de Gestões; Flows depende de Aditivos_flowmaster.</p>
             </div>
           </details>
           <details>
@@ -621,7 +621,7 @@
 
         <div class="manual-source-flow" aria-label="Relação entre fontes e telas">
           <div><strong>TENDÊNCIA</strong><span>Visão Geral · Tendência de Obra · Detalhamento · Controle Projeção</span></div>
-          <div><strong>FlowsValor</strong><span>Flows / Aditivos · Composição do desvio · Controle Projeção</span></div>
+          <div><strong>Aditivos_flowmaster</strong><span>Flows / Aditivos · Composição do desvio · Controle Projeção</span></div>
           <div><strong>Gestões</strong><span>Histórico Mensal · Curva S · Realizado por período</span></div>
         </div>
 
@@ -644,7 +644,7 @@
             </div>
           </details>
           <details>
-            <summary>🔗 Cabeçalhos obrigatórios de FlowsValor</summary>
+            <summary>🔗 Cabeçalhos de Aditivos_flowmaster</summary>
             <div>
               <p>
                 <code>Cod_aditivo</code>, <code>Descr_status</code>,
@@ -652,11 +652,21 @@
                 <code>Data_criacao</code>, <code>Descr_motivo</code>,
                 <code>Descr_observacao_motivo</code>, <code>Descr_descricaoaditivo</code>,
                 <code>Cod_obra</code>, <code>Valor Aprovado ou Solicitado</code>,
-                <code>Vlr_planejamento</code>, <code>Departamento</code>,
-                <code>Ins. Planej.</code>, <code>Ins. Remanej.</code> e
-                <code>Refletido</code>.
+                <code>Vlr_planejamento</code>.
               </p>
-              <p>Os cabeçalhos são normalizados e podem aparecer em outra ordem.</p>
+              <p>
+                <code>Departamento</code>, <code>Ins. Planej.</code>,
+                <code>Ins. Remanej.</code> e <code>Refletido</code> são opcionais.
+                Quando ausente, o departamento usa a área atual; para
+                <code>Fora da Esteira de Aprovação</code>, usa o status. As classificações salvas no
+                dashboard são reaplicadas.
+              </p>
+              <p>
+                Se <code>Valor Aprovado ou Solicitado</code> estiver vazio, um aditivo existente
+                preserva o valor anterior. Para um aditivo novo, o sistema usa
+                <code>Vlr_estimado</code> quando disponível.
+              </p>
+              <p>O nome antigo <code>FlowsValor</code> continua compatível.</p>
             </div>
           </details>
           <details>

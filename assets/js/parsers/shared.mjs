@@ -59,6 +59,8 @@ export const IMPORT_HEADER_RULES = Object.freeze({
           ['valor', 'planejamento'],
         ],
       },
+    }),
+    optionalFields: Object.freeze({
       department: { label: 'Departamento', alternatives: [['departamento']] },
       planningInput: {
         label: 'Ins. Planej.',
@@ -75,6 +77,17 @@ export const IMPORT_HEADER_RULES = Object.freeze({
         ],
       },
       reflected: { label: 'Refletido', alternatives: [['refletido']] },
+      sourceLabel: {
+        label: 'Descr_etiqueta',
+        alternatives: [['descr', 'etiqueta']],
+      },
+      estimatedValue: {
+        label: 'Vlr_estimado',
+        alternatives: [
+          ['vlr', 'estimado'],
+          ['valor', 'estimado'],
+        ],
+      },
     }),
   }),
   gestoes: Object.freeze({

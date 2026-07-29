@@ -54,6 +54,7 @@ export function createImportParserService({
     measured('flows', () =>
       parseFlowsFile(text, {
         projects: options.projects ?? state.obra.obras,
+        previousFlows: options.previousFlows ?? state.dados.flows,
         descriptionLimit: options.descriptionLimit ?? config.max_descricao_flow,
         justificationLimit: options.justificationLimit ?? config.max_justificativa_flow,
       }),

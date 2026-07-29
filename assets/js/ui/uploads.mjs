@@ -311,7 +311,14 @@ async function handleProjectTendencyUpload(ev, projectCode) {
 // Padrões de nome de aba (case-insensitive, sem acentos)
 const EXCEL_SHEET_PATTERNS = {
   tendencia: [/^tend[eê]ncia$/i, /^tendencia$/i, /tend/i],
-  flows: [/^flows?\s*valor$/i, /^flows_valor$/i, /flows.*valor/i, /flowsvalor/i],
+  flows: [
+    /^aditivos[_\s-]*flowmaster$/i,
+    /aditivos.*flowmaster/i,
+    /^flows?\s*valor$/i,
+    /^flows_valor$/i,
+    /flows.*valor/i,
+    /flowsvalor/i,
+  ],
   gestoes: [/^gest[oõ]es$/i, /^gestoes$/i, /^gest[aã]o$/i, /gest/i],
 };
 
@@ -996,6 +1003,17 @@ function showImportReport(kinds, fileName) {
       const unknownProjects = Array.isArray(report.unknownProjects)
         ? report.unknownProjects.filter(Boolean)
         : [];
+      const reconciliation = [];
+      if (report.preservedFlowValues) {
+        reconciliation.push(
+          `${Number(report.preservedFlowValues).toLocaleString('pt-BR')} valor(es) anterior(es) preservado(s)`,
+        );
+      }
+      if (report.estimatedValueFallbacks) {
+        reconciliation.push(
+          `${Number(report.estimatedValueFallbacks).toLocaleString('pt-BR')} aditivo(s) novo(s) preenchido(s) pelo valor estimado`,
+        );
+      }
       return `
         <section class="upload-report-section">
           <h3>${meta.icon} ${escHtml(meta.label)}</h3>
@@ -1013,6 +1031,11 @@ function showImportReport(kinds, fileName) {
           ${
             unknownProjects.length
               ? `<div class="upload-report-alert"><strong>Obras não reconhecidas:</strong> ${unknownProjects.map((value) => escHtml(value)).join(', ')}</div>`
+              : ''
+          }
+          ${
+            reconciliation.length
+              ? `<div class="upload-report-alert"><strong>Reconciliação:</strong> ${escHtml(reconciliation.join(' · '))}</div>`
               : ''
           }
         </section>`;

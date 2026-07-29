@@ -5,7 +5,7 @@ pelos testes automatizados ou por acesso somente leitura. O `ROADMAP.md` usa os
 mesmos IDs para que cada item aberto tenha responsável, dependência e evidência
 de conclusão.
 
-Última atualização: 28/07/2026
+Última atualização: 29/07/2026
 
 | ID | Status | Responsável | Dependência | Ação necessária | Evidência de aceite |
 | --- | --- | --- | --- | --- | --- |
@@ -20,12 +20,12 @@ de conclusão.
 | EXT-09 | Aguardando decisão | Responsável pelo produto | EXT-04 concluída | Decidir se o endereço público também deve ser indexado por buscadores e aprovar texto/imagem de Open Graph. | Decisão registrada; até lá, `noindex` permanece ativo e nenhum preview social é publicado. |
 | EXT-10 | Concluída | Administrador do Supabase | Migration validada localmente | Aplicar `20260728235000_release_hardening.sql` no projeto de produção confirmado. | Em 29/07/2026, auditoria remota confirmou `complete: true`, 59 colunas públicas, quatro policies e duas RPCs. |
 | EXT-11 | Aberta | Administrador do GitHub | Workflow versionado | Cadastrar `SUPABASE_PRODUCTION_DB_URL` e `BACKUP_ENCRYPTION_PASSWORD` nos Actions secrets e executar o primeiro backup manual. | Workflow verde, artefato criptografado criado e etapa `pg_restore --list` aprovada. |
-| EXT-12 | Aberta | Administrador da Vercel | Branch `production` criada no release estável | Alterar a Production Branch de `main` para `production` antes do próximo push na `main`. | Vercel exibe `production` como branch de produção; depois, um CI verde publica o mesmo SHA validado. |
+| EXT-12 | Concluída | Administrador da Vercel | Branch `production` criada no release estável | Alterar a Production Branch de `main` para `production` antes do próximo push na `main`. | Em 29/07/2026, CI e Vercel publicaram o SHA `83828bd`; smokes público e com dados reais passaram. |
 | EXT-13 | Concluída | Administrador do Supabase Auth | Contas responsáveis já criadas | Desativar `Allow new users to sign up` no provedor Email. | Em 29/07/2026, Management API confirmou `disable_signup: true`, com Email e Google habilitados para contas existentes. |
 
 ## Ordem mínima
 
-1. Concluir EXT-11 e EXT-12 para proteger backup e deploy.
+1. Concluir EXT-11 para ativar o backup diário do banco.
 2. Executar EXT-06 no domínio publicado.
 3. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
 4. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.

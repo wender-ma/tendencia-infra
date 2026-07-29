@@ -604,41 +604,75 @@ function promptNewProjects(projects) {
       modalContent,
       `
         <h2>🏗️ Novas obras encontradas</h2>
-        <div class="meta">Confirme o cadastro antes de continuar o upload. Você pode ajustar os nomes agora ou posteriormente na aba Admin.</div>
+        <div class="meta">Marque individualmente as obras que deseja cadastrar. As não selecionadas serão ignoradas neste upload.</div>
         <form id="newProjectsUploadForm" class="upload-project-preview" data-modal-form>
           ${projects
             .map(
               (project, index) => `
-                <label class="upload-project-preview-row">
-                  <span><strong>${escHtml(project.codigo_obra)}</strong><small>Código detectado</small></span>
+                <div class="upload-project-preview-row" data-project-row="${index}">
+                  <label class="upload-project-preview-choice">
+                    <input type="checkbox" data-project-enabled="${index}" checked aria-label="Cadastrar obra ${escAttr(project.codigo_obra)}">
+                    <span>Cadastrar</span>
+                  </label>
+                  <span class="upload-project-preview-code"><strong>${escHtml(project.codigo_obra)}</strong><small>Código detectado</small></span>
                   <input type="text" data-project-name="${index}" value="${escAttr(project.nome)}" maxlength="160" required aria-label="Nome da obra ${escAttr(project.codigo_obra)}">
-                </label>`,
+                </div>`,
             )
             .join('')}
+          <p id="newProjectsSelectionSummary" class="upload-project-preview-summary" role="status"></p>
           <p class="upload-project-preview-note">As obras serão cadastradas com origem “Upload”. Elas poderão ser desativadas, mas não excluídas permanentemente.</p>
           <div class="sheet-mapping-actions">
             <button type="button" class="btn-sm" id="newProjectsCancel">Cancelar upload</button>
-            <button type="submit" class="btn-sm primary">Cadastrar e continuar</button>
+            <button type="submit" class="btn-sm primary">Continuar com selecionadas</button>
           </div>
         </form>
       `,
     );
 
+    const updateSelection = () => {
+      let selected = 0;
+      projects.forEach((project, index) => {
+        const checkbox = document.querySelector(`[data-project-enabled="${index}"]`);
+        const nameInput = document.querySelector(`[data-project-name="${index}"]`);
+        const enabled = checkbox?.checked === true;
+        if (nameInput) {
+          nameInput.disabled = !enabled;
+          nameInput.required = enabled;
+        }
+        document
+          .querySelector(`[data-project-row="${index}"]`)
+          ?.classList.toggle('is-skipped', !enabled);
+        if (enabled) selected += 1;
+      });
+      const summary = document.getElementById('newProjectsSelectionSummary');
+      if (summary) {
+        summary.textContent = `${selected} de ${projects.length} obra(s) selecionada(s) para cadastro.`;
+      }
+    };
     const finish = (result) => closeModal(result);
     document.getElementById('newProjectsCancel')?.addEventListener('click', () => finish(null));
+    document.getElementById('newProjectsUploadForm')?.addEventListener('change', (event) => {
+      if (event.target.matches('[data-project-enabled]')) updateSelection();
+    });
     document.getElementById('newProjectsUploadForm')?.addEventListener('submit', (event) => {
       event.preventDefault();
-      const confirmed = projects.map((project, index) => ({
-        ...project,
-        nome:
-          document.querySelector(`[data-project-name="${index}"]`)?.value.trim() ||
-          project.codigo_obra,
-      }));
+      const confirmed = projects
+        .map((project, index) => {
+          if (!document.querySelector(`[data-project-enabled="${index}"]`)?.checked) return null;
+          return {
+            ...project,
+            nome:
+              document.querySelector(`[data-project-name="${index}"]`)?.value.trim() ||
+              project.codigo_obra,
+          };
+        })
+        .filter(Boolean);
       finish(confirmed);
     });
+    updateSelection();
     openModal({
       onClose: (result) => resolve(Array.isArray(result) ? result : null),
-      initialFocus: '[data-project-name="0"]',
+      initialFocus: '[data-project-enabled="0"]',
     });
   });
 }
@@ -682,6 +716,8 @@ async function rollbackDiscoveredProjects(codes) {
 // ============================================================
 async function _processExcelSheets(workbook, mapping, file) {
   if (!requireAdmin('processar a planilha Excel completa')) return;
+  await carregarObras({ strict: true });
+  renderObrasDropdown();
   // Os registros globais do mesmo Excel compartilham este UUID.
   const groupId = _uuid4();
   const results = {};
@@ -709,12 +745,12 @@ async function _processExcelSheets(workbook, mapping, file) {
     _renderExcelProgress(
       `🏗️ ${discoveredProjects.length} nova(s) obra(s) aguardando confirmação...`,
     );
-    confirmedProjects = (await promptNewProjects(discoveredProjects)) || [];
-    if (!confirmedProjects.length) {
+    confirmedProjects = await promptNewProjects(discoveredProjects);
+    if (confirmedProjects === null) {
       setUploadRuntimeState(selectedKinds, 'idle');
       _renderExcelProgress(null);
       renderUploadsCentral();
-      authToast('Upload cancelado. Nenhuma obra foi cadastrada.', 'warn', 3500);
+      authToast('Upload cancelado. Nenhuma alteração foi realizada.', 'warn', 3500);
       return;
     }
 

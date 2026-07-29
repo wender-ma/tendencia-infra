@@ -15,7 +15,8 @@ export function createProjectRepository({ getClient, warn = () => {} }) {
     }
   }
 
-  async function listProjects() {
+  async function listProjects(options = {}) {
+    const strict = options.strict === true;
     const client = getClient?.();
     if (!client) return [];
     try {
@@ -31,6 +32,7 @@ export function createProjectRepository({ getClient, warn = () => {} }) {
       }));
     } catch (error) {
       warn('Obras/carregar catálogo', error);
+      if (strict) throw error;
       return [];
     }
   }

@@ -92,6 +92,16 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
 
 test('upload global apresenta novas obras e permite cancelar sem cadastrar', async ({ page }) => {
   await openOfflineDashboard(page);
+  await page.route('https://*.supabase.co/rest/v1/obras*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { codigo_obra: '42-21O', nome: 'Obra Atual', ativa: true },
+        { codigo_obra: '66-JDFMO', nome: 'Obra Inativa', ativa: false },
+      ]),
+    }),
+  );
   await page.evaluate(() => {
     window.dashboardServices.state.obra.obras = [
       { codigo_obra: '42-21O', nome: 'Obra Atual', ativa: true },
@@ -159,6 +169,8 @@ test('upload global apresenta novas obras e permite cancelar sem cadastrar', asy
         'Mes_pagamento',
       ],
       ['Atual', 'Obra', '88-NEW-1-31005-S001-I001-01.01.01', '100', '01/07/2026'],
+      ['Atual', 'Obra', '66-JDFMO-1-31005-S001-I001-01.01.01', '100', '01/07/2026'],
+      ['Atual', 'Obra', '99-OTHER-1-31005-S001-I001-01.01.01', '100', '01/07/2026'],
     ]),
     'Gestões',
   );
@@ -183,11 +195,21 @@ test('upload global apresenta novas obras e permite cancelar sem cadastrar', asy
     timeout: 15_000,
   });
   await expect(page.locator('.upload-project-preview')).toContainText('88-NEW');
+  await expect(page.locator('.upload-project-preview')).toContainText('99-OTHER');
+  await expect(page.locator('.upload-project-preview')).not.toContainText('66-JDFMO');
+  await expect(page.locator('[data-project-enabled]')).toHaveCount(2);
+  await expect(page.locator('[data-project-enabled]').nth(0)).toBeChecked();
+  await expect(page.locator('[data-project-enabled]').nth(1)).toBeChecked();
   await expect(page.locator('[data-project-name="0"]')).toHaveValue('88-NEW');
+  await page.locator('[data-project-enabled="1"]').uncheck();
+  await expect(page.locator('[data-project-name="1"]')).toBeDisabled();
+  await expect(page.locator('#newProjectsSelectionSummary')).toHaveText(
+    '1 de 2 obra(s) selecionada(s) para cadastro.',
+  );
   await page.getByRole('button', { name: 'Cancelar upload' }).click();
   await expect(page.getByRole('heading', { name: 'Novas obras encontradas' })).toBeHidden();
   expect(projectWrites).toBe(0);
   expect(
     await page.evaluate(() => window.dashboardServices.state.obra.obras.map((obra) => obra.codigo_obra)),
-  ).toEqual(['42-21O']);
+  ).toEqual(['42-21O', '66-JDFMO']);
 });

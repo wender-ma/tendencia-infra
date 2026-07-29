@@ -112,8 +112,8 @@ export function createProjectController({
     });
   }
 
-  async function carregarObras() {
-    state.obra.obras = await projectRepository.listProjects();
+  async function carregarObras(options = {}) {
+    state.obra.obras = await projectRepository.listProjects(options);
     log(`[OBRAS] ${state.obra.obras.length} obra(s) carregada(s)`);
     return state.obra.obras;
   }

@@ -30,6 +30,12 @@ assert(
   'falha posterior ao cadastro deve executar rollback das obras novas',
 );
 assert(
+  source.includes('data-project-enabled') &&
+    source.includes('.filter(Boolean)') &&
+    source.includes('confirmedProjects === null'),
+  'modal deve permitir selecionar obras individualmente sem confundir lista vazia com cancelamento',
+);
+assert(
   migration.includes('security definer') &&
     migration.includes('public.authz_is_admin()') &&
     migration.includes('admin_rollback_upload_projects'),

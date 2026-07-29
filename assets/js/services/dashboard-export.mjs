@@ -6,7 +6,7 @@ import {
 } from './projection-control-accounting.mjs';
 
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
-const DASHBOARD_VERSION = 'v1.1.0';
+const DASHBOARD_VERSION = 'v1.2.0';
 
 function roundCurrency(value) {
   return value == null ? null : Math.round(value * 100) / 100;

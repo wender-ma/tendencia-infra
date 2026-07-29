@@ -88,6 +88,125 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
   expect(hasOverflow).toBe(false);
 });
 
+test('fontes publicadas permanecem visíveis e empilhadas sem metadados privados', async ({
+  page,
+}) => {
+  await openOfflineDashboard(page);
+  await page.evaluate(() => {
+    window.dashboardServices.state.dados.tendencia = [{ cod: '01.01' }];
+    window.dashboardServices.state.dados.flows = [{ codigo_obra: 'OBRA-A' }];
+    window.dashboardServices.state.dados.historico = {
+      items: [{ codigo_obra: 'OBRA-A' }],
+      gestoes: ['Atual'],
+    };
+    for (const kind of Object.keys(window.dashboardServices.state.uploads)) {
+      window.dashboardServices.state.uploads[kind] = null;
+    }
+    window.dashboardServices.views.uploads.renderSourcesHeaders();
+  });
+
+  const sources = page.locator('#srcHeader_global .src-item');
+  await expect(sources).toHaveCount(3);
+  await expect(page.locator('#srcHeader_global')).toContainText('dados publicados');
+  await expect(page.locator('#srcHeader_global')).not.toContainText('(sem dados)');
+  await expect(page.locator('#srcHeader_global .src-list')).toHaveCSS('display', 'grid');
+  const positions = await sources.evaluateAll((items) => items.map((item) => item.offsetTop));
+  expect(new Set(positions).size).toBe(3);
+});
+
+test('histórico global gerencia planilhas ativas e arquivadas', async ({ page }) => {
+  await openOfflineDashboard(page);
+  const records = [
+    {
+      id: 10,
+      tipo: 'flows',
+      nome_arquivo: 'base-atual.xlsx',
+      tamanho_bytes: 1000,
+      linhas: 20,
+      enviado_por: 'admin@example.com',
+      enviado_em: '2026-07-29T12:00:00Z',
+      storage_path: '_global/excel/base-atual.xlsx',
+      upload_group_id: 'group-active',
+      codigo_obra: null,
+      is_active: true,
+    },
+    {
+      id: 11,
+      tipo: 'gestoes',
+      nome_arquivo: 'base-atual.xlsx',
+      tamanho_bytes: 1000,
+      linhas: 30,
+      enviado_por: 'admin@example.com',
+      enviado_em: '2026-07-29T12:00:00Z',
+      storage_path: '_global/excel/base-atual.xlsx',
+      upload_group_id: 'group-active',
+      codigo_obra: null,
+      is_active: true,
+    },
+    {
+      id: 12,
+      tipo: 'flows',
+      nome_arquivo: 'base-anterior.xlsx',
+      tamanho_bytes: 900,
+      linhas: 18,
+      enviado_por: 'admin@example.com',
+      enviado_em: '2026-07-28T12:00:00Z',
+      storage_path: '_global/excel/base-anterior.xlsx',
+      upload_group_id: 'group-archived',
+      codigo_obra: null,
+      is_active: false,
+    },
+    {
+      id: 13,
+      tipo: 'gestoes',
+      nome_arquivo: 'base-anterior.xlsx',
+      tamanho_bytes: 900,
+      linhas: 28,
+      enviado_por: 'admin@example.com',
+      enviado_em: '2026-07-28T12:00:00Z',
+      storage_path: '_global/excel/base-anterior.xlsx',
+      upload_group_id: 'group-archived',
+      codigo_obra: null,
+      is_active: false,
+    },
+  ];
+  await page.route('https://*.supabase.co/rest/v1/upload_history*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(records),
+    }),
+  );
+  await page.evaluate(() => {
+    window.dashboardServices.state.obra.ativa = 'OBRA-A';
+    Object.assign(window.dashboardServices.auth.state, {
+      ready: true,
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      isAdminGeral: true,
+      isEditor: true,
+      isPending: false,
+      editaObras: [],
+    });
+    window.dashboardServices.authUi.updateAuthUI();
+  });
+
+  await page.evaluate(() => window.dashboardServices.views.uploads.openExcelUploadsHistory());
+  await expect(
+    page.getByRole('heading', { name: 'Histórico de planilhas completas' }),
+  ).toBeVisible();
+  const activeRow = page.locator('#excelUploadsHistoryList tbody tr').filter({
+    hasText: 'base-atual.xlsx',
+  });
+  const archivedRow = page.locator('#excelUploadsHistoryList tbody tr').filter({
+    hasText: 'base-anterior.xlsx',
+  });
+  await expect(activeRow).toContainText('ATIVA');
+  await expect(activeRow.getByRole('button', { name: 'Ativar' })).toHaveCount(0);
+  await expect(activeRow.getByLabel('Excluir base-atual.xlsx')).toHaveCount(0);
+  await expect(archivedRow.getByRole('button', { name: 'Ativar' })).toBeVisible();
+  await expect(archivedRow.getByLabel('Excluir base-anterior.xlsx')).toBeVisible();
+});
+
 test('Tendência multiaba identifica cabeçalhos e pede confirmação', async ({ page }) => {
   await openOfflineDashboard(page);
   await page.evaluate(() => {

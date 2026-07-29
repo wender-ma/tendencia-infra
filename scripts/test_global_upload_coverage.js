@@ -6,7 +6,7 @@ const { pathToFileURL } = require('url');
 
 (async () => {
   const moduleUrl = pathToFileURL(path.resolve(__dirname, '../assets/js/ui/uploads.mjs'));
-  const { analyzeGlobalUploadCoverage } = await import(moduleUrl.href);
+  const { analyzeGlobalUploadCoverage, summarizeExcelUploadGroup } = await import(moduleUrl.href);
 
   const projects = [
     { codigo_obra: '42-21O', nome: 'Zurique', ativa: false },
@@ -72,7 +72,37 @@ const { pathToFileURL } = require('url');
   });
   assert.strictEqual(managements.missing.length, 0, 'Cobertura preservada não deveria alertar');
 
-  console.log('Cobertura de uploads globais: 7 cenários OK');
+  const activeGroup = summarizeExcelUploadGroup({
+    records: [
+      { id: 1, tipo: 'flows', is_active: true },
+      { id: 2, tipo: 'gestoes', is_active: true },
+    ],
+  });
+  assert.strictEqual(activeGroup.isActive, true);
+  assert.strictEqual(activeGroup.canActivate, false);
+  assert.strictEqual(activeGroup.canDelete, false);
+
+  const archivedGroup = summarizeExcelUploadGroup({
+    records: [
+      { id: 3, tipo: 'flows', is_active: false },
+      { id: 4, tipo: 'gestoes', is_active: false },
+    ],
+  });
+  assert.strictEqual(archivedGroup.isActive, false);
+  assert.strictEqual(archivedGroup.canActivate, true);
+  assert.strictEqual(archivedGroup.canDelete, true);
+
+  const partialGroup = summarizeExcelUploadGroup({
+    records: [
+      { id: 5, tipo: 'flows', is_active: true },
+      { id: 6, tipo: 'gestoes', is_active: false },
+    ],
+  });
+  assert.strictEqual(partialGroup.isPartiallyActive, true);
+  assert.strictEqual(partialGroup.canActivate, true);
+  assert.strictEqual(partialGroup.canDelete, false);
+
+  console.log('Cobertura de uploads globais: 16 cenários OK');
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

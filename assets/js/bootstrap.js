@@ -115,7 +115,8 @@ const authUi = createAuthUi({
   toast: (...args) => feedbackService.toast(...args),
   requestConfirmation: (...args) => modalService.confirm(...args),
   getActiveProject: () => appState.obra.ativa,
-  renderProtectedViews: () => {
+  renderProtectedViews: async () => {
+    await ui.uploads?.refreshLatestUploadReferences();
     ui.flows?.renderFlows();
     if (document.getElementById('projCtrlMovsList')) ui.projectionControl?.renderProjCtrl();
     ui.uploads?.renderUploadsCentral();

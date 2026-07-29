@@ -120,7 +120,7 @@ export function createAuthUi({
     button.title = 'Sair da conta';
   }
 
-  function handleAuthServiceStateChanged({ isFreshLogin = false } = {}) {
+  async function handleAuthServiceStateChanged({ isFreshLogin = false } = {}) {
     if (isFreshLogin && state.user) {
       if (!state.isEditor) {
         toast(
@@ -135,7 +135,7 @@ export function createAuthUi({
 
     updateAuthUI();
     try {
-      renderProtectedViews();
+      await renderProtectedViews();
     } catch (error) {
       reportError('Auth/atualizar interface', error);
     }

@@ -19,7 +19,10 @@ let supaActivateUploadRecord;
 let supaRollbackUploadActivation;
 let supaListUploadsByType;
 let supaListExcelGroups;
+let supaLoadLatestUploads;
 let supaGetDownloadURL;
+let supaDeleteUploadRecords;
+let supaRemoveStoredUpload;
 let supaEnforceRollingBackup;
 let supaEnforceDatasetRetention;
 let supaCaptureDashboardRows;
@@ -58,6 +61,7 @@ let loadClassifications;
 let requireAdmin;
 let loadLatestTendencies;
 const PROJECT_TENDENCY_UPLOADS = Object.create(null);
+const EXCEL_UPLOAD_GROUPS = new Map();
 let projectUploadsLoadKey = '';
 let projectUploadsLoading = false;
 let projectUploadBusy = '';
@@ -1742,6 +1746,25 @@ async function openUploadsHistory(kind, projectCode = null) {
   await _renderUploadsHistoryList(kind, project);
 }
 
+export function summarizeExcelUploadGroup(group) {
+  const records = Array.isArray(group?.records) ? group.records : [];
+  const globalRecords = ['flows', 'gestoes']
+    .map((kind) => records.find((record) => record.tipo === kind))
+    .filter(Boolean);
+  const activeRecords = records.filter((record) => record.is_active);
+  const activeGlobalRecords = globalRecords.filter((record) => record.is_active);
+  return {
+    records,
+    globalRecords,
+    activeRecords,
+    hasCompleteGlobalBase: globalRecords.length === 2,
+    isActive: globalRecords.length === 2 && activeGlobalRecords.length === 2,
+    isPartiallyActive: activeGlobalRecords.length > 0 && activeGlobalRecords.length < 2,
+    canActivate: globalRecords.length === 2 && activeGlobalRecords.length < 2,
+    canDelete: records.length > 0 && activeRecords.length === 0,
+  };
+}
+
 async function openExcelUploadsHistory() {
   if (!requireAdmin('consultar o histórico de planilhas completas')) return;
   const modalContent = document.getElementById('modalContent');
@@ -1755,9 +1778,15 @@ async function openExcelUploadsHistory() {
     `,
   );
   openModal();
+  await _renderExcelUploadsHistoryList();
+}
+
+async function _renderExcelUploadsHistoryList() {
   const groups = await supaListExcelGroups(UPLOADS_MAX_PER_TYPE);
   const box = document.getElementById('excelUploadsHistoryList');
   if (!box) return;
+  EXCEL_UPLOAD_GROUPS.clear();
+  groups.forEach((group) => EXCEL_UPLOAD_GROUPS.set(String(group.id), group));
   if (!groups.length) {
     replaceWithParsedMarkup(
       box,
@@ -1770,44 +1799,227 @@ async function openExcelUploadsHistory() {
     `
       <table class="uploads-history-table">
         <thead>
-          <tr>
+          <tr class="uploads-history-heading">
             <th>Data / Hora</th>
             <th>Arquivo</th>
-            <th>Obra da Tendência</th>
             <th>Abas processadas</th>
             <th>Enviado por</th>
-            <th>Ação</th>
+            <th class="uploads-history-actions-heading">Ações</th>
           </tr>
         </thead>
         <tbody>
           ${groups
             .map((group) => {
-              const tendencyRecord = group.records.find((record) => record.tipo === 'tendencia');
-              const kinds = group.records.map((record) => {
+              const summary = summarizeExcelUploadGroup(group);
+              const kinds = summary.records.map((record) => {
                 const meta = UPLOAD_META[record.tipo];
-                const active = record.is_active ? ' · ativo' : '';
-                return `${meta?.icon || ''} ${meta?.label || record.tipo}${active}`;
+                return {
+                  label: `${meta?.icon || ''} ${meta?.label || record.tipo}`,
+                  active: record.is_active,
+                };
               });
+              const cleanStoragePath = sanitizeStoragePath(group.storage_path);
+              const status = summary.isActive
+                ? '<span class="uploads-history-active">ATIVA</span>'
+                : summary.isPartiallyActive
+                  ? '<span class="uploads-history-partial">PARCIAL</span>'
+                  : '';
+              const activateButton = summary.canActivate
+                ? `<button class="btn-sm primary" data-action="activate-excel-group" data-group="${escAttr(group.id)}" title="Ativar Flows e Gestões desta planilha">⭐ Ativar</button>`
+                : summary.isActive
+                  ? ''
+                  : '<span class="uploads-history-unavailable" title="A planilha não contém Flows e Gestões completos">—</span>';
+              const deleteButton = summary.canDelete
+                ? `<button class="btn-sm danger uploads-history-delete" data-action="delete-excel-group" data-group="${escAttr(group.id)}" title="Excluir esta planilha" aria-label="Excluir ${escAttr(group.nome_arquivo)}">🗑️</button>`
+                : `<span class="uploads-history-unavailable" title="Ative outra planilha antes de excluir esta">🔒</span>`;
               return `
-                <tr>
-                  <td>${escHtml(fmtUploadDate(group.enviado_em))}</td>
+                <tr class="uploads-history-row ${summary.isActive ? 'is-active' : ''}">
+                  <td>${escHtml(fmtUploadDate(group.enviado_em))} ${status}</td>
                   <td class="uploads-history-file">${escHtml(group.nome_arquivo)}<br><small>${fmtBytes(group.tamanho_bytes)}</small></td>
-                  <td>${escHtml(tendencyRecord?.codigo_obra || 'Não incluída')}</td>
-                  <td>${kinds.map((value) => `<span class="upload-kind-chip">${escHtml(value)}</span>`).join('')}</td>
-                  <td>${escHtml(group.enviado_por || 'não informado')}</td>
-                  <td><button class="btn-sm" data-action="download-upload" data-path="${escAttr(group.storage_path)}" data-filename="${escAttr(group.nome_arquivo)}">📥 Baixar</button></td>
+                  <td>${kinds
+                    .map(
+                      ({ label, active }) =>
+                        `<span class="upload-kind-chip ${active ? 'is-active' : ''}">${escHtml(label)}${active ? ' · ativo' : ''}</span>`,
+                    )
+                    .join('')}</td>
+                  <td class="uploads-history-sender">${escHtml(group.enviado_por || 'não informado')}</td>
+                  <td class="uploads-history-actions-cell">
+                    <span class="uploads-history-actions">
+                      ${
+                        cleanStoragePath
+                          ? `<button class="btn-sm" data-action="download-upload" data-path="${escAttr(cleanStoragePath)}" data-filename="${escAttr(group.nome_arquivo)}" title="Baixar planilha" aria-label="Baixar ${escAttr(group.nome_arquivo)}">📥</button>`
+                          : '<span class="uploads-history-unavailable">—</span>'
+                      }
+                      ${activateButton}
+                      ${deleteButton}
+                    </span>
+                  </td>
                 </tr>`;
             })
             .join('')}
         </tbody>
       </table>
-      <div class="uploads-history-help">Para restaurar uma aba específica, abra o histórico de Tendência, Flows ou Gestões e ative a versão desejada.</div>
+      <div class="uploads-history-help">
+        <strong>Ativar:</strong> restaura Flows e Gestões juntos, depois de validar a cobertura de todas as obras.<br>
+        <strong>Excluir:</strong> remove o arquivo e seus registros. Uma planilha ativa nunca pode ser excluída.
+      </div>
     `,
   );
-  box.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-action="download-upload"]');
-    if (button) downloadUploadFile(button.dataset.path, button.dataset.filename);
-  });
+  if (!box._delegationSet) {
+    box._delegationSet = true;
+    box.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-action]');
+      if (!button) return;
+      if (button.dataset.action === 'download-upload') {
+        downloadUploadFile(button.dataset.path, button.dataset.filename);
+      } else if (button.dataset.action === 'activate-excel-group') {
+        ativarGrupoExcel(button.dataset.group);
+      } else if (button.dataset.action === 'delete-excel-group') {
+        excluirGrupoExcel(button.dataset.group);
+      }
+    });
+  }
+}
+
+async function ativarGrupoExcel(groupId) {
+  if (!requireAdmin('ativar esta planilha global')) return;
+  const group = EXCEL_UPLOAD_GROUPS.get(String(groupId));
+  const summary = summarizeExcelUploadGroup(group);
+  if (!group || !summary.hasCompleteGlobalBase) {
+    authToast('A planilha não contém registros completos de Flows e Gestões.', 'err', 5000);
+    return;
+  }
+  if (summary.isActive) return;
+  const confirmed = await confirmModal(
+    'Ativar planilha global',
+    `Restaurar Flows e Gestões do arquivo "${group.nome_arquivo}" para todas as obras?`,
+    { confirmText: 'Ativar planilha', destructive: false },
+  );
+  if (!confirmed) return;
+
+  const kinds = ['flows', 'gestoes'];
+  const memorySnapshot = captureInMemoryUploadState();
+  let dashboardSnapshot = null;
+  let dashboardPersistence = null;
+  let dashboardPersisted = false;
+  const activations = [];
+  setUploadRuntimeState(kinds, 'processing', 'Restaurando planilha global');
+  authToast('Restaurando planilha global...', 'info', 2500);
+  try {
+    await carregarObras({ strict: true });
+    renderObrasDropdown();
+    const url = await supaGetDownloadURL(group.storage_path, APP_STATE.obra.ativa);
+    if (!url) throw new Error('Não foi possível acessar o arquivo armazenado');
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Falha ao baixar arquivo: HTTP ${response.status}`);
+    const workbook = await readExcelBuffer(await response.arrayBuffer());
+    const mapping = _resolveExcelSheetMapping(workbook, kinds);
+    const missingKinds = kinds.filter((kind) => !mapping[kind]);
+    if (missingKinds.length) {
+      throw new Error(`Abas não encontradas: ${missingKinds.join(', ')}`);
+    }
+
+    for (const kind of kinds) {
+      _parsearECarregar(kind, _sheetToImportCSV(workbook, mapping[kind], kind));
+    }
+    const coverage = prepareGlobalUploadCoverage(memorySnapshot, kinds);
+    if (coverage.missing.length && !(await promptMissingProjectCoverage(coverage.missing))) {
+      restoreInMemoryUploadState(memorySnapshot);
+      setUploadRuntimeState(kinds, 'idle');
+      authToast('Restauração cancelada. Nenhuma alteração foi realizada.', 'warn', 3500);
+      return;
+    }
+
+    dashboardSnapshot = await supaCaptureDashboardRows(kinds);
+    dashboardPersistence = await supaSaveAllData(kinds, dashboardSnapshot, summary.globalRecords);
+    dashboardPersisted = true;
+    for (const record of summary.globalRecords) {
+      if (!record.is_active) activations.push(await supaActivateUploadRecord(record));
+    }
+  } catch (error) {
+    const cleanupErrors = [];
+    for (const activation of [...activations].reverse()) {
+      try {
+        await supaRollbackUploadActivation(activation);
+      } catch (cleanupError) {
+        cleanupErrors.push(`upload ${activation.active.tipo}: ${cleanupError.message}`);
+      }
+    }
+    if (dashboardPersisted) {
+      try {
+        await restoreSavedData(dashboardSnapshot, dashboardPersistence);
+      } catch (cleanupError) {
+        cleanupErrors.push(`dados: ${cleanupError.message}`);
+      }
+    }
+    restoreInMemoryUploadState(memorySnapshot);
+    setUploadRuntimeState(kinds, 'failed', error.message || String(error));
+    renderUploadsCentral();
+    renderSourcesHeaders();
+    authToast(`Erro ao ativar planilha: ${error.message}`, 'err', 7000);
+    if (cleanupErrors.length) {
+      authToast(`Recuperação parcial: ${cleanupErrors.join('; ')}`, 'warn', 8000);
+    }
+    return;
+  }
+
+  for (const record of summary.globalRecords) {
+    const activation = activations.find((item) => item.active.id === record.id);
+    APP_STATE.uploads[record.tipo] = activation?.active || record;
+  }
+  setUploadRuntimeState(kinds, 'active');
+  debouncedRender();
+  renderUploadsCentral();
+  renderSourcesHeaders();
+  await _renderExcelUploadsHistoryList();
+  authToast(`Planilha ativada: ${group.nome_arquivo}`, 'ok', 4000);
+}
+
+async function excluirGrupoExcel(groupId) {
+  if (!requireAdmin('excluir esta planilha global')) return;
+  const group = EXCEL_UPLOAD_GROUPS.get(String(groupId));
+  const summary = summarizeExcelUploadGroup(group);
+  if (!group || !summary.records.length) {
+    authToast('Planilha não encontrada no histórico.', 'err', 4000);
+    return;
+  }
+  if (!summary.canDelete) {
+    authToast('Ative outra planilha antes de excluir esta.', 'warn', 4500);
+    return;
+  }
+  const confirmed = await confirmModal(
+    'Excluir planilha do histórico',
+    `Excluir permanentemente "${group.nome_arquivo}" e todos os seus registros?`,
+    { confirmText: 'Excluir planilha' },
+  );
+  if (!confirmed) return;
+
+  try {
+    const cleanStoragePath = sanitizeStoragePath(group.storage_path);
+    await supaDeleteUploadRecords(summary.records);
+    if (cleanStoragePath) {
+      const { data: references, error: referenceError } = await SUPA.from('upload_history')
+        .select('id')
+        .eq('storage_path', cleanStoragePath)
+        .limit(1);
+      if (referenceError) throw referenceError;
+      if (!references?.length) {
+        try {
+          await supaRemoveStoredUpload(cleanStoragePath);
+        } catch (storageError) {
+          reportNonFatalError(
+            'Uploads/excluir planilha do Storage',
+            storageError,
+            'Os registros foram excluídos, mas o arquivo ficou pendente no Storage.',
+          );
+        }
+      }
+    }
+    await _renderExcelUploadsHistoryList();
+    authToast('Planilha excluída do histórico.', 'ok', 3000);
+  } catch (error) {
+    authToast(`Erro ao excluir planilha: ${error.message}`, 'err', 6000);
+  }
 }
 
 // extraído em função separada pra poder re-renderizar após ações (ativar/excluir)
@@ -2239,7 +2451,7 @@ function renderSourcesHeaders() {
           (k === 'tendencia' && APP_STATE.dados.tendencia?.length) ||
           (k === 'flows' && APP_STATE.dados.flows?.length) ||
           (k === 'gestoes' && APP_STATE.dados.historico?.items?.length);
-        if (!AUTH?.user && hasPublishedData) {
+        if (hasPublishedData) {
           return `<span class="src-item"><strong>${meta?.icon || ''} ${meta?.label || k}:</strong> dados publicados</span>`;
         }
         return `<span class="src-item src-empty" title="Nenhum arquivo enviado ainda para ${meta ? meta.label : k}">${meta ? meta.icon : ''} ${meta ? meta.label : k}: (sem dados)</span>`;
@@ -2247,8 +2459,20 @@ function renderSourcesHeaders() {
       const tip = `${last.nome_arquivo} · ${fmtUploadDate(last.enviado_em)}${last.enviado_por ? ' · ' + last.enviado_por : ''}`;
       return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span class="src-date">(${escHtml(fmtUploadDateShort(last.enviado_em))})</span></span>`;
     });
-    replaceWithParsedMarkup(el, '📎 ' + parts.join(' <span class="src-sep">·</span> '));
+    replaceWithParsedMarkup(
+      el,
+      `<span class="src-marker" aria-hidden="true">📎</span><span class="src-list">${parts.join('')}</span>`,
+    );
   });
+}
+
+async function refreshLatestUploadReferences() {
+  for (const kind of Object.keys(APP_STATE.uploads)) APP_STATE.uploads[kind] = null;
+  if (AUTH?.user) {
+    const latest = await supaLoadLatestUploads();
+    Object.assign(APP_STATE.uploads, latest || {});
+  }
+  renderSourcesHeaders();
 }
 
 export function createUploadView({
@@ -2285,8 +2509,11 @@ export function createUploadView({
   supaRollbackUploadActivation = uploadRepository.rollbackActivation;
   supaListUploadsByType = uploadRepository.listByType;
   supaListExcelGroups = uploadRepository.listExcelGroups;
+  supaLoadLatestUploads = uploadRepository.loadLatest;
   loadLatestTendencies = uploadRepository.loadLatestTendencies;
   supaGetDownloadURL = uploadRepository.getDownloadUrl;
+  supaDeleteUploadRecords = uploadRepository.deleteRecords;
+  supaRemoveStoredUpload = uploadRepository.removeStoredUpload;
   supaEnforceRollingBackup = uploadRepository.enforceRollingBackup;
   supaEnforceDatasetRetention = uploadCoordinator.enforceDatasetRetention;
   supaCaptureDashboardRows = uploadCoordinator.captureDashboardRows;
@@ -2326,6 +2553,7 @@ export function createUploadView({
   return Object.freeze({
     renderUploadsCentral,
     renderSourcesHeaders,
+    refreshLatestUploadReferences,
     handleUpload,
     handleProjectTendencyUpload,
     handleExcelUpload,

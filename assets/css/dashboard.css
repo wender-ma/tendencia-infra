@@ -86,7 +86,7 @@
     border-color: rgba(255,200,100,0.4);
   }
   .sources-header.header-source-summary {
-    width: fit-content;
+    width: min(100%, 720px);
     max-width: 100%;
     margin: 6px 0 0;
     padding: 0;
@@ -101,13 +101,11 @@
   .sources-header.header-source-summary .src-date {
     color: var(--text-on-dark);
   }
-  .sources-header.header-source-summary .src-sep { color: rgba(255,255,255,0.38); }
   .sources-header.header-source-summary .src-empty { color: var(--sem-alerta-bg); }
   body.dark .sources-header.header-source-summary,
   body.dark .sources-header.header-source-summary strong,
   body.dark .sources-header.header-source-summary code,
   body.dark .sources-header.header-source-summary .src-date,
-  body.dark .sources-header.header-source-summary .src-sep,
   body.dark .sources-header.header-source-summary .src-empty {
     color: var(--text-on-dark);
   }
@@ -907,9 +905,8 @@ body:not(.is-admin-geral) [data-admin-control],
 /* Cabeçalho de fontes no topo de cada aba (compacto) */
 .sources-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  flex-wrap: wrap;
   padding: 6px 10px;
   background: var(--bg-soft);
   border-radius: 6px;
@@ -919,9 +916,24 @@ body:not(.is-admin-geral) [data-admin-control],
   border: 1px solid var(--border);
 }
 .sources-header strong { color: var(--text-strong); font-weight: 600; }
-.sources-header .src-item { display: inline-flex; align-items: center; gap: 4px; }
+.sources-header .src-marker { flex: 0 0 auto; line-height: 1.45; }
+.sources-header .src-list {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.sources-header .src-item {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.sources-header .src-item code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 .sources-header .src-empty { color: var(--sem-alerta); font-style: italic; }
-.sources-header .src-sep { color: var(--border-strong); }
 .sources-header .src-date { color: var(--text-soft); }
 
 /* ==== v0.54: Excel upload + accordeon avançado ==== */
@@ -1201,6 +1213,20 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-medium);
   font-size: 11px;
   white-space: nowrap;
+}
+.upload-kind-chip.is-active {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.uploads-history-partial {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--sem-alerta-bg);
+  color: var(--sem-alerta);
+  font-size: 9px;
+  font-weight: 700;
 }
 .upload-report {
   display: grid;

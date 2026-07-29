@@ -119,6 +119,8 @@ test('Tendência multiaba identifica cabeçalhos e pede confirmação', async ({
   XLSX.utils.book_append_sheet(
     workbook,
     XLSX.utils.aoa_to_sheet([
+      ['RELATÓRIO DE TENDÊNCIA DA OBRA'],
+      ['Atualizado em', '29/07/2026'],
       [
         'Item',
         'Código',

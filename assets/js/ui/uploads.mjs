@@ -238,7 +238,7 @@ async function handleProjectTendencyUpload(ev, projectCode) {
       if (!sheetName) {
         throw new Error('Selecione a aba que contém os dados de Tendência.');
       }
-      csv = _sheetToCSV(workbook, sheetName);
+      csv = _sheetToImportCSV(workbook, sheetName, 'tendencia');
       validateImportHeaders('tendencia', parseCSVRows(csv));
     } else {
       csv = await file.text();
@@ -360,7 +360,7 @@ export function autoDetectExcelSheets(sheetNames) {
 
 function _sheetHasValidHeaders(workbook, sheetName, kind) {
   try {
-    validateImportHeaders(kind, parseCSVRows(_sheetToCSV(workbook, sheetName)));
+    validateImportHeaders(kind, parseCSVRows(_sheetToImportCSV(workbook, sheetName, kind)));
     return true;
   } catch {
     return false;
@@ -396,13 +396,49 @@ function _sheetToCSV(workbook, sheetName) {
   return workbook?.csvBySheet?.[sheetName] || '';
 }
 
+function _serializeCSVRows(rows) {
+  return rows
+    .map((row) =>
+      row
+        .map((value) => {
+          const text = String(value ?? '');
+          return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+        })
+        .join(';'),
+    )
+    .join('\n');
+}
+
+export function prepareImportCSV(csv, kind) {
+  const rows = parseCSVRows(csv);
+  const searchLimit = Math.min(rows.length, 50);
+  let headerIndex = -1;
+
+  for (let index = 0; index < searchLimit; index += 1) {
+    try {
+      validateImportHeaders(kind, [rows[index]]);
+      headerIndex = index;
+      break;
+    } catch {
+      // A aba pode conter títulos e metadados antes do cabeçalho real.
+    }
+  }
+
+  if (headerIndex <= 0) return csv;
+  return _serializeCSVRows(rows.slice(headerIndex));
+}
+
+function _sheetToImportCSV(workbook, sheetName, kind) {
+  return prepareImportCSV(_sheetToCSV(workbook, sheetName), kind);
+}
+
 function _preflightExcelHeaders(workbook, mapping, kinds = ['tendencia', 'flows', 'gestoes']) {
   const errors = [];
   for (const kind of kinds) {
     const sheetName = mapping[kind];
     if (!sheetName) continue;
     try {
-      const csv = _sheetToCSV(workbook, sheetName);
+      const csv = _sheetToImportCSV(workbook, sheetName, kind);
       validateImportHeaders(kind, parseCSVRows(csv));
     } catch (error) {
       errors.push({ kind, sheetName, message: error.message });
@@ -786,7 +822,7 @@ async function _processExcelSheets(workbook, mapping, file) {
   const csvByKind = Object.fromEntries(
     steps
       .filter((step) => mapping[step.kind])
-      .map((step) => [step.kind, _sheetToCSV(workbook, mapping[step.kind])]),
+      .map((step) => [step.kind, _sheetToImportCSV(workbook, mapping[step.kind], step.kind)]),
   );
 
   const discoveredProjects = discoverNewProjects(csvByKind);
@@ -1668,7 +1704,7 @@ async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
       const sheetName =
         mapping[kind] || (kind === 'tendencia' && sheetNames.length === 1 ? sheetNames[0] : null);
       if (!sheetName) throw new Error(`Aba correspondente a "${kind}" não encontrada no Excel`);
-      const csv = _sheetToCSV(wb, sheetName);
+      const csv = _sheetToImportCSV(wb, sheetName, kind);
       if (kind === 'tendencia') {
         parsedTendency = parseTendenciaFile(csv);
       } else {

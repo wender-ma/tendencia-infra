@@ -533,7 +533,9 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
   await page.getByRole('tab', { name: /Uploads/ }).click();
   await expect(page.locator('#tab-uploads')).toContainText('Nenhuma base global enviada ainda');
   await page.getByRole('tab', { name: /Manual/ }).click();
-  await expect(page.locator('#tab-manual')).toContainText('Sobre a versão online');
+  await expect(page.locator('#tab-manual')).toContainText('Manual de uso');
+  await expect(page.locator('#tab-manual')).toContainText('Guia das abas');
+  await expect(page.locator('#tab-manual')).toContainText('Resolução de problemas');
 
   const accessibility = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

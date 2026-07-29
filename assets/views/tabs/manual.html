@@ -1,171 +1,697 @@
-<div class="card">
-    <h2>ℹ️ Manual</h2>
-
-    <!-- ==== v0.52: Novas seções ==== -->
-    <h3 class="manual-heading red">🌐 Sobre a versão online</h3>
-    <div class="manual-section red">
-      <p>Este dashboard vive em <a class="manual-link" href="https://tendencia-infra.vercel.app/" target="_blank">tendencia-infra.vercel.app</a> e agora é <strong>compartilhado por toda a equipe</strong>. Todas as edições (classificações de aditivos, movimentações, aditivos manuais) são sincronizadas em tempo real com um banco na nuvem (<strong>Supabase</strong>).</p>
-      <p class="manual-spaced"><strong>Badges no header:</strong></p>
-      <ul class="manual-list">
-        <li><code>🔗 Conectando…</code> — SDK inicializando (primeiros 1-2 segundos após abrir)</li>
-        <li><code>☁️ Sincronizado</code> — tudo em dia com a nuvem ✅</li>
-        <li><code>⚠️ Erro ao sincronizar</code> — falha na última operação (passe o mouse pra ver detalhes)</li>
-        <li><code>🔴 Offline (local)</code> — sem conexão; operações remotas falham e precisam ser repetidas depois que a conexão voltar</li>
-      </ul>
-    </div>
-
-    <h3 class="manual-heading green">🔐 Login e permissões</h3>
-    <div class="manual-section green">
-      <p>Modelo atual <strong>ver = qualquer pessoa com o link / editar = restrito por papel e obra</strong>:</p>
-      <ul class="manual-list">
-        <li><strong>Sem login</strong> — qualquer pessoa com o link consegue visualizar os dados de todas as obras. Botões de edição ficam escondidos ou desabilitados.</li>
-        <li><strong>Editor ativo</strong> — pode editar somente as obras atribuídas ao seu email. Nas demais obras continua em modo de leitura.</li>
-        <li><strong>Administrador</strong> — pode editar todas as obras, gerenciar usuários/obras e executar uploads globais de Flows e Gestões.</li>
-        <li><strong>Conta pendente, rejeitada ou sem permissão</strong> — consegue visualizar, mas não editar.</li>
-      </ul>
-      <p class="manual-spaced"><strong>Como logar:</strong> clique em <code>🔑 Entrar</code> no header e use Google ou email e senha. Novas contas são liberadas somente pelo administrador responsável.</p>
-      <p class="manual-note red">
-        📧 <strong>Para pedir permissão de edição:</strong> informe ao administrador o mesmo email usado no login e quais obras você precisa editar.
+<article class="manual-guide" aria-labelledby="manual-title">
+  <header class="manual-hero">
+    <div>
+      <p class="manual-eyebrow">GUIA OFICIAL · VERSÃO 1.0</p>
+      <h2 id="manual-title" class="manual-title">ℹ️ Manual de uso</h2>
+      <p class="manual-hero-copy">
+        Aprenda a consultar uma obra, interpretar os indicadores, atualizar as bases e
+        administrar os acessos. Para começar, escolha seu perfil abaixo.
       </p>
     </div>
+    <div class="manual-hero-badges" aria-label="Características do dashboard">
+      <span>👁️ Consulta pública</span>
+      <span>🔐 Edição protegida</span>
+      <span>☁️ Dados centralizados</span>
+    </div>
+  </header>
 
-    <h3 class="manual-heading purple">📤 Como atualizar os dados</h3>
-    <div class="manual-section purple">
-      <p>Todas as atualizações ficam na aba <strong>📤 Uploads</strong> (só editores). As bases globais e as Tendências são enviadas separadamente:</p>
-      <p class="manual-spaced"><strong>🌐 Gestões + Flows:</strong></p>
-      <ul class="manual-list">
-        <li>O administrador envia <strong>1 arquivo</strong> <code>.xlsx</code> ou <code>.xlsm</code> contendo as abas FlowsValor e Gestões</li>
-        <li>O dashboard identifica as abas automaticamente pelos nomes</li>
-        <li>Se algum nome for diferente, aparece um modal pra você mapear manualmente</li>
-        <li>Novos códigos de obra são exibidos para confirmação e cadastro antes da importação</li>
-        <li>Essas duas fontes são compartilhadas por todas as obras</li>
-      </ul>
-      <p class="manual-spaced"><strong>🏗️ Tendência por obra:</strong></p>
-      <ul class="manual-list">
-        <li>Cada obra possui seu próprio bloco de upload e histórico</li>
-        <li>Envie a planilha de Tendência diretamente no bloco da obra correta</li>
-        <li>Administradores podem atualizar qualquer obra; editores veem habilitadas somente as obras permitidas</li>
-      </ul>
-      <p class="manual-spaced">Cada bloco mostra: 📁 nome do arquivo, 📅 quando/por quem foi enviado, 📤 botão pra substituir e 📜 botão de histórico (últimos 12 arquivos, com opção de baixar de novo).</p>
-      <p class="manual-spaced">Nas outras abas, um cabeçalho compacto no topo mostra qual arquivo está alimentando aquela aba (útil pra saber se os dados estão desatualizados).</p>
-      <p class="manual-note green">
-        📦 <strong>Retenção de uploads:</strong> cada arquivo enviado é armazenado no Supabase Storage. O dashboard mantém as <strong>12 versões mais recentes por tipo</strong>, tanto dos arquivos originais quanto dos snapshots processados. Arquivos inativos podem ser excluídos por usuários autorizados. O arquivo ativo precisa ser substituído antes da exclusão. Uploads via Excel ficam agrupados pelo mesmo <code>upload_group_id</code>.
+  <div class="manual-layout">
+    <aside class="manual-index" aria-label="Sumário do manual">
+      <strong>SUMÁRIO</strong>
+      <nav>
+        <a href="#manual-comecar">01 · Comece aqui</a>
+        <a href="#manual-cabecalho">02 · Cabeçalho</a>
+        <a href="#manual-abas">03 · Guia das abas</a>
+        <a href="#manual-rotinas">04 · Rotinas recomendadas</a>
+        <a href="#manual-uploads">05 · Uploads</a>
+        <a href="#manual-acessos">06 · Acessos e administração</a>
+        <a href="#manual-problemas">07 · Resolução de problemas</a>
+        <a href="#manual-arquivos">08 · Referência dos arquivos</a>
+      </nav>
+      <p>
+        Dica: use <strong>Ctrl + F</strong> para localizar rapidamente um termo neste manual.
       </p>
+    </aside>
+
+    <div class="manual-content">
+      <section class="manual-chapter" id="manual-comecar">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">01</span>
+          <div>
+            <p class="manual-eyebrow">PRIMEIRO ACESSO</p>
+            <h2>Comece aqui</h2>
+          </div>
+        </div>
+
+        <div class="manual-paths">
+          <section>
+            <h3>👁️ Quero apenas consultar</h3>
+            <ol class="manual-steps">
+              <li>
+                <span>1</span>
+                <div>
+                  <strong>Abra o dashboard</strong>
+                  <p>Não é necessário entrar. O modo público permite visualizar todas as obras.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <strong>Selecione a obra</strong>
+                  <p>Use a caixa no cabeçalho. Todas as abas passam a mostrar a obra escolhida.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <strong>Confira as fontes</strong>
+                  <p>Logo abaixo da obra, verifique os nomes e datas dos arquivos ativos.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <strong>Navegue pelas abas</strong>
+                  <p>Comece pela Visão Geral e aprofunde a análise nas demais telas.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>✏️ Preciso editar</h3>
+            <ol class="manual-steps">
+              <li>
+                <span>1</span>
+                <div>
+                  <strong>Entre na sua conta</strong>
+                  <p>Clique em <b>Entrar</b> e use Google ou email e senha.</p>
+                </div>
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <strong>Confirme seu perfil</strong>
+                  <p>O cabeçalho deve indicar Editor ou Admin, junto ao email usado.</p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <strong>Escolha uma obra permitida</strong>
+                  <p>Um editor pode alterar somente as obras atribuídas pelo administrador.</p>
+                </div>
+              </li>
+              <li>
+                <span>4</span>
+                <div>
+                  <strong>Aguarde a sincronização</strong>
+                  <p>Após editar, confirme o indicador <b>Sincronizado</b> antes de sair.</p>
+                </div>
+              </li>
+            </ol>
+          </section>
+        </div>
+
+        <div class="manual-table-wrap">
+          <table class="manual-role-table">
+            <caption>O que cada perfil pode fazer</caption>
+            <thead>
+              <tr>
+                <th>Perfil</th>
+                <th>Consultar</th>
+                <th>Editar obras</th>
+                <th>Enviar Tendência</th>
+                <th>Enviar Gestões + Flows</th>
+                <th>Administrar</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Visitante</th>
+                <td>✅ Todas</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <th>Editor</th>
+                <td>✅ Todas</td>
+                <td>✅ Atribuídas</td>
+                <td>✅ Atribuídas</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <th>Admin</th>
+                <td>✅ Todas</td>
+                <td>✅ Todas</td>
+                <td>✅ Todas</td>
+                <td>✅ Global</td>
+                <td>✅</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-cabecalho">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">02</span>
+          <div>
+            <p class="manual-eyebrow">ORIENTAÇÃO</p>
+            <h2>Entenda o cabeçalho</h2>
+          </div>
+        </div>
+
+        <dl class="manual-reference-grid">
+          <div>
+            <dt>🏗️ Seletor de obra</dt>
+            <dd>Define a obra ativa. Indicadores, tabelas, configurações e permissões acompanham essa seleção.</dd>
+          </div>
+          <div>
+            <dt>📎 Fontes ativas</dt>
+            <dd>Mostra quais arquivos alimentam a obra. Confira esta linha antes de analisar ou apresentar os dados.</dd>
+          </div>
+          <div>
+            <dt>🔑 Entrar / 🚪 Sair</dt>
+            <dd>Abre o acesso de edição ou encerra a sessão. A consulta continua disponível sem login.</dd>
+          </div>
+          <div>
+            <dt>🌙 Tema</dt>
+            <dd>Alterna entre os modos claro e noturno. A escolha fica salva neste navegador.</dd>
+          </div>
+          <div>
+            <dt>🖨️ Imprimir</dt>
+            <dd>Abre a impressão da tela atual. Escolha orientação paisagem para tabelas largas.</dd>
+          </div>
+          <div>
+            <dt>☁️ Sincronização</dt>
+            <dd>Indica conexão, salvamento ou erro. Passe o mouse sobre o indicador para ver mais detalhes.</dd>
+          </div>
+        </dl>
+
+        <div class="manual-callout manual-callout--warning">
+          <strong>Antes de tomar uma decisão</strong>
+          <p>
+            Confirme a obra selecionada, o período da gestão e os arquivos ativos. Uma tela sem
+            dados normalmente indica que a fonte daquela obra ainda não foi enviada.
+          </p>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-abas">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">03</span>
+          <div>
+            <p class="manual-eyebrow">NAVEGAÇÃO</p>
+            <h2>Guia das abas</h2>
+          </div>
+        </div>
+
+        <div class="manual-tab-list">
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>📈</span>
+              <div>
+                <h3>Visão Geral</h3>
+                <p>Resumo executivo da saúde orçamentária da obra.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Use para</strong>
+                <p>Comparar Licitação, Gestão e Tendência, entender o desvio e acompanhar a aderência físico-financeira.</p>
+              </div>
+              <div>
+                <strong>Como analisar</strong>
+                <ol>
+                  <li>Leia os quatro indicadores do topo.</li>
+                  <li>Confira o status dos grupos e a composição dos aditivos.</li>
+                  <li>Use os rankings para localizar os maiores aumentos e reduções.</li>
+                  <li>Alterne Bruto/Líquido e INCC/IPCA quando precisar mudar a referência.</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>🔗</span>
+              <div>
+                <h3>Flows / Aditivos</h3>
+                <p>Classificação e rastreamento dos aditivos da obra.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Use para</strong>
+                <p>Identificar aumento real, remanejamento, economia e itens ainda pendentes de classificação.</p>
+              </div>
+              <div>
+                <strong>Como trabalhar</strong>
+                <ol>
+                  <li>Localize pelo número do Flow ou pela descrição.</li>
+                  <li>Refine por status, departamento, destino, origem, data ou valor.</li>
+                  <li>Como editor, altere Destino e Origem diretamente nas células habilitadas.</li>
+                  <li>Selecione várias linhas para aplicar a mesma classificação em lote.</li>
+                  <li>Use <b>Novo aditivo</b> somente para um item que não existe na base de Flows.</li>
+                </ol>
+              </div>
+            </div>
+            <div class="manual-callout manual-callout--info">
+              <strong>Salvamento das classificações</strong>
+              <p>
+                As alterações são salvas na obra ativa e reaplicadas quando uma nova base global é
+                enviada. Aguarde o status Sincronizado antes de fechar a página.
+              </p>
+            </div>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>🔮</span>
+              <div>
+                <h3>Tendência de Obra</h3>
+                <p>Projeção do custo até a data prevista de término.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Configure</strong>
+                <p>
+                  Informe a data prevista de término, escolha a janela do ritmo histórico e defina a
+                  tolerância. A data de corte acompanha automaticamente o mês atual.
+                </p>
+              </div>
+              <div>
+                <strong>Como analisar</strong>
+                <ol>
+                  <li>Compare valor planejado, realizado, saldo e Tendência Total.</li>
+                  <li>Na Curva S, use o cadeado para controlar o zoom e os botões para ajustar o período.</li>
+                  <li>Passe o mouse no gráfico para comparar Planejado, Tendência e Diferença.</li>
+                  <li>Filtre a Projeção Detalhada por status ou grupo.</li>
+                  <li>Clique na lupa de um insumo para abrir sua curva e memória de cálculo.</li>
+                </ol>
+              </div>
+            </div>
+            <p class="manual-footnote">
+              Custos indiretos podem ser extrapolados pelo ritmo histórico. Diretos, Obras Civis e
+              Outros preservam o planejamento existente.
+            </p>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>📦</span>
+              <div>
+                <h3>Controle Projeção</h3>
+                <p>Conciliação da verba reservada para o insumo controlado.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Preparação</strong>
+                <ol>
+                  <li>Informe o saldo inicial e a data de referência.</li>
+                  <li>Selecione o insumo controlado entre os insumos da obra.</li>
+                  <li>Use os cadeados para evitar alterações acidentais.</li>
+                </ol>
+              </div>
+              <div>
+                <strong>Movimentações</strong>
+                <ul>
+                  <li><b>Aporte:</b> adiciona valor ao saldo.</li>
+                  <li><b>Devolução:</b> retira valor do saldo.</li>
+                  <li><b>Remanejamento/Aditivo:</b> entra quando o insumo controlado é o destino e sai quando é a origem.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="manual-callout manual-callout--success">
+              <strong>Conferência correta</strong>
+              <p>
+                Valor no sistema menos Saldo controlado resulta na Diferença. Se houver divergência,
+                revise as movimentações em ordem cronológica e o saldo inicial.
+              </p>
+            </div>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>📋</span>
+              <div>
+                <h3>Detalhamento</h3>
+                <p>Consulta linha a linha do orçamento da obra.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Use para</strong>
+                <p>Encontrar grupos, serviços e insumos e comparar Licitação, Gestão, diferença e aditivos vinculados.</p>
+              </div>
+              <div>
+                <strong>Recursos</strong>
+                <p>
+                  Pesquise por nome ou código, filtre por grupo/status/aditivo, ordene clicando nos
+                  títulos das colunas e exporte o resultado para Excel.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>📅</span>
+              <div>
+                <h3>Histórico Mensal</h3>
+                <p>Evolução do orçamento entre as gestões.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Use para</strong>
+                <p>Acompanhar a trajetória da obra e descobrir em qual gestão cada item mudou.</p>
+              </div>
+              <div>
+                <strong>Como analisar</strong>
+                <ol>
+                  <li>Leia os indicadores e a evolução do total.</li>
+                  <li>Consulte os maiores aumentos e reduções acumulados.</li>
+                  <li>No mapa de variações, compare contra a Licitação ou contra a gestão anterior.</li>
+                  <li>Filtre apenas os itens alterados para reduzir o ruído.</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>📤</span>
+              <div>
+                <h3>Uploads</h3>
+                <p>Atualização das fontes globais e individuais.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Base global</strong>
+                <p>Gestões + Flows são compartilhados por todas as obras e só podem ser enviados por um administrador.</p>
+              </div>
+              <div>
+                <strong>Base por obra</strong>
+                <p>Cada obra recebe sua própria Tendência. Admins enviam para qualquer obra; editores, somente para as atribuídas.</p>
+              </div>
+            </div>
+            <p class="manual-footnote">O procedimento completo está na seção 05 deste manual.</p>
+          </section>
+
+          <section class="manual-tab-section">
+            <div class="manual-tab-title">
+              <span>⚙️</span>
+              <div>
+                <h3>Admin</h3>
+                <p>Catálogo de obras e permissões de edição.</p>
+              </div>
+            </div>
+            <div class="manual-tab-body">
+              <div>
+                <strong>Obras</strong>
+                <p>Cadastre, edite, ative ou desative obras. Obras originadas por upload preservam o histórico ao serem desativadas.</p>
+              </div>
+              <div>
+                <strong>Usuários</strong>
+                <p>Adicione editores, altere o papel e marque exatamente quais obras cada pessoa pode editar.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-rotinas">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">04</span>
+          <div>
+            <p class="manual-eyebrow">FLUXOS DE TRABALHO</p>
+            <h2>Rotinas recomendadas</h2>
+          </div>
+        </div>
+
+        <div class="manual-workflows">
+          <section>
+            <h3>📅 Atualização mensal</h3>
+            <ol class="manual-timeline">
+              <li><span>1</span><p>Prepare a planilha global com as abas <b>Gestões</b> e <b>FlowsValor</b>.</p></li>
+              <li><span>2</span><p>Prepare a planilha de <b>Tendência</b> de cada obra atualizada.</p></li>
+              <li><span>3</span><p>O administrador envia primeiro a base global em Uploads.</p></li>
+              <li><span>4</span><p>Envie a Tendência no bloco correspondente a cada obra.</p></li>
+              <li><span>5</span><p>Confira o relatório de importação e os arquivos ativos.</p></li>
+              <li><span>6</span><p>Revise os novos aditivos pendentes na aba Flows / Aditivos.</p></li>
+              <li><span>7</span><p>Valide Visão Geral, Tendência e Histórico antes de comunicar os números.</p></li>
+            </ol>
+          </section>
+
+          <section>
+            <h3>🔎 Investigar um desvio</h3>
+            <ol class="manual-timeline">
+              <li><span>1</span><p>Na Visão Geral, identifique o grupo e a direção do desvio.</p></li>
+              <li><span>2</span><p>No Detalhamento, filtre o grupo e ordene por <b>Δ R$</b>.</p></li>
+              <li><span>3</span><p>Confira os aditivos vinculados e a parcela ainda não rastreada.</p></li>
+              <li><span>4</span><p>No Histórico Mensal, descubra quando o valor começou a mudar.</p></li>
+              <li><span>5</span><p>Na Tendência de Obra, avalie o impacto projetado até o término.</p></li>
+            </ol>
+          </section>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-uploads">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">05</span>
+          <div>
+            <p class="manual-eyebrow">ATUALIZAÇÃO DE DADOS</p>
+            <h2>Como fazer uploads</h2>
+          </div>
+        </div>
+
+        <div class="manual-upload-grid">
+          <section>
+            <p class="manual-sequence-label">ADMIN · BASE COMPARTILHADA</p>
+            <h3>🌐 Gestões + Flows</h3>
+            <ol class="manual-steps manual-steps--compact">
+              <li><span>1</span><div><strong>Abra Uploads</strong><p>Entre como administrador.</p></div></li>
+              <li><span>2</span><div><strong>Selecione o arquivo</strong><p>Use um <code>.xlsx</code> ou <code>.xlsm</code> com Gestões e FlowsValor.</p></div></li>
+              <li><span>3</span><div><strong>Revise o mapeamento</strong><p>Se os nomes não forem reconhecidos, indique qual aba corresponde a cada fonte.</p></div></li>
+              <li><span>4</span><div><strong>Confirme novas obras</strong><p>Códigos ainda não cadastrados aparecem para revisão antes da criação.</p></div></li>
+              <li><span>5</span><div><strong>Leia o relatório</strong><p>Confira linhas aceitas, ignoradas e rejeitadas.</p></div></li>
+            </ol>
+          </section>
+
+          <section>
+            <p class="manual-sequence-label">EDITOR OU ADMIN · BASE INDIVIDUAL</p>
+            <h3>🏗️ Tendência da obra</h3>
+            <ol class="manual-steps manual-steps--compact">
+              <li><span>1</span><div><strong>Localize a obra</strong><p>Os blocos aparecem um abaixo do outro na Central de Uploads.</p></div></li>
+              <li><span>2</span><div><strong>Confirme o código</strong><p>Envie o arquivo somente no bloco da obra correspondente.</p></div></li>
+              <li><span>3</span><div><strong>Selecione a Tendência</strong><p>São aceitos Excel e CSV compatíveis.</p></div></li>
+              <li><span>4</span><div><strong>Aguarde a conclusão</strong><p>Não feche a página enquanto o arquivo estiver sendo processado.</p></div></li>
+              <li><span>5</span><div><strong>Valide a obra</strong><p>Abra a Visão Geral e confira gestão, totais e fontes ativas.</p></div></li>
+            </ol>
+          </section>
+        </div>
+
+        <dl class="manual-facts">
+          <div><dt>12 versões</dt><dd>São mantidas as versões mais recentes de cada tipo de arquivo e snapshot.</dd></div>
+          <div><dt>Histórico</dt><dd>Permite baixar uma versão anterior e, quando autorizado, torná-la ativa novamente.</dd></div>
+          <div><dt>Substituição</dt><dd>O novo arquivo vira a fonte ativa; o anterior permanece no histórico durante a retenção.</dd></div>
+          <div><dt>Edições preservadas</dt><dd>Classificações, aditivos manuais e movimentações não são apagados por um novo upload.</dd></div>
+        </dl>
+
+        <div class="manual-callout manual-callout--danger">
+          <strong>Zona de manutenção</strong>
+          <p>
+            As ações de limpeza são diferentes: uma remove dados processados do dashboard e outra
+            remove arquivos do histórico. Leia a confirmação inteira e confira a obra antes de
+            prosseguir.
+          </p>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-acessos">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">06</span>
+          <div>
+            <p class="manual-eyebrow">SEGURANÇA</p>
+            <h2>Acessos e administração</h2>
+          </div>
+        </div>
+
+        <div class="manual-admin-flow">
+          <section>
+            <h3>👤 Liberar um editor</h3>
+            <ol>
+              <li>Confirme o email usado pela pessoa no login.</li>
+              <li>Em Admin, clique em <b>Adicionar editor</b>.</li>
+              <li>Escolha o papel Editor e marque as obras permitidas.</li>
+              <li>Salve e peça para a pessoa recarregar o dashboard.</li>
+            </ol>
+          </section>
+          <section>
+            <h3>🏗️ Gerenciar uma obra</h3>
+            <ol>
+              <li>Use <b>Nova obra</b> para um cadastro manual.</li>
+              <li>Informe código e nome; o código não poderá ser alterado depois.</li>
+              <li>Desative uma obra para removê-la do seletor sem apagar seu histórico.</li>
+              <li>Obras criadas por upload podem ser desativadas, mas não excluídas pela interface.</li>
+            </ol>
+          </section>
+        </div>
+
+        <div class="manual-callout manual-callout--info">
+          <strong>Princípio de acesso</strong>
+          <p>
+            A visualização é pública. Login não concede edição automaticamente: a permissão depende
+            do papel e das obras atribuídas ao email.
+          </p>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-problemas">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">07</span>
+          <div>
+            <p class="manual-eyebrow">AJUDA RÁPIDA</p>
+            <h2>Resolução de problemas</h2>
+          </div>
+        </div>
+
+        <div class="manual-disclosures">
+          <details>
+            <summary>A obra ou uma aba aparece sem dados</summary>
+            <div>
+              <p>Confirme a obra selecionada e veja no cabeçalho se a fonte necessária está ativa.</p>
+              <p>Visão Geral e Detalhamento dependem da Tendência; Histórico e Curva S dependem também de Gestões; Flows depende de FlowsValor.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Estou logado, mas não consigo editar</summary>
+            <div>
+              <p>Confira o texto ao lado do seu email. “Só leitura aqui” significa que sua conta é editora de outra obra.</p>
+              <p>Troque a obra no cabeçalho ou peça ao administrador para ajustar suas atribuições.</p>
+            </div>
+          </details>
+          <details>
+            <summary>O indicador mostra erro ou offline</summary>
+            <div>
+              <p>Não continue editando. Verifique a internet, recarregue a página e confirme se o indicador volta para Sincronizado.</p>
+              <p>Se a última ação não aparecer depois da recarga, repita-a.</p>
+            </div>
+          </details>
+          <details>
+            <summary>O upload foi rejeitado</summary>
+            <div>
+              <p>Confira o relatório exibido pelo dashboard. Os motivos mais comuns são aba ausente, cabeçalho não reconhecido, código de obra vazio ou arquivo no formato antigo.</p>
+              <p>Corrija a planilha de origem e envie novamente; não edite o CSV manualmente sem necessidade.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Os valores ou percentuais parecem incorretos</summary>
+            <div>
+              <p>Confirme o índice selecionado, o modo Bruto/Líquido, a gestão ativa e o período da análise.</p>
+              <p>Valores aceitam ponto de milhar e vírgula decimal. Na Tendência, a linha de totais também precisa estar preenchida.</p>
+            </div>
+          </details>
+          <details>
+            <summary>Não consigo rolar a página sobre uma tabela ou gráfico</summary>
+            <div>
+              <p>Nas tabelas largas, a rolagem horizontal fica dentro da própria tabela. Para navegar verticalmente, use a página normalmente.</p>
+              <p>Nos gráficos, o zoom deve ser feito pelos controles da barra ou pela seleção de período, não pela roda do mouse.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="manual-chapter" id="manual-arquivos">
+        <div class="manual-chapter-heading">
+          <span class="manual-chapter-number">08</span>
+          <div>
+            <p class="manual-eyebrow">APÊNDICE TÉCNICO</p>
+            <h2>Referência dos arquivos</h2>
+          </div>
+        </div>
+
+        <div class="manual-source-flow" aria-label="Relação entre fontes e telas">
+          <div><strong>TENDÊNCIA</strong><span>Visão Geral · Tendência de Obra · Detalhamento · Controle Projeção</span></div>
+          <div><strong>FlowsValor</strong><span>Flows / Aditivos · Composição do desvio · Controle Projeção</span></div>
+          <div><strong>Gestões</strong><span>Histórico Mensal · Curva S · Realizado por período</span></div>
+        </div>
+
+        <div class="manual-disclosures manual-disclosures--technical">
+          <details>
+            <summary>📈 Cabeçalhos obrigatórios da TENDÊNCIA</summary>
+            <div>
+              <p>
+                <code>Código</code>, <code>Serviço</code>, <code>Insumo</code>,
+                <code>Item</code>, <code>Orçamento Licitação</code>, <code>IPCA</code>,
+                <code>INCC</code>, <code>Gestão</code>, <code>Diferença</code>,
+                <code>Evolução Teórica</code> e <code>Evolução Financeira</code>.
+              </p>
+              <ul>
+                <li>Linha 1: cabeçalhos.</li>
+                <li>Linha 2: totais globais e percentuais de evolução.</li>
+                <li>Linha 3 em diante: grupos, serviços e insumos.</li>
+                <li>O código e o nome do item são obrigatórios em cada linha válida.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
+            <summary>🔗 Cabeçalhos obrigatórios de FlowsValor</summary>
+            <div>
+              <p>
+                <code>Cod_aditivo</code>, <code>Descr_status</code>,
+                <code>Descr_areaatual</code>, <code>Descr_setorcriacao</code>,
+                <code>Data_criacao</code>, <code>Descr_motivo</code>,
+                <code>Descr_observacao_motivo</code>, <code>Descr_descricaoaditivo</code>,
+                <code>Cod_obra</code>, <code>Valor Aprovado ou Solicitado</code>,
+                <code>Vlr_planejamento</code>, <code>Departamento</code>,
+                <code>Ins. Planej.</code>, <code>Ins. Remanej.</code> e
+                <code>Refletido</code>.
+              </p>
+              <p>Os cabeçalhos são normalizados e podem aparecer em outra ordem.</p>
+            </div>
+          </details>
+          <details>
+            <summary>📅 Cabeçalhos obrigatórios de Gestões</summary>
+            <div>
+              <p>
+                <code>Descr_gestao</code>, <code>Descr_classificacaofinanceira</code>,
+                <code>Key_planejamento</code>, <code>Val_totalliquido</code> e
+                <code>Mes_pagamento</code>.
+              </p>
+              <p>
+                O dashboard considera a classificação financeira <code>Obra</code> e identifica a
+                obra pelo prefixo da chave de planejamento.
+              </p>
+            </div>
+          </details>
+          <details>
+            <summary>🧾 Formatos aceitos e regras de leitura</summary>
+            <div>
+              <ul>
+                <li>Excel: <code>.xlsx</code>, <code>.xlsm</code> e <code>.xls</code>.</li>
+                <li>CSV: UTF-8, com separador ponto e vírgula, vírgula ou tabulação.</li>
+                <li>Moeda: <code>1.234.567,89</code> ou formato numérico equivalente.</li>
+                <li>Datas: <code>dd/mm/aaaa</code> ou <code>aaaa-mm-dd</code>.</li>
+                <li>Acentos, espaços e diferenças entre maiúsculas/minúsculas são normalizados nos cabeçalhos.</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+
+        <p class="manual-document-end">
+          <strong>Dashboard Tendência Infra · v1.0.0</strong>
+          <span>Use este manual como referência durante a operação e a conferência mensal.</span>
+        </p>
+      </section>
     </div>
-
-    <h3 class="manual-heading amber">🔄 Fluxo mensal recomendado</h3>
-    <div class="manual-section amber">
-      <ol class="manual-list">
-        <li>No começo de cada mês, prepare a base global de FlowsValor + Gestões e a Tendência de cada obra</li>
-        <li>Faça login no dashboard</li>
-        <li>Vá em <strong>📤 Uploads</strong>, atualize a base global e depois cada obra necessária</li>
-        <li>Confira nos cabeçalhos das outras abas se todas estão apontando pra data certa</li>
-        <li>Reveja as novas classificações de aditivos que apareceram na aba <strong>🔗 Flows</strong></li>
-      </ol>
-      <p class="manual-spaced">Os dados classificados anteriormente (aditivos manuais, movimentações, refletidos) <strong>continuam preservados</strong> mesmo depois de substituir os CSVs.</p>
-    </div>
-
-    <hr class="manual-divider">
-
-    <h2 class="manual-subtitle">📊 Formato dos arquivos CSV</h2>
-    <p class="manual-intro">
-      Referência técnica de cada CSV que o dashboard consome. Se algum arquivo for rejeitado no upload, confira aqui a estrutura esperada.
-    </p>
-    <div class="manual-source-map">
-      <strong class="manual-source-map-title">🗂️ Mapa de fontes</strong>
-      <table class="manual-source-table">
-        <thead>
-          <tr><th>Aba do Dashboard</th>
-          <th>Fonte (aba da planilha)</th>
-          <th>Atualiza</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>📈 Visão Geral</td><td><code>TENDÊNCIA</code></td><td>KPIs, Grupos, Donut, Top 10</td></tr>
-          <tr><td>📋 Detalhamento</td><td><code>TENDÊNCIA</code></td><td>Tabela completa de itens</td></tr>
-          <tr><td>🔗 Flows / Aditivos</td><td><code>FlowsValor</code></td><td>Aditivos e suas classificações</td></tr>
-          <tr><td>📅 Histórico Mensal</td><td><code>Gestões</code></td><td>Evolução das gestões + heatmap</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3 class="manual-heading red">📈 Aba TENDÊNCIA</h3>
-    <div class="manual-section red">
-      <p><strong>Como exportar:</strong> Abra a planilha .xlsm, vá na aba <code>TENDÊNCIA</code>, Arquivo → Salvar Como → CSV UTF-8 (.csv).</p>
-      <p class="manual-spaced"><strong>Estrutura esperada (v0.55+, 22 colunas):</strong></p>
-      <ul class="manual-list">
-        <li><code>A</code> — Chave (ex: <code>42-21O-1-31005-S05765-ADM5189-01.01.01.02</code>)</li>
-        <li><code>B</code> — Código hierárquico (ex: <code>01.01.01.02</code>)</li>
-        <li><code>C</code> — Código de serviço (ex: <code>S05765</code>) · <code>-1</code> quando vazio</li>
-        <li><code>D</code> — Código de insumo (ex: <code>ADM5189</code>) ← obrigatório para o item ser "folha". <code>-1</code> ou <code>INSUMOS</code> = grupo</li>
-        <li><code>E</code> — Nome do item</li>
-        <li><code>F</code> — <em>(vazia — separador visual)</em></li>
-        <li><code>G</code> — <strong>ORÇ. LICITAÇÃO</strong> (R$)</li>
-        <li><code>H</code> — <strong>Corrigido IPCA</strong> (R$) ← agora vem antes do INCC</li>
-        <li><code>I</code> — <strong>Corrigido INCC</strong> (R$)</li>
-        <li><code>J</code> — Gestão atual (R$) — cabeçalho contém a data da gestão (ex: <code>GESTÃO MM-AAAA</code>)</li>
-        <li><code>K</code> — Diferença (R$) — calculada na planilha</li>
-        <li><code>L</code> — <em>(vazia — separador visual)</em></li>
-        <li><code>M</code> — 🆕 <strong>EVOLUÇÃO TEÓRICA</strong> (Prevision) — % em cronograma físico</li>
-        <li><code>N</code> — 🆕 <strong>EVOLUÇÃO FINANCEIRA</strong> — % gasto do orçamento</li>
-        <li><code>O</code> — <em>(vazia — separador visual)</em></li>
-        <li><code>P</code> — TENDÊNCIA (manual, ainda não usada no dashboard)</li>
-        <li><code>Q</code> — DIF. TENDÊNCIA (manual, ainda não usada)</li>
-        <li><code>R</code> — <em>(vazia — separador visual)</em></li>
-        <li><code>S</code> — Observações (manuais)</li>
-      </ul>
-      <p class="manual-note green">
-        💡 <strong>Linha 2 é o subheader com totais globais</strong> (área vendável, valores totais e <strong>% globais de evolução</strong>). A linha 1 é o cabeçalho de nomes, dados começam na linha 3.
-      </p>
-      <p><strong>Linhas:</strong> linha 1 = cabeçalho. A partir da linha 2 são os dados.</p>
-      <p><strong>Cabeçalho obrigatório:</strong> as colunas descritas acima são localizadas pelo nome e podem mudar de posição; espaços, acentos e maiúsculas são normalizados durante a validação.</p>
-      <p class="manual-note red">✨ <strong>Novidade v0.55:</strong> o arquivo agora tem 22 colunas (era 17). Foram adicionadas <code>EVOLUÇÃO TEÓRICA</code> e <code>EVOLUÇÃO FINANCEIRA</code> (integração com o Prevision) para calcular a <strong>Aderência Físico-Financeira</strong> da obra. Custos indiretos não entram nessa conta.</p>
-      <p class="manual-note amber">⚠️ Formato anterior (17 colunas, sem EVOLUÇÃO) <strong>não é mais aceito</strong> a partir da v0.55.</p>
-    </div>
-
-    <h3 class="manual-heading neutral">🔗 Aba FlowsValor</h3>
-    <div class="manual-section">
-      <p><strong>Como exportar:</strong> Vá na aba <code>FlowsValor</code> da planilha, Salvar Como → CSV UTF-8.</p>
-      <p class="manual-spaced"><strong>Estrutura esperada (Fabric v0.63, 15 colunas):</strong></p>
-      <ul class="manual-list">
-        <li><code>A</code> — Cod_aditivo</li>
-        <li><code>B–D</code> — Descr_status, Descr_areaatual e Descr_setorcriacao</li>
-        <li><code>E</code> — Data_criacao</li>
-        <li><code>F–H</code> — Descr_motivo, Descr_observacao_motivo e Descr_descricaoaditivo</li>
-        <li><code>I</code> — Cod_obra</li>
-        <li><code>J–K</code> — Valor Aprovado ou Solicitado e Vlr_planejamento</li>
-        <li><code>L</code> — Departamento</li>
-        <li><code>M–N</code> — Ins. Planej. e Ins. Remanej.</li>
-        <li><code>O</code> — Refletido</li>
-      </ul>
-      <p><strong>Linhas:</strong> linha 1 = cabeçalho; dados a partir da linha 2.</p>
-      <p><strong>Cabeçalho obrigatório:</strong> as 15 colunas são localizadas pelo nome e podem mudar de ordem.</p>
-      <p class="manual-spaced"><strong>Importante:</strong> as edições e os aditivos manuais que você cria neste dashboard <strong>NÃO são apagados</strong> quando você sobe um novo CSV. Eles ficam preservados.</p>
-    </div>
-
-    <h3 class="manual-heading info">📅 Aba Gestões</h3>
-    <div class="manual-section">
-      <p><strong>Como exportar:</strong> Aba <code>Gestões</code> da planilha → Salvar Como → CSV UTF-8.</p>
-      <p class="manual-spaced"><strong>Estrutura esperada (27 colunas):</strong></p>
-      <ul class="manual-list">
-        <li><code>B</code> — Empreendimento (informativo)</li>
-        <li><code>D</code> — Nome da gestão (ex: <code>GESTÃO MM-AAAA</code>, <code>Atual</code>)</li>
-        <li><code>H</code> — Classificação financeira (filtro: <code>Obra</code>)</li>
-        <li><code>K</code> — Key_planejamento (chave igual à coluna A da Tendência)</li>
-        <li><code>L</code> — Val_totalliquido (R$ por mês de pagamento)</li>
-        <li><code>J</code> — Mês de pagamento</li>
-        <li><code>Z</code> — Insumo (ex: <code>I001148</code>, <code>ADM5189</code>)</li>
-      </ul>
-      <p><strong>Lógica:</strong> o dashboard soma <code>Val_totalliquido</code> por <code>Key_planejamento</code> e <code>Gestão</code>, considera a classificação financeira <code>Obra</code> e identifica cada obra pelo prefixo da chave de planejamento.</p>
-      <p><strong>Cabeçalhos obrigatórios:</strong> <code>Descr_gestao</code>, <code>Descr_classificacaofinanceira</code>, <code>Key_planejamento</code>, <code>Val_totalliquido</code> e <code>Mes_pagamento</code>. A ordem pode variar.</p>
-    </div>
-
-    <h3 class="manual-heading deep">💡 Dicas gerais</h3>
-    <ul class="manual-tips">
-      <li>Formato dos CSVs: <strong>UTF-8</strong>; os separadores <code>;</code>, vírgula e tabulação são detectados automaticamente.</li>
-      <li>Valores em R$ podem vir com <code>.</code> de milhar e <code>,</code> de decimal — o dashboard converte automaticamente.</li>
-      <li>Datas aceitas: <code>dd/mm/aaaa</code>, <code>mm/dd/aaaa</code> quando inequívoca, ou <code>aaaa-mm-dd</code>. Datas inválidas são rejeitadas.</li>
-      <li>O dashboard <strong>detecta automaticamente</strong> o tipo do CSV pelo cabeçalho e rejeita se você subir o errado.</li>
-      <li>O processamento dos arquivos ocorre no navegador. Arquivos e dados consolidados são enviados ao <strong>Supabase</strong> para sincronização entre usuários autorizados.</li>
-      <li>Aditivos manuais e classificações também usam o <code>localStorage</code> como cache local e são sincronizados com o Supabase quando o usuário possui permissão de edição na obra ativa.</li>
-    </ul>
   </div>
+</article>

@@ -1,40 +1,3 @@
-<div class="card">
-    <h2>⚙️ Administração <span class="hint">só visível para admin geral</span></h2>
-    <p class="admin-intro">
-      Gerenciar o catálogo de obras e a lista de editores permitidos.
-      Todas as alterações são compartilhadas com toda a equipe em tempo real.
-    </p>
-  </div>
-
-  <!-- === PENDENTES DE APROVAÇÃO === -->
-  <div class="card">
-    <h2>🔔 Cadastros aguardando aprovação <span class="hint" id="pendentesCount"></span>
-      <span class="panel-actions">
-        <button class="btn-sm" data-click-action="renderPendentesAdmin" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
-      </span>
-    </h2>
-    <p class="admin-help">
-      Usuários que criaram conta pelo botão "Criar conta" e ainda não têm permissão de edição.<br>
-      <strong>Aprovar</strong> = vira editor sem obras (defina depois em Editores via 🏗️). <strong>Rejeitar</strong> = nega acesso permanente.
-    </p>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Nome</th>
-            <th>Observação</th>
-            <th class="table-col-150">Cadastrado em</th>
-            <th class="table-col-200">Ações</th>
-          </tr>
-        </thead>
-        <tbody id="pendentesAdminTbody" aria-live="polite">
-          <tr><td colspan="5" class="table-empty">carregando…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
   <!-- === OBRAS === -->
   <div class="card">
     <h2>🏗️ Obras
@@ -43,13 +6,8 @@
         <button class="btn-sm" data-click-action="renderObrasAdmin" title="Recarregar do Supabase" aria-label="Recarregar obras">🔄</button>
       </span>
     </h2>
-    <p class="admin-help">
-      Obras <strong>inativas</strong> ficam fora do dropdown do header (dados históricos preservados).<br>
-      Coluna <strong>Origem</strong>: <span class="badge purple">✍️ Manual</span> = criada aqui, pode ser deletada (🗑️).
-      <span class="badge gray">📥 Upload</span> = veio de arquivo de Gestões, só pode desativar.
-    </p>
     <div class="table-wrap">
-      <table>
+      <table class="admin-table admin-table--works">
         <thead>
           <tr>
             <th class="table-col-120">Código</th>
@@ -76,13 +34,8 @@
         <button class="btn-sm" data-click-action="renderEditoresAdmin" title="Recarregar do Supabase" aria-label="Recarregar editores">🔄</button>
       </span>
     </h2>
-    <p class="admin-help">
-      💡 <strong>Admin</strong> (👑) gerencia obras, aprova cadastros e edita dados de qualquer obra.<br>
-      <strong>Editor</strong> (✏️) edita só as obras marcadas na coluna "Obra". Editor sem obra atribuída não edita nada (⚠️).<br>
-      Use ⬆️/⬇️ para alternar admin↔editor · 🏗️ para escolher obras do editor (checkbox) · 🗑️ para remover totalmente.
-    </p>
     <div class="table-wrap">
-      <table>
+      <table class="admin-table admin-table--editors">
         <thead>
           <tr>
             <th>Email</th>
@@ -96,6 +49,31 @@
         </thead>
         <tbody id="editoresAdminTbody" aria-live="polite">
           <tr><td colspan="7" class="table-empty">carregando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- === PENDENTES DE APROVAÇÃO === -->
+  <div class="card">
+    <h2>🔔 Cadastros aguardando aprovação <span class="hint" id="pendentesCount"></span>
+      <span class="panel-actions">
+        <button class="btn-sm" data-click-action="renderPendentesAdmin" title="Recarregar do Supabase" aria-label="Recarregar cadastros pendentes">🔄</button>
+      </span>
+    </h2>
+    <div class="table-wrap">
+      <table class="admin-table admin-table--pending">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nome</th>
+            <th>Observação</th>
+            <th class="table-col-150">Cadastrado em</th>
+            <th class="table-col-200">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="pendentesAdminTbody" aria-live="polite">
+          <tr><td colspan="5" class="table-empty">carregando…</td></tr>
         </tbody>
       </table>
     </div>

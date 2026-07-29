@@ -1811,8 +1811,10 @@ body:not(.is-admin-geral) [data-admin-control],
 }
 
 /* Administração */
-.admin-intro { margin: 8px 0 12px; color: var(--text-medium); font-size: 12.5px; }
-.admin-help { margin-bottom: 8px; color: var(--text-soft); font-size: 12px; }
+#tab-admin > .card + .card { margin-top: 14px; }
+#tab-admin .admin-table--works,
+#tab-admin .admin-table--editors { min-width: 980px; }
+#tab-admin .admin-table--pending { min-width: 720px; }
 .admin-role-help { margin-top: 6px; color: var(--text-soft); font-size: 11px; }
 .admin-project-actions { display: flex; gap: 6px; margin: 6px 0; }
 .admin-project-note { margin-top: 4px; color: var(--text-soft); font-size: 11px; }

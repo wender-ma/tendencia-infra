@@ -120,4 +120,17 @@ test('administrador abre catálogo com resposta Supabase controlada', async ({ p
   await expect(page.locator('#obrasAdminTbody')).toContainText('Obra E2E');
   await expect(page.locator('#obrasAdminTbody')).toContainText('OBRA-E2E');
   await expect(page.locator('#tab-admin')).toHaveClass(/active/);
+  await expect(page.locator('#tab-admin > .card > h2')).toHaveCount(3);
+  expect(
+    await page.locator('#tab-admin > .card > h2').evaluateAll((headings) =>
+      headings.map((heading) => heading.textContent.replace(/\s+/g, ' ').trim()),
+    ),
+  ).toEqual([
+    '🏗️ Obras ➕ Nova obra 🔄',
+    '👥 Editores permitidos ➕ Adicionar editor 🔄',
+    '🔔 Cadastros aguardando aprovação 🔄',
+  ]);
+  await expect(page.locator('#tab-admin')).not.toContainText('⚙️ Administração');
+  await expect(page.locator('#tab-admin')).not.toContainText('Obras inativas ficam');
+  await expect(page.locator('#tab-admin')).not.toContainText('Usuários que criaram conta');
 });

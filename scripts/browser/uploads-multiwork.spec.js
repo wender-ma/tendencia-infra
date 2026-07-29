@@ -313,3 +313,146 @@ test('upload global apresenta novas obras e permite cancelar sem cadastrar', asy
     ),
   ).toEqual(['42-21O', '66-JDFMO']);
 });
+
+test('upload global bloqueia obra ausente até confirmação individual e cancela sem escrever', async ({
+  page,
+}) => {
+  await openOfflineDashboard(page);
+  const projects = [
+    { codigo_obra: '42-21O', nome: 'Zurique', ativa: false, origem: 'upload' },
+    { codigo_obra: '18-JROMO', nome: 'Roma', ativa: true, origem: 'upload' },
+  ];
+  await page.route('https://*.supabase.co/rest/v1/obras*', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(projects),
+    }),
+  );
+  await page.evaluate((catalog) => {
+    window.dashboardServices.state.obra.obras = catalog;
+    window.dashboardServices.state.obra.ativa = '18-JROMO';
+    window.dashboardServices.state.dados.flows = [
+      ...Array.from({ length: 160 }, (_, index) => ({
+        codigo_obra: '42-21O',
+        n_alteracao: `Z-${index}`,
+      })),
+      { codigo_obra: '18-JROMO', n_alteracao: 'R-1' },
+    ];
+    window.dashboardServices.state.dados.historico = {
+      items: [
+        { codigo_obra: '42-21O', gestao: 'Atual' },
+        { codigo_obra: '18-JROMO', gestao: 'Atual' },
+      ],
+      gestoes: ['Atual'],
+    };
+    Object.assign(window.dashboardServices.auth.state, {
+      ready: true,
+      user: { email: 'admin@example.com' },
+      isAdminGeral: true,
+      isEditor: true,
+      isPending: false,
+      editaObras: [],
+    });
+    window.dashboardServices.authUi.updateAuthUI();
+  }, projects);
+  await page.locator('#tab-btn-uploads').click();
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([
+      [
+        'Descr_etiqueta',
+        'Cod_aditivo',
+        'Descr_setorcriacao',
+        'Data_criacao',
+        'Vlr_estimado',
+        'Descr_motivo',
+        'Descr_observacao_motivo',
+        'Descr_areaatual',
+        'Descr_descricaoaditivo',
+        'Cod_obra',
+        'Descr_usuariocriacao',
+        'Descr_status',
+        'Valor Aprovado ou Solicitado',
+        'Vlr_planejamento',
+      ],
+      [
+        'Em aprovação',
+        '2',
+        'Obras',
+        '8/19/24 8:37',
+        '100',
+        'Escopo',
+        '',
+        'Engenharia',
+        'Aditivo Roma',
+        'JROMO',
+        'Usuário',
+        'Ativo',
+        '100',
+        '100',
+      ],
+    ]),
+    'Aditivos_flowmaster',
+  );
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([
+      [
+        'Descr_gestao',
+        'Descr_classificacaofinanceira',
+        'Key_planejamento',
+        'Val_totalliquido',
+        'Mes_pagamento',
+      ],
+      ['Atual', 'Obra', '42-21O-1-31005-S001-I001-01.01.01', '100', '01/07/2026'],
+      ['Atual', 'Obra', '18-JROMO-1-31005-S001-I001-01.01.01', '100', '01/07/2026'],
+    ]),
+    'Gestões',
+  );
+
+  let remoteWrites = 0;
+  page.on('request', (request) => {
+    if (
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method()) &&
+      request.url().includes('.supabase.co/')
+    ) {
+      remoteWrites += 1;
+    }
+  });
+  await page.locator('#fileInput_excel').setInputFiles({
+    name: 'bases-sem-zurique.xlsx',
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    buffer: XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
+  });
+
+  await expect(page.getByRole('heading', { name: 'Obras ausentes no novo arquivo' })).toBeVisible({
+    timeout: 15_000,
+  });
+  const coverageRow = page.locator('.upload-coverage-table tbody tr').filter({
+    hasText: '42-21O',
+  });
+  await expect(coverageRow).toContainText('Zurique');
+  await expect(coverageRow.locator('td').nth(2)).toHaveText('160');
+  await expect(coverageRow.locator('td').nth(3)).toHaveText('0');
+  await expect(coverageRow.locator('td').nth(4)).toHaveText('-160');
+  const destructiveButton = page.getByRole('button', { name: 'Substituir mesmo assim' });
+  await expect(destructiveButton).toBeDisabled();
+  await coverageRow.getByRole('checkbox').check();
+  await expect(destructiveButton).toBeEnabled();
+  await coverageRow.getByRole('checkbox').uncheck();
+  await expect(destructiveButton).toBeDisabled();
+  await page.getByRole('button', { name: 'Cancelar upload' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Obras ausentes no novo arquivo' })).toBeHidden();
+  expect(remoteWrites).toBe(0);
+  expect(
+    await page.evaluate(
+      () =>
+        window.dashboardServices.state.dados.flows.filter((flow) => flow.codigo_obra === '42-21O')
+          .length,
+    ),
+  ).toBe(160);
+});

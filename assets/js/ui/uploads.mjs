@@ -155,6 +155,33 @@ function handleUpload(ev, kind /* 'tendencia' | 'flows' | 'gestoes' */) {
         result = `GESTÕES: ${linhas} itens · ${parsed.gestoes.length} gestões`;
       }
 
+      if (UPLOAD_META[kind]?.global === true) {
+        await carregarObras({ strict: true });
+        renderObrasDropdown();
+        let coverage;
+        try {
+          coverage = prepareGlobalUploadCoverage(memorySnapshot, [kind]);
+        } catch (error) {
+          restoreInMemoryUploadState(memorySnapshot);
+          setUploadRuntimeState(kind, 'failed', error.message || String(error));
+          authToast(`❌ Upload bloqueado: ${error.message}`, 'err', 7000);
+          renderUploadsCentral();
+          ev.target.value = '';
+          return;
+        }
+        if (coverage.missing.length) {
+          const confirmed = await promptMissingProjectCoverage(coverage.missing);
+          if (!confirmed) {
+            restoreInMemoryUploadState(memorySnapshot);
+            setUploadRuntimeState(kind, 'idle');
+            authToast('Upload cancelado. Nenhuma alteração foi realizada.', 'warn', 3500);
+            renderUploadsCentral();
+            ev.target.value = '';
+            return;
+          }
+        }
+      }
+
       setUploadRuntimeState(kind, 'processing', 'Sincronizando arquivo e dados');
       await commitPreparedUpload({
         file,
@@ -782,6 +809,225 @@ function promptNewProjects(projects) {
   });
 }
 
+function getCoverageProjectCode(record) {
+  return String(record?.codigo_obra || record?.cod_obra || record?.obra || '').trim();
+}
+
+function countCoverageByProject(records) {
+  const counts = new Map();
+  for (const record of Array.isArray(records) ? records : []) {
+    const code = getCoverageProjectCode(record);
+    if (!code) continue;
+    const normalized = code.toLocaleLowerCase('pt-BR');
+    const current = counts.get(normalized);
+    counts.set(normalized, {
+      code: current?.code || code,
+      count: (current?.count || 0) + 1,
+    });
+  }
+  return counts;
+}
+
+export function analyzeGlobalUploadCoverage({
+  previousFlows = [],
+  incomingFlows = [],
+  previousHistory = [],
+  incomingHistory = [],
+  projects = [],
+  selectedKinds = ['flows', 'gestoes'],
+} = {}) {
+  const projectCatalog = new Map();
+  for (const project of Array.isArray(projects) ? projects : []) {
+    const code = String(project?.codigo_obra || '').trim();
+    if (!code) continue;
+    projectCatalog.set(code.toLocaleLowerCase('pt-BR'), {
+      code,
+      name: String(project?.nome || code).trim(),
+      active: project?.ativa !== false,
+    });
+  }
+
+  const definitions = {
+    flows: {
+      label: 'Flows',
+      previous: previousFlows,
+      incoming: incomingFlows,
+    },
+    gestoes: {
+      label: 'Gestões',
+      previous: previousHistory,
+      incoming: incomingHistory,
+    },
+  };
+  const sections = [];
+
+  for (const kind of selectedKinds) {
+    const definition = definitions[kind];
+    if (!definition) continue;
+    const previousCounts = countCoverageByProject(definition.previous);
+    const incomingCounts = countCoverageByProject(definition.incoming);
+    const projectKeys = new Set([
+      ...projectCatalog.keys(),
+      ...previousCounts.keys(),
+      ...incomingCounts.keys(),
+    ]);
+    const rows = [...projectKeys]
+      .map((key) => {
+        const catalog = projectCatalog.get(key);
+        const previousEntry = previousCounts.get(key);
+        const incomingEntry = incomingCounts.get(key);
+        const previous = previousEntry?.count || 0;
+        const incoming = incomingEntry?.count || 0;
+        const code = catalog?.code || previousEntry?.code || incomingEntry?.code || key;
+        return {
+          kind,
+          label: definition.label,
+          code,
+          name: catalog?.name || code,
+          active: catalog?.active ?? null,
+          previous,
+          incoming,
+          delta: incoming - previous,
+          missing: previous > 0 && incoming === 0,
+          partialDrop: previous > incoming && incoming > 0,
+        };
+      })
+      .filter((row) => row.previous > 0 || row.incoming > 0)
+      .sort((left, right) => left.code.localeCompare(right.code, 'pt-BR'));
+
+    sections.push({
+      kind,
+      label: definition.label,
+      previousTotal: Array.isArray(definition.previous) ? definition.previous.length : 0,
+      incomingTotal: Array.isArray(definition.incoming) ? definition.incoming.length : 0,
+      projects: rows,
+    });
+  }
+
+  return {
+    sections,
+    missing: sections.flatMap((section) => section.projects.filter((row) => row.missing)),
+    partialDrops: sections.flatMap((section) => section.projects.filter((row) => row.partialDrop)),
+  };
+}
+
+function validateCoverageBaseline(memorySnapshot, selectedKinds) {
+  for (const kind of selectedKinds) {
+    const activeRows = Number(memorySnapshot?.latestUploads?.[kind]?.linhas || 0);
+    const baselineRows =
+      kind === 'flows'
+        ? memorySnapshot?.flows?.length || 0
+        : kind === 'gestoes'
+          ? memorySnapshot?.history?.items?.length || 0
+          : 0;
+    if (activeRows > 0 && baselineRows === 0) {
+      throw new Error(
+        `Não foi possível verificar a cobertura anterior de ${UPLOAD_META[kind]?.label || kind}. Recarregue a página antes de tentar novamente.`,
+      );
+    }
+  }
+}
+
+function promptMissingProjectCoverage(missingRows) {
+  return new Promise((resolve) => {
+    const modalContent = document.getElementById('modalContent');
+    if (!modalContent || !missingRows.length) {
+      resolve(false);
+      return;
+    }
+    replaceWithParsedMarkup(
+      modalContent,
+      `
+        <h2>⚠️ Obras ausentes no novo arquivo</h2>
+        <div class="meta">A substituição removerá todos os registros abaixo. Confirme cada obra individualmente para liberar o upload.</div>
+        <form id="uploadCoverageForm" class="upload-coverage" data-modal-form>
+          <div class="upload-coverage-table-wrap">
+            <table class="upload-coverage-table">
+              <thead>
+                <tr>
+                  <th>Fonte</th>
+                  <th>Obra</th>
+                  <th>Anterior</th>
+                  <th>Novo</th>
+                  <th>Diferença</th>
+                  <th>Confirmação</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${missingRows
+                  .map(
+                    (row, index) => `
+                      <tr>
+                        <td>${escHtml(row.label)}</td>
+                        <td><strong>${escHtml(row.code)}</strong><small>${escHtml(row.name)}${row.active === false ? ' · inativa' : ''}</small></td>
+                        <td>${row.previous.toLocaleString('pt-BR')}</td>
+                        <td>${row.incoming.toLocaleString('pt-BR')}</td>
+                        <td class="is-danger">${row.delta.toLocaleString('pt-BR')}</td>
+                        <td>
+                          <label class="upload-coverage-confirm">
+                            <input type="checkbox" data-coverage-confirm="${index}" aria-label="Confirmar remoção de ${escAttr(row.code)} em ${escAttr(row.label)}">
+                            <span>Confirmo</span>
+                          </label>
+                        </td>
+                      </tr>`,
+                  )
+                  .join('')}
+              </tbody>
+            </table>
+          </div>
+          <p class="upload-coverage-summary" id="uploadCoverageSummary" role="status"></p>
+          <div class="sheet-mapping-actions">
+            <button type="button" class="btn-sm" id="uploadCoverageCancel">Cancelar upload</button>
+            <button type="submit" class="btn-sm danger" id="uploadCoverageSubmit" disabled>Substituir mesmo assim</button>
+          </div>
+        </form>
+      `,
+    );
+
+    const checkboxes = [...document.querySelectorAll('[data-coverage-confirm]')];
+    const submit = document.getElementById('uploadCoverageSubmit');
+    const summary = document.getElementById('uploadCoverageSummary');
+    const updateConfirmation = () => {
+      const confirmed = checkboxes.filter((checkbox) => checkbox.checked).length;
+      if (submit) submit.disabled = confirmed !== checkboxes.length;
+      if (summary) {
+        summary.textContent = `${confirmed} de ${checkboxes.length} remoção(ões) confirmada(s).`;
+      }
+    };
+    const finish = (result) => closeModal(result);
+    document.getElementById('uploadCoverageCancel')?.addEventListener('click', () => finish(false));
+    document.getElementById('uploadCoverageForm')?.addEventListener('change', updateConfirmation);
+    document.getElementById('uploadCoverageForm')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (checkboxes.every((checkbox) => checkbox.checked)) finish(true);
+    });
+    updateConfirmation();
+    openModal({
+      onClose: (result) => resolve(result === true),
+      initialFocus: '[data-coverage-confirm="0"]',
+    });
+  });
+}
+
+function prepareGlobalUploadCoverage(memorySnapshot, selectedKinds) {
+  validateCoverageBaseline(memorySnapshot, selectedKinds);
+  const coverage = analyzeGlobalUploadCoverage({
+    previousFlows: memorySnapshot.flows,
+    incomingFlows: APP_STATE.dados.flows,
+    previousHistory: memorySnapshot.history?.items,
+    incomingHistory: APP_STATE.dados.historico?.items,
+    projects: APP_STATE.obra.obras,
+    selectedKinds,
+  });
+  for (const section of coverage.sections) {
+    if (!IMPORT_REPORTS?.[section.kind]) continue;
+    IMPORT_REPORTS[section.kind].coverageChanges = section.projects
+      .filter((row) => row.previous > row.incoming)
+      .map((row) => ({ ...row }));
+  }
+  return coverage;
+}
+
 async function registerDiscoveredProjects(projects) {
   if (!projects.length) return { requestedCodes: [], createdCodes: [] };
   const rows = projects.map((project) => ({
@@ -974,6 +1220,37 @@ async function _processExcelSheets(workbook, mapping, file) {
     return;
   }
 
+  let coverage;
+  try {
+    coverage = prepareGlobalUploadCoverage(memorySnapshot, selectedKinds);
+  } catch (error) {
+    APP_STATE.obra.obras = projectCatalogSnapshot;
+    renderObrasDropdown();
+    restoreInMemoryUploadState(memorySnapshot);
+    setUploadRuntimeState(selectedKinds, 'failed', error.message || String(error));
+    _renderExcelProgress(null);
+    renderUploadsCentral();
+    authToast(`❌ Upload bloqueado: ${error.message}`, 'err', 7000);
+    return;
+  }
+
+  if (coverage.missing.length) {
+    _renderExcelProgress(
+      `⚠️ ${coverage.missing.length} obra(s) ausente(s) aguardando confirmação...`,
+    );
+    const confirmed = await promptMissingProjectCoverage(coverage.missing);
+    if (!confirmed) {
+      APP_STATE.obra.obras = projectCatalogSnapshot;
+      renderObrasDropdown();
+      restoreInMemoryUploadState(memorySnapshot);
+      setUploadRuntimeState(selectedKinds, 'idle');
+      _renderExcelProgress(null);
+      renderUploadsCentral();
+      authToast('Upload cancelado. Nenhuma alteração foi realizada.', 'warn', 3500);
+      return;
+    }
+  }
+
   try {
     if (confirmedProjects.length) {
       _renderExcelProgress('🏗️ Cadastrando novas obras validadas...');
@@ -1155,6 +1432,13 @@ function showImportReport(kinds, fileName) {
           `${Number(report.estimatedValueFallbacks).toLocaleString('pt-BR')} aditivo(s) novo(s) preenchido(s) pelo valor estimado`,
         );
       }
+      const coverageChanges = Array.isArray(report.coverageChanges) ? report.coverageChanges : [];
+      const coverageRows = coverageChanges
+        .map(
+          (row) =>
+            `<li><span><strong>${escHtml(row.code)}</strong> · ${escHtml(row.name)}</span><strong>${row.previous.toLocaleString('pt-BR')} → ${row.incoming.toLocaleString('pt-BR')} (${row.delta.toLocaleString('pt-BR')})</strong></li>`,
+        )
+        .join('');
       return `
         <section class="upload-report-section">
           <h3>${meta.icon} ${escHtml(meta.label)}</h3>
@@ -1177,6 +1461,11 @@ function showImportReport(kinds, fileName) {
           ${
             reconciliation.length
               ? `<div class="upload-report-alert"><strong>Reconciliação:</strong> ${escHtml(reconciliation.join(' · '))}</div>`
+              : ''
+          }
+          ${
+            coverageRows
+              ? `<div class="upload-report-alert"><strong>Reduções por obra:</strong><ul>${coverageRows}</ul></div>`
               : ''
           }
         </section>`;

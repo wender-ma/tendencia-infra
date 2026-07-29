@@ -411,21 +411,41 @@ function _serializeCSVRows(rows) {
 
 export function prepareImportCSV(csv, kind) {
   const rows = parseCSVRows(csv);
+  const normalizedRows = normalizeImportTableRows(rows, kind);
+  if (normalizedRows === rows) return csv;
+  return _serializeCSVRows(normalizedRows);
+}
+
+export function normalizeImportTableRows(rows, kind, headerValidator = validateImportHeaders) {
   const searchLimit = Math.min(rows.length, 50);
-  let headerIndex = -1;
+
+  const hasValidHeader = (row) => {
+    try {
+      headerValidator(kind, [row]);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   for (let index = 0; index < searchLimit; index += 1) {
-    try {
-      validateImportHeaders(kind, [rows[index]]);
-      headerIndex = index;
-      break;
-    } catch {
-      // A aba pode conter títulos e metadados antes do cabeçalho real.
+    const currentRow = rows[index] || [];
+    if (hasValidHeader(currentRow)) return rows.slice(index);
+
+    const nextRow = rows[index + 1];
+    if (!nextRow) continue;
+    const columnCount = Math.max(currentRow.length, nextRow.length);
+    const combinedHeader = Array.from({ length: columnCount }, (_, columnIndex) => {
+      const currentValue = currentRow[columnIndex];
+      return String(currentValue ?? '').trim() ? currentValue : nextRow[columnIndex];
+    });
+
+    if (hasValidHeader(combinedHeader)) {
+      return [combinedHeader, nextRow, ...rows.slice(index + 2)];
     }
   }
 
-  if (headerIndex <= 0) return csv;
-  return _serializeCSVRows(rows.slice(headerIndex));
+  return rows;
 }
 
 function _sheetToImportCSV(workbook, sheetName, kind) {

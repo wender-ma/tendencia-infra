@@ -5,7 +5,7 @@ export const IMPORT_HEADER_RULES = Object.freeze({
       code: { label: 'Código', alternatives: [['codigo'], ['cod']] },
       service: { label: 'Serviço', alternatives: [['servico']] },
       input: { label: 'Insumo', alternatives: [['insumo']] },
-      item: { label: 'Item', alternatives: [['item']] },
+      item: { label: 'Item', alternatives: [['item'], ['itens']] },
       bidding: { label: 'Orçamento Licitação', alternatives: [['licitacao']] },
       ipca: { label: 'IPCA', alternatives: [['ipca']] },
       incc: { label: 'INCC', alternatives: [['incc']] },

@@ -6,7 +6,10 @@ const { pathToFileURL } = require('url');
 
 (async () => {
   const moduleUrl = pathToFileURL(path.resolve(__dirname, '../assets/js/ui/uploads.mjs'));
-  const { autoDetectExcelSheets } = await import(moduleUrl.href);
+  const { autoDetectExcelSheets, normalizeImportTableRows } = await import(moduleUrl.href);
+  const { validateImportHeaders } = await import(
+    pathToFileURL(path.resolve(__dirname, '../assets/js/parsers/shared.mjs')).href
+  );
 
   const flowAliases = [
     'Aditivos_flowmaster',
@@ -58,8 +61,56 @@ const { pathToFileURL } = require('url');
     'Workflow não deve ser confundido com a aba de Flows',
   );
 
+  const splitTendencyRows = [
+    [
+      '',
+      '',
+      '',
+      '',
+      'ITENS',
+      '',
+      'ORÇ. LICITAÇÃO',
+      'IPCA 3,56%',
+      'INCC 1,19%',
+      'GESTÃO 07-2026',
+      'DIFERENÇA',
+      '',
+      'EVOLUÇÃO TEÓRICA',
+      'EVOLUÇÃO FINANCEIRA',
+    ],
+    [
+      'Chave',
+      'Código',
+      'Serviço',
+      'Insumo',
+      'ÁREA VENDÁVEL',
+      '',
+      '100',
+      '103,56',
+      '101,19',
+      '100',
+      '0',
+      '',
+      '50%',
+      '50%',
+    ],
+    ['chave', '01.01.01', 'S001', 'I001', 'Item'],
+  ];
+  const normalizedRows = normalizeImportTableRows(
+    splitTendencyRows,
+    'tendencia',
+    validateImportHeaders,
+  );
+  assert.strictEqual(normalizedRows[0][1], 'Código', 'Cabeçalho dividido perdeu Código');
+  assert.strictEqual(normalizedRows[0][4], 'ITENS', 'Cabeçalho dividido perdeu Item');
+  assert.strictEqual(
+    normalizedRows[1][12],
+    '50%',
+    'Linha de totais da Tendência não foi preservada',
+  );
+
   console.log(
-    `Detecção de abas Excel: ${flowAliases.length + tendencyAliases.length + 2} cenários OK`,
+    `Detecção de abas Excel: ${flowAliases.length + tendencyAliases.length + 3} cenários OK`,
   );
 })().catch((error) => {
   console.error(error);

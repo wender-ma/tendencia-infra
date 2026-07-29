@@ -43,18 +43,3 @@ jobs:
           if-no-files-found: ignore
       - name: Dependency audit
         run: npm audit --audit-level=high
-
-  promote-production:
-    name: Promote tested commit
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: quality
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout tested commit
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Promote commit to production branch
-        run: git push origin "$GITHUB_SHA:refs/heads/production"

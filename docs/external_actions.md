@@ -19,16 +19,15 @@ de conclusão.
 | EXT-08 | Aberta | Responsável pelos arquivos reais | Arquivos reais ou anonimizados | Testar os maiores CSV/XLSX representativos, incluindo um próximo ao limite de 50 MB. | Arquivo/tamanho anonimizados, tempo, resultado e decisão sobre o limite registrados. |
 | EXT-09 | Aguardando decisão | Responsável pelo produto | EXT-04 concluída | Decidir se o endereço público também deve ser indexado por buscadores e aprovar texto/imagem de Open Graph. | Decisão registrada; até lá, `noindex` permanece ativo e nenhum preview social é publicado. |
 | EXT-10 | Concluída | Administrador do Supabase | Migration validada localmente | Aplicar `20260728235000_release_hardening.sql` no projeto de produção confirmado. | Em 29/07/2026, auditoria remota confirmou `complete: true`, 59 colunas públicas, quatro policies e duas RPCs. |
-| EXT-11 | Aberta | Administrador do GitHub | Workflow versionado | Cadastrar `SUPABASE_PRODUCTION_DB_URL` e `BACKUP_ENCRYPTION_PASSWORD` nos Actions secrets e executar o primeiro backup manual. | Workflow verde, artefato criptografado criado e etapa `pg_restore --list` aprovada. |
+| EXT-11 | Concluída | Administrador do GitHub | Workflow versionado | Cadastrar `SUPABASE_PRODUCTION_DB_URL` e `BACKUP_ENCRYPTION_PASSWORD` nos Actions secrets e executar o primeiro backup manual. | Em 29/07/2026, workflow `30416195831` ficou verde e publicou artefato criptografado de 403.593 bytes após validar o catálogo com PostgreSQL 17. |
 | EXT-12 | Concluída | Administrador da Vercel | Branch `production` criada no release estável | Alterar a Production Branch de `main` para `production` antes do próximo push na `main`. | Em 29/07/2026, CI e Vercel publicaram o SHA `83828bd`; smokes público e com dados reais passaram. |
 | EXT-13 | Concluída | Administrador do Supabase Auth | Contas responsáveis já criadas | Desativar `Allow new users to sign up` no provedor Email. | Em 29/07/2026, Management API confirmou `disable_signup: true`, com Email e Google habilitados para contas existentes. |
 
 ## Ordem mínima
 
-1. Concluir EXT-11 para ativar o backup diário do banco.
-2. Executar EXT-06 no domínio publicado.
-3. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
-4. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
+1. Executar EXT-06 no domínio publicado.
+2. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
+3. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
 
 Nenhuma ação deste registro exige compartilhar senha, token, chave privada,
 conteúdo de arquivo ou dado pessoal no repositório.

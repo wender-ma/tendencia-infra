@@ -34,7 +34,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Aplicar `20260720203000_admin_transactions.sql` no desenvolvimento, auditar as três RPCs e validar o workflow autenticado com limpeza integral em 24/07/2026.
 - [x] **EXT-03 concluído** Validar o domínio publicado: o responsável confirmou dados, recarga, abas, troca de obra e administração sem erros funcionais em 27/07/2026.
 - [x] **EXT-10 concluído** Aplicar `20260728235000_release_hardening.sql` no Supabase de produção; auditoria remota confirmou o contrato público e as duas RPCs em 29/07/2026.
-- [ ] **AÇÃO EXTERNA EXT-11** Cadastrar os dois secrets do backup de banco no GitHub Actions e executar o primeiro workflow manual.
+- [x] **EXT-11 concluído** Secrets cadastrados e primeiro backup diário criptografado criado, verificado e armazenado pelo GitHub Actions em 29/07/2026.
 - [x] **EXT-12 concluído** Vercel configurada para publicar a branch `production`; CI promoveu e publicou o SHA validado `83828bd` em 29/07/2026.
 - [x] **EXT-13 concluído** Desativar novos cadastros no Supabase Auth; Management API confirmou `disable_signup: true` e login por Email/Google ativo em 29/07/2026.
 
@@ -361,6 +361,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 29/07/2026 | EXT-10 concluído: hardening de produção auditado em modo somente leitura com 59 colunas públicas, nenhuma coluna extra, quatro policies e duas RPCs | `audit_supabase_inventory.mjs`, `verify_release_hardening_deployment.sql` |
 | 29/07/2026 | EXT-13 concluído: autocadastro bloqueado no frontend e no Supabase Auth, preservando Email e Google para contas existentes | `auth-ui.mjs`, `config.js`, `external_actions.md` |
 | 29/07/2026 | EXT-12 concluído: CI verde promoveu `83828bd` de `main` para `production`; Vercel publicou o mesmo SHA e os smokes público e autenticado passaram | `ci.yml`, `run_public_healthcheck.mjs`, `run_local_release_smoke.mjs` |
+| 29/07/2026 | EXT-11 concluído: workflow `30416195831` criou e verificou o dump PostgreSQL 17 criptografado; artefato de 403.593 bytes retido até 12/08/2026 | `production-backup.yml`, `backup_database.sh`, `verify_database_backup.sh` |
 | 27/07/2026 | Parser DOM passou a preservar o contexto de tabelas dinâmicas; 228 linhas reais em cinco visões mantiveram 7–11 células corretas, com larguras estáveis e rolagem interna em desktop/mobile | `ui/dom.mjs`, `dashboard.css`, `workflows.spec.js` |
 | 27/07/2026 | Janela de estabilidade de `snapshots` definida em sete dias corridos, de 27/07 a 03/08/2026; auditoria read-only e limpeza transacional preparadas com gates de data, inventário, concorrência e preservação dos snapshots | `verify_legacy_dataset_cleanup.sql`, `cleanup_legacy_dashboard_datasets.sql` |
 | 27/07/2026 | Inventário pós-deploy confirmou produção saudável, deployment completo, policies `4 + 4`, quatro snapshots/objetos ativos, quatro blobs de rollback e zero registros operacionais sem escopo | `supabase_production_inventory_2026-07-24.md` |

@@ -22,6 +22,10 @@ assert(service.includes('new Worker('), 'Leitura de Excel não cria Web Worker')
 assert(service.includes('reader.addEventListener(\'progress\''), 'Leitura não reporta progresso real');
 assert(service.includes('worker.terminate()'), 'Worker não é encerrado após o processamento');
 assert(worker.includes("from 'xlsx'"), 'Worker não usa o parser SheetJS local');
+assert(
+  worker.includes('normalizeWorksheetDateCells'),
+  'Worker não normaliza datas nativas do Excel',
+);
 assert(worker.includes('sheet_to_csv'), 'Conversão das abas não ocorre no Worker');
 assert(!uploadUi.includes('XLSX.read('), 'Interface voltou a processar Excel na thread principal');
 assert(uploadUi.includes('await readExcelFile(file,'), 'Upload não usa o serviço de Worker');

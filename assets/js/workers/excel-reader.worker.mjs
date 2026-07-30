@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx';
+import { normalizeWorksheetDateCells } from '../services/excel-date-normalizer.mjs';
 
 self.addEventListener('message', (event) => {
   const { buffer } = event.data || {};
@@ -8,7 +9,9 @@ self.addEventListener('message', (event) => {
     const csvBySheet = {};
 
     for (const sheetName of workbook.SheetNames || []) {
-      csvBySheet[sheetName] = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName], {
+      const worksheet = workbook.Sheets[sheetName];
+      normalizeWorksheetDateCells(worksheet);
+      csvBySheet[sheetName] = XLSX.utils.sheet_to_csv(worksheet, {
         FS: ';',
         RS: '\n',
         blankrows: false,

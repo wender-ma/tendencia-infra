@@ -29,7 +29,6 @@ let openModal;
 let renderDashboardState;
 let APP_STATE;
 let renderAderenciaProj;
-let acharUltimaGestaoCronologica;
 let getProjectionControlState;
 let renderVisao;
 let SafeStorage;
@@ -200,6 +199,19 @@ function addMonths(yyyy_mm, n) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export function buildMonthRange(start, end) {
+  if (!/^\d{4}-\d{2}$/.test(start || '') || !/^\d{4}-\d{2}$/.test(end || '') || start > end) {
+    return [];
+  }
+  const months = [];
+  let current = start;
+  while (current <= end) {
+    months.push(current);
+    current = addMonths(current, 1);
+  }
+  return months;
+}
+
 // Calcula o ritmo histórico (R$/mês) somando os últimos N meses ANTES da data de corte
 function calcularRitmoHistorico(meses, dataCorte, janelaMeses) {
   const past = Object.entries(meses)
@@ -258,17 +270,16 @@ function calcularFlowsPendentesPorGrupo() {
 }
 
 // Função central: calcula KPIs por SERVIÇO (a base de tudo)
-function projetarServico(servico, meses, dataCorte, dataFim, janelaMeses) {
-  const realizado = Object.entries(meses)
-    .filter(([m]) => m < dataCorte)
-    .reduce((s, [, v]) => s + v, 0);
-  const planejadoFuturo = Object.entries(meses)
+export function projetarServico(servico, meses, dataCorte, dataFim, janelaMeses) {
+  const mesesAteTermino = Object.entries(meses).filter(([mes]) => !dataFim || mes <= dataFim);
+  const realizado = mesesAteTermino.filter(([m]) => m < dataCorte).reduce((s, [, v]) => s + v, 0);
+  const planejadoFuturo = mesesAteTermino
     .filter(([m]) => m >= dataCorte)
     .reduce((s, [, v]) => s + v, 0);
   const planejadoTotal = realizado + planejadoFuturo;
 
   // Identificar último mês com planejamento real (valor > 0)
-  const mesesComValor = Object.entries(meses)
+  const mesesComValor = mesesAteTermino
     .filter(([, v]) => v > 0)
     .map(([m]) => m)
     .sort();
@@ -301,6 +312,52 @@ function projetarServico(servico, meses, dataCorte, dataFim, janelaMeses) {
     diff,
     meses, // para drill-down
   };
+}
+
+export function distributeServiceProjection(projServicos, projInsumos) {
+  const serviceProjection = new Map(
+    (projServicos || []).map((projection) => [projection.servico, projection]),
+  );
+  const inputsByService = new Map();
+  for (const input of projInsumos || []) {
+    const inputs = inputsByService.get(input.servico) || [];
+    inputs.push(input);
+    inputsByService.set(input.servico, inputs);
+  }
+
+  const distributed = [];
+  for (const [serviceCode, inputs] of inputsByService) {
+    const service = serviceProjection.get(serviceCode);
+    const target = service?.extrapolacao || 0;
+    const historicalWeights = inputs.map((input) => Math.max(input.ritmo_historico || 0, 0));
+    let weights = historicalWeights;
+    let totalWeight = weights.reduce((sum, value) => sum + value, 0);
+    if (totalWeight <= 0) {
+      weights = inputs.map((input) => Math.max(input.planejado_total || 0, 0));
+      totalWeight = weights.reduce((sum, value) => sum + value, 0);
+    }
+
+    let allocated = 0;
+    inputs.forEach((input, index) => {
+      const isLast = index === inputs.length - 1;
+      const extrapolation =
+        isLast && totalWeight > 0
+          ? target - allocated
+          : totalWeight > 0
+            ? target * (weights[index] / totalWeight)
+            : 0;
+      allocated += extrapolation;
+      distributed.push({
+        ...input,
+        ultimo_mes_planejado: service?.ultimo_mes_planejado || input.ultimo_mes_planejado,
+        meses_gap: service?.meses_gap || 0,
+        extrapolacao: extrapolation,
+        tendencia: (input.planejado_total || 0) + extrapolation,
+        diff: extrapolation,
+      });
+    });
+  }
+  return distributed;
 }
 
 function calcStatus(diff, planejado, tolerancia) {
@@ -364,36 +421,13 @@ function renderProjecao() {
   );
 
   // Projetar cada insumo (herda regra de extrapolação do serviço pai)
-  const projInsumos = Object.values(porInsumo)
+  const projInsumosIndividuais = Object.values(porInsumo)
     .map((item) => projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses))
     .map((proj, idx) => {
       const item = Object.values(porInsumo)[idx];
       return { ...proj, insumo: item.insumo };
     });
-
-  // Calcular totais por grupo (somando os serviços)
-  const porGrupo = {};
-  projServicos.forEach((p) => {
-    if (!porGrupo[p.grupo])
-      porGrupo[p.grupo] = {
-        grupo: p.grupo,
-        realizado: 0,
-        planejado_total: 0,
-        planejado_futuro: 0,
-        extrapolacao: 0,
-        tendencia: 0,
-        diff: 0,
-        servicos: [],
-      };
-    const g = porGrupo[p.grupo];
-    g.realizado += p.realizado;
-    g.planejado_total += p.planejado_total;
-    g.planejado_futuro += p.planejado_futuro;
-    g.extrapolacao += p.extrapolacao;
-    g.tendencia += p.tendencia;
-    g.diff += p.diff;
-    g.servicos.push(p);
-  });
+  const projInsumos = distributeServiceProjection(projServicos, projInsumosIndividuais);
 
   // KPIs gerais
   const totRealizado = projServicos.reduce((s, l) => s + l.realizado, 0);
@@ -471,7 +505,7 @@ function renderProjecao() {
   }
 
   // Tabela hierárquica
-  renderProjTable(porGrupo, projServicos, projInsumos, tolerancia);
+  renderProjTable(projInsumos, tolerancia, flowsPendByGrupo);
 }
 
 function createProjectionCurveTooltip(categories, planData, tendData) {
@@ -507,6 +541,15 @@ function createProjectionCurveTooltip(categories, planData, tendData) {
   };
 }
 
+function projectionCategoryLabelFormatter(categories, compact = false) {
+  const maxLabels = compact ? 10 : 24;
+  const step = Math.max(1, Math.ceil(categories.length / maxLabels));
+  return (value, _timestamp, options) => {
+    const index = Number.isInteger(options?.i) ? options.i : categories.indexOf(value);
+    return index % step === 0 || index === categories.length - 1 ? value : '';
+  };
+}
+
 function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
   // Acumular planejado total mês a mês
   const totalMeses = {};
@@ -515,24 +558,18 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
       totalMeses[m] = (totalMeses[m] || 0) + v;
     });
   });
-  const todosMeses = Object.keys(totalMeses).sort();
+  const todosMeses = Object.keys(totalMeses)
+    .filter((month) => !dataFim || month <= dataFim)
+    .sort();
   if (!todosMeses.length) {
     document.getElementById('projChart').replaceChildren();
     return;
   }
 
-  // Estender meses até dataFim se necessário
-  const extended = [...todosMeses];
+  // Mantém um ponto para cada mês, inclusive quando não houve movimento.
   const ultimoMes = todosMeses[todosMeses.length - 1];
-  if (dataFim > ultimoMes) {
-    let m = ultimoMes;
-    while (m < dataFim) {
-      m = addMonths(m, 1);
-      extended.push(m);
-      if (!(m in totalMeses)) totalMeses[m] = 0;
-    }
-  }
-  extended.sort();
+  const chartEnd = dataFim && dataFim > ultimoMes ? dataFim : ultimoMes;
+  const extended = buildMonthRange(todosMeses[0], chartEnd);
 
   // Linha A: planejado acumulado
   let acumPlan = 0;
@@ -639,7 +676,12 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
     },
     xaxis: {
       categories: categories,
-      labels: { rotate: -45, rotateAlways: true, style: { fontSize: '10px' } },
+      labels: {
+        rotate: -45,
+        rotateAlways: true,
+        formatter: projectionCategoryLabelFormatter(categories),
+        style: { fontSize: '10px' },
+      },
     },
     yaxis: {
       labels: { formatter: (val) => fmtR$k(val), style: { fontSize: '10px' } },
@@ -779,33 +821,10 @@ function flowChip(info) {
   return `<span class="projection-flow-chip" title="${escAttr(title)}">📎 ${info.total} flow${info.total > 1 ? 's' : ''} <span class="projection-flow-chip__value projection-flow-chip__value--${tone}">${liquido >= 0 ? '+' : ''}${fmtR$k(liquido)}</span></span>`;
 }
 
-function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
+function renderProjTable(projInsumos, tolerancia, flowsPendByGrupo = {}) {
   const q = document.getElementById('projSearch').value.toLowerCase();
   const fs = document.getElementById('projFilterStatus').value;
   const fg = document.getElementById('projFilterGrupo').value;
-
-  // mapa de Valor Gestão por (servico|insumo|item_cod) da última gestão fechada do APP_STATE.dados.historico
-  // (filtrado pela obra ativa)
-  const mapaValorGestao = {};
-  let _ultGestaoLabel = null;
-  if (
-    APP_STATE.dados.historico &&
-    Array.isArray(APP_STATE.dados.historico.gestoes) &&
-    Array.isArray(APP_STATE.dados.historico.items)
-  ) {
-    _ultGestaoLabel = acharUltimaGestaoCronologica(APP_STATE.dados.historico.gestoes);
-    if (_ultGestaoLabel) {
-      APP_STATE.dados.historico.items
-        .filter((it) => it.codigo_obra === APP_STATE.obra.ativa)
-        .forEach((it) => {
-          if (!it.insumo) return;
-          const chaveComp =
-            (it.servico || '') + '|' + (it.insumo || '') + '|' + (it.item_cod || '');
-          mapaValorGestao[chaveComp] =
-            (mapaValorGestao[chaveComp] || 0) + (it[_ultGestaoLabel] || 0);
-        });
-    }
-  }
 
   const statusBadge = {
     red: '<span class="badge red">🔴 Vai estourar</span>',
@@ -816,11 +835,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     empty: '<span class="badge gray">— sem valor</span>',
   };
 
-  // Indexar projServicos e projInsumos por chave para lookup rápido
-  const idxServ = {};
-  projServicos.forEach((p) => {
-    idxServ[p.servico] = p;
-  });
+  // Indexar projeções por insumo para lookup rápido.
   const idxIns = {};
   projInsumos.forEach((p) => {
     idxIns[p.servico + '|' + p.insumo] = p;
@@ -862,9 +877,74 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     stack.push(n);
   });
 
+  const flowGroupParents = {
+    'Custos Indiretos': nodes.findIndex((node) => node.cod === '01.01'),
+    'Custos Diretos / Infraestrutura': nodes.findIndex((node) => node.cod === '01.02'),
+    'Obras Civis': nodes.findIndex((node) => node.cod === '01.03'),
+    'Projeção de Gastos': nodes.findIndex((node) => node.cod === '01.04'),
+  };
+  const rootIndex = nodes.findIndex((node) => node.tipo === 'raiz');
+  const catalogProjectionKeys = new Set(
+    nodes
+      .filter((node) => node.tipo === 'insumo')
+      .map((node) => `${node.cod_servico}|${node.cod_insumo}`),
+  );
+  projInsumos
+    .filter(
+      (projection) => !catalogProjectionKeys.has(`${projection.servico}|${projection.insumo}`),
+    )
+    .forEach((projection) => {
+      const parentIndex = flowGroupParents[projection.grupo] ?? rootIndex;
+      const index = nodes.length;
+      nodes.push({
+        ordem: index,
+        cod: '',
+        cod_servico: projection.servico,
+        cod_insumo: projection.insumo,
+        item: descInsumo(projection.insumo),
+        nivel: 4,
+        tipo: 'insumo',
+        children: [],
+        parent: parentIndex,
+        isProjectionFallback: true,
+        proj: projection,
+      });
+      if (parentIndex >= 0) nodes[parentIndex].children.push(index);
+    });
+  Object.entries(flowsPendByGrupo).forEach(([group, value]) => {
+    if (Math.abs(value || 0) < 0.01) return;
+    const parentIndex = flowGroupParents[group] ?? rootIndex;
+    const index = nodes.length;
+    nodes.push({
+      ordem: index,
+      cod: '',
+      cod_servico: '',
+      cod_insumo: '',
+      item: `Flows pendentes · ${group}`,
+      nivel: 3,
+      tipo: 'outro',
+      children: [],
+      parent: parentIndex,
+      flowGroup: group,
+      isPendingFlow: true,
+      proj: {
+        realizado: 0,
+        planejado_total: 0,
+        planejado_futuro: 0,
+        extrapolacao: value,
+        tendencia: value,
+        diff: value,
+        flows_pendentes: value,
+        empty: false,
+      },
+    });
+    if (parentIndex >= 0) nodes[parentIndex].children.push(index);
+  });
+
   // Calcular projeção de cada nó:
   // - Insumo: lookup direto em idxIns
   // - Outros (containers): soma dos descendentes folha (insumos)
+  const assignedProjectionKeys = new Set();
   function getInsumoProj(node) {
     // Para o nó insumo: precisamos identificar qual serviço-pai contém esse insumo
     // O serviço-pai é o ancestral com cod_servico preenchido, ou o próprio cod do nó (servico header)
@@ -873,7 +953,10 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       const p = nodes[cur];
       if (p.cod_servico) {
         const key = p.cod_servico + '|' + node.cod_insumo;
-        if (idxIns[key]) return idxIns[key];
+        if (idxIns[key] && !assignedProjectionKeys.has(key)) {
+          assignedProjectionKeys.add(key);
+          return idxIns[key];
+        }
         break;
       }
       cur = p.parent;
@@ -881,26 +964,11 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     return null;
   }
 
-  // Helper: soma de flows PENDENTES (refletido_status = 'pendente') que tocam um insumo
-  // Entrada (destino) = positivo · Saída (origem) = negativo
-  function flowsPendentesInsumo(cod_insumo) {
-    if (!cod_insumo || !Array.isArray(getFlowsObraAtiva())) return 0;
-    let total = 0;
-    getFlowsObraAtiva().forEach((f) => {
-      if (f.dep === 'Cancelado') return;
-      const status = f.refletido_status || 'pendente';
-      if (status !== 'pendente') return;
-      const v = f.custo_flowmaster || 0;
-      if (Math.abs(v) < 0.01) return;
-      if (f.insumo_planejamento === cod_insumo) total += v;
-      if (f.insumo_remanejamento === cod_insumo) total -= v;
-    });
-    return total;
-  }
-
   // Computar agregados (pós-ordem)
   function compute(idx) {
     const n = nodes[idx];
+    if (n.isPendingFlow) return n.proj;
+    if (n.isProjectionFallback) return n.proj;
     if (n.tipo === 'insumo') {
       const p = getInsumoProj(n);
       const baseProj = p || {
@@ -916,31 +984,11 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
         grupo: grupoDoServico(getServicoCod(idx)),
         empty: true,
       };
-      // injetar Valor Gestão do APP_STATE.dados.historico por chave composta
-      const _servCod = getServicoCod(idx);
-      const _chaveVG = (_servCod || '') + '|' + (n.cod_insumo || '') + '|' + (n.cod || '');
-      const _vg = mapaValorGestao[_chaveVG] || 0;
-      baseProj.valor_gestao = _vg;
-      // Adicionar flows pendentes na extrapolação (independente do grupo)
-      const flowsPend = flowsPendentesInsumo(n.cod_insumo);
-      if (Math.abs(flowsPend) > 0.01) {
-        n.proj = {
-          ...baseProj,
-          valor_gestao: baseProj.valor_gestao || 0,
-          extrapolacao: (baseProj.extrapolacao || 0) + flowsPend,
-          tendencia: (baseProj.tendencia || baseProj.planejado_total || 0) + flowsPend,
-          diff: (baseProj.diff || 0) + flowsPend,
-          flows_pendentes: flowsPend,
-          empty: false,
-        };
-      } else {
-        n.proj = baseProj;
-      }
+      n.proj = baseProj;
       n.proj.empty =
         n.proj.planejado_total === 0 &&
         n.proj.realizado === 0 &&
-        Math.abs(flowsPend) < 0.01 &&
-        (n.proj.valor_gestao || 0) === 0;
+        Math.abs(n.proj.extrapolacao || 0) < 0.01;
       return n.proj;
     }
     // Container: soma filhos
@@ -951,7 +999,6 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       extrapolacao: 0,
       tendencia: 0,
       diff: 0,
-      valor_gestao: 0,
       empty: true,
     };
     n.children.forEach((ci) => {
@@ -962,7 +1009,6 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       agg.extrapolacao += sub.extrapolacao || 0;
       agg.tendencia += sub.tendencia || 0;
       agg.diff += sub.diff || 0;
-      agg.valor_gestao += sub.valor_gestao || 0;
       if (!sub.empty) agg.empty = false;
     });
     n.proj = agg;
@@ -1076,11 +1122,11 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
         leftValue = left.item || left.cod || '';
         rightValue = right.item || right.cod || '';
       } else if (projSortKey === 'tendencia') {
-        leftValue = (left.proj?.valor_gestao || 0) + (left.proj?.extrapolacao || 0);
-        rightValue = (right.proj?.valor_gestao || 0) + (right.proj?.extrapolacao || 0);
+        leftValue = left.proj?.tendencia || 0;
+        rightValue = right.proj?.tendencia || 0;
       } else if (projSortKey === 'saldo') {
-        leftValue = (left.proj?.valor_gestao || 0) - (left.proj?.realizado || 0);
-        rightValue = (right.proj?.valor_gestao || 0) - (right.proj?.realizado || 0);
+        leftValue = (left.proj?.planejado_total || 0) - (left.proj?.realizado || 0);
+        rightValue = (right.proj?.planejado_total || 0) - (right.proj?.realizado || 0);
       } else {
         leftValue = left.proj?.[projSortKey] ?? 0;
         rightValue = right.proj?.[projSortKey] ?? 0;
@@ -1105,7 +1151,10 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
     if (n.tipo === 'insumo' && p.empty) rowClasses.push('is-empty');
     let icon = '',
       labelHtml = '';
-    if (n.tipo === 'raiz') {
+    if (n.isPendingFlow) {
+      icon = '📎';
+      labelHtml = escHtml(n.item);
+    } else if (n.tipo === 'raiz') {
       icon = expanded ? '▼' : '▶';
       labelHtml = `<strong>${escHtml(n.cod)} · ${escHtml(n.item)}</strong>`;
     } else if (n.tipo === 'grupo') {
@@ -1150,7 +1199,7 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
           : `<span class="projection-extrapolation projection-extrapolation--${isDark ? 'dark' : ex < 0 ? 'reduction' : 'increase'}">${ex >= 0 ? '+' : ''}${fmt(ex)}</span>`
         : `<span class="projection-extrapolation projection-extrapolation--${isDark ? 'empty-dark' : 'empty'}">—</span>`;
 
-    const valuesEmpty = p.empty;
+    const valuesEmpty = p.empty || n.isPendingFlow;
     const fmtVal = (v) =>
       valuesEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(v || 0);
 
@@ -1167,20 +1216,19 @@ function renderProjTable(porGrupo, projServicos, projInsumos, tolerancia) {
       actionAttrs = '';
     }
 
-    // Tendência exibida = Valor Gestão + Extrapolação (consistente com o que a tabela mostra)
-    const _vg = p.valor_gestao || 0;
-    const _tendUI = _vg + (p.extrapolacao || 0);
-    const saldo = _vg - (p.realizado || 0);
-    const vgEmpty = valuesEmpty && _vg === 0;
+    const valorPlanejado = p.planejado_total || 0;
+    const tendencia = p.tendencia ?? valorPlanejado + (p.extrapolacao || 0);
+    const saldo = valorPlanejado - (p.realizado || 0);
+    const planejadoEmpty = valuesEmpty && valorPlanejado === 0;
 
     html += `<tr class="${rowClasses.join(' ')}" ${actionAttrs}>
       <td class="projection-tree-icon projection-tree-depth-${depth}">${icon}</td>
       <td class="projection-tree-label projection-tree-depth-${depth}">${labelHtml}</td>
-      <td class="num">${vgEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(_vg)}</td>
+      <td class="num">${planejadoEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(valorPlanejado)}</td>
       <td class="num">${fmtVal(p.realizado)}</td>
-      <td class="num">${vgEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(saldo)}</td>
+      <td class="num">${planejadoEmpty ? '<span class="projection-empty-value">—</span>' : fmtR$(saldo)}</td>
       <td class="num">${extrapTxt}</td>
-      <td class="num">${vgEmpty && Math.abs(p.extrapolacao || 0) < 0.01 ? '<span class="projection-empty-value">—</span>' : '<strong>' + fmtR$(_tendUI) + '</strong>'}</td>
+      <td class="num">${planejadoEmpty && Math.abs(p.extrapolacao || 0) < 0.01 ? '<span class="projection-empty-value">—</span>' : '<strong>' + fmtR$(tendencia) + '</strong>'}</td>
       <td>${statusBadge[st] || ''}</td>
     </tr>`;
     count++;
@@ -1274,50 +1322,13 @@ async function exportarProjecaoDetalhada() {
     const projServicos = Object.entries(byServMes).map(([servico, meses]) =>
       projetarServico(servico, meses, dataCorte, dataFim, janelaMeses),
     );
-    const projInsumos = Object.values(byServInsMes).map((x) => {
+    const projInsumosIndividuais = Object.values(byServInsMes).map((x) => {
       const p = projetarServico(x.servico, x.meses, dataCorte, dataFim, janelaMeses);
       return { ...p, insumo: x.insumo };
     });
-    const idxServ = {};
-    projServicos.forEach((p) => (idxServ[p.servico] = p));
+    const projInsumos = distributeServiceProjection(projServicos, projInsumosIndividuais);
     const idxIns = {};
     projInsumos.forEach((p) => (idxIns[p.servico + '|' + p.insumo] = p));
-
-    // Mapa Valor Gestão (mesma lógica da render)
-    const mapaValorGestao = {};
-    let ultGestao = null;
-    if (
-      APP_STATE.dados.historico &&
-      Array.isArray(APP_STATE.dados.historico.gestoes) &&
-      Array.isArray(APP_STATE.dados.historico.items)
-    ) {
-      ultGestao = acharUltimaGestaoCronologica(APP_STATE.dados.historico.gestoes);
-      if (ultGestao) {
-        APP_STATE.dados.historico.items
-          .filter((it) => it.codigo_obra === APP_STATE.obra.ativa)
-          .forEach((it) => {
-            if (!it.insumo) return;
-            const k = (it.servico || '') + '|' + (it.insumo || '') + '|' + (it.item_cod || '');
-            mapaValorGestao[k] = (mapaValorGestao[k] || 0) + (it[ultGestao] || 0);
-          });
-      }
-    }
-
-    // Flows pendentes por insumo (mesma lógica)
-    function flowsPendInsumo(cod_insumo) {
-      if (!cod_insumo || !Array.isArray(getFlowsObraAtiva())) return 0;
-      let total = 0;
-      getFlowsObraAtiva().forEach((f) => {
-        if (f.dep === 'Cancelado') return;
-        const status = f.refletido_status || 'pendente';
-        if (status !== 'pendente') return;
-        const v = f.custo_flowmaster || 0;
-        if (Math.abs(v) < 0.01) return;
-        if (f.insumo_planejamento === cod_insumo) total += v;
-        if (f.insumo_remanejamento === cod_insumo) total -= v;
-      });
-      return total;
-    }
 
     // Percorrer HIERARQUIA e montar linhas
     const nodes = HIERARQUIA.map((n) => ({ ...n, children: [], parent: null }));
@@ -1339,8 +1350,74 @@ async function exportarProjecaoDetalhada() {
       }
       stack.push(n);
     });
+    const flowGroupParents = {
+      'Custos Indiretos': nodes.findIndex((node) => node.cod === '01.01'),
+      'Custos Diretos / Infraestrutura': nodes.findIndex((node) => node.cod === '01.02'),
+      'Obras Civis': nodes.findIndex((node) => node.cod === '01.03'),
+      'Projeção de Gastos': nodes.findIndex((node) => node.cod === '01.04'),
+    };
+    const rootIndex = nodes.findIndex((node) => node.tipo === 'raiz');
+    const catalogProjectionKeys = new Set(
+      nodes
+        .filter((node) => node.tipo === 'insumo')
+        .map((node) => `${node.cod_servico}|${node.cod_insumo}`),
+    );
+    projInsumos
+      .filter(
+        (projection) => !catalogProjectionKeys.has(`${projection.servico}|${projection.insumo}`),
+      )
+      .forEach((projection) => {
+        const parentIndex = flowGroupParents[projection.grupo] ?? rootIndex;
+        const index = nodes.length;
+        nodes.push({
+          ordem: index,
+          cod: '',
+          cod_servico: projection.servico,
+          cod_insumo: projection.insumo,
+          item: descInsumo(projection.insumo),
+          nivel: 4,
+          tipo: 'insumo',
+          children: [],
+          parent: parentIndex,
+          isProjectionFallback: true,
+          proj: projection,
+        });
+        if (parentIndex >= 0) nodes[parentIndex].children.push(index);
+      });
+    const flowsPendByGrupo = calcularFlowsPendentesPorGrupo();
+    Object.entries(flowsPendByGrupo).forEach(([group, value]) => {
+      if (Math.abs(value || 0) < 0.01) return;
+      const parentIndex = flowGroupParents[group] ?? rootIndex;
+      const index = nodes.length;
+      nodes.push({
+        ordem: index,
+        cod: '',
+        cod_servico: '',
+        cod_insumo: '',
+        item: `Flows pendentes · ${group}`,
+        nivel: 3,
+        tipo: 'outro',
+        children: [],
+        parent: parentIndex,
+        flowGroup: group,
+        isPendingFlow: true,
+        proj: {
+          realizado: 0,
+          planejado_total: 0,
+          planejado_futuro: 0,
+          extrapolacao: value,
+          tendencia: value,
+          diff: value,
+          flows_pendentes: value,
+          empty: false,
+        },
+      });
+      if (parentIndex >= 0) nodes[parentIndex].children.push(index);
+    });
+    const assignedProjectionKeys = new Set();
     function computeNode(idx) {
       const n = nodes[idx];
+      if (n.isPendingFlow || n.isProjectionFallback) return n.proj;
       if (n.tipo === 'insumo') {
         // Buscar serviço pai
         let cur = n.parent,
@@ -1353,7 +1430,13 @@ async function exportarProjecaoDetalhada() {
           }
           cur = pn.parent;
         }
-        const proj = idxIns[servCod + '|' + n.cod_insumo] || {
+        const projectionKey = servCod + '|' + n.cod_insumo;
+        const projection =
+          idxIns[projectionKey] && !assignedProjectionKeys.has(projectionKey)
+            ? idxIns[projectionKey]
+            : null;
+        if (projection) assignedProjectionKeys.add(projectionKey);
+        const proj = projection || {
           realizado: 0,
           planejado_total: 0,
           planejado_futuro: 0,
@@ -1365,18 +1448,11 @@ async function exportarProjecaoDetalhada() {
           meses_gap: 0,
           grupo: grupoDoServico(servCod),
         };
-        const fp = flowsPendInsumo(n.cod_insumo);
-        const vg =
-          mapaValorGestao[(servCod || '') + '|' + (n.cod_insumo || '') + '|' + (n.cod || '')] || 0;
-        n.proj = {
-          ...proj,
-          valor_gestao: vg,
-          flows_pendentes: fp,
-          extrapolacao: (proj.extrapolacao || 0) + fp,
-          tendencia: (proj.planejado_total || 0) + (proj.extrapolacao || 0) + fp,
-        };
+        n.proj = proj;
         n.proj.empty =
-          n.proj.planejado_total === 0 && n.proj.realizado === 0 && vg === 0 && Math.abs(fp) < 0.01;
+          n.proj.planejado_total === 0 &&
+          n.proj.realizado === 0 &&
+          Math.abs(n.proj.extrapolacao || 0) < 0.01;
         return n.proj;
       }
       const agg = {
@@ -1386,7 +1462,6 @@ async function exportarProjecaoDetalhada() {
         extrapolacao: 0,
         tendencia: 0,
         diff: 0,
-        valor_gestao: 0,
         flows_pendentes: 0,
         empty: true,
       };
@@ -1397,7 +1472,6 @@ async function exportarProjecaoDetalhada() {
         agg.planejado_futuro += sub.planejado_futuro || 0;
         agg.extrapolacao += sub.extrapolacao || 0;
         agg.tendencia += sub.tendencia || 0;
-        agg.valor_gestao += sub.valor_gestao || 0;
         agg.flows_pendentes += sub.flows_pendentes || 0;
         if (!sub.empty) agg.empty = false;
       });
@@ -1458,8 +1532,8 @@ async function exportarProjecaoDetalhada() {
       if (n.tipo === 'insumo') label = `${n.cod_insumo || ''} · ${n.item || ''}`;
       else if (n.cod_servico) label = `${n.cod_servico} · ${n.item || ''}`;
       else label = `${n.cod || ''} · ${n.item || ''}`;
-      const tendUI = (p.valor_gestao || 0) + (p.extrapolacao || 0);
-      const saldo = (p.valor_gestao || 0) - (p.realizado || 0);
+      const tendUI = p.tendencia ?? (p.planejado_total || 0) + (p.extrapolacao || 0);
+      const saldo = (p.planejado_total || 0) - (p.realizado || 0);
       linhas.push({
         Nível: nivel,
         Tipo: n.tipo,
@@ -1468,7 +1542,7 @@ async function exportarProjecaoDetalhada() {
         'Cod. Insumo': n.cod_insumo || '',
         Grupo: grupo,
         Descrição: prefixo + label,
-        'Valor Planejado (R$)': Math.round((p.valor_gestao || 0) * 100) / 100,
+        'Valor Planejado (R$)': Math.round((p.planejado_total || 0) * 100) / 100,
         'Realizado (R$)': Math.round((p.realizado || 0) * 100) / 100,
         'Saldo (R$)': Math.round(saldo * 100) / 100,
         'Planejado Total (R$)': Math.round((p.planejado_total || 0) * 100) / 100,
@@ -1491,7 +1565,7 @@ async function exportarProjecaoDetalhada() {
     // Aba de metadados
     const meta = [
       { Campo: 'Obra', Valor: APP_STATE.obra.ativa || '' },
-      { Campo: 'Última gestão (Valor Gestão)', Valor: ultGestao || '' },
+      { Campo: 'Fonte do valor planejado', Valor: 'Gestão Atual' },
       { Campo: 'Data de corte', Valor: dataCorte },
       { Campo: 'Data fim', Valor: dataFim },
       { Campo: 'Janela ritmo histórico (meses)', Valor: janelaMeses },
@@ -1559,38 +1633,50 @@ function openProjDrill(servico, insumo) {
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
 
-  // Pegar meses
-  const meses = {};
+  const mesesServico = {};
+  const mesesPorInsumo = new Map();
+  getProjRawObraAtiva()
+    .filter((row) => row.servico === servico)
+    .forEach((row) => {
+      mesesServico[row.mes] = (mesesServico[row.mes] || 0) + row.valor;
+      const mesesDoInsumo = mesesPorInsumo.get(row.insumo) || {};
+      mesesDoInsumo[row.mes] = (mesesDoInsumo[row.mes] || 0) + row.valor;
+      mesesPorInsumo.set(row.insumo, mesesDoInsumo);
+    });
+
+  const projServico = projetarServico(servico, mesesServico, dataCorte, dataFim, janelaMeses);
+  const projInsumos = distributeServiceProjection(
+    [projServico],
+    [...mesesPorInsumo].map(([inputCode, inputMonths]) => ({
+      ...projetarServico(servico, inputMonths, dataCorte, dataFim, janelaMeses),
+      insumo: inputCode,
+    })),
+  );
+
+  let meses;
+  let proj;
   let titulo, subtitulo;
   if (insumo) {
-    getProjRawObraAtiva()
-      .filter((r) => r.servico === servico && r.insumo === insumo)
-      .forEach((r) => {
-        meses[r.mes] = (meses[r.mes] || 0) + r.valor;
-      });
+    meses = mesesPorInsumo.get(insumo) || {};
+    proj =
+      projInsumos.find((projection) => projection.insumo === insumo) ||
+      projetarServico(servico, meses, dataCorte, dataFim, janelaMeses);
     titulo = `${servico} · ${insumo}`;
     subtitulo = descInsumo(insumo);
   } else {
-    getProjRawObraAtiva()
-      .filter((r) => r.servico === servico)
-      .forEach((r) => {
-        meses[r.mes] = (meses[r.mes] || 0) + r.valor;
-      });
+    meses = mesesServico;
+    proj = projServico;
     titulo = servico;
     subtitulo = descServico(servico);
   }
-  const proj = projetarServico(servico, meses, dataCorte, dataFim, janelaMeses);
 
   // Construir dados para ApexCharts
-  const todosMeses = Object.keys(meses).sort();
-  const extended = [...todosMeses];
-  if (dataFim > (todosMeses[todosMeses.length - 1] || dataFim)) {
-    let m = todosMeses[todosMeses.length - 1];
-    while (m && m < dataFim) {
-      m = addMonths(m, 1);
-      extended.push(m);
-    }
-  }
+  const todosMeses = Object.keys(meses)
+    .filter((month) => !dataFim || month <= dataFim)
+    .sort();
+  const ultimoMes = todosMeses[todosMeses.length - 1] || dataFim;
+  const chartEnd = dataFim && dataFim > ultimoMes ? dataFim : ultimoMes;
+  const extended = todosMeses.length ? buildMonthRange(todosMeses[0], chartEnd) : [];
 
   let acumP = 0,
     acumT = 0;
@@ -1698,7 +1784,12 @@ function openProjDrill(servico, insumo) {
     },
     xaxis: {
       categories: categories,
-      labels: { rotate: -45, rotateAlways: true, style: { fontSize: '10px' } },
+      labels: {
+        rotate: -45,
+        rotateAlways: true,
+        formatter: projectionCategoryLabelFormatter(categories, true),
+        style: { fontSize: '10px' },
+      },
     },
     yaxis: { labels: { formatter: (val) => fmtR$k(val), style: { fontSize: '10px' } } },
     annotations: {
@@ -2010,7 +2101,6 @@ export function createProjectionView({
   viewStates,
   state,
   overview,
-  projectController,
   projectionControl,
 }) {
   reportNonFatalError = runtime.reportNonFatalError;
@@ -2026,7 +2116,6 @@ export function createProjectionView({
   renderAderenciaProj = overview.renderAderenciaProj;
   renderVisao = overview.renderVisao;
   SafeStorage = storage;
-  acharUltimaGestaoCronologica = projectController.findLatestManagement;
   getProjectionControlState = projectionControl.getState;
   const api = {
     defaultDataCorte,

@@ -2518,16 +2518,77 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-soft);
   font-size: 11px;
 }
+.projection-difference-flows {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.projection-difference-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.projection-difference-section-heading h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 15px;
+}
+.projection-difference-section-heading span {
+  color: var(--text-soft);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.projection-difference-flows-table-wrap { max-height: 32vh; }
+.projection-difference-flows-table { min-width: 680px; }
+.projection-difference-flows-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-soft);
+}
+.projection-difference-flows-table tfoot th {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--bg-soft);
+}
+.projection-difference-flows-table :is(th, td):first-child {
+  width: 110px;
+  white-space: nowrap;
+}
+.projection-difference-flows-table td:nth-child(2) {
+  min-width: 220px;
+  white-space: normal;
+}
+.projection-difference-flows-table :is(th, td):nth-child(3) { width: 190px; }
+.projection-difference-flows-table :is(th, td):nth-child(4) {
+  width: 125px;
+  white-space: nowrap;
+}
+.projection-difference-flows-table td:nth-child(3) strong,
+.projection-difference-flows-table td:nth-child(3) span {
+  display: block;
+}
+.projection-difference-flows-table td:nth-child(3) span {
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
 .projection-difference-summary .projection-difference-value--increase,
-.projection-difference-table .projection-difference-value--increase {
+.projection-difference-table .projection-difference-value--increase,
+.projection-difference-flows-table .projection-difference-value--increase {
   color: var(--sem-erro);
 }
 .projection-difference-summary .projection-difference-value--reduction,
-.projection-difference-table .projection-difference-value--reduction {
+.projection-difference-table .projection-difference-value--reduction,
+.projection-difference-flows-table .projection-difference-value--reduction {
   color: var(--sem-ok);
 }
 .projection-difference-summary .projection-difference-value--neutral,
-.projection-difference-table .projection-difference-value--neutral {
+.projection-difference-table .projection-difference-value--neutral,
+.projection-difference-flows-table .projection-difference-value--neutral {
   color: var(--text-strong);
 }
 .projection-chart-lock-button {
@@ -2629,6 +2690,69 @@ body:not(.is-admin-geral) [data-admin-control],
   }
   .projection-difference-table tfoot td { display: none; }
   .projection-difference-table tfoot th {
+    position: static;
+    display: block;
+    width: auto;
+  }
+  .projection-difference-flows-table-wrap {
+    max-height: 38vh;
+    overflow-x: hidden;
+  }
+  .projection-difference-flows-table-wrap > .projection-difference-flows-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .projection-difference-flows-table thead { display: none; }
+  .projection-difference-flows-table tbody,
+  .projection-difference-flows-table tbody tr,
+  .projection-difference-flows-table tbody td {
+    display: block;
+    width: 100%;
+  }
+  .projection-difference-flows-table tbody tr {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .projection-difference-flows-table tbody td {
+    width: 100%;
+    min-width: 0;
+    padding: 3px 0;
+    border: 0;
+    white-space: normal;
+  }
+  .projection-difference-flows-table tbody td:first-child { padding-bottom: 6px; }
+  .projection-difference-flows-table tbody td:nth-child(2)::before,
+  .projection-difference-flows-table tbody td:nth-child(3)::before {
+    display: block;
+    color: var(--text-soft);
+    font-size: 11px;
+  }
+  .projection-difference-flows-table tbody td:nth-child(2)::before {
+    content: 'Descrição';
+  }
+  .projection-difference-flows-table tbody td:nth-child(3)::before {
+    content: 'Insumo destino';
+  }
+  .projection-difference-flows-table tbody td:nth-child(4) {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .projection-difference-flows-table tbody td:nth-child(4)::before {
+    content: 'Valor';
+    color: var(--text-soft);
+    font-weight: 400;
+  }
+  .projection-difference-flows-table tfoot {
+    display: table;
+    width: 100%;
+  }
+  .projection-difference-flows-table tfoot tr {
+    display: flex;
+    justify-content: space-between;
+  }
+  .projection-difference-flows-table tfoot th {
     position: static;
     display: block;
     width: auto;

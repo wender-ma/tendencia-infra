@@ -298,6 +298,42 @@ function roundCurrency(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
+export function buildProjectionDifferenceFlowDetails({
+  pendingFlows = [],
+  selectedMonth,
+  trendStart,
+} = {}) {
+  if (
+    !/^\d{4}-\d{2}$/.test(selectedMonth || '') ||
+    !/^\d{4}-\d{2}$/.test(trendStart || '') ||
+    selectedMonth < trendStart
+  ) {
+    return [];
+  }
+
+  return pendingFlows
+    .filter(
+      (flow) =>
+        flow.dep !== 'Cancelado' &&
+        (flow.refletido_status || 'pendente') === 'pendente' &&
+        Math.abs(Number(flow.custo_flowmaster) || 0) >= 0.005,
+    )
+    .map((flow) => ({
+      numero: String(flow.n_alteracao || '').trim() || 'Sem número',
+      descricao:
+        String(flow.descricao || flow.motivo || flow.justificativa || '').trim() || 'Sem descrição',
+      insumo: isUnclassifiedPlanningInput(flow.insumo_planejamento)
+        ? '__unclassified__'
+        : String(flow.insumo_planejamento).trim(),
+      valor: roundCurrency(flow.custo_flowmaster),
+    }))
+    .sort(
+      (left, right) =>
+        Math.abs(right.valor) - Math.abs(left.valor) ||
+        left.numero.localeCompare(right.numero, 'pt-BR', { numeric: true }),
+    );
+}
+
 export function buildProjectionDifferenceBreakdown({
   projections = [],
   pendingFlows = [],
@@ -350,13 +386,13 @@ export function buildProjectionDifferenceBreakdown({
     }
   }
 
-  for (const flow of pendingFlows) {
-    if (flow.dep === 'Cancelado' || (flow.refletido_status || 'pendente') !== 'pendente') {
-      continue;
-    }
-    const value = flow.custo_flowmaster || 0;
-    if (Math.abs(value) < 0.005) continue;
-    getContribution(flow.insumo_planejamento).flows += value;
+  const flowDetails = buildProjectionDifferenceFlowDetails({
+    pendingFlows,
+    selectedMonth,
+    trendStart,
+  });
+  for (const flow of flowDetails) {
+    getContribution(flow.insumo).flows += flow.valor;
   }
 
   const rows = [...contributions.values()]
@@ -1002,6 +1038,11 @@ function openProjectionDifference(selectedMonth) {
     targetDifference,
   });
   if (!breakdown.available) return;
+  const flowDetails = buildProjectionDifferenceFlowDetails({
+    pendingFlows: context.pendingFlows,
+    selectedMonth,
+    trendStart: context.curve.trendStart,
+  });
 
   const rows = breakdown.rows
     .map((row) => {
@@ -1019,6 +1060,53 @@ function openProjectionDifference(selectedMonth) {
       </tr>`;
     })
     .join('');
+  const flowRows = flowDetails
+    .map((flow) => {
+      const unclassified = flow.insumo === '__unclassified__';
+      const inputLabel = unclassified ? 'Sem insumo classificado' : flow.insumo;
+      return `<tr>
+        <td><strong>${escHtml(flow.numero)}</strong></td>
+        <td>${escHtml(flow.descricao)}</td>
+        <td>
+          <strong>${escHtml(inputLabel)}</strong>
+          ${
+            !unclassified && descInsumo(flow.insumo) !== flow.insumo
+              ? `<span>${escHtml(descInsumo(flow.insumo))}</span>`
+              : ''
+          }
+        </td>
+        <td class="num projection-difference-value--${projectionDifferenceTone(flow.valor)}"><strong>${formatSignedProjectionValue(flow.valor)}</strong></td>
+      </tr>`;
+    })
+    .join('');
+  const flowTotal = roundCurrency(flowDetails.reduce((sum, flow) => sum + flow.valor, 0));
+  const flowDetailsMarkup = flowDetails.length
+    ? `<section class="projection-difference-flows" aria-labelledby="projectionDifferenceFlowsTitle">
+        <div class="projection-difference-section-heading">
+          <h3 id="projectionDifferenceFlowsTitle">Flows pendentes na diferença</h3>
+          <span>${flowDetails.length} ${flowDetails.length === 1 ? 'Flow' : 'Flows'}</span>
+        </div>
+        <div class="table-wrap projection-difference-flows-table-wrap">
+          <table class="projection-difference-flows-table">
+            <thead>
+              <tr>
+                <th>Flow</th>
+                <th>Descrição</th>
+                <th>Insumo destino</th>
+                <th class="num">Valor</th>
+              </tr>
+            </thead>
+            <tbody>${flowRows}</tbody>
+            <tfoot>
+              <tr>
+                <th colspan="3">Total dos Flows pendentes</th>
+                <th class="num projection-difference-value--${projectionDifferenceTone(flowTotal)}">${formatSignedProjectionValue(flowTotal)}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>`
+    : '';
 
   replaceWithParsedMarkup(
     document.getElementById('modalContent'),
@@ -1048,7 +1136,8 @@ function openProjectionDifference(selectedMonth) {
           </tr>
         </tfoot>
       </table>
-    </div>`,
+    </div>
+    ${flowDetailsMarkup}`,
   );
   openModal({ initialFocus: '[data-click-action="closeModal"]' });
 }

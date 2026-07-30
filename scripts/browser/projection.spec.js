@@ -44,6 +44,7 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
         dep: 'Em andamento',
         refletido_status: 'pendente',
         custo_flowmaster: 50,
+        descricao: 'Reforço da equipe de campo',
         insumo_planejamento: '',
         insumo_remanejamento: '',
       },
@@ -118,6 +119,12 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await expect(page.locator('.projection-difference-table tfoot th').last()).toHaveText(
     tooltipDifference,
   );
+  await expect(page.locator('.projection-difference-section-heading')).toContainText('1 Flow');
+  const flowTable = page.locator('.projection-difference-flows-table');
+  await expect(flowTable.locator('tbody')).toContainText('FLOW-1');
+  await expect(flowTable.locator('tbody')).toContainText('Reforço da equipe de campo');
+  await expect(flowTable.locator('tbody')).toContainText('Sem insumo classificado');
+  await expect(flowTable.locator('tfoot th').last()).toHaveText('+50,00');
   await page.locator('#modal .modal-close').click();
 
   for (const seriesIndex of [0, 1]) {

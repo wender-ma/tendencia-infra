@@ -10,6 +10,7 @@ const { pathToFileURL } = require('url');
     buildMonthRange,
     buildProjectionCurve,
     buildProjectionDifferenceBreakdown,
+    buildProjectionDifferenceFlowDetails,
     distributeServiceProjection,
     projetarServico,
   } = await import(moduleUrl.href);
@@ -111,12 +112,16 @@ const { pathToFileURL } = require('url');
         refletido_status: 'pendente',
         custo_flowmaster: 10,
         insumo_planejamento: 'I1',
+        n_alteracao: 'FLOW-10',
+        descricao: 'Aumento de escopo',
       },
       {
         dep: 'Em andamento',
         refletido_status: 'pendente',
         custo_flowmaster: -5,
         insumo_planejamento: '',
+        n_alteracao: 'FLOW-5',
+        motivo: 'Economia contratual',
       },
       {
         dep: 'Cancelado',
@@ -146,6 +151,63 @@ const { pathToFileURL } = require('url');
       ['__unclassified__', 0, -5, -5],
     ],
     'Composição mensal não reconciliou extrapolação e Flows por insumo',
+  );
+  const flowDetails = buildProjectionDifferenceFlowDetails({
+    pendingFlows: [
+      {
+        dep: 'Em andamento',
+        refletido_status: 'pendente',
+        custo_flowmaster: 10,
+        insumo_planejamento: 'I1',
+        n_alteracao: 'FLOW-10',
+        descricao: 'Aumento de escopo',
+      },
+      {
+        dep: 'Em andamento',
+        refletido_status: 'pendente',
+        custo_flowmaster: -5,
+        insumo_planejamento: '',
+        n_alteracao: 'FLOW-5',
+        motivo: 'Economia contratual',
+      },
+      {
+        dep: 'Cancelado',
+        refletido_status: 'pendente',
+        custo_flowmaster: 999,
+        n_alteracao: 'FLOW-CANCELADO',
+      },
+      {
+        dep: 'Em andamento',
+        refletido_status: 'sim',
+        custo_flowmaster: 999,
+        n_alteracao: 'FLOW-REFLETIDO',
+      },
+    ],
+    selectedMonth: '2026-04',
+    trendStart: '2026-02',
+  });
+  assert.deepStrictEqual(flowDetails, [
+    {
+      numero: 'FLOW-10',
+      descricao: 'Aumento de escopo',
+      insumo: 'I1',
+      valor: 10,
+    },
+    {
+      numero: 'FLOW-5',
+      descricao: 'Economia contratual',
+      insumo: '__unclassified__',
+      valor: -5,
+    },
+  ]);
+  assert.deepStrictEqual(
+    buildProjectionDifferenceFlowDetails({
+      pendingFlows: [{ custo_flowmaster: 10 }],
+      selectedMonth: '2026-01',
+      trendStart: '2026-02',
+    }),
+    [],
+    'Flows não deveriam aparecer antes do mês de corte',
   );
 
   const beforeCutoff = buildProjectionDifferenceBreakdown({

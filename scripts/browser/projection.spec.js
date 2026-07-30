@@ -12,6 +12,11 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await page.evaluate(() => {
     const { state } = window.dashboardServices;
     state.obra.ativa = 'OBRA-TESTE';
+    state.dados.historico = {
+      projectionManagementByProject: {
+        'OBRA-TESTE': 'GESTÃO 07-2026',
+      },
+    };
     state.dados.projRaw = [
       ['ADM5189', 60, '2026-01'],
       ['ADM5189', 60, '2026-02'],
@@ -49,10 +54,13 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await page.locator('#projDataFim').fill('2026-10');
   await page.locator('#projDataFim').dispatchEvent('change');
   await expect(page.locator('#projTbody tr').first()).toBeVisible();
+  await expect(page.locator('#projBaseManagement')).toHaveText('GESTÃO 07-2026');
+  await expect(page.locator('#projChart')).toContainText('Planejado acumulado · GESTÃO 07-2026');
 
   const rootCells = page.locator('#projTbody tr').first().locator('td');
-  const totalCard = page
-    .locator('#projKpis .projection-trend-card .projection-summary-row--total strong');
+  const totalCard = page.locator(
+    '#projKpis .projection-trend-card .projection-summary-row--total strong',
+  );
   const impactCard = page
     .locator('#projKpis .projection-trend-card .projection-summary-row')
     .filter({ hasText: 'Tendência Total' })
@@ -77,9 +85,7 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
     .locator('.projection-modal-metric-value');
   await expect(modalExtrapolation).toHaveText(inputExtrapolation);
 
-  const labels = await page
-    .locator('#projChart .apexcharts-xaxis-label')
-    .allTextContents();
+  const labels = await page.locator('#projChart .apexcharts-xaxis-label').allTextContents();
   expect(labels.join(' ')).toContain('fev/2026');
   expect(labels.join(' ')).toContain('out/2026');
   expect(labels.join(' ')).not.toContain('jan/2027');

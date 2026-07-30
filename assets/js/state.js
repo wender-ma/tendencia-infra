@@ -35,7 +35,12 @@ export function createAppState({ storage = getBrowserStorage() } = {}) {
     dados: {
       tendencia: [],
       flows: [],
-      historico: { gestoes: [], items: [], totals: {} },
+      historico: {
+        gestoes: [],
+        items: [],
+        totals: {},
+        projectionManagementByProject: {},
+      },
       projRaw: [],
     },
     sort: {

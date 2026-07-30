@@ -1,51 +1,75 @@
-  <div class="card">
-    <h2>⚙️ Parâmetros da Projeção</h2>
-    <div class="projection-settings-grid">
-      <div>
-        <label for="projDataFim" class="field-label">📅 Data prevista de término</label>
-        <input type="month" id="projDataFim" class="field-control">
-        <div class="field-help">Último mês planejado no CSV: <span id="projUltimoMes"></span></div>
-      </div>
-      <div>
-        <label for="projDataCorte" class="field-label">✂️ Data de corte (mês atual)</label>
-        <input type="month" id="projDataCorte" class="field-control" readonly aria-readonly="true" disabled>
-        <div class="field-help">Atualizada automaticamente · antes = realizado · depois = futuro planejado</div>
-      </div>
-      <div>
-        <label for="projMetodo" class="field-label">📊 Janela do ritmo histórico</label>
-        <select id="projMetodo" class="field-control">
-          <option value="3">Últimos 3 meses</option>
-          <option value="6" selected>Últimos 6 meses</option>
-          <option value="12">Últimos 12 meses</option>
-        </select>
-        <div class="field-help">Usada para extrapolar Indiretos quando obra atrasar</div>
-      </div>
-      <div>
-        <label for="projTolerancia" class="field-label">🎯 Tolerância (R$)</label>
-        <input type="text" id="projTolerancia" value="10.000,00" inputmode="decimal" autocomplete="off" class="field-control">
-        <div class="field-help">Abaixo dessa diferença = "no esperado"</div>
+<div class="card">
+  <h2>⚙️ Parâmetros da Projeção</h2>
+  <div class="projection-settings-grid">
+    <div>
+      <label for="projDataFim" class="field-label">📅 Data prevista de término</label>
+      <input type="month" id="projDataFim" class="field-control" />
+      <div class="field-help">
+        Base da projeção: <strong id="projBaseManagement">Atual</strong> · último mês:
+        <span id="projUltimoMes"></span>
       </div>
     </div>
-  </div>
-
-  <div class="kpis" id="projKpis"></div>
-
-  <div class="card">
-    <h2>📈 Curva S - Visão Geral <span class="hint">Planejado × Tendência projetada</span></h2>
-    <div id="projChart" class="projection-chart"></div>
-    <div class="projection-legend">
-      <span><span class="projection-legend-mark plan"></span> Planejado acumulado (CSV)</span>
-      <span><span class="projection-legend-mark trend"></span> Tendência projetada</span>
-      <span><span class="projection-legend-mark cutoff"></span> Data de corte</span>
-      <span><span class="projection-legend-mark actual"></span> Realizado (passado)</span>
+    <div>
+      <label for="projDataCorte" class="field-label">✂️ Data de corte (mês atual)</label>
+      <input
+        type="month"
+        id="projDataCorte"
+        class="field-control"
+        readonly
+        aria-readonly="true"
+        disabled
+      />
+      <div class="field-help">
+        Atualizada automaticamente · antes = realizado · depois = futuro planejado
+      </div>
+    </div>
+    <div>
+      <label for="projMetodo" class="field-label">📊 Janela do ritmo histórico</label>
+      <select id="projMetodo" class="field-control">
+        <option value="3">Últimos 3 meses</option>
+        <option value="6" selected>Últimos 6 meses</option>
+        <option value="12">Últimos 12 meses</option>
+      </select>
+      <div class="field-help">Usada para extrapolar Indiretos quando obra atrasar</div>
+    </div>
+    <div>
+      <label for="projTolerancia" class="field-label">🎯 Tolerância (R$)</label>
+      <input
+        type="text"
+        id="projTolerancia"
+        value="10.000,00"
+        inputmode="decimal"
+        autocomplete="off"
+        class="field-control"
+      />
+      <div class="field-help">Abaixo dessa diferença = "no esperado"</div>
     </div>
   </div>
+</div>
 
-  <div class="card">
-    <div class="projection-detail-toolbar">
-      <h2 class="projection-detail-title">🔍 Projeção Detalhada</h2>
-      <div class="toolbar projection-detail-filters">
-      <input type="search" id="projSearch" aria-label="Buscar na projeção" placeholder="🔍 Buscar por descrição ou código...">
+<div class="kpis" id="projKpis"></div>
+
+<div class="card">
+  <h2>📈 Curva S - Visão Geral <span class="hint">Planejado × Tendência projetada</span></h2>
+  <div id="projChart" class="projection-chart"></div>
+  <div class="projection-legend">
+    <span><span class="projection-legend-mark plan"></span> Planejado acumulado (CSV)</span>
+    <span><span class="projection-legend-mark trend"></span> Tendência projetada</span>
+    <span><span class="projection-legend-mark cutoff"></span> Data de corte</span>
+    <span><span class="projection-legend-mark actual"></span> Realizado (passado)</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="projection-detail-toolbar">
+    <h2 class="projection-detail-title">🔍 Projeção Detalhada</h2>
+    <div class="toolbar projection-detail-filters">
+      <input
+        type="search"
+        id="projSearch"
+        aria-label="Buscar na projeção"
+        placeholder="🔍 Buscar por descrição ou código..."
+      />
       <select id="projFilterStatus" aria-label="Filtrar projeção por status">
         <option value="">Todos os status</option>
         <option value="red">🔴 Vai estourar</option>
@@ -58,31 +82,52 @@
         <option value="">Todos os grupos</option>
       </select>
       <span class="toolbar-count" id="projCount"></span>
-      </div>
-      <div class="panel-actions projection-detail-actions">
-        <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
-        <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
-        <button class="btn-sm compact" data-click-action="exportarProjecaoDetalhada" title="Exporta a tabela completa (hierarquia toda) em Excel">💾 Exportar</button>
-      </div>
     </div>
-    <div class="table-wrap projection-table">
-      <table>
-        <thead>
-          <tr>
-            <th class="table-col-24"></th>
-            <th class="table-col-min-240" data-sort-proj="label" aria-sort="none">Grupo / Serviço / Insumo</th>
-            <th class="num table-col-130" data-sort-proj="planejado_total" aria-sort="none" title="Total planejado da Gestão Atual até a data prevista de término">Valor Planejado</th>
-            <th class="num table-col-120" data-sort-proj="realizado" aria-sort="none">Realizado</th>
-            <th class="num table-col-120" data-sort-proj="saldo" aria-sort="none">Saldo</th>
-            <th class="num table-col-120" data-sort-proj="extrapolacao" aria-sort="none">Extrapolação</th>
-            <th class="num table-col-130" data-sort-proj="tendencia" aria-sort="none">Tendência</th>
-            <th class="table-col-120">Status</th>
-          </tr>
-        </thead>
-        <tbody id="projTbody"></tbody>
-      </table>
-    </div>
-    <div class="table-note">
-      💡 <strong>Valor Planejado</strong>: Gestão Atual até a data prevista de término · <strong>Realizado</strong>: soma até a data de corte · <strong>Saldo</strong>: Valor Planejado − Realizado · <strong>Extrapolação</strong>: valor adicional projetado quando a obra ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos), incluindo Flows pendentes · <strong>Tendência</strong>: Valor Planejado + Extrapolação
+    <div class="panel-actions projection-detail-actions">
+      <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
+      <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
+      <button
+        class="btn-sm compact"
+        data-click-action="exportarProjecaoDetalhada"
+        title="Exporta a tabela completa (hierarquia toda) em Excel"
+      >
+        💾 Exportar
+      </button>
     </div>
   </div>
+  <div class="table-wrap projection-table">
+    <table>
+      <thead>
+        <tr>
+          <th class="table-col-24"></th>
+          <th class="table-col-min-240" data-sort-proj="label" aria-sort="none">
+            Grupo / Serviço / Insumo
+          </th>
+          <th
+            class="num table-col-130"
+            data-sort-proj="planejado_total"
+            aria-sort="none"
+            title="Total da gestão-base até a data prevista de término"
+          >
+            Valor Planejado
+          </th>
+          <th class="num table-col-120" data-sort-proj="realizado" aria-sort="none">Realizado</th>
+          <th class="num table-col-120" data-sort-proj="saldo" aria-sort="none">Saldo</th>
+          <th class="num table-col-120" data-sort-proj="extrapolacao" aria-sort="none">
+            Extrapolação
+          </th>
+          <th class="num table-col-130" data-sort-proj="tendencia" aria-sort="none">Tendência</th>
+          <th class="table-col-120">Status</th>
+        </tr>
+      </thead>
+      <tbody id="projTbody"></tbody>
+    </table>
+  </div>
+  <div class="table-note">
+    💡 <strong>Valor Planejado</strong>: gestão-base indicada nos parâmetros até a data prevista de
+    término · <strong>Realizado</strong>: soma até a data de corte · <strong>Saldo</strong>: Valor
+    Planejado − Realizado · <strong>Extrapolação</strong>: valor adicional projetado quando a obra
+    ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos), incluindo Flows pendentes
+    · <strong>Tendência</strong>: Valor Planejado + Extrapolação
+  </div>
+</div>

@@ -40,6 +40,10 @@ function managementSortKey(management) {
   return match ? [Number(match[2]), Number(match[1])] : [0, 0];
 }
 
+function isNamedManagement(management) {
+  return /GEST[ÃA]O\s+\d{2}-\d{4}/i.test(management);
+}
+
 export function parseGestoesFile(text, options = {}) {
   const rows = parseDelimitedRows(text);
   const columns = resolveImportColumns('gestoes', rows);
@@ -48,7 +52,7 @@ export function parseGestoesFile(text, options = {}) {
   const report = createImportReport(rows.length - 1);
   const aggregated = new Map();
   const managementNames = new Set();
-  const projectionRows = [];
+  const monthlyRowsByProject = new Map();
   const knownProjects = new Set(
     (options.projects || []).map((project) => String(project?.codigo_obra || '')).filter(Boolean),
   );
@@ -97,17 +101,20 @@ export function parseGestoesFile(text, options = {}) {
     managementNames.add(management);
     report.accepted += 1;
 
-    if (management !== 'Atual') continue;
     const paymentDate = toIsoDate(String(row[columns.paymentMonth] || '').trim(), 'br');
     const value = parseNumber(row[columns.netValue]) || 0;
     if (!paymentDate || value <= 0) continue;
-    projectionRows.push({
+    const projectManagements = monthlyRowsByProject.get(projectCode) || new Map();
+    const monthlyRows = projectManagements.get(management) || [];
+    monthlyRows.push({
       codigo_obra: projectCode,
       servico: service,
       insumo: input,
       mes: paymentDate.slice(0, 7),
       valor: value,
     });
+    projectManagements.set(management, monthlyRows);
+    monthlyRowsByProject.set(projectCode, projectManagements);
   }
 
   const managements = [...managementNames].sort((left, right) => {
@@ -138,9 +145,32 @@ export function parseGestoesFile(text, options = {}) {
     }
   }
 
+  const projectionRows = [];
+  const projectionManagementByProject = {};
+  for (const [projectCode, projectManagements] of monthlyRowsByProject) {
+    const namedManagements = [...projectManagements.keys()]
+      .filter(isNamedManagement)
+      .sort((left, right) => {
+        const leftKey = managementSortKey(left);
+        const rightKey = managementSortKey(right);
+        return rightKey[0] * 100 + rightKey[1] - (leftKey[0] * 100 + leftKey[1]);
+      });
+    const selectedManagement =
+      namedManagements[0] || (projectManagements.has('Atual') ? 'Atual' : null);
+    if (!selectedManagement) continue;
+    projectionManagementByProject[projectCode] = selectedManagement;
+    projectionRows.push(...projectManagements.get(selectedManagement));
+  }
+
   return {
-    history: { gestoes: managements, items, totals },
+    history: {
+      gestoes: managements,
+      items,
+      totals,
+      projectionManagementByProject,
+    },
     projectionRows,
+    projectionManagementByProject,
     report,
     unknownProjects: [...unknownProjects],
   };

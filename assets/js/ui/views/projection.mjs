@@ -63,6 +63,11 @@ function activeProjectionProjectKey() {
   return String(APP_STATE?.obra?.ativa || '__global__');
 }
 
+function activeProjectionManagement() {
+  const projectCode = activeProjectionProjectKey();
+  return APP_STATE?.dados?.historico?.projectionManagementByProject?.[projectCode] || 'Atual';
+}
+
 function readProjectionSettings() {
   try {
     const parsed = JSON.parse(SafeStorage?.get(PROJECTION_SETTINGS_KEY, '{}') || '{}');
@@ -118,6 +123,8 @@ function initProjecao() {
   }
   const ultimo = defaultDataFim();
   document.getElementById('projUltimoMes').textContent = formatMonthLabel(ultimo);
+  const source = document.getElementById('projBaseManagement');
+  if (source) source.textContent = activeProjectionManagement();
   syncProjectionInputs();
   // popular filtro de grupos
   const fg = document.getElementById('projFilterGrupo');
@@ -210,6 +217,69 @@ export function buildMonthRange(start, end) {
     current = addMonths(current, 1);
   }
   return months;
+}
+
+export function buildProjectionCurve(
+  monthlyValues,
+  projections,
+  dataCorte,
+  dataFim,
+  pendingFlowImpact = 0,
+) {
+  const sourceMonths = Object.keys(monthlyValues || {})
+    .filter((month) => !dataFim || month <= dataFim)
+    .sort();
+  if (!sourceMonths.length) {
+    return { months: [], planned: [], tendency: [], trendStart: null };
+  }
+
+  const lastSourceMonth = sourceMonths[sourceMonths.length - 1];
+  const chartEnd = dataFim && dataFim > lastSourceMonth ? dataFim : lastSourceMonth;
+  const months = buildMonthRange(sourceMonths[0], chartEnd);
+  const extrapolationByMonth = {};
+  for (const projection of projections || []) {
+    if (
+      projection.extrapolacao <= 0 ||
+      !projection.ultimo_mes_planejado ||
+      projection.meses_gap <= 0
+    ) {
+      continue;
+    }
+    const monthlyExtrapolation = projection.extrapolacao / projection.meses_gap;
+    let month = projection.ultimo_mes_planejado;
+    for (let index = 0; index < projection.meses_gap; index += 1) {
+      month = addMonths(month, 1);
+      if (month <= chartEnd) {
+        extrapolationByMonth[month] = (extrapolationByMonth[month] || 0) + monthlyExtrapolation;
+      }
+    }
+  }
+
+  const trendStart =
+    dataCorte < months[0] ? months[0] : dataCorte > chartEnd ? chartEnd : dataCorte;
+  const flowImpactMonth = trendStart;
+  let plannedAccumulated = 0;
+  let tendencyAccumulated = 0;
+  const planned = [];
+  const tendency = [];
+  for (const month of months) {
+    const baseValue = monthlyValues[month] || 0;
+    plannedAccumulated += baseValue;
+    tendencyAccumulated += baseValue + (extrapolationByMonth[month] || 0);
+    if (month === flowImpactMonth) tendencyAccumulated += pendingFlowImpact || 0;
+    planned.push(plannedAccumulated);
+    tendency.push(month < trendStart ? null : tendencyAccumulated);
+  }
+
+  if (tendency.length) {
+    const expectedFinal =
+      planned[planned.length - 1] +
+      (projections || []).reduce((sum, projection) => sum + (projection.extrapolacao || 0), 0) +
+      (pendingFlowImpact || 0);
+    tendency[tendency.length - 1] = expectedFinal;
+  }
+
+  return { months, planned, tendency, trendStart };
 }
 
 // Calcula o ritmo histórico (R$/mês) somando os últimos N meses ANTES da data de corte
@@ -368,24 +438,24 @@ function calcStatus(diff, planejado, tolerancia) {
 }
 
 function syncProjectionChartLockUi() {
-  const container = document.getElementById('projChart');
-  if (!container) return;
-  container.classList.toggle('projection-chart-is-locked', projectionChartLocked);
-  const control = container.querySelector('.projection-chart-lock-toggle');
-  const button = container.querySelector('.projection-chart-lock-button');
-  const symbol = container.querySelector('.projection-chart-lock-symbol');
   const label = projectionChartLocked
     ? 'Desbloquear zoom e movimentação'
     : 'Bloquear zoom e movimentação';
-  if (control) control.title = label;
-  if (button) button.setAttribute('aria-label', label);
-  if (symbol) symbol.textContent = projectionChartLocked ? '🔒' : '🔓';
+  for (const container of document.querySelectorAll('#projChart, #modalProjChart')) {
+    container.classList.toggle('projection-chart-is-locked', projectionChartLocked);
+    const control = container.querySelector('.projection-chart-lock-toggle');
+    const button = container.querySelector('.projection-chart-lock-button');
+    const symbol = container.querySelector('.projection-chart-lock-symbol');
+    if (control) control.title = label;
+    if (button) button.setAttribute('aria-label', label);
+    if (symbol) symbol.textContent = projectionChartLocked ? '🔒' : '🔓';
+  }
 }
 
-function toggleProjectionChartLock(_chartContext) {
+function toggleProjectionChartLock(chartContext) {
   const nextLocked = !projectionChartLocked;
   if (nextLocked) {
-    document.querySelector('#projChart .apexcharts-zoom-icon')?.click();
+    chartContext?.el?.querySelector('.apexcharts-zoom-icon')?.click();
   }
   projectionChartLocked = nextLocked;
   syncProjectionChartLockUi();
@@ -399,6 +469,8 @@ function renderProjecao() {
     return;
   }
   syncProjectionInputs();
+  const source = document.getElementById('projBaseManagement');
+  if (source) source.textContent = activeProjectionManagement();
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
@@ -495,7 +567,13 @@ function renderProjecao() {
   );
 
   // Gráfico curva S geral
-  renderProjChartGeral(porServico, projServicos, dataCorte, dataFim);
+  renderProjChartGeral(
+    porServico,
+    projServicos,
+    dataCorte,
+    dataFim,
+    totImpactoTendencia - totExtrap,
+  );
 
   // Aderência Físico × Financeira (renderiza se o container existir na página)
   try {
@@ -511,17 +589,24 @@ function renderProjecao() {
 function createProjectionCurveTooltip(categories, planData, tendData) {
   return ({ dataPointIndex }) => {
     if (dataPointIndex < 0) return '';
-    const planejado = planData[dataPointIndex] || 0;
-    const tendencia = tendData[dataPointIndex] || 0;
-    const diferenca = tendencia - planejado;
+    const planejado = Number(planData[dataPointIndex]) || 0;
+    const tendenciaDisponivel = Number.isFinite(tendData[dataPointIndex]);
+    const tendencia = tendenciaDisponivel ? Number(tendData[dataPointIndex]) : null;
+    const diferenca = tendenciaDisponivel ? tendencia - planejado : null;
     const diferencaTexto =
-      Math.abs(diferenca) < 0.005 ? '0,00' : `${diferenca > 0 ? '+' : ''}${fmtR$(diferenca)}`;
+      diferenca == null
+        ? '—'
+        : Math.abs(diferenca) < 0.005
+          ? '0,00'
+          : `${diferenca > 0 ? '+' : ''}${fmtR$(diferenca)}`;
     const diferencaClasse =
-      diferenca > 0
-        ? 'projection-curve-tooltip-value--increase'
-        : diferenca < 0
-          ? 'projection-curve-tooltip-value--reduction'
-          : '';
+      diferenca == null
+        ? ''
+        : diferenca > 0
+          ? 'projection-curve-tooltip-value--increase'
+          : diferenca < 0
+            ? 'projection-curve-tooltip-value--reduction'
+            : '';
 
     return `<div class="projection-chart-tooltip projection-curve-tooltip">
       <strong class="projection-curve-tooltip-title">${escHtml(categories[dataPointIndex])}</strong>
@@ -531,7 +616,7 @@ function createProjectionCurveTooltip(categories, planData, tendData) {
       </div>
       <div class="projection-curve-tooltip-row">
         <span><i class="projection-curve-tooltip-mark projection-curve-tooltip-mark--trend"></i>Tendência projetada</span>
-        <strong>${fmtR$(tendencia)}</strong>
+        <strong>${tendenciaDisponivel ? fmtR$(tendencia) : '—'}</strong>
       </div>
       <div class="projection-curve-tooltip-row projection-curve-tooltip-row--difference">
         <span>Δ Diferença</span>
@@ -550,7 +635,7 @@ function projectionCategoryLabelFormatter(categories, compact = false) {
   };
 }
 
-function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
+function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, pendingFlowImpact = 0) {
   // Acumular planejado total mês a mês
   const totalMeses = {};
   Object.values(porServico).forEach((meses) => {
@@ -558,47 +643,22 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
       totalMeses[m] = (totalMeses[m] || 0) + v;
     });
   });
-  const todosMeses = Object.keys(totalMeses)
-    .filter((month) => !dataFim || month <= dataFim)
-    .sort();
-  if (!todosMeses.length) {
+  const curve = buildProjectionCurve(
+    totalMeses,
+    projServicos,
+    dataCorte,
+    dataFim,
+    pendingFlowImpact,
+  );
+  if (!curve.months.length) {
     document.getElementById('projChart').replaceChildren();
     return;
   }
 
-  // Mantém um ponto para cada mês, inclusive quando não houve movimento.
-  const ultimoMes = todosMeses[todosMeses.length - 1];
-  const chartEnd = dataFim && dataFim > ultimoMes ? dataFim : ultimoMes;
-  const extended = buildMonthRange(todosMeses[0], chartEnd);
-
-  // Linha A: planejado acumulado
-  let acumPlan = 0;
-  const planAcumulado = extended.map((m) => {
-    acumPlan += totalMeses[m] || 0;
-    return { mes: m, valor: acumPlan };
-  });
-
-  // Linha B: tendência acumulada
-  const extrapPorMes = {};
-  projServicos.forEach((p) => {
-    if (p.extrapolacao > 0 && p.ultimo_mes_planejado && p.meses_gap > 0) {
-      const perMonth = p.extrapolacao / p.meses_gap;
-      let m = p.ultimo_mes_planejado;
-      for (let i = 0; i < p.meses_gap; i++) {
-        m = addMonths(m, 1);
-        extrapPorMes[m] = (extrapPorMes[m] || 0) + perMonth;
-      }
-    }
-  });
-  let acumTend = 0;
-  const tendAcumulada = extended.map((m) => {
-    acumTend += (totalMeses[m] || 0) + (extrapPorMes[m] || 0);
-    return { mes: m, valor: acumTend };
-  });
-
+  const extended = curve.months;
   const categories = extended.map((m) => formatMonthLabel(m));
-  const planData = planAcumulado.map((p) => p.valor);
-  const tendData = tendAcumulada.map((p) => p.valor);
+  const planData = curve.planned;
+  const tendData = curve.tendency;
 
   // Posição do corte e do fim para annotations
   const findIdx = (m) => {
@@ -614,7 +674,11 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
 
   const options = {
     series: [
-      { name: 'Planejado acumulado', type: 'area', data: planData },
+      {
+        name: `Planejado acumulado · ${activeProjectionManagement()}`,
+        type: 'area',
+        data: planData,
+      },
       { name: 'Tendência projetada', type: 'line', data: tendData },
     ],
     chart: {
@@ -736,10 +800,10 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim) {
     grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
     markers: {
-      size: [4, 4],
+      size: [0, 0],
       strokeWidth: 2,
       strokeColors: resolveColor('var(--text-on-dark)'),
-      hover: { sizeOffset: 3 },
+      hover: { sizeOffset: 5 },
     },
     responsive: [
       { breakpoint: 600, options: { chart: { height: 300 }, legend: { position: 'bottom' } } },
@@ -1565,7 +1629,7 @@ async function exportarProjecaoDetalhada() {
     // Aba de metadados
     const meta = [
       { Campo: 'Obra', Valor: APP_STATE.obra.ativa || '' },
-      { Campo: 'Fonte do valor planejado', Valor: 'Gestão Atual' },
+      { Campo: 'Fonte do valor planejado', Valor: activeProjectionManagement() },
       { Campo: 'Data de corte', Valor: dataCorte },
       { Campo: 'Data fim', Valor: dataFim },
       { Campo: 'Janela ritmo histórico (meses)', Valor: janelaMeses },
@@ -1628,6 +1692,26 @@ async function exportarProjecaoDetalhada() {
   }
 }
 
+function pendingFlowImpactForTarget(servico, insumo) {
+  const targetInputs = insumo
+    ? new Set([insumo])
+    : new Set(
+        getProjRawObraAtiva()
+          .filter((row) => row.servico === servico)
+          .map((row) => row.insumo),
+      );
+  return getFlowsObraAtiva().reduce((total, flow) => {
+    if (flow.dep === 'Cancelado' || (flow.refletido_status || 'pendente') !== 'pendente') {
+      return total;
+    }
+    const value = flow.custo_flowmaster || 0;
+    let impact = 0;
+    if (targetInputs.has(flow.insumo_planejamento)) impact += value;
+    if (targetInputs.has(flow.insumo_remanejamento)) impact -= value;
+    return total + impact;
+  }, 0);
+}
+
 function openProjDrill(servico, insumo) {
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
@@ -1670,38 +1754,15 @@ function openProjDrill(servico, insumo) {
     subtitulo = descServico(servico);
   }
 
-  // Construir dados para ApexCharts
-  const todosMeses = Object.keys(meses)
-    .filter((month) => !dataFim || month <= dataFim)
-    .sort();
-  const ultimoMes = todosMeses[todosMeses.length - 1] || dataFim;
-  const chartEnd = dataFim && dataFim > ultimoMes ? dataFim : ultimoMes;
-  const extended = todosMeses.length ? buildMonthRange(todosMeses[0], chartEnd) : [];
-
-  let acumP = 0,
-    acumT = 0;
-  const extrapPorMes = {};
-  if (proj.extrapolacao > 0 && proj.ultimo_mes_planejado && proj.meses_gap > 0) {
-    const perMonth = proj.extrapolacao / proj.meses_gap;
-    let m = proj.ultimo_mes_planejado;
-    for (let i = 0; i < proj.meses_gap; i++) {
-      m = addMonths(m, 1);
-      extrapPorMes[m] = perMonth;
-    }
-  }
-  const planAcum = extended.map((m) => {
-    acumP += meses[m] || 0;
-    return { mes: m, valor: acumP };
-  });
-  const tendAcum = extended.map((m) => {
-    acumT += (meses[m] || 0) + (extrapPorMes[m] || 0);
-    return { mes: m, valor: acumT };
-  });
-
+  const pendingFlowImpact = pendingFlowImpactForTarget(servico, insumo);
+  const curve = buildProjectionCurve(meses, [proj], dataCorte, dataFim, pendingFlowImpact);
+  const extended = curve.months;
   const categories = extended.map((m) => formatMonthLabel(m));
-  const planData = planAcum.map((p) => p.valor);
-  const tendData = tendAcum.map((p) => p.valor);
+  const planData = curve.planned;
+  const tendData = curve.tendency;
   const saldoPlanejado = proj.planejado_total - proj.realizado;
+  const finalTrend = proj.tendencia + pendingFlowImpact;
+  const finalDifference = proj.diff + pendingFlowImpact;
   const extrapolacaoTexto =
     Math.abs(proj.extrapolacao) < 0.005
       ? '—'
@@ -1737,7 +1798,7 @@ function openProjDrill(servico, insumo) {
           <strong class="projection-modal-metric-value">${fmtR$(saldoPlanejado)}</strong>
         </div>
       </div>
-      <div class="kpi kpi-wide projection-modal-card ${proj.diff > 0 ? 'red' : proj.diff < 0 ? 'green' : ''}">
+      <div class="kpi kpi-wide projection-modal-card ${finalDifference > 0 ? 'red' : finalDifference < 0 ? 'green' : ''}">
         <h3 class="projection-modal-card-title">🔮 Extrapolação</h3>
         <div class="projection-modal-metric">
           <div class="projection-modal-metric-label">Saldo</div>
@@ -1750,10 +1811,18 @@ function openProjDrill(servico, insumo) {
             <span class="projection-modal-calculation">- ${proj.meses_gap > 0 ? `${proj.meses_gap} meses × R$ ${fmt(proj.ritmo_historico, 0)}/m` : 'Sem meses adicionais'}</span>
           </div>
         </div>
+        ${
+          Math.abs(pendingFlowImpact) >= 0.005
+            ? `<div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Flows pendentes</div>
+          <strong class="projection-modal-metric-value">${pendingFlowImpact > 0 ? '+' : ''}${fmtR$(pendingFlowImpact)}</strong>
+        </div>`
+            : ''
+        }
         <hr class="border-top-soft projection-modal-divider">
         <div class="projection-modal-metric projection-modal-metric--total">
           <div class="projection-modal-metric-label">Tendência Final</div>
-          <strong class="projection-modal-metric-value">${fmtR$(proj.tendencia)}</strong>
+          <strong class="projection-modal-metric-value">${fmtR$(finalTrend)}</strong>
         </div>
       </div>
     </div>
@@ -1767,13 +1836,62 @@ function openProjDrill(servico, insumo) {
   // Renderizar ApexCharts no modal
   const modalChartOptions = {
     series: [
-      { name: 'Planejado acumulado', type: 'area', data: planData },
+      {
+        name: `Planejado acumulado · ${activeProjectionManagement()}`,
+        type: 'area',
+        data: planData,
+      },
       { name: 'Tendência projetada', type: 'line', data: tendData },
     ],
     chart: {
       height: 300,
       animations: { enabled: true, easing: 'easeinout', speed: 600 },
-      toolbar: { show: false },
+      toolbar: {
+        show: true,
+        tools: {
+          download: true,
+          selection: true,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true,
+          customIcons: [
+            {
+              icon: `<button type="button" class="projection-chart-lock-button" aria-label="${projectionChartLocked ? 'Desbloquear zoom e movimentação' : 'Bloquear zoom e movimentação'}"><span class="projection-chart-lock-symbol" aria-hidden="true">${projectionChartLocked ? '🔒' : '🔓'}</span></button>`,
+              index: 2,
+              title: projectionChartLocked
+                ? 'Desbloquear zoom e movimentação'
+                : 'Bloquear zoom e movimentação',
+              class: 'projection-chart-lock-toggle',
+              click: toggleProjectionChartLock,
+            },
+          ],
+        },
+      },
+      zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
+      events: {
+        mounted: syncProjectionChartLockUi,
+        updated: syncProjectionChartLockUi,
+        beforeZoom: (chartContext, { xaxis }) =>
+          projectionChartLocked
+            ? {
+                xaxis: {
+                  min: chartContext.w.globals.minX,
+                  max: chartContext.w.globals.maxX,
+                },
+              }
+            : { xaxis },
+        beforeResetZoom: (chartContext) =>
+          projectionChartLocked
+            ? {
+                xaxis: {
+                  min: chartContext.w.globals.minX,
+                  max: chartContext.w.globals.maxX,
+                },
+              }
+            : undefined,
+      },
     },
     themePalette: ['var(--chart-primary)', 'var(--sem-alerta)'],
     colors: [resolveColor('var(--chart-primary)'), resolveColor('var(--sem-alerta)')],
@@ -1842,10 +1960,10 @@ function openProjDrill(servico, insumo) {
     grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
     dataLabels: { enabled: false },
     markers: {
-      size: [4, 4],
+      size: [0, 0],
       strokeWidth: 2,
       strokeColors: resolveColor('var(--text-on-dark)'),
-      hover: { sizeOffset: 3 },
+      hover: { sizeOffset: 5 },
     },
   };
 

@@ -306,7 +306,12 @@ function clearDeletedActiveObra() {
   APP_STATE.obra.ativa = null;
   SafeStorage.remove('jzurique_obra_ativa');
   resetDadosObra();
-  APP_STATE.dados.historico = { gestoes: [], items: [], totals: {} };
+  APP_STATE.dados.historico = {
+    gestoes: [],
+    items: [],
+    totals: {},
+    projectionManagementByProject: {},
+  };
   APP_STATE.dados.projRaw = [];
   Object.keys(APP_STATE.uploads).forEach((key) => {
     APP_STATE.uploads[key] = null;

@@ -904,7 +904,6 @@ body:not(.is-admin-geral) [data-admin-control],
   border: 1px solid var(--border);
 }
 .sources-header strong { color: var(--text-strong); font-weight: 600; }
-.sources-header .src-marker { flex: 0 0 auto; line-height: 1.45; }
 .sources-header .src-list {
   display: grid;
   min-width: 0;

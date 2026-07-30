@@ -2459,10 +2459,7 @@ function renderSourcesHeaders() {
       const tip = `${last.nome_arquivo} · ${fmtUploadDate(last.enviado_em)}${last.enviado_por ? ' · ' + last.enviado_por : ''}`;
       return `<span class="src-item" title="${escAttr(tip)}"><strong>${meta.icon} ${meta.label}:</strong> <code>${escHtml(last.nome_arquivo)}</code> <span class="src-date">(${escHtml(fmtUploadDateShort(last.enviado_em))})</span></span>`;
     });
-    replaceWithParsedMarkup(
-      el,
-      `<span class="src-marker" aria-hidden="true">📎</span><span class="src-list">${parts.join('')}</span>`,
-    );
+    replaceWithParsedMarkup(el, `<span class="src-list">${parts.join('')}</span>`);
   });
 }
 

@@ -12,6 +12,7 @@ const CLASSIFICATION_FIELDS = new Set([
   'insumo_remanejamento',
   'custo_flowmaster',
   'refletido_status',
+  'refletido_mes',
 ]);
 
 const RESETTABLE_PROJECT_KEYS = new Set([
@@ -63,6 +64,7 @@ function classificationMap(rows = []) {
         insumo_remanejamento: row.insumo_remanejamento,
         custo_flowmaster: row.custo_flowmaster,
         refletido_status: row.refletido_status,
+        refletido_mes: row.refletido_mes,
         refletido: row.refletido_status === 'sim',
       },
     ]),
@@ -162,7 +164,7 @@ export function createDashboardRepository({
       supabase
         .from('flow_classifications')
         .select(
-          'codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status',
+          'codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes',
         )
         .eq('codigo_obra', project),
     );

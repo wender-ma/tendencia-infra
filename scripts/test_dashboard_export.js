@@ -27,10 +27,16 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(detail['Δ % (vs Licitação)'], 12.35);
 
   const [flow] = buildFlowsExportRows([
-    { tipo: 'remanejamento', refletido_status: 'nao', custo_flowmaster: 10.126 },
+    {
+      tipo: 'remanejamento',
+      refletido_status: 'sim',
+      refletido_mes: '2026-07-01',
+      custo_flowmaster: 10.126,
+    },
   ]);
   assert.strictEqual(flow['Tipo classificação'], 'Remanejamento');
-  assert.strictEqual(flow['Refletido?'], 'Não');
+  assert.strictEqual(flow['Refletido?'], 'Sim');
+  assert.strictEqual(flow['Mês refletido'], '07/2026');
   assert.strictEqual(flow['Custo Flowmaster (R$)'], 10.13);
 
   const projection = buildProjectionExportRows({

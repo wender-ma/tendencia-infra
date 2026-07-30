@@ -3,6 +3,11 @@ import { debounce, formatNumber as fmt, formatNumber as fmtR$ } from '../dashboa
 import { STORAGE_KEYS } from '../../config.js';
 import { escAttr, escHtml, formatDate } from '../formatters.mjs';
 import { bindSortableHeaders, updateSortHeaderState } from '../table-interactions.mjs';
+import {
+  formatReflectionMonth,
+  reflectionMonthInputValue,
+  resolveReflectionMonth,
+} from '../../services/flow-reflection.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 
@@ -91,7 +96,7 @@ function renderFlows() {
       renderDashboardState(flowsTbody, {
         title: 'Sem aditivos para listar',
         compact: true,
-        tableColspan: 10,
+        tableColspan: 11,
       });
     document.getElementById('flowsByMotivo')?.replaceChildren();
     document.getElementById('flowsDescartados')?.replaceChildren();
@@ -273,6 +278,22 @@ function clearFlowFilters() {
   renderFlowTable();
 }
 
+function renderReflectionMonth(f) {
+  const status = f.refletido_status || 'pendente';
+  if (status !== 'sim') {
+    return '<span class="flow-reflection-month-empty">—</span>';
+  }
+  if (!isEditorDaObraAtiva()) {
+    return `<span>${escHtml(formatReflectionMonth(f.refletido_mes))}</span>`;
+  }
+  return `<input type="month" class="refletido-month-input" data-edit-control
+    value="${escAttr(reflectionMonthInputValue(f.refletido_mes))}"
+    data-n="${escAttr(f.n_alteracao)}"
+    data-change-action="onRefletidoMonthChange" data-action-mode="self"
+    aria-label="Mês em que o Flow ${escAttr(f.n_alteracao)} foi refletido no planejamento"
+    title="Mês em que o Flow foi refletido no planejamento">`;
+}
+
 function renderFlowTable() {
   bindFlowInteractions();
   const q = document.getElementById('flowSearch').value.toLowerCase();
@@ -361,6 +382,7 @@ function renderFlowTable() {
           <option value="nao" ${f.refletido_status === 'nao' ? 'selected' : ''}>❌ Não</option>
         </select>
       </td>
+      <td class="flow-reflection-month-cell">${renderReflectionMonth(f)}</td>
       <td>${escHtml(f.n_alteracao)}${manualBadge}${delBtn}</td>
       <td class="flow-date-cell">${escHtml(formatDate(f.data_br))}</td>
       <td><span class="badge ${depBadge[f.dep] || 'gray'}">${escHtml(f.dep || '')}</span></td>
@@ -398,6 +420,7 @@ function onRefletidoChange(sel) {
   const f = getFlowsObraAtiva().find((x) => x.n_alteracao === nAlt);
   if (!f) return;
   f.refletido_status = status;
+  f.refletido_mes = resolveReflectionMonth(status, f.refletido_mes);
   // manter campo legado 'refletido' = (status === 'sim') por compatibilidade
   f.refletido = status === 'sim';
   // chave composta + sync Supabase
@@ -406,10 +429,15 @@ function onRefletidoChange(sel) {
   const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
   map[key].refletido_status = status;
+  map[key].refletido_mes = f.refletido_mes;
   map[key].refletido = status === 'sim'; // compat
   SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   void runAsyncSafely(
-    supaPatchClassification(nAlt, { refletido_status: status }, codigoObra),
+    supaPatchClassification(
+      nAlt,
+      { refletido_status: status, refletido_mes: f.refletido_mes },
+      codigoObra,
+    ),
     'Classificações/salvar reflexo no Supabase',
     'O status foi salvo apenas neste navegador.',
   );
@@ -424,6 +452,33 @@ function onRefletidoChange(sel) {
   renderFlowTable();
   // Sincronizar TODAS as telas (Visão Geral, Tendência de Obra, Controle Projeção)
   syncAllViewsFromFlows();
+}
+
+function onRefletidoMonthChange(input) {
+  if (!requireEditor('alterar o mês de reflexo')) {
+    renderFlowTable();
+    return;
+  }
+  const nAlt = input.dataset.n;
+  const f = getFlowsObraAtiva().find((flow) => flow.n_alteracao === nAlt);
+  if (!f || f.refletido_status !== 'sim') {
+    renderFlowTable();
+    return;
+  }
+  const reflectedMonth = input.value ? resolveReflectionMonth('sim', input.value) : null;
+  f.refletido_mes = reflectedMonth;
+  const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
+  const key = `${codigoObra}:${nAlt}`;
+  const map = readClassificationMap();
+  if (!map[key]) map[key] = { codigo_obra: codigoObra };
+  map[key].refletido_mes = reflectedMonth;
+  SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
+  void runAsyncSafely(
+    supaPatchClassification(nAlt, { refletido_mes: reflectedMonth }, codigoObra),
+    'Classificações/salvar mês de reflexo no Supabase',
+    'O mês de reflexo foi salvo apenas neste navegador.',
+  );
+  renderFlowTable();
 }
 
 export function createFlowsView({
@@ -454,5 +509,11 @@ export function createFlowsView({
   updateMassBar = flowEditor.updateMassBar;
   readClassificationMap = flowEditor.readClassificationMap;
   syncAllViewsFromFlows = flowEditor.syncAllViewsFromFlows;
-  return Object.freeze({ renderFlows, renderFlowTable, clearFlowFilters, onRefletidoChange });
+  return Object.freeze({
+    renderFlows,
+    renderFlowTable,
+    clearFlowFilters,
+    onRefletidoChange,
+    onRefletidoMonthChange,
+  });
 }

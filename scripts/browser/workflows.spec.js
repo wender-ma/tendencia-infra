@@ -65,14 +65,27 @@ test('editor altera status de Flow preservando a obra ativa', async ({ page }) =
   const status = page.locator('select.refletido-select[data-n="ADT-E2E-1"]');
   const row = page.locator('#flowTbody tr[data-n="ADT-E2E-1"]');
   await expect(row).toHaveCount(1);
-  await expect(row.locator(':scope > td')).toHaveCount(10);
-  await expect(row.locator(':scope > td').nth(2)).toContainText('ADT-E2E-1');
-  await expect(row.locator(':scope > td').nth(9)).toContainText('Teste E2E');
+  await expect(row.locator(':scope > td')).toHaveCount(11);
+  await expect(row.locator(':scope > td').nth(3)).toContainText('ADT-E2E-1');
+  await expect(row.locator(':scope > td').nth(10)).toContainText('Teste E2E');
+  await expect(row.locator('.flow-reflection-month-empty')).toHaveText('—');
   await expect(status).toBeEnabled();
   await status.selectOption('sim');
   await expect
     .poll(() => page.evaluate(() => window.dashboardServices.state.dados.flows[0].refletido_status))
     .toBe('sim');
+  const reflectionMonth = row.locator('.refletido-month-input');
+  await expect(reflectionMonth).toBeVisible();
+  await reflectionMonth.fill('2026-05');
+  await reflectionMonth.dispatchEvent('change');
+  await expect
+    .poll(() => page.evaluate(() => window.dashboardServices.state.dados.flows[0].refletido_mes))
+    .toBe('2026-05-01');
+  await status.selectOption('pendente');
+  await expect
+    .poll(() => page.evaluate(() => window.dashboardServices.state.dados.flows[0].refletido_mes))
+    .toBe(null);
+  await expect(row.locator('.flow-reflection-month-empty')).toHaveText('—');
 });
 
 test('administrador abre catálogo com resposta Supabase controlada', async ({ page }) => {
@@ -122,9 +135,11 @@ test('administrador abre catálogo com resposta Supabase controlada', async ({ p
   await expect(page.locator('#tab-admin')).toHaveClass(/active/);
   await expect(page.locator('#tab-admin > .card > h2')).toHaveCount(3);
   expect(
-    await page.locator('#tab-admin > .card > h2').evaluateAll((headings) =>
-      headings.map((heading) => heading.textContent.replace(/\s+/g, ' ').trim()),
-    ),
+    await page
+      .locator('#tab-admin > .card > h2')
+      .evaluateAll((headings) =>
+        headings.map((heading) => heading.textContent.replace(/\s+/g, ' ').trim()),
+      ),
   ).toEqual([
     '🏗️ Obras ➕ Nova obra 🔄',
     '👥 Editores permitidos ➕ Adicionar editor 🔄',

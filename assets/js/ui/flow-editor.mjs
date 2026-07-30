@@ -4,6 +4,11 @@ import { STORAGE_KEYS } from '../config.js';
 import { classifyFlow, parseNumber } from '../parsers/shared.mjs';
 import { escAttr, escHtml, formatDate } from './formatters.mjs';
 import { MANUAL_TEXT } from './manual-text.mjs';
+import {
+  currentReflectionMonth,
+  formatReflectionMonth,
+  resolveReflectionMonth,
+} from '../services/flow-reflection.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 const MANUAL_KEY = STORAGE_KEYS.manuals;
@@ -94,6 +99,9 @@ function loadClassifications() {
           f.refletido = entry.refletido;
           f.refletido_status = entry.refletido ? 'sim' : 'pendente';
         }
+        if (entry.refletido_mes !== undefined) {
+          f.refletido_mes = entry.refletido_mes;
+        }
         f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
         n++;
       }
@@ -175,7 +183,7 @@ function exportClassifications() {
     return;
   }
   const lines = [
-    'Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Refletido (PENDENTE/SIM/NAO);Justificativa;Data exportação',
+    'Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Refletido (PENDENTE/SIM/NAO);Mês refletido;Justificativa;Data exportação',
   ];
   const now = new Date().toLocaleString('pt-BR');
   allKeys.forEach((k) => {
@@ -198,6 +206,8 @@ function exportClassifications() {
         ? edit.refletido_status
         : f.refletido_status || 'pendente';
     const refLabel = refStatus === 'sim' ? 'SIM' : refStatus === 'nao' ? 'NAO' : 'PENDENTE';
+    const refMonth =
+      edit.refletido_mes !== undefined ? edit.refletido_mes : f.refletido_mes || null;
     lines.push(
       [
         f.is_manual ? 'Manual' : 'Sistema',
@@ -211,6 +221,7 @@ function exportClassifications() {
         fmtVal,
         tipo,
         refLabel,
+        refStatus === 'sim' && refMonth ? formatReflectionMonth(refMonth) : '',
         csvEsc(f.justificativa),
         now,
       ].join(';'),
@@ -394,8 +405,8 @@ function onClassifChange(sel) {
   // Atualiza apenas a linha desta tr (badge de tipo + estilo do select)
   const tr = sel.closest('tr');
   if (tr) {
-    // Atualiza o badge de tipo (6ª <td> = índice 5)
-    // Ordem: 0=checkbox 1=refletido 2=Nº 3=Data 4=Departamento 5=Tipo 6=Destino ...
+    // Atualiza o badge de tipo (7ª <td> = índice 6)
+    // Ordem: 0=checkbox 1=refletido 2=mês refletido 3=Nº 4=Data 5=Departamento 6=Tipo ...
     const tipoLabel = {
       aumento_real: '<span class="badge red">🔴 Aum.real</span>',
       remanejamento: '<span class="badge cyan">🔵 Remanej.</span>',
@@ -405,7 +416,7 @@ function onClassifChange(sel) {
       sem_classificacao: '<span class="badge gray">⚪ Sem class.</span>',
       misto: '<span class="badge gray">⚪ Misto</span>',
     };
-    const tipoTd = tr.children[5];
+    const tipoTd = tr.children[6];
     if (tipoTd) tipoTd.textContent = tipoLabel[f.tipo] || '';
     // marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
@@ -1007,6 +1018,8 @@ function massAplicarRefletido() {
         <option value="nao">❌ Não — não refletir (ex: cancelado)</option>
         <option value="pendente">⏳ Pendente — ainda não decidido</option>
       </select>
+      <label for="massReflMonth">Mês do reflexo (usado ao marcar Sim):</label>
+      <input type="month" id="massReflMonth" class="field-control" value="${currentReflectionMonth()?.slice(0, 7) || ''}">
     </div>
   `;
   massPrompt(
@@ -1015,6 +1028,7 @@ function massAplicarRefletido() {
     opt,
     () => {
       const status = document.getElementById('massReflInput').value;
+      const requestedMonth = document.getElementById('massReflMonth').value;
       const map = readClassificationMap();
       const bulkPayloads = [];
       MASS_SELECTED.forEach((nAlt) => {
@@ -1022,15 +1036,18 @@ function massAplicarRefletido() {
         if (!f) return;
         f.refletido_status = status;
         f.refletido = status === 'sim';
+        f.refletido_mes = resolveReflectionMonth(status, requestedMonth);
         const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
         const key = codigoObra + ':' + nAlt;
         if (!map[key]) map[key] = { codigo_obra: codigoObra };
         map[key].refletido_status = status;
         map[key].refletido = status === 'sim';
+        map[key].refletido_mes = f.refletido_mes;
         bulkPayloads.push({
           codigo_obra: codigoObra,
           n_alteracao: nAlt,
           refletido_status: status,
+          refletido_mes: f.refletido_mes,
           updated_at: new Date().toISOString(),
         });
       });

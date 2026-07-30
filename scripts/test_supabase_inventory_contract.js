@@ -92,7 +92,8 @@ const assert = require('assert');
       register_rpc_exists: true,
       rollback_rpc_exists: true,
       required_policy_count: 4,
-      anon_select_column_count: 59,
+      anon_select_column_count: 60,
+      expected_column_count: 60,
       anon_sensitive_columns_blocked: true,
     },
   });
@@ -135,6 +136,7 @@ const assert = require('assert');
       rollback_rpc_exists: false,
       required_policy_count: 0,
       anon_select_column_count: 74,
+      expected_column_count: 60,
       anon_sensitive_columns_blocked: false,
     },
   });

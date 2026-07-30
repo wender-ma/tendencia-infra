@@ -22,6 +22,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Backfill em produção: concluído em 27/07/2026; quatro snapshots ativos e quatro objetos privados foram verificados contra os quatro blobs legados, preservados temporariamente para rollback.
 - Frontend em produção: modo `snapshots` publicado e validado em 27/07/2026; janela mínima de estabilidade aberta até 03/08/2026.
 - Hardening de lançamento: limita o contrato público às colunas consumidas pelo painel, oculta obras inativas e blobs legados, e adiciona cadastro transacional de obras por upload.
+- Mês de reflexo dos Flows: adiciona `refletido_mes` às classificações, preservado entre uploads e exposto no contrato público operacional.
 
 Teste local reproduzível:
 
@@ -37,7 +38,7 @@ supabase/audit/verify_dashboard_datasets_deployment.sql
 
 O resultado deve indicar `complete: true`.
 
-Depois da migration de hardening de lançamento, execute:
+Depois das migrations de hardening de lançamento e mês de reflexo, execute:
 
 ```text
 supabase/audit/verify_release_hardening_deployment.sql
@@ -54,6 +55,7 @@ Ordem de aplicação:
 5. `20260724190000_dashboard_dataset_cleanup_policies.sql`
 6. `20260728193000_global_upload_history.sql`
 7. `20260728235000_release_hardening.sql`
+8. `20260730175500_flow_reflection_month.sql`
 
 Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
 URL do SQL Editor.

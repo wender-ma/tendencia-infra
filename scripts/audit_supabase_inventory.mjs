@@ -54,7 +54,8 @@ export const READ_ONLY_QUERIES = Object.freeze({
           'flow_classifications',
           array[
             'codigo_obra', 'n_alteracao', 'insumo_planejamento',
-            'insumo_remanejamento', 'custo_flowmaster', 'refletido_status'
+            'insumo_remanejamento', 'custo_flowmaster', 'refletido_status',
+            'refletido_mes'
           ]::text[]
         ),
         (
@@ -126,6 +127,7 @@ export const READ_ONLY_QUERIES = Object.freeze({
           'SELECT'
         )
       ) as anon_select_column_count,
+      (select count(*)::integer from expected_columns) as expected_column_count,
       not exists (
         select 1
         from information_schema.columns available
@@ -439,13 +441,15 @@ export function buildSummary({
     rollback_rpc_exists: toBoolean(releaseHardening.rollback_rpc_exists),
     required_policy_count: toNumber(releaseHardening.required_policy_count),
     anon_select_column_count: toNumber(releaseHardening.anon_select_column_count),
+    expected_column_count: toNumber(releaseHardening.expected_column_count),
     anon_sensitive_columns_blocked: toBoolean(releaseHardening.anon_sensitive_columns_blocked),
   };
   normalizedReleaseHardening.complete =
     normalizedReleaseHardening.register_rpc_exists &&
     normalizedReleaseHardening.rollback_rpc_exists &&
     normalizedReleaseHardening.required_policy_count === 4 &&
-    normalizedReleaseHardening.anon_select_column_count === 59 &&
+    normalizedReleaseHardening.anon_select_column_count ===
+      normalizedReleaseHardening.expected_column_count &&
     normalizedReleaseHardening.anon_sensitive_columns_blocked;
 
   return {

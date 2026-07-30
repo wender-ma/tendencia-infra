@@ -4,9 +4,10 @@ import {
   PROJECTION_MOVEMENT_DIRECTIONS,
   resolveProjectionMovementDirection,
 } from './projection-control-accounting.mjs';
+import { formatReflectionMonth } from './flow-reflection.mjs';
 
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
-const DASHBOARD_VERSION = 'v1.5.9';
+const DASHBOARD_VERSION = 'v1.5.10';
 
 function roundCurrency(value) {
   return value == null ? null : Math.round(value * 100) / 100;
@@ -70,6 +71,10 @@ export function buildFlowsExportRows(flows = []) {
     'Insumo Remanejamento (origem)': flow.insumo_remanejamento || '',
     'Tipo classificação': typeLabels[flow.tipo] || flow.tipo || '',
     'Refletido?': reflectedLabels[flow.refletido_status] || flow.refletido_status || 'Pendente',
+    'Mês refletido':
+      flow.refletido_status === 'sim' && flow.refletido_mes
+        ? formatReflectionMonth(flow.refletido_mes)
+        : '',
     'Solicitante Dep.': flow.solicitante_dep || '',
     'É manual': flow.is_manual ? 'Sim' : 'Não',
   }));

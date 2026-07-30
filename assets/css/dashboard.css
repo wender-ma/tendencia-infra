@@ -180,7 +180,7 @@
   }
   .table-wrap > table { min-width: 720px; }
   .table-wrap > .flows-table {
-    min-width: 1260px;
+    min-width: 1360px;
     table-layout: fixed;
   }
   .details-table {
@@ -212,7 +212,7 @@
     overflow-wrap: anywhere;
     word-break: normal;
   }
-  .table-wrap :is(.num, .flow-selection-cell, .flow-status-cell, .flow-date-cell, .hist-cell),
+  .table-wrap :is(.num, .flow-selection-cell, .flow-status-cell, .flow-reflection-month-cell, .flow-date-cell, .hist-cell),
   .uploads-history-table :is(.uploads-history-muted, .uploads-history-actions-cell),
   .admin-actions-cell {
     overflow-wrap: normal;
@@ -634,6 +634,26 @@
   .flow-selection-cell { text-align: center; vertical-align: middle; }
   .flow-selection-input { cursor: pointer; transform: scale(1.15); }
   .flow-status-cell { padding: 6px; vertical-align: middle; }
+  .flow-reflection-month-cell {
+    color: var(--text-medium);
+    font-size: 11px;
+    text-align: center;
+  }
+  .refletido-month-input {
+    width: 102px;
+    padding: 5px 4px;
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+    background: var(--bg-card);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .refletido-month-input:focus {
+    border-color: var(--fgr-red);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--fgr-red-light);
+  }
+  .flow-reflection-month-empty { color: var(--text-lighter); }
   .flow-date-cell { color: var(--text-soft); font-size: 11px; }
   .flow-reason-cell { font-size: 11px; }
   .flow-reason-description { color: var(--text-soft); }

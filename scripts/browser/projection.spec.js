@@ -84,9 +84,38 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
     .locator('.projection-modal-metric', { hasText: 'Extrapolação' })
     .locator('.projection-modal-metric-value');
   await expect(modalExtrapolation).toHaveText(inputExtrapolation);
+  await expect(page.locator('#modalProjChart .projection-curve-tooltip-action')).toHaveCount(0);
+  await page.locator('#modal .modal-close').click();
 
   const labels = await page.locator('#projChart .apexcharts-xaxis-label').allTextContents();
   expect(labels.join(' ')).toContain('fev/2026');
   expect(labels.join(' ')).toContain('out/2026');
   expect(labels.join(' ')).not.toContain('jan/2027');
+
+  await page.locator('#projChart').scrollIntoViewIfNeeded();
+  await page.locator('#projChart').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#modalContent h2')).toContainText('Composição da diferença');
+  await page.locator('#modal .modal-close').click();
+
+  const chartSvg = page.locator('#projChart .apexcharts-svg');
+  const chartBox = await chartSvg.boundingBox();
+  await chartSvg.hover({
+    position: { x: chartBox.width - 50, y: chartBox.height / 2 },
+    force: true,
+  });
+  const compositionAction = page.locator('#projChart .projection-curve-tooltip-action');
+  await expect(compositionAction).toBeVisible();
+  const tooltipDifference = await page
+    .locator('#projChart .projection-curve-tooltip-row--difference strong')
+    .innerText();
+  await compositionAction.click();
+
+  await expect(page.locator('#modalContent h2')).toContainText('Composição da diferença');
+  await expect(page.locator('.projection-difference-table tbody')).toContainText(
+    'Sem insumo classificado',
+  );
+  await expect(page.locator('.projection-difference-table tfoot th').last()).toHaveText(
+    tooltipDifference,
+  );
 });

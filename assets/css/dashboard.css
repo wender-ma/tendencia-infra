@@ -2431,6 +2431,7 @@ body:not(.is-admin-geral) [data-admin-control],
 .projection-chart-tooltip { padding: 8px 12px; font-size: 12px; }
 .projection-chart-tooltip-label { color: var(--text-soft); }
 .projection-chart-tooltip-description { color: var(--text-soft); font-size: 11px; }
+#projChart .apexcharts-tooltip { pointer-events: auto; }
 .projection-curve-tooltip { min-width: 250px; }
 .projection-curve-tooltip-title {
   display: block;
@@ -2465,6 +2466,69 @@ body:not(.is-admin-geral) [data-admin-control],
 }
 .projection-curve-tooltip-row strong.projection-curve-tooltip-value--reduction {
   color: var(--sem-ok);
+}
+.projection-curve-tooltip-action {
+  width: 100%;
+  margin-top: 5px;
+  padding: 7px 4px 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent-info);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.projection-curve-tooltip-action:hover,
+.projection-curve-tooltip-action:focus-visible {
+  color: var(--text-strong);
+}
+.projection-difference-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-medium);
+}
+.projection-difference-summary strong { color: var(--text-strong); font-size: 18px; }
+.projection-difference-table-wrap { max-height: 55vh; }
+.projection-difference-table { min-width: 620px; }
+.projection-difference-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-soft);
+}
+.projection-difference-table tfoot th {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--bg-soft);
+}
+.projection-difference-table td:first-child strong,
+.projection-difference-table td:first-child span {
+  display: block;
+}
+.projection-difference-table td:first-child span {
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+.projection-difference-summary .projection-difference-value--increase,
+.projection-difference-table .projection-difference-value--increase {
+  color: var(--sem-erro);
+}
+.projection-difference-summary .projection-difference-value--reduction,
+.projection-difference-table .projection-difference-value--reduction {
+  color: var(--sem-ok);
+}
+.projection-difference-summary .projection-difference-value--neutral,
+.projection-difference-table .projection-difference-value--neutral {
+  color: var(--text-strong);
 }
 .projection-chart-lock-button {
   display: grid;
@@ -2508,6 +2572,67 @@ body:not(.is-admin-geral) [data-admin-control],
 .projection-direction-icon.is-invalid,
 .projection-movement-table .num.is-invalid {
   color: var(--sem-alerta);
+}
+
+@media (max-width: 600px) {
+  .projection-curve-tooltip { min-width: min(250px, calc(100vw - 32px)); }
+  .projection-difference-summary { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .projection-difference-table-wrap { overflow-x: hidden; }
+  .projection-difference-table-wrap > .projection-difference-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .projection-difference-table thead { display: none; }
+  .projection-difference-table tbody,
+  .projection-difference-table tbody tr,
+  .projection-difference-table tbody td {
+    display: block;
+    width: 100%;
+  }
+  .projection-difference-table tbody tr {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .projection-difference-table tbody td {
+    padding: 3px 0;
+    border: 0;
+  }
+  .projection-difference-table tbody td:first-child { padding-bottom: 6px; }
+  .projection-difference-table tbody td.num {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .projection-difference-table tbody td:nth-child(2)::before {
+    content: 'Extrapolação';
+    color: var(--text-soft);
+    font-weight: 400;
+  }
+  .projection-difference-table tbody td:nth-child(3)::before {
+    content: 'Flows pendentes';
+    color: var(--text-soft);
+    font-weight: 400;
+  }
+  .projection-difference-table tbody td:nth-child(4)::before {
+    content: 'Contribuição';
+    color: var(--text-soft);
+    font-weight: 700;
+  }
+  .projection-difference-table tfoot {
+    display: table;
+    width: 100%;
+  }
+  .projection-difference-table tfoot tr {
+    display: flex;
+    justify-content: space-between;
+  }
+  .projection-difference-table tfoot td { display: none; }
+  .projection-difference-table tfoot th {
+    position: static;
+    display: block;
+    width: auto;
+  }
 }
 
 /* Detalhamento e Histórico Mensal */

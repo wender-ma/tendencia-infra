@@ -34,6 +34,8 @@ let renderVisao;
 let SafeStorage;
 let projectionSettingsProject = null;
 let projectionChartLocked = false;
+let projectionDifferenceContext = null;
+let projectionDifferenceSelectedMonth = null;
 
 const PROJECTION_SETTINGS_KEY = STORAGE_KEYS.projectionSettings;
 
@@ -282,6 +284,130 @@ export function buildProjectionCurve(
   return { months, planned, tendency, trendStart };
 }
 
+function isUnclassifiedPlanningInput(input) {
+  const value = String(input || '').trim();
+  return (
+    !value ||
+    ['-', 'Não encontrado!'].includes(value) ||
+    value.toUpperCase().includes('VERIFICAR') ||
+    value === 'Aumento de obra'
+  );
+}
+
+function roundCurrency(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+export function buildProjectionDifferenceBreakdown({
+  projections = [],
+  pendingFlows = [],
+  selectedMonth,
+  trendStart,
+  dataFim,
+  targetDifference,
+} = {}) {
+  if (
+    !/^\d{4}-\d{2}$/.test(selectedMonth || '') ||
+    !/^\d{4}-\d{2}$/.test(trendStart || '') ||
+    selectedMonth < trendStart
+  ) {
+    return { available: false, total: 0, rows: [] };
+  }
+
+  const contributions = new Map();
+  const getContribution = (input) => {
+    const normalizedInput = isUnclassifiedPlanningInput(input)
+      ? '__unclassified__'
+      : String(input).trim();
+    if (!contributions.has(normalizedInput)) {
+      contributions.set(normalizedInput, {
+        insumo: normalizedInput,
+        servicos: new Set(),
+        extrapolacao: 0,
+        flows: 0,
+      });
+    }
+    return contributions.get(normalizedInput);
+  };
+
+  for (const projection of projections) {
+    if (
+      projection.extrapolacao <= 0 ||
+      !projection.ultimo_mes_planejado ||
+      projection.meses_gap <= 0
+    ) {
+      continue;
+    }
+    const contribution = getContribution(projection.insumo);
+    if (projection.servico) contribution.servicos.add(projection.servico);
+    const monthlyExtrapolation = projection.extrapolacao / projection.meses_gap;
+    let month = projection.ultimo_mes_planejado;
+    for (let index = 0; index < projection.meses_gap; index += 1) {
+      month = addMonths(month, 1);
+      if ((!dataFim || month <= dataFim) && month <= selectedMonth) {
+        contribution.extrapolacao += monthlyExtrapolation;
+      }
+    }
+  }
+
+  for (const flow of pendingFlows) {
+    if (flow.dep === 'Cancelado' || (flow.refletido_status || 'pendente') !== 'pendente') {
+      continue;
+    }
+    const value = flow.custo_flowmaster || 0;
+    if (Math.abs(value) < 0.005) continue;
+    getContribution(flow.insumo_planejamento).flows += value;
+  }
+
+  const rows = [...contributions.values()]
+    .map((row) => {
+      const extrapolacao = roundCurrency(row.extrapolacao);
+      const flows = roundCurrency(row.flows);
+      return {
+        insumo: row.insumo,
+        servicos: [...row.servicos].sort(),
+        extrapolacao,
+        flows,
+        total: roundCurrency(extrapolacao + flows),
+      };
+    })
+    .filter((row) => Math.abs(row.total) >= 0.005)
+    .sort((left, right) => Math.abs(right.total) - Math.abs(left.total));
+
+  const expectedTotal = Number.isFinite(targetDifference)
+    ? roundCurrency(targetDifference)
+    : roundCurrency(rows.reduce((sum, row) => sum + row.total, 0));
+  const displayedTotal = roundCurrency(rows.reduce((sum, row) => sum + row.total, 0));
+  const roundingResidual = roundCurrency(expectedTotal - displayedTotal);
+  if (Math.abs(roundingResidual) >= 0.005) {
+    const targetRow =
+      rows[0] ||
+      (() => {
+        const fallback = {
+          insumo: '__unclassified__',
+          servicos: [],
+          extrapolacao: 0,
+          flows: 0,
+          total: 0,
+        };
+        rows.push(fallback);
+        return fallback;
+      })();
+    if (Math.abs(targetRow.extrapolacao) >= Math.abs(targetRow.flows)) {
+      targetRow.extrapolacao = roundCurrency(targetRow.extrapolacao + roundingResidual);
+    } else {
+      targetRow.flows = roundCurrency(targetRow.flows + roundingResidual);
+    }
+    targetRow.total = roundCurrency(targetRow.extrapolacao + targetRow.flows);
+  }
+
+  return {
+    available: true,
+    total: expectedTotal,
+    rows: rows.sort((left, right) => Math.abs(right.total) - Math.abs(left.total)),
+  };
+}
+
 // Calcula o ritmo histórico (R$/mês) somando os últimos N meses ANTES da data de corte
 function calcularRitmoHistorico(meses, dataCorte, janelaMeses) {
   const past = Object.entries(meses)
@@ -318,12 +444,7 @@ function calcularFlowsPendentesPorGrupo() {
     if (Math.abs(valor) < 0.01) return;
 
     const insDest = f.insumo_planejamento;
-    if (
-      !insDest ||
-      ['', '-', 'Não encontrado!'].includes(insDest) ||
-      String(insDest).toUpperCase().includes('VERIFICAR') ||
-      insDest === 'Aumento de obra'
-    ) {
+    if (isUnclassifiedPlanningInput(insDest)) {
       out['Outros'] += valor;
       return;
     }
@@ -573,6 +694,8 @@ function renderProjecao() {
     dataCorte,
     dataFim,
     totImpactoTendencia - totExtrap,
+    projInsumos,
+    getFlowsObraAtiva(),
   );
 
   // Aderência Físico × Financeira (renderiza se o container existir na página)
@@ -586,7 +709,12 @@ function renderProjecao() {
   renderProjTable(projInsumos, tolerancia, flowsPendByGrupo);
 }
 
-function createProjectionCurveTooltip(categories, planData, tendData) {
+function createProjectionCurveTooltip(
+  categories,
+  planData,
+  tendData,
+  { interactive = false, months = [] } = {},
+) {
   return ({ dataPointIndex }) => {
     if (dataPointIndex < 0) return '';
     const planejado = Number(planData[dataPointIndex]) || 0;
@@ -607,6 +735,14 @@ function createProjectionCurveTooltip(categories, planData, tendData) {
           : diferenca < 0
             ? 'projection-curve-tooltip-value--reduction'
             : '';
+    const selectedMonth = months[dataPointIndex];
+    if (interactive && selectedMonth && tendenciaDisponivel) {
+      projectionDifferenceSelectedMonth = selectedMonth;
+    }
+    const compositionAction =
+      interactive && selectedMonth && tendenciaDisponivel && Math.abs(diferenca || 0) >= 0.005
+        ? `<button type="button" class="projection-curve-tooltip-action" data-click-action="openProjectionDifference" data-action-mode="arg" data-action-arg="${escAttr(selectedMonth)}">Ver composição</button>`
+        : '';
 
     return `<div class="projection-chart-tooltip projection-curve-tooltip">
       <strong class="projection-curve-tooltip-title">${escHtml(categories[dataPointIndex])}</strong>
@@ -622,6 +758,7 @@ function createProjectionCurveTooltip(categories, planData, tendData) {
         <span>Δ Diferença</span>
         <strong class="${diferencaClasse}">${diferencaTexto}</strong>
       </div>
+      ${compositionAction}
     </div>`;
   };
 }
@@ -635,7 +772,15 @@ function projectionCategoryLabelFormatter(categories, compact = false) {
   };
 }
 
-function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, pendingFlowImpact = 0) {
+function renderProjChartGeral(
+  porServico,
+  projServicos,
+  dataCorte,
+  dataFim,
+  pendingFlowImpact = 0,
+  inputProjections = [],
+  pendingFlows = [],
+) {
   // Acumular planejado total mês a mês
   const totalMeses = {};
   Object.values(porServico).forEach((meses) => {
@@ -651,9 +796,18 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, pend
     pendingFlowImpact,
   );
   if (!curve.months.length) {
+    projectionDifferenceContext = null;
+    projectionDifferenceSelectedMonth = null;
     document.getElementById('projChart').replaceChildren();
     return;
   }
+  projectionDifferenceContext = {
+    curve,
+    inputProjections,
+    pendingFlows,
+    dataFim,
+  };
+  projectionDifferenceSelectedMonth = curve.months[curve.months.length - 1] || null;
 
   const extended = curve.months;
   const categories = extended.map((m) => formatMonthLabel(m));
@@ -789,7 +943,10 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, pend
       enabled: true,
       shared: true,
       theme: document.body.classList.contains('dark') ? 'dark' : 'light',
-      custom: createProjectionCurveTooltip(categories, planData, tendData),
+      custom: createProjectionCurveTooltip(categories, planData, tendData, {
+        interactive: true,
+        months: extended,
+      }),
     },
     legend: {
       show: true,
@@ -811,6 +968,97 @@ function renderProjChartGeral(porServico, projServicos, dataCorte, dataFim, pend
   };
 
   renderApexChart('projChart', options);
+}
+
+function formatSignedProjectionValue(value) {
+  if (Math.abs(value || 0) < 0.005) return '—';
+  return `${value > 0 ? '+' : ''}${fmtR$(value)}`;
+}
+
+function projectionDifferenceTone(value) {
+  return value > 0 ? 'increase' : value < 0 ? 'reduction' : 'neutral';
+}
+
+function openProjectionDifference(selectedMonth) {
+  const context = projectionDifferenceContext;
+  const dataPointIndex = context?.curve?.months?.indexOf(selectedMonth) ?? -1;
+  if (dataPointIndex < 0) return;
+  const planned = Number(context.curve.planned[dataPointIndex]) || 0;
+  const tendency = context.curve.tendency[dataPointIndex];
+  if (!Number.isFinite(tendency)) return;
+  const targetDifference = roundCurrency(tendency - planned);
+  if (Math.abs(targetDifference) < 0.005) return;
+
+  const breakdown = buildProjectionDifferenceBreakdown({
+    projections: context.inputProjections,
+    pendingFlows: context.pendingFlows,
+    selectedMonth,
+    trendStart: context.curve.trendStart,
+    dataFim: context.dataFim,
+    targetDifference,
+  });
+  if (!breakdown.available) return;
+
+  const rows = breakdown.rows
+    .map((row) => {
+      const unclassified = row.insumo === '__unclassified__';
+      const inputLabel = unclassified ? 'Sem insumo classificado' : row.insumo;
+      const inputDescription = unclassified ? '' : descInsumo(row.insumo);
+      return `<tr>
+        <td>
+          <strong>${escHtml(inputLabel)}</strong>
+          ${inputDescription && inputDescription !== inputLabel ? `<span>${escHtml(inputDescription)}</span>` : ''}
+        </td>
+        <td class="num projection-difference-value--${projectionDifferenceTone(row.extrapolacao)}">${formatSignedProjectionValue(row.extrapolacao)}</td>
+        <td class="num projection-difference-value--${projectionDifferenceTone(row.flows)}">${formatSignedProjectionValue(row.flows)}</td>
+        <td class="num projection-difference-value--${projectionDifferenceTone(row.total)}"><strong>${formatSignedProjectionValue(row.total)}</strong></td>
+      </tr>`;
+    })
+    .join('');
+
+  replaceWithParsedMarkup(
+    document.getElementById('modalContent'),
+    `<h2>Δ Composição da diferença · ${escHtml(formatMonthLabel(selectedMonth))}</h2>
+    <div class="meta">Base: <strong>${escHtml(activeProjectionManagement())}</strong> · acumulado até o mês selecionado</div>
+    <div class="projection-difference-summary">
+      <span>Diferença acumulada</span>
+      <strong class="projection-difference-value--${projectionDifferenceTone(breakdown.total)}">${formatSignedProjectionValue(breakdown.total)}</strong>
+    </div>
+    <div class="table-wrap projection-difference-table-wrap">
+      <table class="projection-difference-table">
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th class="num">Extrapolação</th>
+            <th class="num">Flows pendentes</th>
+            <th class="num">Contribuição</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <th>Total</th>
+            <td></td>
+            <td></td>
+            <th class="num projection-difference-value--${projectionDifferenceTone(breakdown.total)}">${formatSignedProjectionValue(breakdown.total)}</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`,
+  );
+  openModal({ initialFocus: '[data-click-action="closeModal"]' });
+}
+
+function activateProjectionDifferenceFromKeyboard(event) {
+  if (
+    event.target !== event.currentTarget ||
+    !['Enter', ' '].includes(event.key) ||
+    !projectionDifferenceSelectedMonth
+  ) {
+    return;
+  }
+  event.preventDefault();
+  openProjectionDifference(projectionDifferenceSelectedMonth);
 }
 
 let projSortKey = null;
@@ -2244,6 +2492,7 @@ export function createProjectionView({
     renderProjecao,
     toggleProjExpand,
     openProjDrill,
+    openProjectionDifference,
     projExpandAll,
     projCollapseAll,
     exportarProjecaoDetalhada,
@@ -2251,6 +2500,15 @@ export function createProjectionView({
 
   document.getElementById('projTbody')?.addEventListener('click', activateProjectionRow);
   document.getElementById('projTbody')?.addEventListener('keydown', activateProjectionRow);
+  const generalChart = document.getElementById('projChart');
+  if (generalChart) {
+    generalChart.tabIndex = 0;
+    generalChart.setAttribute(
+      'aria-label',
+      'Curva S geral. Pressione Enter para detalhar a diferença do período selecionado.',
+    );
+    generalChart.addEventListener('keydown', activateProjectionDifferenceFromKeyboard);
+  }
 
   const sharedParameterIds = new Set([
     'projDataFim',

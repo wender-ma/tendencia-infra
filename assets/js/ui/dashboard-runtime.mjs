@@ -123,7 +123,7 @@ export function createDashboardRuntime({
     const container = documentRef.getElementById(containerId);
     if (!container) return null;
     container.replaceChildren();
-    bindPageWheelToPageScroll(container);
+    bindPageWheelToPageScroll(container, { blockTargetWheel: true });
     try {
       const ApexCharts = await ensureApexCharts();
       if (chartVersions.get(containerId) !== version || !container.isConnected) return null;

@@ -293,6 +293,68 @@ export function buildProjectionCurve(
   return { months, planned, tendency, trendStart };
 }
 
+export function buildProjectionCurveDisplaySeries(
+  curve,
+  dataFim,
+  requiredMonths = [],
+  monthlyWindowMonths = 60,
+) {
+  const months = Array.isArray(curve?.months) ? curve.months : [];
+  if (!months.length) {
+    return {
+      months: [],
+      planned: [],
+      tendency: [],
+      pointKinds: [],
+      monthlyStart: null,
+      condensed: false,
+    };
+  }
+
+  const chartEnd = /^\d{4}-\d{2}$/.test(dataFim || '') ? dataFim : months[months.length - 1];
+  const monthlyStart = addMonths(chartEnd, -monthlyWindowMonths);
+  if (months[0] >= monthlyStart) {
+    return {
+      months: [...months],
+      planned: [...(curve.planned || [])],
+      tendency: [...(curve.tendency || [])],
+      pointKinds: months.map(() => 'monthly'),
+      monthlyStart,
+      condensed: false,
+    };
+  }
+
+  const selectedIndexes = new Set([0, months.length - 1]);
+  const annualClosingIndexes = new Map();
+  months.forEach((month, index) => {
+    if (month < monthlyStart) annualClosingIndexes.set(month.slice(0, 4), index);
+    else selectedIndexes.add(index);
+  });
+  annualClosingIndexes.forEach((index) => selectedIndexes.add(index));
+  for (const requiredMonth of requiredMonths) {
+    const index = months.indexOf(requiredMonth);
+    if (index >= 0) selectedIndexes.add(index);
+  }
+
+  const transitionIndex = [...annualClosingIndexes.values()].slice(-1)[0];
+  const indexes = [...selectedIndexes].sort((left, right) => left - right);
+  const pointKinds = indexes.map((index) => {
+    if (months[index] >= monthlyStart) return 'monthly';
+    if (index === transitionIndex) return 'transition';
+    if (annualClosingIndexes.get(months[index].slice(0, 4)) === index) return 'annual';
+    return 'initial';
+  });
+
+  return {
+    months: indexes.map((index) => months[index]),
+    planned: indexes.map((index) => curve.planned[index]),
+    tendency: indexes.map((index) => curve.tendency[index]),
+    pointKinds,
+    monthlyStart,
+    condensed: true,
+  };
+}
+
 function isUnclassifiedPlanningInput(input) {
   const value = String(input || '').trim();
   return (
@@ -1067,7 +1129,7 @@ function createProjectionCurveTooltip(
   categories,
   planData,
   tendData,
-  { interactive = false, months = [] } = {},
+  { interactive = false, months = [], pointKinds = [] } = {},
 ) {
   return ({ dataPointIndex }) => {
     if (dataPointIndex < 0) return '';
@@ -1090,6 +1152,13 @@ function createProjectionCurveTooltip(
             ? 'projection-curve-tooltip-value--reduction'
             : '';
     const selectedMonth = months[dataPointIndex];
+    const pointKind = pointKinds[dataPointIndex] || 'monthly';
+    const tooltipTitle =
+      pointKind === 'annual'
+        ? `${formatMonthLabel(selectedMonth)} · fechamento anual`
+        : pointKind === 'transition'
+          ? `${formatMonthLabel(selectedMonth)} · fechamento do período anterior`
+          : categories[dataPointIndex];
     if (interactive && selectedMonth && tendenciaDisponivel) {
       projectionDifferenceSelectedMonth = selectedMonth;
     }
@@ -1099,7 +1168,7 @@ function createProjectionCurveTooltip(
         : '';
 
     return `<div class="projection-chart-tooltip projection-curve-tooltip">
-      <strong class="projection-curve-tooltip-title">${escHtml(categories[dataPointIndex])}</strong>
+      <strong class="projection-curve-tooltip-title">${escHtml(tooltipTitle)}</strong>
       <div class="projection-curve-tooltip-row">
         <span><i class="projection-curve-tooltip-mark projection-curve-tooltip-mark--plan"></i>Planejado acumulado</span>
         <strong>${fmtR$(planejado)}</strong>
@@ -1117,12 +1186,15 @@ function createProjectionCurveTooltip(
   };
 }
 
-function projectionCategoryLabelFormatter(categories, compact = false) {
+function projectionCategoryLabelFormatter(categories, compact = false, requiredCategories = []) {
   const maxLabels = compact ? 10 : 24;
   const step = Math.max(1, Math.ceil(categories.length / maxLabels));
+  const required = new Set(requiredCategories);
   return (value, _timestamp, options) => {
     const index = Number.isInteger(options?.i) ? options.i : categories.indexOf(value);
-    return index % step === 0 || index === categories.length - 1 ? value : '';
+    return required.has(value) || index % step === 0 || index === categories.length - 1
+      ? value
+      : '';
   };
 }
 
@@ -1163,10 +1235,14 @@ function renderProjChartGeral(
   };
   projectionDifferenceSelectedMonth = curve.months[curve.months.length - 1] || null;
 
-  const extended = curve.months;
-  const categories = extended.map((m) => formatMonthLabel(m));
-  const planData = curve.planned;
-  const tendData = curve.tendency;
+  const displayCurve = buildProjectionCurveDisplaySeries(curve, dataFim, [dataCorte, dataFim]);
+  const extended = displayCurve.months;
+  const categories = extended.map((month, index) => {
+    if (displayCurve.pointKinds[index] === 'annual') return month.slice(0, 4);
+    return formatMonthLabel(month);
+  });
+  const planData = displayCurve.planned;
+  const tendData = displayCurve.tendency;
 
   // Posição do corte e do fim para annotations
   const findIdx = (m) => {
@@ -1177,8 +1253,13 @@ function renderProjChartGeral(
     }
     return bestIdx;
   };
-  const corteIdx = findIdx(dataCorte);
+  const exactCutoffIndex = extended.indexOf(dataCorte);
+  const corteIdx = exactCutoffIndex >= 0 ? exactCutoffIndex : findIdx(dataCorte);
   const fimIdx = findIdx(dataFim);
+  const requiredAxisCategories = categories.filter((_category, index) =>
+    ['annual', 'transition'].includes(displayCurve.pointKinds[index]),
+  );
+  requiredAxisCategories.push(categories[corteIdx], categories[fimIdx]);
 
   const options = {
     series: [
@@ -1255,7 +1336,7 @@ function renderProjChartGeral(
       labels: {
         rotate: -45,
         rotateAlways: true,
-        formatter: projectionCategoryLabelFormatter(categories),
+        formatter: projectionCategoryLabelFormatter(categories, false, requiredAxisCategories),
         style: { fontSize: '10px' },
       },
     },
@@ -1265,11 +1346,15 @@ function renderProjChartGeral(
     annotations: {
       xaxis: [
         {
+          id: 'projection-cutoff',
           x: categories[corteIdx],
           borderColor: resolveColor('var(--fgr-red-vivid)'),
           strokeDashArray: 4,
           label: {
             text: 'Corte: ' + formatMonthLabel(dataCorte),
+            orientation: 'horizontal',
+            position: 'top',
+            offsetY: 8,
             style: {
               color: resolveColor('var(--text-on-dark)'),
               background: resolveColor('var(--fgr-red-vivid)'),
@@ -1304,6 +1389,7 @@ function renderProjChartGeral(
       custom: createProjectionCurveTooltip(categories, planData, tendData, {
         interactive: true,
         months: extended,
+        pointKinds: displayCurve.pointKinds,
       }),
     },
     legend: {

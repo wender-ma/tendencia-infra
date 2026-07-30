@@ -32,7 +32,7 @@ export function isTableRowActivation(event) {
   return event.type === 'click' || event.key === 'Enter' || event.key === ' ';
 }
 
-export function bindPageWheelToPageScroll(target) {
+export function bindPageWheelToPageScroll(target, { blockTargetWheel = false } = {}) {
   const elements =
     typeof target === 'string' ? [...document.querySelectorAll(target)] : target ? [target] : [];
   elements.forEach((scrollContainer) => {
@@ -42,7 +42,9 @@ export function bindPageWheelToPageScroll(target) {
       'wheel',
       (event) => {
         if (!event.deltaY) return;
+        if (blockTargetWheel) event.stopImmediatePropagation();
         const canScrollTableVertically =
+          !blockTargetWheel &&
           scrollContainer.scrollHeight > scrollContainer.clientHeight + 1 &&
           ((event.deltaY < 0 && scrollContainer.scrollTop > 0) ||
             (event.deltaY > 0 &&

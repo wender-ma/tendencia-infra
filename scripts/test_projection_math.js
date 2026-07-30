@@ -9,6 +9,7 @@ const { pathToFileURL } = require('url');
   const {
     buildMonthRange,
     buildProjectionCurve,
+    buildProjectionCurveDisplaySeries,
     buildProjectionDifferenceBreakdown,
     buildProjectionDifferenceFlowDetails,
     buildProjectionMonthlyTableModel,
@@ -174,6 +175,35 @@ const { pathToFileURL } = require('url');
     [null, 140, 340, 370, 400],
     'Tendência deveria começar no corte, incluir Flow e reconciliar o total final',
   );
+
+  const longMonths = buildMonthRange('2015-01', '2028-04');
+  const longCurve = {
+    months: longMonths,
+    planned: longMonths.map((_month, index) => index + 1),
+    tendency: longMonths.map((_month, index) => index + 101),
+  };
+  const displayCurve = buildProjectionCurveDisplaySeries(longCurve, '2028-04', ['2026-07']);
+  assert.strictEqual(displayCurve.monthlyStart, '2023-04');
+  assert.strictEqual(displayCurve.condensed, true);
+  assert.strictEqual(displayCurve.months[0], '2015-01');
+  assert(displayCurve.months.includes('2015-12'), 'Deveria preservar o fechamento de 2015');
+  assert(displayCurve.months.includes('2023-03'), 'Deveria preservar o mês de transição');
+  assert(displayCurve.months.includes('2023-04'), 'A janela mensal deveria começar em abr/2023');
+  assert(displayCurve.months.includes('2026-07'), 'O mês de corte deveria estar disponível');
+  assert.strictEqual(displayCurve.months.at(-1), '2028-04');
+  assert.strictEqual(displayCurve.planned.at(-1), longCurve.planned.at(-1));
+  assert.strictEqual(displayCurve.tendency.at(-1), longCurve.tendency.at(-1));
+  const oldYearCounts = displayCurve.months
+    .filter((month) => month < '2023-04' && month !== '2015-01')
+    .reduce((counts, month) => {
+      counts[month.slice(0, 4)] = (counts[month.slice(0, 4)] || 0) + 1;
+      return counts;
+    }, {});
+  assert(Object.values(oldYearCounts).every((count) => count === 1));
+
+  const shortCurve = buildProjectionCurveDisplaySeries(curve, '2026-05', ['2026-02']);
+  assert.strictEqual(shortCurve.condensed, false);
+  assert.deepStrictEqual(shortCurve.months, curve.months);
 
   const breakdown = buildProjectionDifferenceBreakdown({
     projections: [

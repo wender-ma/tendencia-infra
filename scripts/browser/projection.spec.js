@@ -68,6 +68,9 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await expect(page.locator('#projTbody tr').first()).toBeVisible();
   await expect(page.locator('#projBaseManagement')).toHaveText('GESTÃO 07-2026');
   await expect(page.locator('#projChart')).toContainText('Planejado acumulado · GESTÃO 07-2026');
+  await expect(
+    page.locator('#projChart .apexcharts-xaxis-annotations text', { hasText: 'Corte:' }),
+  ).toBeVisible();
 
   const rootCells = page.locator('#projTbody tr').first().locator('td');
   const totalCard = page.locator(
@@ -114,9 +117,7 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await expect(page.locator('.projection-month-reflected-section')).toContainText(
     'não somados novamente',
   );
-  await expect(page.locator('.projection-month-reflected-section')).toContainText(
-    'FLOW-REFLETIDO',
-  );
+  await expect(page.locator('.projection-month-reflected-section')).toContainText('FLOW-REFLETIDO');
   await page.locator('#modal .modal-close').click();
 
   const labelResize = page.locator('[data-projection-resize="label"]');
@@ -141,6 +142,21 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   expect(labels.join(' ')).toContain('fev/2026');
   expect(labels.join(' ')).toContain('out/2026');
   expect(labels.join(' ')).not.toContain('jan/2027');
+
+  const wheelResult = await page.evaluate(() => {
+    const chart = document.getElementById('projChart');
+    const pageScroller = document.scrollingElement;
+    let reachedChartHandler = false;
+    chart.addEventListener('wheel', () => {
+      reachedChartHandler = true;
+    });
+    pageScroller.scrollTop = 100;
+    const before = pageScroller.scrollTop;
+    chart.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 120 }));
+    return { reachedChartHandler, before, after: pageScroller.scrollTop };
+  });
+  expect(wheelResult.reachedChartHandler).toBe(false);
+  expect(wheelResult.after).toBeGreaterThan(wheelResult.before);
 
   await page.locator('#projChart').scrollIntoViewIfNeeded();
   await page.locator('#projChart').focus();

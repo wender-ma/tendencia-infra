@@ -193,7 +193,13 @@ export function createDashboardShell({
       return;
     }
     const tab = root.querySelector(`.tab[data-tab="${CSS.escape(saved)}"]`);
-    if (tab) activateTab(tab);
+    if (tab) {
+      activateTab(tab);
+      return;
+    }
+    removePreference(ACTIVE_TAB_STORAGE_KEY);
+    const overview = root.querySelector('.tab[data-tab="visao"]');
+    if (overview) activateTab(overview);
   }
 
   function getVisibleTabs() {

@@ -70,14 +70,6 @@
         aria-label="Buscar na projeção"
         placeholder="🔍 Buscar por descrição ou código..."
       />
-      <select id="projFilterStatus" aria-label="Filtrar projeção por status">
-        <option value="">Todos os status</option>
-        <option value="red">🔴 Vai estourar</option>
-        <option value="amber">🟡 Atenção</option>
-        <option value="green">🟢 No esperado</option>
-        <option value="sobra">💰 Vai sobrar</option>
-        <option value="done">✅ Concluído</option>
-      </select>
       <select id="projFilterGrupo" aria-label="Filtrar projeção por grupo">
         <option value="">Todos os grupos</option>
       </select>
@@ -86,6 +78,14 @@
     <div class="panel-actions projection-detail-actions">
       <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
       <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
+      <button
+        class="btn-sm compact icon-only"
+        data-click-action="resetProjectionColumnWidths"
+        title="Restaurar larguras das colunas"
+        aria-label="Restaurar larguras das colunas"
+      >
+        ↔
+      </button>
       <button
         class="btn-sm compact"
         data-click-action="exportarProjecaoDetalhada"
@@ -96,38 +96,17 @@
     </div>
   </div>
   <div class="table-wrap projection-table">
-    <table>
-      <thead>
-        <tr>
-          <th class="table-col-24"></th>
-          <th class="table-col-min-240" data-sort-proj="label" aria-sort="none">
-            Grupo / Serviço / Insumo
-          </th>
-          <th
-            class="num table-col-130"
-            data-sort-proj="planejado_total"
-            aria-sort="none"
-            title="Total da gestão-base até a data prevista de término"
-          >
-            Valor Planejado
-          </th>
-          <th class="num table-col-120" data-sort-proj="realizado" aria-sort="none">Realizado</th>
-          <th class="num table-col-120" data-sort-proj="saldo" aria-sort="none">Saldo</th>
-          <th class="num table-col-120" data-sort-proj="extrapolacao" aria-sort="none">
-            Extrapolação
-          </th>
-          <th class="num table-col-130" data-sort-proj="tendencia" aria-sort="none">Tendência</th>
-          <th class="table-col-120">Status</th>
-        </tr>
-      </thead>
+    <table id="projMonthlyTable" class="projection-monthly-table">
+      <colgroup id="projColgroup"></colgroup>
+      <thead id="projThead"></thead>
       <tbody id="projTbody"></tbody>
     </table>
   </div>
   <div class="table-note">
-    💡 <strong>Valor Planejado</strong>: gestão-base indicada nos parâmetros até a data prevista de
-    término · <strong>Realizado</strong>: soma até a data de corte · <strong>Saldo</strong>: Valor
-    Planejado − Realizado · <strong>Extrapolação</strong>: valor adicional projetado quando a obra
-    ultrapassa o último mês planejado (só Indiretos e Projeção de Gastos), incluindo Flows pendentes
-    · <strong>Tendência</strong>: Valor Planejado + Extrapolação
+    <span class="projection-month-legend projection-month-legend--planned">Gestão-base</span>
+    <span class="projection-month-legend projection-month-legend--extrapolated">Extrapolação</span>
+    <span class="projection-month-legend projection-month-legend--flow">📎 Flow pendente</span>
+    · Os meses exibem Gestão + extrapolação + Flows pendentes. Clique em um valor para ver a
+    composição.
   </div>
 </div>

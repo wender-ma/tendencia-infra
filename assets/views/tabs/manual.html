@@ -292,14 +292,18 @@
                   <li>Compare valor planejado, realizado, saldo e Tendência Total.</li>
                   <li>Na Curva S mensal, use o cadeado para controlar o zoom e os botões para ajustar o período.</li>
                   <li>Passe o mouse no gráfico para comparar Planejado, Tendência e Diferença.</li>
-                  <li>Filtre a Projeção Detalhada por status ou grupo.</li>
-                  <li>Clique na lupa de um insumo para abrir sua curva e memória de cálculo.</li>
+                  <li>Na Projeção Detalhada, filtre por grupo e expanda a hierarquia até o insumo.</li>
+                  <li>Role horizontalmente para consultar cada mês até a data prevista de término.</li>
+                  <li>Meses destacados contêm extrapolação; o ícone 📎 indica Flow pendente.</li>
+                  <li>Clique em um valor mensal para abrir sua composição conciliada.</li>
+                  <li>Arraste a divisória do cabeçalho para ajustar a largura de qualquer coluna.</li>
                 </ol>
               </div>
             </div>
             <p class="manual-footnote">
               Custos indiretos podem ser extrapolados pelo ritmo histórico. Diretos, Obras Civis e
-              Outros preservam o planejamento existente.
+              Outros preservam o planejamento existente. Flows já refletidos são apenas
+              informativos; somente os pendentes alteram a Tendência.
             </p>
           </section>
 
@@ -335,54 +339,6 @@
                 Valor no sistema menos Saldo controlado resulta na Diferença. Se houver divergência,
                 revise as movimentações em ordem cronológica e o saldo inicial.
               </p>
-            </div>
-          </section>
-
-          <section class="manual-tab-section">
-            <div class="manual-tab-title">
-              <span>📋</span>
-              <div>
-                <h3>Detalhamento</h3>
-                <p>Consulta linha a linha do orçamento da obra.</p>
-              </div>
-            </div>
-            <div class="manual-tab-body">
-              <div>
-                <strong>Use para</strong>
-                <p>Encontrar grupos, serviços e insumos e comparar Licitação, Gestão, diferença e aditivos vinculados.</p>
-              </div>
-              <div>
-                <strong>Recursos</strong>
-                <p>
-                  Pesquise por nome ou código, filtre por grupo/status/aditivo, ordene clicando nos
-                  títulos das colunas e exporte o resultado para Excel.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section class="manual-tab-section">
-            <div class="manual-tab-title">
-              <span>📅</span>
-              <div>
-                <h3>Histórico Mensal</h3>
-                <p>Evolução do orçamento entre as gestões.</p>
-              </div>
-            </div>
-            <div class="manual-tab-body">
-              <div>
-                <strong>Use para</strong>
-                <p>Acompanhar a trajetória da obra e descobrir em qual gestão cada item mudou.</p>
-              </div>
-              <div>
-                <strong>Como analisar</strong>
-                <ol>
-                  <li>Leia os indicadores e a evolução do total.</li>
-                  <li>Consulte os maiores aumentos e reduções acumulados.</li>
-                  <li>No mapa de variações, compare contra a Licitação ou contra a gestão anterior.</li>
-                  <li>Filtre apenas os itens alterados para reduzir o ruído.</li>
-                </ol>
-              </div>
             </div>
           </section>
 
@@ -448,7 +404,7 @@
               <li><span>4</span><p>Envie a Tendência no bloco correspondente a cada obra.</p></li>
               <li><span>5</span><p>Confira o relatório de importação e os arquivos ativos.</p></li>
               <li><span>6</span><p>Revise os novos aditivos pendentes na aba Flows / Aditivos.</p></li>
-              <li><span>7</span><p>Valide Visão Geral, Tendência e Histórico antes de comunicar os números.</p></li>
+              <li><span>7</span><p>Valide Visão Geral, Curva S e Projeção Detalhada antes de comunicar os números.</p></li>
             </ol>
           </section>
 
@@ -456,10 +412,10 @@
             <h3>🔎 Investigar um desvio</h3>
             <ol class="manual-timeline">
               <li><span>1</span><p>Na Visão Geral, identifique o grupo e a direção do desvio.</p></li>
-              <li><span>2</span><p>No Detalhamento, filtre o grupo e ordene por <b>Δ R$</b>.</p></li>
-              <li><span>3</span><p>Confira os aditivos vinculados e a parcela ainda não rastreada.</p></li>
-              <li><span>4</span><p>No Histórico Mensal, descubra quando o valor começou a mudar.</p></li>
-              <li><span>5</span><p>Na Tendência de Obra, avalie o impacto projetado até o término.</p></li>
+              <li><span>2</span><p>Na Tendência de Obra, filtre o grupo e expanda até o insumo.</p></li>
+              <li><span>3</span><p>Clique no mês para separar Gestão, extrapolação e Flows pendentes.</p></li>
+              <li><span>4</span><p>Confira os aditivos vinculados e a parcela ainda não rastreada.</p></li>
+              <li><span>5</span><p>Compare o total conciliado com a Curva S e a Tendência Total.</p></li>
             </ol>
           </section>
         </div>
@@ -570,7 +526,7 @@
             <summary>A obra ou uma aba aparece sem dados</summary>
             <div>
               <p>Confirme a obra selecionada e veja no cabeçalho se a fonte necessária está ativa.</p>
-              <p>Visão Geral e Detalhamento dependem da Tendência; Histórico e Curva S dependem também de Gestões; Flows depende de Aditivos_flowmaster.</p>
+              <p>Visão Geral depende da Tendência; Curva S e Projeção Detalhada dependem de Gestões; Flows depende de Aditivos_flowmaster.</p>
             </div>
           </details>
           <details>
@@ -621,9 +577,9 @@
         </div>
 
         <div class="manual-source-flow" aria-label="Relação entre fontes e telas">
-          <div><strong>TENDÊNCIA</strong><span>Visão Geral · Tendência de Obra · Detalhamento · Controle Projeção</span></div>
+          <div><strong>TENDÊNCIA</strong><span>Visão Geral · Tendência de Obra · Controle Projeção</span></div>
           <div><strong>Aditivos_flowmaster</strong><span>Flows / Aditivos · Composição do desvio · Controle Projeção</span></div>
-          <div><strong>Gestões</strong><span>Histórico Mensal · Curva S · Realizado por período</span></div>
+          <div><strong>Gestões</strong><span>Curva S · Projeção Detalhada · Realizado por período</span></div>
         </div>
 
         <div class="manual-disclosures manual-disclosures--technical">
@@ -703,7 +659,7 @@
         </div>
 
         <p class="manual-document-end">
-          <strong>Dashboard Tendência Infra · v1.5.10</strong>
+          <strong>Dashboard Tendência Infra · v1.6.0</strong>
           <span>Use este manual como referência durante a operação e a conferência mensal.</span>
         </p>
       </section>

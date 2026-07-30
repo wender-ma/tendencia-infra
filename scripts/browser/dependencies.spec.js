@@ -522,8 +522,6 @@ test('carrega dependencias locais e inicia o dashboard', async ({ page }) => {
     ['flows', 'Sem aditivos carregados'],
     ['projecao', 'Projeção sem dados mensais'],
     ['projecao_ctrl', 'Nenhuma movimentação registrada'],
-    ['detalhe', 'Detalhamento sem dados'],
-    ['historico', 'Sem histórico para esta obra'],
   ];
   for (const [tab, expectedText] of emptyTabs) {
     await page.locator(`#tab-btn-${tab}`).click();

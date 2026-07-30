@@ -80,7 +80,6 @@ const { pathToFileURL } = require('url');
     },
     logger: { warn: (...args) => events.push(['warn', ...args]) },
     toast: (...args) => events.push(['toast', ...args]),
-    populateFilters: () => events.push('filters'),
     renderSourcesHeaders: () => events.push('sources'),
     renderers: { overview: () => events.push('overview') },
   });
@@ -92,7 +91,6 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(runtime.getActiveFlows().length, 2);
 
   runtime.renderAll();
-  assert(events.includes('filters'));
   assert(events.includes('sources'));
   assert(events.includes('overview'));
 

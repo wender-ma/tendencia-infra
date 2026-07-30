@@ -68,8 +68,6 @@ for (const viewport of viewports) {
       'flows',
       'projecao',
       'projecao_ctrl',
-      'detalhe',
-      'historico',
       'uploads',
       'manual',
     ]) {

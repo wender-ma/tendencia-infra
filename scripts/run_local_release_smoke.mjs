@@ -29,20 +29,17 @@ try {
     { timeout: 30_000 },
   );
 
-  const publicTabs = [
-    'visao',
-    'flows',
-    'projecao',
-    'projecao_ctrl',
-    'detalhe',
-    'historico',
-    'manual',
-  ];
+  const publicTabs = ['visao', 'flows', 'projecao', 'projecao_ctrl', 'manual'];
   for (const tab of publicTabs) {
     const button = page.locator(`#tab-btn-${tab}`);
     await button.click();
     await page.locator(`#tab-${tab}`).waitFor({ state: 'visible' });
   }
+  await page.locator('#tab-btn-projecao').click();
+  assert(
+    (await page.locator('#projThead .projection-month-header').count()) > 0,
+    'grade mensal da Projecao nao foi carregada',
+  );
 
   const projectOptions = await page.locator('#obraSelector option').count();
   assert(projectOptions > 0, 'nenhuma obra real foi carregada');

@@ -11,6 +11,7 @@ const { pathToFileURL } = require('url');
     buildProjectionCurve,
     buildProjectionDifferenceBreakdown,
     buildProjectionDifferenceFlowDetails,
+    buildProjectionMonthlyTableModel,
     distributeServiceProjection,
     projetarServico,
   } = await import(moduleUrl.href);
@@ -61,6 +62,91 @@ const { pathToFileURL } = require('url');
     distributed.map((projection) => projection.extrapolacao),
     [120, 80],
   );
+
+  const monthlyModel = buildProjectionMonthlyTableModel({
+    projections: distributed,
+    flows: [
+      {
+        dep: 'Em andamento',
+        refletido_status: 'pendente',
+        custo_flowmaster: 25,
+        insumo_planejamento: 'A',
+        n_alteracao: 'FLOW-PENDENTE',
+        descricao: 'Acréscimo futuro',
+      },
+      {
+        dep: 'Finalizado',
+        refletido_status: 'sim',
+        refletido_mes: '2026-03-01',
+        custo_flowmaster: 30,
+        insumo_planejamento: 'A',
+        n_alteracao: 'FLOW-REFLETIDO',
+        descricao: 'Já incorporado',
+      },
+      {
+        dep: 'Em andamento',
+        refletido_status: 'pendente',
+        custo_flowmaster: -5,
+        insumo_planejamento: '',
+        n_alteracao: 'FLOW-SEM-INSUMO',
+        descricao: 'Economia sem classificação',
+      },
+    ],
+    dataCorte: '2026-03',
+    dataFim: '2026-04',
+    hierarchy: [
+      { ordem: 0, cod: '1', item: 'RAIZ', tipo: 'raiz', nivel: 1 },
+      { ordem: 1, cod: '01.01', item: 'INDIRETOS', tipo: 'grupo', nivel: 2 },
+      {
+        ordem: 2,
+        cod: '01.01.01',
+        cod_servico: 'S05765',
+        item: 'SERVIÇO',
+        tipo: 'servico',
+        nivel: 3,
+      },
+      {
+        ordem: 3,
+        cod: '01.01.01',
+        cod_servico: 'S05765',
+        cod_insumo: 'A',
+        item: 'INSUMO A',
+        tipo: 'insumo',
+        nivel: 4,
+      },
+      {
+        ordem: 4,
+        cod: '01.01.01',
+        cod_servico: 'S05765',
+        cod_insumo: 'B',
+        item: 'INSUMO B',
+        tipo: 'insumo',
+        nivel: 4,
+      },
+    ],
+  });
+  assert.deepStrictEqual(monthlyModel.months, ['2026-03', '2026-04']);
+  assert.strictEqual(monthlyModel.root.metrics.planned, 200);
+  assert.strictEqual(monthlyModel.root.metrics.realized, 200);
+  assert.strictEqual(monthlyModel.root.metrics.extrapolation, 200);
+  assert.strictEqual(monthlyModel.root.metrics.pendingFlows, 20);
+  assert.strictEqual(monthlyModel.root.metrics.tendency, 420);
+  assert.strictEqual(monthlyModel.root.monthly['2026-03'].total, 120);
+  assert.strictEqual(monthlyModel.root.monthly['2026-04'].total, 100);
+  const inputAMonth = monthlyModel.nodes.find((node) => node.cod_insumo === 'A').monthly[
+    '2026-03'
+  ];
+  assert.strictEqual(inputAMonth.extrapolation, 60);
+  assert.strictEqual(inputAMonth.pendingFlows, 25);
+  assert.strictEqual(inputAMonth.reflectedFlowItems.length, 1);
+  assert.strictEqual(
+    inputAMonth.total,
+    85,
+    'Flow refletido não pode ser somado novamente ao mês',
+  );
+  const unclassified = monthlyModel.nodes.find((node) => node.isFlowOnly);
+  assert.strictEqual(unclassified.item, 'Sem insumo classificado');
+  assert.strictEqual(unclassified.monthly['2026-03'].pendingFlows, -5);
 
   assert.deepStrictEqual(buildMonthRange('2026-01', '2026-04'), [
     '2026-01',

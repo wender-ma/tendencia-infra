@@ -48,6 +48,17 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
         insumo_planejamento: '',
         insumo_remanejamento: '',
       },
+      {
+        codigo_obra: 'OBRA-TESTE',
+        n_alteracao: 'FLOW-REFLETIDO',
+        dep: 'Finalizado',
+        refletido_status: 'sim',
+        refletido_mes: '2026-07-01',
+        custo_flowmaster: 30,
+        descricao: 'Flow já incorporado na Gestão',
+        insumo_planejamento: 'ADM5189',
+        insumo_remanejamento: '',
+      },
     ];
   });
 
@@ -67,15 +78,18 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
     .filter({ hasText: 'Tendência Total' })
     .locator('strong');
 
-  await expect(rootCells.nth(2)).toHaveText('560,00');
-  await expect(rootCells.nth(5)).toHaveText(await impactCard.innerText());
-  await expect(rootCells.nth(6)).toHaveText(await totalCard.innerText());
+  await expect(rootCells.nth(1)).toHaveText('560,00');
+  await expect(rootCells.nth(5)).toHaveText(await totalCard.innerText());
+  await expect(page.locator('#projThead')).toContainText('Realizado até jun/2026');
+  await expect(page.locator('#projThead')).toContainText('jul/26');
+  await expect(page.locator('#projThead')).toContainText('out/26');
+  expect(await impactCard.innerText()).toBe('+423,33');
 
-  await rootCells.nth(1).click();
-  await expect(page.locator('#projTbody')).toContainText('Flows pendentes · Outros');
+  await rootCells.nth(0).click();
+  await expect(page.locator('#projTbody')).toContainText('Sem insumo classificado');
   await page.evaluate(() => window.dashboardServices.views.projection.projExpandAll());
   const inputRow = page.locator('#projTbody tr', { hasText: 'ADM5189' }).first();
-  const inputExtrapolation = await inputRow.locator('td').nth(5).innerText();
+  const inputExtrapolation = await inputRow.locator('td').nth(4).innerText();
   await page.evaluate(() =>
     window.dashboardServices.views.projection.openProjDrill('S05765', 'ADM5189'),
   );
@@ -87,6 +101,41 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await expect(modalExtrapolation).toHaveText(inputExtrapolation);
   await expect(page.locator('#modalProjChart .projection-curve-tooltip-action')).toHaveCount(0);
   await page.locator('#modal .modal-close').click();
+
+  const firstExtrapolatedMonth = inputRow.locator('.projection-month-cell--extrapolated').first();
+  await expect(firstExtrapolatedMonth).toBeVisible();
+  await firstExtrapolatedMonth.locator('button').click();
+  await expect(page.locator('#modalContent h2')).toContainText('Composição mensal');
+  await expect(page.locator('.projection-month-summary')).toContainText('Gestão-base');
+  await expect(page.locator('.projection-month-summary')).toContainText('Extrapolação');
+  await expect(page.locator('.projection-month-composition-table tfoot')).toContainText(
+    await firstExtrapolatedMonth.locator('.projection-month-value > span').last().innerText(),
+  );
+  await expect(page.locator('.projection-month-reflected-section')).toContainText(
+    'não somados novamente',
+  );
+  await expect(page.locator('.projection-month-reflected-section')).toContainText(
+    'FLOW-REFLETIDO',
+  );
+  await page.locator('#modal .modal-close').click();
+
+  const labelResize = page.locator('[data-projection-resize="label"]');
+  await labelResize.focus();
+  const initialWidth = Number(await labelResize.getAttribute('aria-valuenow'));
+  await page.keyboard.press('ArrowRight');
+  await expect(labelResize).toHaveAttribute('aria-valuenow', String(initialWidth + 10));
+  expect(
+    await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('jzurique_proj_column_widths_v1') || '{}'),
+    ),
+  ).toMatchObject({ 'OBRA-TESTE': { label: initialWidth + 10 } });
+  await page.evaluate(() =>
+    window.dashboardServices.views.projection.resetProjectionColumnWidths(),
+  );
+  await expect(page.locator('[data-projection-resize="label"]')).toHaveAttribute(
+    'aria-valuenow',
+    String(initialWidth),
+  );
 
   const labels = await page.locator('#projChart .apexcharts-xaxis-label').allTextContents();
   expect(labels.join(' ')).toContain('fev/2026');

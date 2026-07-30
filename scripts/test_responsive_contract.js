@@ -18,10 +18,8 @@ assert(/\.table-wrap\s*{[^}]*overflow:\s*auto/s.test(css), 'Tabelas precisam de 
 assert(/\.table-wrap\s*>\s*table\s*{[^}]*min-width:\s*720px/s.test(css), 'Tabelas perderam sua largura estável');
 for (const [selector, width] of [
   ['.table-wrap > .flows-table', 1360],
-  ['.details-table', 1320],
   ['.projection-table > table', 960],
   ['.projection-movement-table > table', 1160],
-  ['#histTbl', 1050],
 ]) {
   const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   assert(
@@ -30,9 +28,13 @@ for (const [selector, width] of [
   );
 }
 assert(
-  /\.details-table\s*\{[^}]*table-layout:\s*fixed/s.test(css) &&
+  /\.projection-monthly-table\s*\{[^}]*table-layout:\s*fixed/s.test(css) &&
     /\.table-wrap\s*>\s*\.flows-table\s*\{[^}]*table-layout:\s*fixed/s.test(css),
   'Tabelas operacionais precisam preservar as colunas definidas',
+);
+assert(
+  /\.projection-monthly-table\s+\.projection-sticky-col\s*\{[^}]*position:\s*sticky/s.test(css),
+  'Resumo mensal precisa permanecer congelado no desktop',
 );
 assert(
   /\.table-wrap\s+:is\(th,\s*td\)[^{]*\{[^}]*overflow-wrap:\s*anywhere/s.test(css),

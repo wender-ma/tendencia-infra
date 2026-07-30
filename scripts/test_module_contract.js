@@ -54,9 +54,7 @@ const storageService = fs.readFileSync(
   'utf8',
 );
 const adminView = fs.readFileSync(path.join(root, 'assets/js/ui/views/admin.mjs'), 'utf8');
-const detailsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/details.mjs'), 'utf8');
 const flowsView = fs.readFileSync(path.join(root, 'assets/js/ui/views/flows.mjs'), 'utf8');
-const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
 const overviewView = fs.readFileSync(path.join(root, 'assets/js/ui/views/overview.mjs'), 'utf8');
 const projectionView = fs.readFileSync(
   path.join(root, 'assets/js/ui/views/projection.mjs'),
@@ -78,9 +76,7 @@ const viewSources = [
   flowEditor,
   uploadUi,
   adminView,
-  detailsView,
   flowsView,
-  historyView,
   overviewView,
   projectionView,
   projectionControlView,
@@ -293,23 +289,16 @@ assert(
 );
 assert(!adminView.includes('.innerHTML'), 'View administrativa não pode montar HTML sem parser');
 assert(
-  detailsView.includes('export function createDetailsView'),
-  'View de detalhamento não foi modularizada',
+  !fs.existsSync(path.join(root, 'assets/js/ui/views/details.mjs')) &&
+    !fs.existsSync(path.join(root, 'assets/js/ui/views/history.mjs')),
+  'Views removidas de Detalhamento e Histórico Mensal voltaram ao bundle',
 );
-assert(detailsView.includes('function renderTable('), 'Tabela de detalhamento ausente da view');
-assert(!detailsView.includes('.innerHTML'), 'View de detalhamento não pode montar HTML sem parser');
 assert(
   flowsView.includes('export function createFlowsView'),
   'View de Flows não foi modularizada',
 );
 assert(flowsView.includes('function renderFlowTable('), 'Tabela de Flows ausente da view');
 assert(!flowsView.includes('.innerHTML'), 'View de Flows não pode montar HTML sem parser');
-assert(
-  historyView.includes('export function createHistoryView'),
-  'View de histórico não foi modularizada',
-);
-assert(historyView.includes('function renderHistHeatmap('), 'Tabela histórica ausente da view');
-assert(!historyView.includes('.innerHTML'), 'View de histórico não pode montar HTML sem parser');
 assert(
   overviewView.includes('export function createOverviewView'),
   'View da Visão Geral não foi modularizada',
@@ -324,8 +313,9 @@ assert(
   'View de Tendência de Obra não foi modularizada',
 );
 assert(
-  projectionView.includes('function renderProjTable('),
-  'Tabela de Tendência de Obra ausente da view',
+  projectionView.includes('function renderProjectionMonthlyTable(') &&
+    projectionView.includes('export function buildProjectionMonthlyTableModel('),
+  'Grade mensal de Tendência de Obra ausente da view',
 );
 assert(
   !projectionView.includes('.innerHTML'),

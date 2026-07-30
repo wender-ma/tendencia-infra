@@ -72,7 +72,6 @@ const chartSources = [
   'assets/js/ui/views/overview.mjs',
   'assets/js/ui/views/projection.mjs',
   'assets/js/ui/views/projection-control.mjs',
-  'assets/js/ui/views/history.mjs',
 ].map((file) => fs.readFileSync(path.join(root, file), 'utf8'));
 assert(
   chartSources.every((source) => source.includes("resolveColor('var(--chart-grid)')")),

@@ -47,7 +47,7 @@ for (const escapedExternalValue of [
   'escHtml(o.nome)',
   'escHtml(g.email)',
   'escHtml(e.observacao',
-  'escHtml(f.descricao',
+  'escHtml((f.descricao',
   'escHtml(f.justificativa',
   'escHtml(m.descricao',
   'escHtml(r.nome_arquivo)',

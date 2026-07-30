@@ -48,7 +48,7 @@ assert(
 ['header', 'nav', 'main', 'footer'].forEach(tag => {
   assert(new RegExp(`<${tag}\\b`, 'i').test(html), `Landmark <${tag}> ausente`);
 });
-assert((html.match(/<section\b[^>]*class="tab-content/gi) || []).length === 9, 'As nove abas devem ser sections');
+assert((html.match(/<section\b[^>]*class="tab-content/gi) || []).length === 7, 'As sete abas devem ser sections');
 assert(html.includes('class="skip-link" href="#mainContent"'), 'Link para pular ao conteúdo ausente');
 
 const labels = [...html.matchAll(/<label\b([^>]*)>([\s\S]*?)<\/label>/gi)];
@@ -90,14 +90,17 @@ assert(source.includes('data-modal-form="movement"'), 'Movimentação precisa us
 assert(!/id="(?:loginSenha|signupSenha2)"[^>]*onkeydown=/.test(html), 'Login não deve simular submit no keydown');
 
 const sortableHeaders = [...html.matchAll(/<th\b[^>]*data-sort(?:-flow|-proj)?="[^"]+"[^>]*>/gi)];
-assert(sortableHeaders.length >= 20, 'Cabeçalhos ordenáveis esperados não foram encontrados');
+assert(sortableHeaders.length >= 9, 'Cabeçalhos ordenáveis estáticos esperados não foram encontrados');
 sortableHeaders.forEach(header => {
   assert(/aria-sort="none"/.test(header[0]), `Cabeçalho ordenável sem aria-sort na linha ${lineAt(header.index)}`);
 });
+assert(
+  javascript.includes('data-sort-proj="${sortKeys[definition.id]}"') &&
+    javascript.includes('aria-sort="none"'),
+  'Cabeçalhos mensais ordenáveis não preservam aria-sort',
+);
 assert(javascript.includes('function bindSortableHeaders('), 'Runtime de ordenação acessível ausente');
 assert(javascript.includes("event.key !== 'Enter' && event.key !== ' '"), 'Ordenação por Enter/Espaço ausente');
-assert(/data-idx="\$\{origIdx\}" tabindex="0"/.test(javascript), 'Linhas de detalhamento não entram na ordem de foco');
-assert(javascript.includes("addEventListener('keydown', activateDetailRow)"), 'Detalhamento sem ativação por teclado');
 assert(javascript.includes("addEventListener('keydown', activateProjectionRow)"), 'Projeção sem ativação por teclado');
 
 console.log('Contrato de acessibilidade: landmarks, formulários, ordenação, foco e anúncios OK');

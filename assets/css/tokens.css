@@ -57,12 +57,6 @@
     --ref-nao-border: #FCA5A5;
     --ref-pend-border: #FCD34D;
 
-    /* Histórico heatmap */
-    --hist-up:        rgba(239, 68, 68, 0.15);
-    --hist-up-strong: rgba(239, 68, 68, 0.35);
-    --hist-down:      rgba(16, 185, 129, 0.15);
-    --hist-down-strong: rgba(16, 185, 129, 0.35);
-
     /* Badge manual */
     --badge-manual-bg:  #FBBF24;
     --badge-manual-fg:  #78350F;
@@ -139,12 +133,6 @@
     --ref-sim-border: #065F46;
     --ref-nao-border: #5A0808;
     --ref-pend-border: #92400E;
-
-    /* Histórico heatmap (dark) */
-    --hist-up:        rgba(239, 68, 68, 0.25);
-    --hist-up-strong: rgba(239, 68, 68, 0.4);
-    --hist-down:      rgba(16, 185, 129, 0.25);
-    --hist-down-strong: rgba(16, 185, 129, 0.4);
 
     /* Badge manual (dark) */
     --badge-manual-bg:  #92400E;

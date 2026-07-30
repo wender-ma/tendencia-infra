@@ -198,8 +198,8 @@ versionado estiver indisponivel. A troca para `snapshots` e o rollback para `dua
 nao exigem alteracao de codigo, mas devem seguir o inventario e os gates descritos
 em `docs/operations.md`.
 
-No modelo multiobra, Tendência é versionada por obra; Flows, Histórico Mensal e
-Curva S usam bases globais consolidadas. O histórico de arquivos segue o mesmo
+No modelo multiobra, Tendência é versionada por obra; Flows, Curva S e a grade
+mensal da Projeção Detalhada usam bases globais consolidadas. O histórico de arquivos segue o mesmo
 escopo depois da migration
 `supabase/migrations/20260728193000_global_upload_history.sql`, que também garante
 uma única versão ativa por base e adiciona o reset global isolado.

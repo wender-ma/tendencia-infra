@@ -63,7 +63,6 @@ export function createDashboardRuntime({
   windowRef = window,
   logger,
   toast = () => {},
-  populateFilters = () => {},
   renderSourcesHeaders = () => {},
   renderers = {},
 }) {
@@ -267,8 +266,6 @@ export function createDashboardRuntime({
     try {
       if (tabName === 'visao') renderers.overview?.();
       else if (tabName === 'flows') renderers.flows?.();
-      else if (tabName === 'detalhe') renderers.details?.();
-      else if (tabName === 'historico') renderers.history?.();
       else if (tabName === 'projecao') {
         if (state.dados.projRaw.length) renderers.projection?.();
         else renderers.initializeProjection?.();
@@ -290,7 +287,6 @@ export function createDashboardRuntime({
 
   function renderAll() {
     buildLinks();
-    populateFilters();
     try {
       renderSourcesHeaders();
     } catch (error) {

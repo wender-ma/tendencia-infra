@@ -7,7 +7,6 @@ const root = path.resolve(__dirname, '..');
 const moduleSource = fs.readFileSync(path.join(root, 'assets/js/ui/view-states.mjs'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'assets/js/bootstrap.js'), 'utf8');
 const legacyPath = path.join(root, 'assets/js/dashboard-legacy.js');
-const historyView = fs.readFileSync(path.join(root, 'assets/js/ui/views/history.mjs'), 'utf8');
 const projectionControlView = fs.readFileSync(
   path.join(root, 'assets/js/ui/views/projection-control.mjs'),
   'utf8',
@@ -48,15 +47,6 @@ assert(
 assert(
   !movementTable.includes('compare'),
   'Tabela de movimentações depende de filtro do histórico',
-);
-
-const historyHeatmap = historyView.slice(
-  historyView.indexOf('function renderHistHeatmap('),
-  historyView.indexOf('export function createHistoryView'),
-);
-assert(
-  historyHeatmap.indexOf('const historyPage') < historyHeatmap.indexOf('historyPage.items'),
-  'Página do histórico deve ser criada antes do uso',
 );
 
 console.log('Contrato de estados: componente seguro, integração e regressões de paginação OK');

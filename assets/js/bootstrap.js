@@ -185,13 +185,10 @@ const dashboardRuntime = createDashboardRuntime({
   ensureApexCharts,
   logger,
   toast: (...args) => feedbackService.toast(...args),
-  populateFilters: () => ui.details?.populateFilters(),
   renderSourcesHeaders: () => ui.uploads?.renderSourcesHeaders(),
   renderers: {
     overview: () => ui.overview?.renderVisao(),
     flows: () => ui.flows?.renderFlows(),
-    details: () => ui.details?.renderTable(),
-    history: () => ui.history?.renderHistorico(),
     projection: () => ui.projection?.renderProjecao(),
     initializeProjection: () => ui.projection?.initProjecao(),
     projectionControl: () => ui.projectionControl?.initProjCtrl(),
@@ -318,9 +315,7 @@ Promise.resolve()
       { createFlowEditor },
       { createUploadView },
       { createAdminView },
-      { createDetailsView },
       { createFlowsView },
-      { createHistoryView },
       { createOverviewView },
       { createProjectionView },
       { createProjectionControlView },
@@ -328,9 +323,7 @@ Promise.resolve()
       import('./ui/flow-editor.mjs'),
       import('./ui/uploads.mjs'),
       import('./ui/views/admin.mjs'),
-      import('./ui/views/details.mjs'),
       import('./ui/views/flows.mjs'),
-      import('./ui/views/history.mjs'),
       import('./ui/views/overview.mjs'),
       import('./ui/views/projection.mjs'),
       import('./ui/views/projection-control.mjs'),
@@ -381,15 +374,6 @@ Promise.resolve()
       state: appState,
     });
     actionRegistry.register(ui.admin);
-    ui.details = createDetailsView({
-      runtime: dashboardRuntime,
-      pagination: paginationService,
-      viewStates: viewStateService,
-      modals: modalService,
-      state: appState,
-      overview: { hasTendency: (...args) => ui.overview?.obraTemTendencia(...args) },
-    });
-    actionRegistry.register(ui.details);
     ui.flows = createFlowsView({
       runtime: dashboardRuntime,
       pagination: paginationService,
@@ -402,13 +386,6 @@ Promise.resolve()
       flowEditor: ui.flowEditor,
     });
     actionRegistry.register(ui.flows);
-    ui.history = createHistoryView({
-      runtime: dashboardRuntime,
-      pagination: paginationService,
-      viewStates: viewStateService,
-      state: appState,
-    });
-    actionRegistry.register(ui.history);
     ui.projectionControl = createProjectionControlView({
       runtime: dashboardRuntime,
       storage: storageService,
@@ -496,7 +473,6 @@ Promise.resolve()
       buildDatalist: () => ui.flowEditor.buildDatalist(),
       applyManuals: () => ui.flowEditor.applyManuals(),
       loadClassifications: () => ui.flowEditor.loadClassifications(),
-      restoreFilters: () => ui.details.restaurarFiltros(),
       toast: (...args) => feedbackService.toast(...args),
       reportError: (...args) => dashboardRuntime.reportNonFatalError(...args),
     });

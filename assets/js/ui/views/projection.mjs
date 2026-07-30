@@ -865,6 +865,10 @@ function renderProjChartGeral(
       events: {
         mounted: syncProjectionChartLockUi,
         updated: syncProjectionChartLockUi,
+        markerClick: (_event, _chartContext, { dataPointIndex }) => {
+          const selectedMonth = extended[dataPointIndex];
+          if (selectedMonth) openProjectionDifference(selectedMonth);
+        },
         beforeZoom: (chartContext, { xaxis }) =>
           projectionChartLocked
             ? {

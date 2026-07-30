@@ -118,4 +118,55 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await expect(page.locator('.projection-difference-table tfoot th').last()).toHaveText(
     tooltipDifference,
   );
+  await page.locator('#modal .modal-close').click();
+
+  for (const seriesIndex of [0, 1]) {
+    await chartSvg.hover({
+      position: { x: chartBox.width - 50, y: chartBox.height / 2 },
+      force: true,
+    });
+    const tooltipMonth = await page
+      .locator('#projChart .projection-curve-tooltip-title')
+      .innerText();
+    const marker = page
+      .locator(
+        `#projChart .apexcharts-series-markers-wrap[data\\:realIndex="${seriesIndex}"] .apexcharts-marker`,
+      )
+      .first();
+    await expect(marker).toBeVisible();
+    await marker.click({ force: true });
+    await expect(page.locator('#modalContent h2')).toContainText(tooltipMonth);
+    await expect(page.locator('.projection-difference-table tfoot th').last()).toHaveText(
+      tooltipDifference,
+    );
+    await page.locator('#modal .modal-close').click();
+  }
+
+  await chartSvg.hover({
+    position: { x: 100, y: chartBox.height / 2 },
+    force: true,
+  });
+  await expect(page.locator('#projChart .projection-curve-tooltip-action')).toHaveCount(0);
+  const plannedMarkerBeforeCutoff = page
+    .locator('#projChart .apexcharts-series-markers-wrap[data\\:realIndex="0"] .apexcharts-marker')
+    .first();
+  await plannedMarkerBeforeCutoff.click({ force: true });
+  await expect(page.locator('#modalBg')).not.toHaveClass(/show/);
+
+  await page.evaluate(() => {
+    const { state, views } = window.dashboardServices;
+    state.dados.flows = [];
+    state.dados.projRaw = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].map(
+      (mes) => ({
+        codigo_obra: 'OBRA-TESTE',
+        servico: 'SERVICO-SEM-EXTRAPOLACAO',
+        insumo: 'I001',
+        valor: 100,
+        mes,
+      }),
+    );
+    views.projection.renderProjecao();
+    views.projection.openProjectionDifference('2026-10');
+  });
+  await expect(page.locator('#modalBg')).not.toHaveClass(/show/);
 });

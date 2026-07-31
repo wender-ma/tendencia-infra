@@ -458,15 +458,15 @@ export function createOverviewDetailView({
       `<h2>Δ Composição da diferença · ${escHtml(node.item || nodeCode(node))}</h2>
       <div class="meta">Obra: <strong>${escHtml(model.projectCode)}</strong> · Base: <strong>${escHtml(model.managementLabel)}</strong> · Licitação corrigida: <strong>${escHtml(model.correctionIndex.toUpperCase())}</strong></div>
       <div class="overview-input-difference-lines">
-        <div><span>Licitação Corrigida</span><strong>${node.correctedAvailable ? fmtR$(node.metrics.correctedBudget) : '—'}</strong></div>
-        <div><span>Gestão atual</span><strong>${fmtR$(node.metrics.management)}</strong></div>
-        <div><span>Variação de Inflação</span><strong class="overview-input-difference--${tone(node.metrics.inflationVariation)}">${signedValue(node.metrics.inflationVariation)}</strong></div>
-        <div><span>Projeção automática</span><strong class="overview-input-difference--${tone(node.metrics.automaticProjection)}">${signedValue(node.metrics.automaticProjection)}</strong></div>
-        <div><span>Flows pendentes</span><strong class="overview-input-difference--${tone(node.metrics.pendingFlows)}">${signedValue(node.metrics.pendingFlows)}</strong></div>
-        <div class="overview-input-difference-line--total"><span>Diferença total</span><strong class="overview-input-difference--${tone(node.metrics.difference)}">${signedValue(node.metrics.difference)}</strong></div>
-        <div class="overview-input-difference-line--final"><span>Valor final</span><strong class="overview-input-difference--${tone(node.metrics.difference)}">${fmtR$(node.metrics.finalTendency)}</strong></div>
+        <div><span>Licitação Original</span><strong>${fmtR$(node.metrics.originalBudget)}</strong></div>
+        <div><span>Tendência atualizada</span><strong>${fmtR$(node.metrics.finalTendency)}</strong></div>
+        <div class="overview-input-difference-line--total"><span>Diferença Licitação × Tendência</span><strong class="overview-input-difference--${tone(node.metrics.totalVariation)}">${signedValue(node.metrics.totalVariation)}</strong></div>
+        <div class="overview-input-difference-composition-title"><span>Composição dessa diferença</span></div>
+        <div class="overview-input-difference-component"><span>Inflação</span><strong class="overview-input-difference--${tone(node.metrics.inflationVariation)}">${signedValue(node.metrics.inflationVariation)}</strong></div>
+        <div class="overview-input-difference-component"><span>Projeção automática</span><strong class="overview-input-difference--${tone(node.metrics.automaticProjection)}">${signedValue(node.metrics.automaticProjection)}</strong></div>
+        <div class="overview-input-difference-component"><span>Flows pendentes</span><strong class="overview-input-difference--${tone(node.metrics.pendingFlows)}">${signedValue(node.metrics.pendingFlows)}</strong></div>
+        <div class="overview-input-difference-component"><span>Não identificado</span><strong class="overview-input-difference--${tone(node.metrics.incorporatedVariation)}">${signedValue(node.metrics.incorporatedVariation)}</strong></div>
       </div>
-      <div class="overview-input-reconciliation">${fmtR$(node.metrics.correctedBudget)} ${node.metrics.difference >= 0 ? '+' : '−'} ${fmtR$(Math.abs(node.metrics.difference))} = <strong>${fmtR$(node.metrics.finalTendency)}</strong></div>
       ${
         projectionRows
           ? `<section class="projection-difference-flows">

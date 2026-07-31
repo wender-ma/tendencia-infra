@@ -129,6 +129,16 @@ async function main() {
   assert.equal(model.root.metrics.pendingFlows, 10);
   assert.equal(model.root.metrics.finalTendency, 235);
   assert.equal(model.root.metrics.difference, 85);
+  assert.equal(model.root.metrics.totalVariation, 115);
+  assert.equal(model.root.metrics.incorporatedVariation, 30);
+  assert.equal(
+    model.root.metrics.inflationVariation +
+      model.root.metrics.automaticProjection +
+      model.root.metrics.pendingFlows +
+      model.root.metrics.incorporatedVariation,
+    model.root.metrics.totalVariation,
+    'A composição deve fechar com a diferença entre Licitação original e Tendência',
+  );
   assert.equal(
     model.root.metrics.correctedBudget + model.root.metrics.difference,
     model.root.metrics.finalTendency,

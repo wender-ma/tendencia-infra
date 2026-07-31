@@ -28,6 +28,7 @@ function emptyMetrics() {
     pendingFlows: 0,
     finalTendency: 0,
     difference: 0,
+    totalVariation: 0,
   };
 }
 
@@ -319,6 +320,9 @@ export function buildOverviewInputDetailModel({
     );
     node.metrics.difference = roundCurrency(
       node.metrics.finalTendency - node.metrics.correctedBudget,
+    );
+    node.metrics.totalVariation = roundCurrency(
+      node.metrics.finalTendency - node.metrics.originalBudget,
     );
     for (const projection of node.projectionItems) {
       projection.finalTendency = node.metrics.finalTendency;

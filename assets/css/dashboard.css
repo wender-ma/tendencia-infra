@@ -3670,11 +3670,28 @@ body:not(.is-admin-geral) [data-admin-control],
   font-size: 15px;
 }
 .overview-input-difference-line--total { font-weight: 700; }
-.overview-input-difference-lines > .overview-input-difference-line--final {
+.overview-input-difference-lines > .overview-input-difference-line--total {
   padding: 12px 10px;
   background: var(--bg-soft);
   color: var(--text-strong);
+}
+.overview-input-difference-lines > .overview-input-difference-composition-title {
+  padding-top: 16px;
+  color: var(--text-strong);
   font-weight: 700;
+}
+.overview-input-difference-lines > .overview-input-difference-component {
+  padding-left: 22px;
+}
+.overview-input-difference-component > span::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  vertical-align: 2px;
 }
 .overview-input-projection-table :is(th, td):first-child {
   width: 190px;
@@ -3687,7 +3704,6 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-soft);
   font-size: 11px;
 }
-.overview-input-reconciliation,
 .overview-input-projection-result {
   margin-top: 10px;
   padding: 10px 12px;
@@ -3696,7 +3712,6 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-medium);
   text-align: right;
 }
-.overview-input-reconciliation strong,
 .overview-input-projection-result strong { color: var(--text-strong); }
 
 @media (max-width: 760px) {

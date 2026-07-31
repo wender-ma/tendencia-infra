@@ -1,6 +1,11 @@
 export function parseLocalMarkup(markup, ownerDocument = document) {
   const parsed = new DOMParser().parseFromString(String(markup), 'text/html');
-  return [...parsed.body.childNodes].map((node) => ownerDocument.importNode(node, true));
+  const relocatedTemplates = [...parsed.head.childNodes].filter(
+    (node) => node.nodeName === 'TEMPLATE',
+  );
+  return [...relocatedTemplates, ...parsed.body.childNodes].map((node) =>
+    ownerDocument.importNode(node, true),
+  );
 }
 
 export function replaceWithParsedMarkup(element, markup) {

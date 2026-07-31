@@ -7,7 +7,7 @@ import {
 import { formatReflectionMonth } from './flow-reflection.mjs';
 
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
-const DASHBOARD_VERSION = 'v1.6.2';
+const DASHBOARD_VERSION = 'v1.6.3';
 
 function roundCurrency(value) {
   return value == null ? null : Math.round(value * 100) / 100;
@@ -219,6 +219,7 @@ export function createDashboardExportService({
     const projectCode = normalizeFileSegment(state.activeProject);
     const filename = `${filePrefix}_${projectCode}_${exportedAt.toISOString().slice(0, 10)}.xlsx`;
     xlsx.writeFile(workbook, filename);
+    toast(`✅ Excel exportado: ${filename}`, 'ok', 3500);
     return { filename, rowCount: rows.length };
   }
 

@@ -231,6 +231,29 @@ function obraTemTendencia() {
   );
 }
 
+export function buildOverviewProjectionMetrics({
+  correctedBudget,
+  management,
+  indirectTendency = 0,
+  directTendency = 0,
+  projectionReserve = 0,
+}) {
+  const projectedTotal = management + indirectTendency + directTendency;
+  const managementVsCorrected = management - correctedBudget;
+  const grossDifference = projectedTotal - correctedBudget;
+  const liquidProjectedTotal = projectedTotal - projectionReserve;
+  const liquidDifference = liquidProjectedTotal - correctedBudget;
+  return {
+    projectedTotal,
+    managementVsCorrected,
+    grossDifference,
+    liquidProjectedTotal,
+    liquidDifference,
+    grossPercentage: correctedBudget ? (grossDifference / correctedBudget) * 100 : 0,
+    liquidPercentage: correctedBudget ? (liquidDifference / correctedBudget) * 100 : 0,
+  };
+}
+
 function renderVisao({ cardsOnly = false } = {}) {
   // guard sem dados de Tendência
   if (!obraTemTendencia()) {
@@ -245,20 +268,14 @@ function renderVisao({ cardsOnly = false } = {}) {
       });
     if (gruposEl) gruposEl.replaceChildren();
     if (alertEl) alertEl.replaceChildren();
-    // Limpar donut e top 10 também
+    // Limpar composição do desvio
     const donutEl = document.getElementById('donutChart');
     const donutLegendEl = document.getElementById('donutLegend');
     const donutCenterEl = document.getElementById('donutCenter');
-    const topUpEl = document.getElementById('top10Up');
-    const topDownEl = document.getElementById('top10Down');
     if (donutEl)
       renderDashboardState(donutEl, { title: 'Sem composição disponível', compact: true });
     if (donutLegendEl) donutLegendEl.replaceChildren();
     if (donutCenterEl) donutCenterEl.hidden = true;
-    if (topUpEl)
-      renderDashboardState(topUpEl, { title: 'Sem aumentos para comparar', compact: true });
-    if (topDownEl)
-      renderDashboardState(topDownEl, { title: 'Sem reduções para comparar', compact: true });
     refreshHeaderSubtitle();
     verificarDadosDesatualizados();
     return;
@@ -333,11 +350,6 @@ function renderVisao({ cardsOnly = false } = {}) {
     totExtrapInd + flowsPend['Custos Indiretos'] + flowsPend['Projeção de Gastos'];
   const tendDiretos =
     flowsPend['Custos Diretos / Infraestrutura'] + flowsPend['Obras Civis'] + flowsPend['Outros'];
-  const tendFinal = totGestao + tendIndiretos + tendDiretos;
-  const tendVsLic = tendFinal - totLicit;
-  const tendVsLicPct = totLicit ? (tendVsLic / totLicit) * 100 : 0;
-  const tendBrutoCls =
-    tendVsLicPct > 10 ? 'red' : tendVsLicPct > 5 ? 'amber' : tendVsLicPct > 0 ? 'amber' : 'green';
 
   // Reserva (Projeção de Gastos) - vem do saldo atual da aba Controle Projeção
   const projectionControlState = getProjectionControlState();
@@ -358,15 +370,34 @@ function renderVisao({ cardsOnly = false } = {}) {
     reservaProj = 0;
     reportNonFatalError('Visão geral/calcular reserva de projeção', e);
   }
-  const tendFinalLiq = tendFinal - reservaProj;
-  const tendVsLicLiq = tendVsLic - reservaProj;
-  const tendVsLicLiqPct = totLicit ? (tendVsLicLiq / totLicit) * 100 : 0;
-  const tendLiqCls =
-    tendVsLicLiqPct > 10
+  const projectionMetrics = buildOverviewProjectionMetrics({
+    correctedBudget: totCorrigido,
+    management: totGestao,
+    indirectTendency: tendIndiretos,
+    directTendency: tendDiretos,
+    projectionReserve: reservaProj,
+  });
+  const tendFinal = projectionMetrics.projectedTotal;
+  const gestaoVsCorrigido = projectionMetrics.managementVsCorrected;
+  const tendVsCorrigido = projectionMetrics.grossDifference;
+  const tendFinalLiq = projectionMetrics.liquidProjectedTotal;
+  const tendVsCorrigidoLiq = projectionMetrics.liquidDifference;
+  const tendVsCorrigidoPct = projectionMetrics.grossPercentage;
+  const tendVsCorrigidoLiqPct = projectionMetrics.liquidPercentage;
+  const tendBrutoCls =
+    tendVsCorrigidoPct > 10
       ? 'red'
-      : tendVsLicLiqPct > 5
+      : tendVsCorrigidoPct > 5
         ? 'amber'
-        : tendVsLicLiqPct > 0
+        : tendVsCorrigidoPct > 0
+          ? 'amber'
+          : 'green';
+  const tendLiqCls =
+    tendVsCorrigidoLiqPct > 10
+      ? 'red'
+      : tendVsCorrigidoLiqPct > 5
+        ? 'amber'
+        : tendVsCorrigidoLiqPct > 0
           ? 'amber'
           : 'green';
 
@@ -465,21 +496,21 @@ function renderVisao({ cardsOnly = false } = {}) {
           <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${APP_STATE.config.card3Modo === 'liquido' ? 'active' : ''}">Líquido</button>
         </div>
       </div>
-      ${bdLine('🎯 Total · Desvio bruto', (desvioBruto >= 0 ? '+' : '') + fmtR$(desvioBruto), signedTone(desvioBruto))}
+      ${bdLine('🎯 Gestão vs Licitação corrigida (' + indiceLabel + ')', (gestaoVsCorrigido >= 0 ? '+' : '') + fmtR$(gestaoVsCorrigido), signedTone(gestaoVsCorrigido))}
       ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'purple')}
       ${bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning')}
       <div class="overview-total-block">
         <div class="overview-total-line">
-          <span class="overview-total-label">📈 Δ vs Licitação</span>
-          <strong class="overview-total-value overview-tone--${signedTone(tendVsLic)}">${tendVsLic >= 0 ? '+' : ''}${fmtR$(tendVsLic)}</strong>
+          <span class="overview-total-label">📈 Δ bruto vs Licitação corrigida</span>
+          <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigido)}">${tendVsCorrigido >= 0 ? '+' : ''}${fmtR$(tendVsCorrigido)}</strong>
         </div>
         <div class="overview-total-line">
           <span class="overview-projection-reserve-label">${escHtml(insumoControlado)} - Projeção de Gastos</span>
           <strong class="overview-total-value overview-tone--${signedTone(-reservaProj)}">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
         </div>
         <div class="overview-total-line">
-          <span class="overview-total-label">💧 Δ vs Licitação</span>
-          <strong class="overview-total-value overview-tone--${signedTone(tendVsLicLiq)}">${tendVsLicLiq >= 0 ? '+' : ''}${fmtR$(tendVsLicLiq)}</strong>
+          <span class="overview-total-label">💧 Δ líquido vs Licitação corrigida</span>
+          <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigidoLiq)}">${tendVsCorrigidoLiq >= 0 ? '+' : ''}${fmtR$(tendVsCorrigidoLiq)}</strong>
         </div>
       </div>
     </div>
@@ -559,78 +590,6 @@ function renderVisao({ cardsOnly = false } = {}) {
   );
 
   renderDonut(tipoSum);
-
-  // Top 10 dividido em aumentos e reduções
-  const todasFolhas = folhas
-    .filter((d) => d.licitacao != null && d.gestao != null)
-    .map((d) => ({ ...d, delta: d.gestao - d.licitacao }));
-  const ups = todasFolhas
-    .filter((d) => d.delta > 0)
-    .sort((a, b) => b.delta - a.delta)
-    .slice(0, 10);
-  const downs = todasFolhas
-    .filter((d) => d.delta < 0)
-    .sort((a, b) => a.delta - b.delta)
-    .slice(0, 10);
-
-  const renderTopList = (arr, isUp, containerId) => {
-    if (!arr.length) {
-      replaceWithParsedMarkup(
-        document.getElementById(containerId),
-        '<div class="overview-list-empty">Nenhum item nessa categoria.</div>',
-      );
-      return;
-    }
-
-    const barColorToken = isUp ? 'var(--fgr-red-vivid)' : 'var(--sem-ok)';
-    const barColor = resolveColor(barColorToken);
-    const categories = arr.map((d) => (d.item.length > 35 ? d.item.slice(0, 32) + '...' : d.item));
-    const seriesData = arr.map((d) => Math.abs(d.delta));
-
-    const options = {
-      series: [{ name: isUp ? 'Aumento' : 'Redução', data: seriesData }],
-      chart: {
-        type: 'bar',
-        height: Math.max(250, arr.length * 40),
-        animations: { enabled: true, easing: 'easeinout', speed: 600 },
-        toolbar: { show: true, tools: { download: true, zoom: false, pan: false, reset: false } },
-      },
-      themePalette: [barColorToken],
-      colors: [barColor],
-      plotOptions: {
-        bar: {
-          horizontal: true,
-          borderRadius: 4,
-          barHeight: '60%',
-          dataLabels: { position: 'right' },
-        },
-      },
-      xaxis: {
-        categories: categories,
-        labels: { formatter: (val) => fmtR$k(val), style: { fontSize: '10px' } },
-      },
-      yaxis: {
-        labels: { style: { fontSize: '11px', colors: resolveColor('var(--chart-text)') } },
-      },
-      tooltip: {
-        enabled: true,
-        theme: document.body.classList.contains('dark') ? 'dark' : 'light',
-        y: { formatter: (val) => fmtR$(val) },
-      },
-      dataLabels: {
-        enabled: true,
-        formatter: (val) => fmtR$k(val),
-        style: { fontSize: '10px', colors: [resolveColor('var(--chart-text)')] },
-        offsetX: 30,
-      },
-      grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
-      legend: { show: false },
-    };
-
-    renderApexChart(containerId, options);
-  };
-  renderTopList(ups, true, 'top10Up');
-  renderTopList(downs, false, 'top10Down');
 }
 
 // Filtro interativo do donut (toggle por tipo) — APP_STATE.donut.hidden e APP_STATE.donut.lastTipoSum em AppState.donut

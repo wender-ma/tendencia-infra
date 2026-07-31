@@ -3587,12 +3587,6 @@ body:not(.is-admin-geral) [data-admin-control],
 .grupo-bar-progress--red { --grupo-progress-color: var(--fgr-red-vivid); }
 .grupo-bar-progress--amber { --grupo-progress-color: var(--sem-alerta); }
 .grupo-bar-progress--green { --grupo-progress-color: var(--sem-ok); }
-.overview-list-empty {
-  padding: 20px;
-  color: var(--text-lighter);
-  text-align: center;
-  font-size: 12px;
-}
 .overview-donut-empty {
   padding: 80px 20px;
   color: var(--text-lighter);

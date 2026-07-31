@@ -83,8 +83,20 @@ assert(
 );
 assert(
   overview.includes('${escHtml(insumoControlado)} - Projeção de Gastos') &&
-    overview.includes('<span class="overview-total-label">💧 Δ vs Licitação</span>'),
-  'Card de Tendência deve identificar a reserva e a diferença líquida',
+    overview.includes(
+      '<span class="overview-total-label">💧 Δ líquido vs Licitação corrigida</span>',
+    ) &&
+    overview.includes('🎯 Gestão vs Licitação corrigida (') &&
+    overview.includes('📈 Δ bruto vs Licitação corrigida'),
+  'Card de Tendência deve identificar a reserva e usar a Licitação corrigida como referência',
+);
+assert(
+  !html.includes('id="top10Up"') &&
+    !html.includes('id="top10Down"') &&
+    !html.includes('Top 10 - Maiores aumentos') &&
+    !html.includes('Top 10 - Maiores reduções') &&
+    !overview.includes('renderTopList'),
+  'Visão Geral não deve reintroduzir os rankings Top 10 removidos',
 );
 assert(
   overview.includes('overview-tone--${signedTone(-reservaProj)}'),

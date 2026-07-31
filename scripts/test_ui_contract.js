@@ -102,6 +102,7 @@ assert(
   html.includes('id="overviewInputTable"') &&
     html.includes('id="overviewInputSearch"') &&
     html.includes('data-click-action="exportOverviewInputDetail"') &&
+    html.includes('data-click-action="restoreOverviewInputOriginalOrder"') &&
     overview.includes('overviewDetailView.render') &&
     overview.includes('snapshot: projectionSnapshot'),
   'Visão Geral deve renderizar o detalhamento por insumo a partir do snapshot compartilhado',

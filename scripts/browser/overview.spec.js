@@ -116,12 +116,22 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   await expect(page.locator('#overviewInputTbody tr')).toHaveCount(4);
 
   await rootRow.getByRole('button', { name: /Ver composição da diferença/ }).click();
-  await expect(page.locator('#modalContent')).toContainText('Variação incorporada');
+  await expect(page.locator('#modalContent')).toContainText('Licitação Corrigida');
+  await expect(page.locator('#modalContent')).toContainText('Gestão atual');
+  await expect(page.locator('#modalContent')).toContainText('Variação de Inflação');
   await expect(page.locator('#modalContent')).toContainText('Projeção automática');
+  await expect(page.locator('#modalContent')).toContainText('Diferença total');
+  await expect(page.locator('#modalContent')).toContainText('Valor final');
   await expect(page.locator('#modalContent')).toContainText('FLOW-PENDENTE');
   await expect(page.locator('#modalContent')).toContainText('FLOW-REFLETIDO');
   await expect(page.locator('#modalContent')).toContainText('Informativos · não somados novamente');
   await expect(page.locator('#modalContent')).toContainText('120,00 + 18,33 = 138,33');
+  await expect(page.locator('.overview-input-projection-item strong').first()).toHaveText(
+    'ADM5189',
+  );
+  await expect(page.locator('.overview-input-projection-item span').first()).toHaveText(
+    'Serviço S05765',
+  );
   await page.getByRole('button', { name: 'Fechar janela' }).click();
 
   await page.locator('#kpis').getByRole('button', { name: 'INCC' }).click();
@@ -132,6 +142,14 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   );
   await expect(rootRow).toContainText('110,00');
   await expect(rootRow).toContainText('+28,33');
+
+  const differenceHeader = page.locator(
+    '#overviewInputThead [data-sort-overview-input="difference"]',
+  );
+  await differenceHeader.click();
+  await expect(differenceHeader).toHaveAttribute('aria-sort', 'descending');
+  await page.getByRole('button', { name: 'Ordem original' }).click();
+  await expect(differenceHeader).toHaveAttribute('aria-sort', 'none');
 
   const firstResizeHandle = page
     .locator('#overviewInputThead [data-overview-input-resize]')

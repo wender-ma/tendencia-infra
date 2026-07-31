@@ -19,8 +19,10 @@ function isUnclassifiedInput(value) {
 
 function emptyMetrics() {
   return {
+    originalBudget: 0,
     correctedBudget: 0,
     management: 0,
+    inflationVariation: 0,
     incorporatedVariation: 0,
     automaticProjection: 0,
     pendingFlows: 0,
@@ -101,6 +103,9 @@ export function buildOverviewInputDetailModel({
       reflectedFlowItems: [],
     };
     if (node.isLeaf) {
+      node.metrics.originalBudget = hasCurrencyValue(row.licitacao)
+        ? roundCurrency(row.licitacao)
+        : 0;
       node.metrics.correctedBudget = correctedAvailable ? roundCurrency(row[correctionField]) : 0;
       node.metrics.management = roundCurrency(row.gestao);
       let parent = null;
@@ -303,6 +308,9 @@ export function buildOverviewInputDetailModel({
   }
 
   for (const node of nodes.filter((item) => item.isLeaf)) {
+    node.metrics.inflationVariation = roundCurrency(
+      node.metrics.correctedBudget - node.metrics.originalBudget,
+    );
     node.metrics.incorporatedVariation = roundCurrency(
       node.metrics.management - node.metrics.correctedBudget,
     );
@@ -315,6 +323,14 @@ export function buildOverviewInputDetailModel({
     for (const projection of node.projectionItems) {
       projection.finalTendency = node.metrics.finalTendency;
     }
+  }
+
+  if (unlinkedGroup && unlinkedGroup.parent !== null) {
+    const siblings = nodes[unlinkedGroup.parent].children;
+    nodes[unlinkedGroup.parent].children = [
+      unlinkedGroup.index,
+      ...siblings.filter((index) => index !== unlinkedGroup.index),
+    ];
   }
 
   function aggregate(index) {

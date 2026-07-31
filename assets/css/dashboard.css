@@ -3650,8 +3650,42 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-soft);
   text-align: center;
 }
-.overview-input-difference-summary {
-  grid-template-columns: repeat(3, minmax(150px, 1fr));
+.overview-input-difference-lines {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.overview-input-difference-lines > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-medium);
+}
+.overview-input-difference-lines > div:last-child { border-bottom: 0; }
+.overview-input-difference-lines strong {
+  flex: 0 0 auto;
+  font-size: 15px;
+}
+.overview-input-difference-line--total { font-weight: 700; }
+.overview-input-difference-lines > .overview-input-difference-line--final {
+  padding: 12px 10px;
+  background: var(--bg-soft);
+  color: var(--text-strong);
+  font-weight: 700;
+}
+.overview-input-projection-table :is(th, td):first-child {
+  width: 190px;
+  white-space: normal;
+}
+.overview-input-projection-item strong,
+.overview-input-projection-item span { display: block; }
+.overview-input-projection-item span {
+  margin-top: 3px;
+  color: var(--text-soft);
+  font-size: 11px;
 }
 .overview-input-reconciliation,
 .overview-input-projection-result {
@@ -3674,7 +3708,6 @@ body:not(.is-admin-geral) [data-admin-control],
     min-width: 0;
   }
   .overview-input-detail-toolbar .toolbar-count { flex-basis: 100%; }
-  .overview-input-difference-summary { grid-template-columns: 1fr; }
   .overview-input-table-wrap { max-height: 620px; }
   .overview-input-table th:first-child,
   .overview-input-table td:first-child { position: static; }

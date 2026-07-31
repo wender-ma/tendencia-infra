@@ -28,6 +28,7 @@ async function main() {
       nivel: 3,
       is_folha: true,
       grupo: 'Custos Indiretos',
+      licitacao: 80,
       corrigido_ipca: 100,
       corrigido_incc: 90,
       gestao: 120,
@@ -40,6 +41,7 @@ async function main() {
       nivel: 3,
       is_folha: true,
       grupo: 'Custos Indiretos',
+      licitacao: 40,
       corrigido_ipca: 50,
       corrigido_incc: 45,
       gestao: 60,
@@ -120,6 +122,8 @@ async function main() {
     managementLabel: 'GESTÃO 07-2026',
   });
   assert.equal(model.root.metrics.correctedBudget, 150);
+  assert.equal(model.root.metrics.originalBudget, 120);
+  assert.equal(model.root.metrics.inflationVariation, 30);
   assert.equal(model.root.metrics.management, 180);
   assert.equal(model.root.metrics.automaticProjection, 45);
   assert.equal(model.root.metrics.pendingFlows, 10);
@@ -138,6 +142,11 @@ async function main() {
   );
   const ambiguous = model.nodes.find((node) => node.item.includes('I001 · vínculo ambíguo'));
   assert.equal(ambiguous.metrics.pendingFlows, 5);
+  assert.equal(
+    model.nodes[model.root.children[0]].item,
+    'Sem vínculo único',
+    'Itens sem vínculo devem aparecer antes dos demais grupos',
+  );
   const noBudget = model.nodes.find((node) => node.cod_insumo === 'I002' && !node.isSynthetic);
   assert.equal(noBudget.correctedAvailable, false);
   assert.equal(noBudget.metrics.pendingFlows, -2);

@@ -209,8 +209,16 @@ export function createOverviewDetailView({
     model.roots.forEach(collect);
 
     function sorted(indexes) {
-      if (!sortKey) return indexes;
+      const withUnlinkedFirst = (leftIndex, rightIndex) => {
+        const leftUnlinked = model.nodes[leftIndex].key === 'synthetic:unlinked-group';
+        const rightUnlinked = model.nodes[rightIndex].key === 'synthetic:unlinked-group';
+        if (leftUnlinked !== rightUnlinked) return leftUnlinked ? -1 : 1;
+        return 0;
+      };
+      if (!sortKey) return [...indexes].sort(withUnlinkedFirst);
       return [...indexes].sort((leftIndex, rightIndex) => {
+        const unlinkedOrder = withUnlinkedFirst(leftIndex, rightIndex);
+        if (unlinkedOrder) return unlinkedOrder;
         const left = model.nodes[leftIndex];
         const right = model.nodes[rightIndex];
         const leftValue =
@@ -323,6 +331,12 @@ export function createOverviewDetailView({
     renderBody();
   }
 
+  function restoreOriginalOrder() {
+    sortKey = null;
+    sortDirection = 1;
+    renderBody();
+  }
+
   function resetWidths() {
     const store = readWidthStore();
     delete store[model?.projectCode || '__global__'];
@@ -419,11 +433,16 @@ export function createOverviewDetailView({
   function openDifference(rawIndex) {
     const node = model?.nodes?.[Number(rawIndex)];
     if (!node || Math.abs(node.metrics.difference) < 0.005) return;
-    const projectionRows = node.projectionItems
-      .filter((item) => Math.abs(item.valorProjetado) >= 0.005)
+    const projectionItems = node.projectionItems.filter(
+      (item) => Math.abs(item.valorProjetado) >= 0.005,
+    );
+    const projectionRows = projectionItems
       .map(
         (item) => `<tr>
-          <td><strong>${escHtml(item.insumo || 'Sem insumo')}</strong><span>${escHtml(item.servico || '')}</span></td>
+          <td class="overview-input-projection-item">
+            <strong>${escHtml(item.insumo || 'Sem insumo')}</strong>
+            <span>${item.servico ? `Serviço ${escHtml(item.servico)}` : 'Sem serviço vinculado'}</span>
+          </td>
           <td>${escHtml(monthLabel(item.ultimoMesPlanejado))}</td>
           <td>${escHtml(monthLabel(item.dataFim))}</td>
           <td class="num">${item.mesesGap}</td>
@@ -438,20 +457,21 @@ export function createOverviewDetailView({
       document.getElementById('modalContent'),
       `<h2>Δ Composição da diferença · ${escHtml(node.item || nodeCode(node))}</h2>
       <div class="meta">Obra: <strong>${escHtml(model.projectCode)}</strong> · Base: <strong>${escHtml(model.managementLabel)}</strong> · Licitação corrigida: <strong>${escHtml(model.correctionIndex.toUpperCase())}</strong></div>
-      <div class="projection-month-summary overview-input-difference-summary">
-        <div><span>Gestão-base</span><strong>${fmtR$(node.metrics.management)}</strong></div>
-        <div><span>Licitação corrigida</span><strong>${node.correctedAvailable ? fmtR$(node.metrics.correctedBudget) : '—'}</strong></div>
-        <div><span>Variação incorporada</span><strong>${signedValue(node.metrics.incorporatedVariation)}</strong></div>
-        <div><span>Projeção automática</span><strong>${signedValue(node.metrics.automaticProjection)}</strong></div>
-        <div><span>Flows pendentes</span><strong>${signedValue(node.metrics.pendingFlows)}</strong></div>
-        <div class="projection-month-summary--total"><span>Diferença total</span><strong class="overview-input-difference--${tone(node.metrics.difference)}">${signedValue(node.metrics.difference)}</strong></div>
+      <div class="overview-input-difference-lines">
+        <div><span>Licitação Corrigida</span><strong>${node.correctedAvailable ? fmtR$(node.metrics.correctedBudget) : '—'}</strong></div>
+        <div><span>Gestão atual</span><strong>${fmtR$(node.metrics.management)}</strong></div>
+        <div><span>Variação de Inflação</span><strong class="overview-input-difference--${tone(node.metrics.inflationVariation)}">${signedValue(node.metrics.inflationVariation)}</strong></div>
+        <div><span>Projeção automática</span><strong class="overview-input-difference--${tone(node.metrics.automaticProjection)}">${signedValue(node.metrics.automaticProjection)}</strong></div>
+        <div><span>Flows pendentes</span><strong class="overview-input-difference--${tone(node.metrics.pendingFlows)}">${signedValue(node.metrics.pendingFlows)}</strong></div>
+        <div class="overview-input-difference-line--total"><span>Diferença total</span><strong class="overview-input-difference--${tone(node.metrics.difference)}">${signedValue(node.metrics.difference)}</strong></div>
+        <div class="overview-input-difference-line--final"><span>Valor final</span><strong class="overview-input-difference--${tone(node.metrics.difference)}">${fmtR$(node.metrics.finalTendency)}</strong></div>
       </div>
       <div class="overview-input-reconciliation">${fmtR$(node.metrics.correctedBudget)} ${node.metrics.difference >= 0 ? '+' : '−'} ${fmtR$(Math.abs(node.metrics.difference))} = <strong>${fmtR$(node.metrics.finalTendency)}</strong></div>
       ${
         projectionRows
           ? `<section class="projection-difference-flows">
-          <div class="projection-difference-section-heading"><h3>🔮 Projeção automática até o fim da obra</h3><span>${node.projectionItems.length} item(ns)</span></div>
-          <div class="table-wrap projection-difference-flows-table-wrap"><table class="projection-difference-flows-table">
+          <div class="projection-difference-section-heading"><h3>🔮 Projeção automática até o fim da obra</h3><span>${projectionItems.length} item(ns)</span></div>
+          <div class="table-wrap projection-difference-flows-table-wrap"><table class="projection-difference-flows-table overview-input-projection-table">
             <thead><tr><th>Insumo / serviço</th><th>Último mês planejado</th><th>Término da obra</th><th class="num">Meses</th><th class="num">Ritmo histórico</th><th class="num">Valor projetado</th></tr></thead>
             <tbody>${projectionRows}</tbody>
             <tfoot><tr><th colspan="5">Projeção automática total</th><th class="num">${signedValue(node.metrics.automaticProjection)}</th></tr></tfoot>
@@ -563,6 +583,7 @@ export function createOverviewDetailView({
     render,
     expandAll,
     collapseAll,
+    restoreOriginalOrder,
     resetWidths,
     openDifference,
     exportExcel,

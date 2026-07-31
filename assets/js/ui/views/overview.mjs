@@ -797,6 +797,7 @@ export function createOverviewView({
     setCorrecaoIndice,
     overviewInputExpandAll: overviewDetailView.expandAll,
     overviewInputCollapseAll: overviewDetailView.collapseAll,
+    restoreOverviewInputOriginalOrder: overviewDetailView.restoreOriginalOrder,
     resetOverviewInputColumnWidths: overviewDetailView.resetWidths,
     openOverviewInputDifference: overviewDetailView.openDifference,
     exportOverviewInputDetail: overviewDetailView.exportExcel,

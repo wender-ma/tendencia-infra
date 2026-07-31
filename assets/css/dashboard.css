@@ -3593,6 +3593,92 @@ body:not(.is-admin-geral) [data-admin-control],
   text-align: center;
   font-size: 13px;
 }
+.overview-input-detail-card { margin-top: 16px; }
+.overview-input-detail-toolbar > div:first-child {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+.overview-input-table-wrap {
+  position: relative;
+  max-height: 720px;
+  overscroll-behavior: contain;
+}
+.overview-input-table {
+  width: 100%;
+  min-width: 1000px;
+  table-layout: fixed;
+}
+.overview-input-table th { position: sticky; top: 0; }
+.overview-input-table th:first-child,
+.overview-input-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: inherit;
+  background-clip: padding-box;
+}
+.overview-input-table th:first-child { z-index: 14; background: var(--bg-page); }
+.overview-input-label {
+  padding-left: calc(10px + var(--projection-tree-indent, 0px));
+  text-align: left;
+}
+.overview-input-difference--increase { color: var(--sem-erro); }
+.overview-input-difference--reduction { color: var(--sem-ok); }
+.overview-input-difference--neutral { color: var(--text-strong); }
+.projection-tree-row--raiz .overview-input-difference,
+.projection-tree-row--grupo .overview-input-difference { color: var(--text-on-dark); }
+.overview-input-difference-button {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.overview-input-difference-button:hover,
+.overview-input-difference-button:focus-visible {
+  background: var(--bg-soft);
+  outline: 2px solid var(--accent-info);
+  outline-offset: -1px;
+}
+.overview-input-empty {
+  padding: 24px;
+  color: var(--text-soft);
+  text-align: center;
+}
+.overview-input-difference-summary {
+  grid-template-columns: repeat(3, minmax(150px, 1fr));
+}
+.overview-input-reconciliation,
+.overview-input-projection-result {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  background: var(--bg-soft);
+  color: var(--text-medium);
+  text-align: right;
+}
+.overview-input-reconciliation strong,
+.overview-input-projection-result strong { color: var(--text-strong); }
+
+@media (max-width: 760px) {
+  .overview-input-detail-toolbar { align-items: stretch; }
+  .overview-input-detail-toolbar > div:first-child { width: 100%; }
+  .overview-input-detail-toolbar .projection-detail-filters { flex-wrap: wrap; }
+  .overview-input-detail-toolbar .projection-detail-filters :is(input[type=search], select) {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+  .overview-input-detail-toolbar .toolbar-count { flex-basis: 100%; }
+  .overview-input-difference-summary { grid-template-columns: 1fr; }
+  .overview-input-table-wrap { max-height: 620px; }
+  .overview-input-table th:first-child,
+  .overview-input-table td:first-child { position: static; }
+}
 
 @media (max-width: 900px) {
   .header { flex-wrap: wrap; }

@@ -983,6 +983,82 @@ function toggleProjectionChartLock(chartContext) {
   syncProjectionChartLockUi();
 }
 
+export function buildProjectionSnapshot({
+  rows = [],
+  flows = [],
+  dataCorte,
+  dataFim,
+  janelaMeses = 6,
+  hierarchy = HIERARQUIA,
+} = {}) {
+  const porServico = {};
+  const porInsumo = {};
+  for (const row of rows) {
+    if (!porServico[row.servico]) porServico[row.servico] = {};
+    porServico[row.servico][row.mes] =
+      (porServico[row.servico][row.mes] || 0) + (Number(row.valor) || 0);
+    const key = `${row.servico}|${row.insumo}`;
+    if (!porInsumo[key]) {
+      porInsumo[key] = { servico: row.servico, insumo: row.insumo, meses: {} };
+    }
+    porInsumo[key].meses[row.mes] = (porInsumo[key].meses[row.mes] || 0) + (Number(row.valor) || 0);
+  }
+
+  const serviceProjections = Object.entries(porServico).map(([servico, months]) =>
+    projetarServico(servico, months, dataCorte, dataFim, janelaMeses),
+  );
+  const individualInputProjections = Object.values(porInsumo).map((item) => ({
+    ...projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses),
+    insumo: item.insumo,
+  }));
+  const inputProjections = distributeServiceProjection(
+    serviceProjections,
+    individualInputProjections,
+  );
+  const monthlyModel = buildProjectionMonthlyTableModel({
+    projections: inputProjections,
+    flows,
+    dataCorte,
+    dataFim,
+    hierarchy,
+  });
+
+  return {
+    rows,
+    flows,
+    dataCorte,
+    dataFim,
+    janelaMeses,
+    porServico,
+    serviceProjections,
+    inputProjections,
+    monthlyModel,
+    rootMetrics: monthlyModel.root?.metrics || {
+      planned: 0,
+      realized: 0,
+      balance: 0,
+      extrapolation: 0,
+      pendingFlows: 0,
+      tendency: 0,
+    },
+  };
+}
+
+function buildActiveProjectionSnapshot() {
+  const rows = getProjRawObraAtiva();
+  const dataCorte = document.getElementById('projDataCorte')?.value || defaultDataCorte();
+  const dataFim =
+    document.getElementById('projDataFim')?.value || savedDataFim() || defaultDataFim();
+  const janelaMeses = parseInt(document.getElementById('projMetodo')?.value) || 6;
+  return buildProjectionSnapshot({
+    rows,
+    flows: getFlowsObraAtiva(),
+    dataCorte,
+    dataFim,
+    janelaMeses,
+  });
+}
+
 function renderProjecao() {
   // v0.58b: filtra APP_STATE.dados.projRaw pela obra ativa
   const PROJ_OBRA = getProjRawObraAtiva();
@@ -995,48 +1071,14 @@ function renderProjecao() {
   if (source) source.textContent = activeProjectionManagement();
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
-  const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
   const tolerancia = parseNumber(document.getElementById('projTolerancia').value) ?? 0;
-
-  // Agregar por serviço e por insumo
-  const porServico = {};
-  const porInsumo = {}; // chave "servico|insumo"
-  PROJ_OBRA.forEach((r) => {
-    if (!porServico[r.servico]) porServico[r.servico] = {};
-    porServico[r.servico][r.mes] = (porServico[r.servico][r.mes] || 0) + r.valor;
-    const k = r.servico + '|' + r.insumo;
-    if (!porInsumo[k]) porInsumo[k] = { servico: r.servico, insumo: r.insumo, meses: {} };
-    porInsumo[k].meses[r.mes] = (porInsumo[k].meses[r.mes] || 0) + r.valor;
-  });
-
-  // Projetar cada serviço
-  const projServicos = Object.entries(porServico).map(([s, meses]) =>
-    projetarServico(s, meses, dataCorte, dataFim, janelaMeses),
-  );
-
-  // Projetar cada insumo (herda regra de extrapolação do serviço pai)
-  const projInsumosIndividuais = Object.values(porInsumo)
-    .map((item) => projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses))
-    .map((proj, idx) => {
-      const item = Object.values(porInsumo)[idx];
-      return { ...proj, insumo: item.insumo };
-    });
-  const projInsumos = distributeServiceProjection(projServicos, projInsumosIndividuais);
-  const flowsObra = getFlowsObraAtiva();
-  projectionMonthlyTableModel = buildProjectionMonthlyTableModel({
-    projections: projInsumos,
-    flows: flowsObra,
-    dataCorte,
-    dataFim,
-  });
-  const rootMetrics = projectionMonthlyTableModel.root?.metrics || {
-    planned: 0,
-    realized: 0,
-    balance: 0,
-    extrapolation: 0,
-    pendingFlows: 0,
-    tendency: 0,
-  };
+  const snapshot = buildActiveProjectionSnapshot();
+  const porServico = snapshot.porServico;
+  const projServicos = snapshot.serviceProjections;
+  const projInsumos = snapshot.inputProjections;
+  const flowsObra = snapshot.flows;
+  projectionMonthlyTableModel = snapshot.monthlyModel;
+  const rootMetrics = snapshot.rootMetrics;
 
   // KPIs gerais
   const totRealizado = rootMetrics.realized;
@@ -2773,6 +2815,7 @@ export function createProjectionView({
     initProjecao,
     calcularFlowsPendentesPorGrupo,
     projetarServico,
+    buildSnapshot: buildActiveProjectionSnapshot,
     renderProjecao,
     toggleProjExpand,
     openProjDrill,

@@ -1,5 +1,6 @@
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { escHtml } from '../formatters.mjs';
+import { createOverviewDetailView } from './overview-detail-view.mjs';
 import {
   formatCompactNumber as fmtR$k,
   formatNumber as fmtR$,
@@ -11,7 +12,6 @@ let runAsyncSafely;
 let resolveColor;
 let renderApexChart;
 let destroyApexChart;
-let getProjRawObraAtiva;
 let getFlowsObraAtiva;
 let SafeStorage;
 let renderDashboardState;
@@ -21,11 +21,10 @@ let APP_STATE;
 let refreshHeaderSubtitle;
 let verificarDadosDesatualizados;
 let calcularFlowsPendentesPorGrupo;
-let defaultDataCorte;
-let defaultDataFim;
-let projetarServico;
+let buildProjectionSnapshot;
 let getProjectionControlState;
 let getAllMovimentacoes;
+let overviewDetailView;
 
 // ============ VISÃO GERAL ============
 // APP_STATE.config.gestaoLabel, APP_STATE.config.evolGlobal, APP_STATE.config.card3Modo, APP_STATE.config.correcaoIndice
@@ -238,19 +237,25 @@ export function buildOverviewProjectionMetrics({
   directTendency = 0,
   projectionReserve = 0,
 }) {
-  const projectedTotal = management + indirectTendency + directTendency;
-  const managementVsCorrected = management - correctedBudget;
-  const grossDifference = projectedTotal - correctedBudget;
-  const liquidProjectedTotal = projectedTotal - projectionReserve;
-  const liquidDifference = liquidProjectedTotal - correctedBudget;
+  const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+  const corrected = roundCurrency(correctedBudget);
+  const managed = roundCurrency(management);
+  const indirect = roundCurrency(indirectTendency);
+  const direct = roundCurrency(directTendency);
+  const reserve = roundCurrency(projectionReserve);
+  const projectedTotal = roundCurrency(managed + indirect + direct);
+  const managementVsCorrected = roundCurrency(managed - corrected);
+  const grossDifference = roundCurrency(projectedTotal - corrected);
+  const liquidProjectedTotal = roundCurrency(projectedTotal - reserve);
+  const liquidDifference = roundCurrency(liquidProjectedTotal - corrected);
   return {
     projectedTotal,
     managementVsCorrected,
     grossDifference,
     liquidProjectedTotal,
     liquidDifference,
-    grossPercentage: correctedBudget ? (grossDifference / correctedBudget) * 100 : 0,
-    liquidPercentage: correctedBudget ? (liquidDifference / correctedBudget) * 100 : 0,
+    grossPercentage: corrected ? (grossDifference / corrected) * 100 : 0,
+    liquidPercentage: corrected ? (liquidDifference / corrected) * 100 : 0,
   };
 }
 
@@ -276,6 +281,13 @@ function renderVisao({ cardsOnly = false } = {}) {
       renderDashboardState(donutEl, { title: 'Sem composição disponível', compact: true });
     if (donutLegendEl) donutLegendEl.replaceChildren();
     if (donutCenterEl) donutCenterEl.hidden = true;
+    const detailBody = document.getElementById('overviewInputTbody');
+    if (detailBody) {
+      replaceWithParsedMarkup(
+        detailBody,
+        '<tr><td colspan="4" class="overview-input-empty">Sem insumos para detalhar.</td></tr>',
+      );
+    }
     refreshHeaderSubtitle();
     verificarDadosDesatualizados();
     return;
@@ -325,27 +337,13 @@ function renderVisao({ cardsOnly = false } = {}) {
           'Projeção de Gastos': 0,
           Outros: 0,
         };
-  // Calcular extrapolação dos Indiretos rodando uma "mini-projeção" rápida
-  let totExtrapInd = 0;
-  // v0.58b: usa APP_STATE.dados.projRaw filtrado pela obra ativa
-  const _PROJ_VG =
-    typeof getProjRawObraAtiva === 'function' ? getProjRawObraAtiva() : APP_STATE.dados.projRaw;
-  if (Array.isArray(_PROJ_VG) && _PROJ_VG.length && typeof projetarServico === 'function') {
-    const dataCorteVG = document.getElementById('projDataCorte')?.value || defaultDataCorte();
-    const dataFimVG = document.getElementById('projDataFim')?.value || defaultDataFim();
-    const janelaVG = parseInt(document.getElementById('projMetodo')?.value) || 6;
-    const porServVG = {};
-    _PROJ_VG.forEach((r) => {
-      if (!porServVG[r.servico]) porServVG[r.servico] = {};
-      porServVG[r.servico][r.mes] = (porServVG[r.servico][r.mes] || 0) + r.valor;
-    });
-    Object.entries(porServVG).forEach(([s, meses]) => {
-      const p = projetarServico(s, meses, dataCorteVG, dataFimVG, janelaVG);
-      if (p.grupo === 'Custos Indiretos' || p.grupo === 'Projeção de Gastos') {
-        totExtrapInd += p.extrapolacao || 0;
-      }
-    });
-  }
+  const projectionSnapshot = buildProjectionSnapshot();
+  const totExtrapInd = projectionSnapshot.serviceProjections
+    .filter(
+      (projection) =>
+        projection.grupo === 'Custos Indiretos' || projection.grupo === 'Projeção de Gastos',
+    )
+    .reduce((sum, projection) => sum + (projection.extrapolacao || 0), 0);
   const tendIndiretos =
     totExtrapInd + flowsPend['Custos Indiretos'] + flowsPend['Projeção de Gastos'];
   const tendDiretos =
@@ -519,6 +517,12 @@ function renderVisao({ cardsOnly = false } = {}) {
     ${renderCardAderencia()}
   `,
   );
+
+  overviewDetailView.render({
+    snapshot: projectionSnapshot,
+    correctedBudget: totCorrigido,
+    finalTendency: tendFinal,
+  });
 
   if (cardsOnly) return;
 
@@ -746,7 +750,10 @@ function renderDonut(tipoSum) {
 
 export function createOverviewView({
   runtime,
+  loadXlsx,
   storage,
+  feedback,
+  modals,
   viewStates,
   dashboardRepository,
   authService,
@@ -760,7 +767,6 @@ export function createOverviewView({
   resolveColor = runtime.resolveColor;
   renderApexChart = runtime.renderApexChart;
   destroyApexChart = runtime.destroyApexChart;
-  getProjRawObraAtiva = runtime.getActiveProjection;
   getFlowsObraAtiva = runtime.getActiveFlows;
   SafeStorage = storage;
   renderDashboardState = viewStates.render;
@@ -770,11 +776,17 @@ export function createOverviewView({
   refreshHeaderSubtitle = shell.refreshHeaderSubtitle;
   verificarDadosDesatualizados = shell.verificarDadosDesatualizados;
   calcularFlowsPendentesPorGrupo = projection.calcularFlowsPendentesPorGrupo;
-  defaultDataCorte = projection.defaultDataCorte;
-  defaultDataFim = projection.defaultDataFim;
-  projetarServico = projection.projetarServico;
+  buildProjectionSnapshot = projection.buildSnapshot;
   getProjectionControlState = projectionControl.getState;
   getAllMovimentacoes = projectionControl.getAllMovimentacoes;
+  overviewDetailView = createOverviewDetailView({
+    storage,
+    feedback,
+    modals,
+    loadXlsx,
+    state,
+    reportNonFatalError,
+  });
   return Object.freeze({
     renderAderenciaProj,
     irParaAba,
@@ -783,5 +795,10 @@ export function createOverviewView({
     toggleDonutSlice,
     setCard3Modo,
     setCorrecaoIndice,
+    overviewInputExpandAll: overviewDetailView.expandAll,
+    overviewInputCollapseAll: overviewDetailView.collapseAll,
+    resetOverviewInputColumnWidths: overviewDetailView.resetWidths,
+    openOverviewInputDifference: overviewDetailView.openDifference,
+    exportOverviewInputDetail: overviewDetailView.exportExcel,
   });
 }

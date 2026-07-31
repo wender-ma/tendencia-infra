@@ -99,6 +99,14 @@ assert(
   'Visão Geral não deve reintroduzir os rankings Top 10 removidos',
 );
 assert(
+  html.includes('id="overviewInputTable"') &&
+    html.includes('id="overviewInputSearch"') &&
+    html.includes('data-click-action="exportOverviewInputDetail"') &&
+    overview.includes('overviewDetailView.render') &&
+    overview.includes('snapshot: projectionSnapshot'),
+  'Visão Geral deve renderizar o detalhamento por insumo a partir do snapshot compartilhado',
+);
+assert(
   overview.includes('overview-tone--${signedTone(-reservaProj)}'),
   'Projeção de gastos deve exibir economia em verde e estouro em vermelho',
 );

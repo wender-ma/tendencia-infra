@@ -418,7 +418,10 @@ Promise.resolve()
     actionRegistry.register(ui.projection);
     ui.overview = createOverviewView({
       runtime: dashboardRuntime,
+      loadXlsx: ensureXlsx,
       storage: storageService,
+      feedback: feedbackService,
+      modals: modalService,
       viewStates: viewStateService,
       dashboardRepository,
       authService,

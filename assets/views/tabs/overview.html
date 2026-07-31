@@ -25,3 +25,58 @@
       </div>
     </div>
   </div>
+
+  <div class="card overview-input-detail-card">
+    <div class="projection-detail-toolbar overview-input-detail-toolbar">
+      <div>
+        <h2 class="projection-detail-title">🔍 Detalhamento de Insumos</h2>
+        <span id="overviewInputSource" class="hint"></span>
+      </div>
+      <div class="toolbar projection-detail-filters">
+        <input
+          type="search"
+          id="overviewInputSearch"
+          aria-label="Buscar no detalhamento de insumos"
+          placeholder="🔍 Buscar descrição ou código..."
+        />
+        <select id="overviewInputGroup" aria-label="Filtrar detalhamento por grupo">
+          <option value="">Todos os grupos</option>
+        </select>
+        <span class="toolbar-count" id="overviewInputCount"></span>
+      </div>
+      <div class="panel-actions projection-detail-actions">
+        <button class="btn-sm compact" data-click-action="overviewInputExpandAll">
+          📂 Expandir tudo
+        </button>
+        <button class="btn-sm compact" data-click-action="overviewInputCollapseAll">
+          📁 Recolher tudo
+        </button>
+        <button
+          class="btn-sm compact icon-only"
+          data-click-action="resetOverviewInputColumnWidths"
+          title="Restaurar larguras das colunas"
+          aria-label="Restaurar larguras das colunas"
+        >
+          ↔
+        </button>
+        <button
+          class="btn-sm compact"
+          data-click-action="exportOverviewInputDetail"
+          title="Exportar o detalhamento completo em Excel"
+        >
+          💾 Exportar
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap overview-input-table-wrap">
+      <table id="overviewInputTable" class="projection-monthly-table overview-input-table">
+        <colgroup id="overviewInputColgroup"></colgroup>
+        <thead id="overviewInputThead"></thead>
+        <tbody id="overviewInputTbody"></tbody>
+      </table>
+    </div>
+    <div class="table-note">
+      A Tendência Final inclui a Gestão-base, a projeção automática e os Flows pendentes. Clique na
+      diferença para ver a composição conciliada.
+    </div>
+  </div>

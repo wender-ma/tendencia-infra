@@ -35,7 +35,7 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] **EXT-03 concluído** Validar o domínio publicado: o responsável confirmou dados, recarga, abas, troca de obra e administração sem erros funcionais em 27/07/2026.
 - [x] **EXT-10 concluído** Aplicar `20260728235000_release_hardening.sql` no Supabase de produção; auditoria remota confirmou o contrato público e as duas RPCs em 29/07/2026.
 - [x] **EXT-11 concluído** Secrets cadastrados e primeiro backup diário criptografado criado, verificado e armazenado pelo GitHub Actions em 29/07/2026.
-- [x] **EXT-12 concluído** Vercel configurada para publicar a branch `production`; CI promoveu e publicou o SHA validado `83828bd` em 29/07/2026.
+- [x] **EXT-12 concluído** O release `83828bd` foi promovido pela branch `production` em 29/07/2026; o fluxo foi posteriormente simplificado pelo commit `f1cb9fe` para publicação direta da `main`, com gate operacional de CI, deployment e smoke.
 - [x] **EXT-13 concluído** Desativar novos cadastros no Supabase Auth; Management API confirmou `disable_signup: true` e login por Email/Google ativo em 29/07/2026.
 
 ## Versão 1.7.0
@@ -392,7 +392,7 @@ Use esta seção para registrar decisões que alterem o roadmap.
 | 28/07/2026 | Revisão de lançamento: contrato público mínimo, upload de obras transacional, autocadastro fechado, release promovido apenas após CI, healthcheck e backup diário criptografado preparados | `20260728235000_release_hardening.sql`, `ci.yml`, `production-smoke.yml`, `production-backup.yml` |
 | 29/07/2026 | EXT-10 concluído: hardening de produção auditado em modo somente leitura com 59 colunas públicas, nenhuma coluna extra, quatro policies e duas RPCs | `audit_supabase_inventory.mjs`, `verify_release_hardening_deployment.sql` |
 | 29/07/2026 | EXT-13 concluído: autocadastro bloqueado no frontend e no Supabase Auth, preservando Email e Google para contas existentes | `auth-ui.mjs`, `config.js`, `external_actions.md` |
-| 29/07/2026 | EXT-12 concluído: CI verde promoveu `83828bd` de `main` para `production`; Vercel publicou o mesmo SHA e os smokes público e autenticado passaram | `ci.yml`, `run_public_healthcheck.mjs`, `run_local_release_smoke.mjs` |
+| 29/07/2026 | EXT-12 concluído: CI verde promoveu `83828bd` de `main` para `production`; depois, `f1cb9fe` removeu a promoção e restaurou o deploy direto da `main` | `ci.yml`, `run_public_healthcheck.mjs`, `run_local_release_smoke.mjs` |
 | 29/07/2026 | EXT-11 concluído: workflow `30416195831` criou e verificou o dump PostgreSQL 17 criptografado; artefato de 403.593 bytes retido até 12/08/2026 | `production-backup.yml`, `backup_database.sh`, `verify_database_backup.sh` |
 | 27/07/2026 | Parser DOM passou a preservar o contexto de tabelas dinâmicas; 228 linhas reais em cinco visões mantiveram 7–11 células corretas, com larguras estáveis e rolagem interna em desktop/mobile | `ui/dom.mjs`, `dashboard.css`, `workflows.spec.js` |
 | 27/07/2026 | Janela de estabilidade de `snapshots` definida em sete dias corridos, de 27/07 a 03/08/2026; auditoria read-only e limpeza transacional preparadas com gates de data, inventário, concorrência e preservação dos snapshots | `verify_legacy_dataset_cleanup.sql`, `cleanup_legacy_dashboard_datasets.sql` |

@@ -68,9 +68,11 @@ local e nao deve receber valores reais versionados.
 
 O deploy do frontend não aplica migrations nem altera o banco. Depois da publicação, confirme o carregamento, login, troca de obra e headers HTTP no domínio final.
 
-O CI valida a `main` e somente depois promove o mesmo SHA para a branch
-`production`. Na Vercel, configure **Settings > Git > Production Branch** como
-`production`; assim um commit com CI vermelho não vira deployment de produção.
+Desde o commit `f1cb9fe`, a Vercel publica diretamente a branch `main` e o CI não
+move mais uma branch intermediária. O deployment pode começar enquanto o workflow
+ainda está em execução; por isso um release só deve ser considerado concluído após
+confirmar, para o mesmo SHA, CI verde, deployment `Production / Ready` e smoke no
+domínio oficial.
 
 ### Falha de deploy por configuracao
 

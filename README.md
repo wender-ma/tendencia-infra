@@ -38,7 +38,7 @@ Dashboard de tendência orçamentária
 - `assets/js/config.js`: configurações imutáveis, chaves de armazenamento e variáveis de ambiente.
 - `assets/js/state.js`: estado compartilhado de dados, obra ativa, filtros, uploads e preferências.
 - `assets/js/performance.mjs`: métricas locais de boot, DOM, parsing e renderização.
-- `assets/js/parsers/`: parsers testáveis de Tendência, Flows e Gestões e normalizadores compartilhados.
+- `assets/js/parsers/`: parsers testáveis de Tendência, Flows, Gestões e Cronograma Físico, além dos normalizadores compartilhados.
 - `assets/js/ui/`: serviços compartilhados de feedback, loading e modais acessíveis.
 - `public/_headers`: headers defensivos e política de cache para hospedagem estática compatível.
 - `vercel.json`: build, saída e headers aplicados no ambiente publicado da Vercel.
@@ -198,7 +198,7 @@ versionado estiver indisponivel. A troca para `snapshots` e o rollback para `dua
 nao exigem alteracao de codigo, mas devem seguir o inventario e os gates descritos
 em `docs/operations.md`.
 
-No modelo multiobra, Tendência é versionada por obra; Flows, Curva S e a grade
+No modelo multiobra, Tendência e Cronograma Físico são versionados separadamente por obra; Flows, Curva S e a grade
 mensal da Projeção Detalhada usam bases globais consolidadas. O histórico de arquivos segue o mesmo
 escopo depois da migration
 `supabase/migrations/20260728193000_global_upload_history.sql`, que também garante
@@ -214,6 +214,12 @@ uma única versão ativa por base e adiciona o reset global isolado.
 - A projeção automática calcula ritmo e último mês planejado separadamente para
   cada insumo. A janela de `3`, `6` ou `12` meses inclui meses zerados e não gera
   extrapolação quando a média líquida for negativa.
+- O Cronograma Físico usa `Código EAP` como identificador e `Total (R$)` apenas
+  como peso físico. O corte é detectado pelo último avanço realizado e confirmado
+  no upload. A curva importada é normalizada pela evolução física oficial da obra.
+- O modelo híbrido compara ritmo recente, desmobilização física e custo por avanço,
+  escolhendo a alternativa de menor erro histórico por insumo. O administrador
+  pode ativá-lo por obra ou voltar imediatamente ao cálculo atual.
 - O Planejamento de Mão de Obra controla `ADM5189` e `CONDH271` por cargo, custo
   unitário e quantidade mensal. Quando ativado para um insumo, substitui o futuro
   da Gestão e sua extrapolação automática, preservando realizado e Flows pendentes.

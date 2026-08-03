@@ -3,7 +3,7 @@ function projectKey(key, project) {
 }
 
 export function buildUploadDashboardRows(
-  { tendency, flows, history, projectionRaw, managementLabel, evolution },
+  { tendency, flows, history, projectionRaw, physicalSchedule, managementLabel, evolution },
   kinds,
   project,
   date = new Date(),
@@ -38,6 +38,9 @@ export function buildUploadDashboardRows(
       dataKeys.PROJ_RAW,
       JSON.stringify(Array.isArray(projectionRaw) ? projectionRaw : []),
     );
+  }
+  if (requested.includes('cronograma_fisico') && !physicalSchedule?.items?.length) {
+    throw new Error('Cronograma Físico sem dados válidos para persistir');
   }
 
   const updatedAt = date.toISOString();

@@ -1,5 +1,71 @@
 const { expect, test } = require('@playwright/test');
 
+test('cronograma físico compara modelos e restringe a ativação ao administrador', async ({
+  page,
+}) => {
+  await page.route('https://*.supabase.co/**', (route) => route.abort());
+  await page.goto('/');
+  await page.waitForFunction(
+    () => window.dashboardServices?.performance.snapshot().boot.completed === true,
+  );
+
+  await page.evaluate(() => {
+    const { state } = window.dashboardServices;
+    state.obra.ativa = 'OBRA-FISICA';
+    state.config.evolGlobal = { teorica: 35, financeira: 40 };
+    state.config.projectionForecast = { active: false, overrides: {} };
+    state.dados.projRaw = Array.from({ length: 8 }, (_, index) => ({
+      codigo_obra: 'OBRA-FISICA',
+      servico: 'S05765',
+      insumo: 'ADM5189',
+      valor: 100 + index * 10,
+      mes: `2026-${String(index + 1).padStart(2, '0')}`,
+    }));
+    state.dados.physicalSchedule = {
+      items: [{ code: '1', description: 'Administração', total: 100, weight: 1 }],
+      months: ['2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11'],
+      curve: [
+        { month: '2026-06', planned: 30, actual: 28 },
+        { month: '2026-07', planned: 36, actual: 35 },
+        { month: '2026-08', planned: 48, actual: 35 },
+        { month: '2026-09', planned: 64, actual: 35 },
+        { month: '2026-10', planned: 82, actual: 35 },
+        { month: '2026-11', planned: 100, actual: 35 },
+      ],
+      cutoffMonth: '2026-07',
+      sourceFile: 'cronograma-fisico.xlsx',
+    };
+  });
+
+  await page.locator('#tab-btn-projecao').click();
+  await page.locator('#projDataFim').fill('2026-11');
+  await page.locator('#projDataFim').dispatchEvent('change');
+  await expect(page.locator('#projectionForecastMethodology')).toContainText(
+    'cronograma-fisico.xlsx',
+  );
+  await expect(page.locator('#projectionForecastMethodology')).toContainText('Cálculo atual');
+  await expect(page.locator('#projectionForecastMethodology')).toContainText(
+    'Modelo recomendado',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Ativar modelo recomendado' }),
+  ).toHaveCount(0);
+
+  await page.evaluate(() => {
+    Object.assign(window.dashboardServices.auth.state, {
+      ready: true,
+      user: { email: 'admin@example.com' },
+      isAdminGeral: true,
+      isEditor: true,
+      isPending: false,
+      editaObras: [],
+    });
+    window.dashboardServices.authUi.updateAuthUI();
+    window.dashboardServices.views.projection.renderProjecao();
+  });
+  await expect(page.getByRole('button', { name: 'Ativar modelo recomendado' })).toBeVisible();
+});
+
 test('projeção mensal reconcilia card, detalhamento e data prevista de término', async ({
   page,
 }) => {

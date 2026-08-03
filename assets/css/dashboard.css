@@ -1046,6 +1046,107 @@ body:not(.is-admin-geral) [data-admin-control],
 .project-tendency-card .upload-card-meta {
   flex: 1;
 }
+.project-upload-dataset {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.project-upload-dataset:first-of-type {
+  margin-top: 8px;
+}
+.project-upload-dataset + .project-upload-dataset {
+  margin-top: 12px;
+}
+.project-upload-dataset-title {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-strong);
+  font-size: 12px;
+}
+.projection-forecast-heading,
+.projection-forecast-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.projection-forecast-heading h2 {
+  margin: 0;
+}
+.projection-forecast-heading p,
+.projection-forecast-empty,
+.projection-forecast-footer span {
+  margin: 3px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+.projection-forecast-comparison {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 12px 0;
+  background: var(--border);
+}
+.projection-forecast-comparison > div {
+  padding: 10px 12px;
+  background: var(--bg-card);
+}
+.projection-forecast-comparison span,
+.projection-forecast-comparison strong {
+  display: block;
+}
+@media (max-width: 700px) {
+  .projection-forecast-heading,
+  .projection-forecast-footer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .projection-forecast-comparison {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.projection-workforce-activation small {
+  color: var(--text-soft);
+  font-size: 9px;
+}
+.projection-workforce-activation-help {
+  margin: 4px 0 10px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+.projection-modal-forecast {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+.projection-modal-forecast span,
+.projection-modal-forecast strong,
+.projection-modal-forecast small {
+  display: block;
+}
+.projection-modal-forecast span,
+.projection-modal-forecast small,
+.projection-modal-forecast label {
+  color: var(--text-soft);
+  font-size: 10.5px;
+}
+.projection-modal-forecast strong {
+  margin: 2px 0;
+  color: var(--text-strong);
+}
+.projection-forecast-comparison span {
+  color: var(--text-soft);
+  font-size: 10.5px;
+}
+.projection-forecast-comparison strong {
+  margin-top: 3px;
+  color: var(--text-strong);
+  font-size: 15px;
+}
 .project-tendency-heading {
   display: flex;
   min-width: 0;

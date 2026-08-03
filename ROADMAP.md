@@ -54,6 +54,22 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 
 Critério de conclusão: atendido em 03/08/2026; migration auditada, arquivo global reprocessado, totais reais reconciliados e `v1.7.0` publicada na Vercel.
 
+## Versão 1.8.0
+
+- [x] Validar o novo Cronograma Físico-Financeiro, preservando atividades repetidas pela chave `Código EAP`.
+- [x] Usar `Total (R$)` exclusivamente como peso da evolução física, sem alterar valores orçamentários.
+- [x] Detectar o último mês com avanço realizado e exigir confirmação do corte antes de gravar o upload.
+- [x] Criar upload, histórico, ativação, retenção e snapshot independentes por obra para o Cronograma Físico.
+- [x] Normalizar a curva importada pela evolução física oficial e usar `Previsto` como formato do avanço futuro.
+- [x] Comparar ritmo ponderado, desmobilização física e custo por avanço com backtest por insumo.
+- [x] Integrar a recomendação aos cards, Curva S, Projeção Detalhada, modais e Excel usando um snapshot único.
+- [x] Manter o cálculo atual como oficial por padrão e restringir a ativação do modelo híbrido ao administrador.
+- [x] Criar migration, rollback, auditoria e contratos de RLS, reset e persistência por obra.
+- [x] **EXT-16 concluída** Aplicar `20260803150000_physical_schedule_datasets.sql` em produção e executar `verify_physical_schedule_deployment.sql`; auditoria confirmou os três escopos físicos e o reset em 03/08/2026.
+- [ ] **AÇÃO EXTERNA EXT-17** Enviar o Cronograma Físico da obra, confirmar o corte e comparar os dois modelos com dados reais.
+
+Critério de conclusão: migration auditada, cronograma ativo em produção, recomendação real conferida e `v1.8.0` publicada na Vercel.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

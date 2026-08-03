@@ -480,7 +480,7 @@ export function createUploadRepository({
     const project = activeProject();
     if (!supabase || !getCurrentUser?.() || !project) return {};
     const result = {};
-    for (const kind of ['tendencia', 'flows', 'gestoes']) {
+    for (const kind of ['tendencia', 'cronograma_fisico', 'flows', 'gestoes']) {
       let query = supabase
         .from('upload_history')
         .select('*')
@@ -501,6 +501,10 @@ export function createUploadRepository({
   }
 
   async function loadLatestTendencies(projectCodes = []) {
+    return loadLatestProjectUploads(projectCodes, 'tendencia');
+  }
+
+  async function loadLatestProjectUploads(projectCodes = [], kind = 'tendencia') {
     const supabase = client();
     const projects = [
       ...new Set(projectCodes.map((code) => String(code || '').trim()).filter(Boolean)),
@@ -509,12 +513,12 @@ export function createUploadRepository({
     const { data, error } = await supabase
       .from('upload_history')
       .select('*')
-      .eq('tipo', 'tendencia')
+      .eq('tipo', kind)
       .eq('is_active', true)
       .in('codigo_obra', projects)
       .order('enviado_em', { ascending: false });
     if (error) {
-      warn('Uploads/carregar Tendências por obra', error);
+      warn(`Uploads/carregar ${kind} por obra`, error);
       return {};
     }
     const latest = {};
@@ -576,5 +580,6 @@ export function createUploadRepository({
     enforceRollingBackup,
     loadLatest,
     loadLatestTendencies,
+    loadLatestProjectUploads,
   });
 }

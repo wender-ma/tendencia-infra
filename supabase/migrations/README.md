@@ -24,6 +24,8 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Hardening de lançamento: limita o contrato público às colunas consumidas pelo painel, oculta obras inativas e blobs legados, e adiciona cadastro transacional de obras por upload.
 - Mês de reflexo dos Flows: adiciona `refletido_mes` às classificações, preservado entre uploads e exposto no contrato público operacional.
 - Planejamento de mão de obra: adiciona ativação por insumo e linhas mensais públicas por obra, com escrita restrita aos responsáveis autorizados.
+- Cronograma físico: adiciona snapshots e histórico independentes por obra, permite upload por responsáveis atribuídos e mantém a ativação da metodologia híbrida sob controle administrativo.
+- Cronograma físico em produção: migration aplicada e auditoria confirmou `complete: true`, escopos e reset habilitados em 03/08/2026.
 
 Teste local reproduzível:
 
@@ -58,6 +60,15 @@ Ordem de aplicação:
 7. `20260728235000_release_hardening.sql`
 8. `20260730175500_flow_reflection_month.sql`
 9. `20260731203000_projection_workforce.sql`
+10. `20260803150000_physical_schedule_datasets.sql`
+
+Depois da décima migration, execute:
+
+```text
+supabase/audit/verify_physical_schedule_deployment.sql
+```
+
+O resultado deve indicar `complete: true` antes de habilitar uploads físicos em produção.
 
 Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
 URL do SQL Editor.

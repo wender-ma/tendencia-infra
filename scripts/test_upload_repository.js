@@ -56,6 +56,11 @@ function assert(condition, message) {
       JSON.stringify({ codigoObra: null, storageRoot: '_global' }),
     'Escopo global de Flows está incorreto',
   );
+  assert(
+    JSON.stringify(uploadHistoryScope('cronograma_fisico', 'OBRA-A')) ===
+      JSON.stringify({ codigoObra: 'OBRA-A', storageRoot: 'OBRA-A' }),
+    'Escopo do Cronograma Físico está incorreto',
+  );
   assert(isGlobalUploadKind('flows') && isGlobalUploadKind('gestoes'));
   assert(
     buildScopedUploadStoragePath(

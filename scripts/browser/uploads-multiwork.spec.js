@@ -49,7 +49,17 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
   ).toBeEnabled();
   await expect(
     page.locator('.project-tendency-card').nth(0).getByRole('button', {
-      name: 'Histórico da obra',
+      name: 'Histórico da Tendência',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.locator('.project-tendency-card').nth(0).getByRole('button', {
+      name: 'Enviar Cronograma Físico',
+    }),
+  ).toBeEnabled();
+  await expect(
+    page.locator('.project-tendency-card').nth(0).getByRole('button', {
+      name: 'Histórico do Cronograma',
     }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Dados desta obra' })).toBeVisible();
@@ -72,8 +82,18 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
     }),
   ).toBeDisabled();
   await expect(
+    page.locator('.project-tendency-card[data-project="OBRA-A"]').getByRole('button', {
+      name: 'Enviar Cronograma Físico',
+    }),
+  ).toBeDisabled();
+  await expect(
     page.locator('.project-tendency-card[data-project="OBRA-B"]').getByRole('button', {
       name: 'Enviar Tendência',
+    }),
+  ).toBeEnabled();
+  await expect(
+    page.locator('.project-tendency-card[data-project="OBRA-B"]').getByRole('button', {
+      name: 'Enviar Cronograma Físico',
     }),
   ).toBeEnabled();
 
@@ -99,6 +119,12 @@ test('fontes publicadas permanecem visíveis e empilhadas sem metadados privados
       items: [{ codigo_obra: 'OBRA-A' }],
       gestoes: ['Atual'],
     };
+    window.dashboardServices.state.dados.physicalSchedule = {
+      items: [{ code: '1', description: 'Serviço', total: 100 }],
+      months: ['2026-07'],
+      curve: [{ month: '2026-07', planned: 35, actual: 31 }],
+      cutoffMonth: '2026-07',
+    };
     for (const kind of Object.keys(window.dashboardServices.state.uploads)) {
       window.dashboardServices.state.uploads[kind] = null;
     }
@@ -106,12 +132,12 @@ test('fontes publicadas permanecem visíveis e empilhadas sem metadados privados
   });
 
   const sources = page.locator('#srcHeader_global .src-item');
-  await expect(sources).toHaveCount(3);
+  await expect(sources).toHaveCount(4);
   await expect(page.locator('#srcHeader_global')).toContainText('dados publicados');
   await expect(page.locator('#srcHeader_global')).not.toContainText('(sem dados)');
   await expect(page.locator('#srcHeader_global .src-list')).toHaveCSS('display', 'grid');
   const positions = await sources.evaluateAll((items) => items.map((item) => item.offsetTop));
-  expect(new Set(positions).size).toBe(3);
+  expect(new Set(positions).size).toBe(4);
 });
 
 test('histórico global gerencia planilhas ativas e arquivadas', async ({ page }) => {

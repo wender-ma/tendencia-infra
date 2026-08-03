@@ -11,6 +11,7 @@ const cleanEnvironment = Object.fromEntries(
 );
 const validEnvironment = {
   ...cleanEnvironment,
+  PRODUCTION_ENV_FILE_LOADING: 'disabled',
   VITE_APP_ENV: 'production',
   VITE_SUPABASE_URL: 'https://production-example.supabase.co',
   VITE_SUPABASE_ANON_KEY: 'public-anon-key',

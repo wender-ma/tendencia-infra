@@ -27,10 +27,10 @@ export function isDatasetResetRpcUnavailable(error) {
 }
 
 export function datasetScope(type, activeProject) {
-  if (type === 'tendencia') {
+  if (['tendencia', 'cronograma_fisico'].includes(type)) {
     const project = String(activeProject || '').trim();
-    if (!project) throw new Error('Obra ativa obrigatória para o dataset de Tendência');
-    return { codigoObra: project, prefix: `${project}/tendencia` };
+    if (!project) throw new Error('Obra ativa obrigatória para o dataset por obra');
+    return { codigoObra: project, prefix: `${project}/${type}` };
   }
   if (['flows', 'historico', 'projecao_raw'].includes(type)) {
     return { codigoObra: null, prefix: `_global/${type}` };
@@ -50,6 +50,15 @@ export function buildDatasetEntries(dashboardData, kinds, activeProject, records
       rows: dashboardData.tendency?.length || 0,
       uploadHistoryId: uploadIds.get('tendencia') || null,
       ...datasetScope('tendencia', activeProject),
+    });
+  }
+  if (requested.has('cronograma_fisico')) {
+    entries.push({
+      type: 'cronograma_fisico',
+      data: dashboardData.physicalSchedule,
+      rows: dashboardData.physicalSchedule?.items?.length || 0,
+      uploadHistoryId: uploadIds.get('cronograma_fisico') || null,
+      ...datasetScope('cronograma_fisico', activeProject),
     });
   }
   if (requested.has('flows')) {
@@ -89,6 +98,9 @@ export function datasetRetentionScopes(kinds, activeProject) {
   if (requested.has('tendencia')) {
     scopes.push({ type: 'tendencia', ...datasetScope('tendencia', activeProject) });
   }
+  if (requested.has('cronograma_fisico')) {
+    scopes.push({ type: 'cronograma_fisico', ...datasetScope('cronograma_fisico', activeProject) });
+  }
   if (requested.has('flows')) {
     scopes.push({ type: 'flows', ...datasetScope('flows', activeProject) });
   }
@@ -105,7 +117,9 @@ function assertDatasetValue(entry) {
   const valid =
     entry.type === 'historico'
       ? entry.data && Array.isArray(entry.data.items) && entry.data.items.length > 0
-      : Array.isArray(entry.data) && entry.data.length > 0;
+      : entry.type === 'cronograma_fisico'
+        ? entry.data && Array.isArray(entry.data.items) && entry.data.items.length > 0
+        : Array.isArray(entry.data) && entry.data.length > 0;
   if (!valid) throw new Error(`Dataset ${entry.type} sem dados válidos para persistir`);
 }
 
@@ -225,14 +239,16 @@ export function createDashboardDatasetRepository({
   async function loadForDashboard() {
     const project = String(getActiveProject?.() || '').trim();
     if (!project || !(await checkAvailability())) return {};
-    const [tendency, flows, history, projectionRaw] = await Promise.all([
+    const [tendency, physicalSchedule, flows, history, projectionRaw] = await Promise.all([
       safeLoad('tendencia', project),
+      safeLoad('cronograma_fisico', project),
       safeLoad('flows', null),
       safeLoad('historico', null),
       safeLoad('projecao_raw', null),
     ]);
     return {
       ...(tendency ? { tendency: tendency.data } : {}),
+      ...(physicalSchedule ? { physicalSchedule: physicalSchedule.data } : {}),
       ...(flows ? { flows: flows.data } : {}),
       ...(history ? { history: history.data } : {}),
       ...(projectionRaw ? { projectionRaw: projectionRaw.data } : {}),

@@ -45,8 +45,10 @@ assert(
   'Comandos devem aparecer acima do status e da identidade',
 );
 assert(
-  html.includes('id="srcHeader_global" data-sources="tendencia,flows"'),
-  'Resumo global de Tendência e Flows deve ficar no cabeçalho',
+  html.includes(
+    'id="srcHeader_global" data-sources="tendencia,cronograma_fisico,flows" data-head-sources="gestoes"',
+  ),
+  'Resumo de Tendência, Cronograma Físico, Flows e Gestões deve ficar no cabeçalho',
 );
 assert(
   !html.includes('id="srcHeader_visao"'),

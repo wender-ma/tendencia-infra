@@ -128,13 +128,14 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     if (name === 'reset_dashboard_datasets') {
       const removed = rows.filter(
         (row) =>
-          (row.codigo_obra === params.p_codigo_obra && row.tipo === 'tendencia') ||
+          (row.codigo_obra === params.p_codigo_obra &&
+            ['tendencia', 'cronograma_fisico'].includes(row.tipo)) ||
           (params.p_include_global === true && row.codigo_obra == null),
       );
       removed.forEach((row) => rows.splice(rows.indexOf(row), 1));
       return {
         data: {
-          config_deleted: params.p_include_global ? 7 : 4,
+          config_deleted: params.p_include_global ? 8 : 5,
           datasets: removed.map(({ id, codigo_obra, tipo, storage_path }) => ({
             id,
             codigo_obra,
@@ -214,6 +215,10 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     codigoObra: 'OBRA-A',
     prefix: 'OBRA-A/tendencia',
   });
+  assert.deepStrictEqual(datasetScope('cronograma_fisico', 'OBRA-A'), {
+    codigoObra: 'OBRA-A',
+    prefix: 'OBRA-A/cronograma_fisico',
+  });
   assert.deepStrictEqual(datasetScope('flows', 'OBRA-A'), {
     codigoObra: null,
     prefix: '_global/flows',
@@ -222,6 +227,12 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
 
   const dashboardData = {
     tendency: [{ codigo_obra: 'OBRA-A', item: 1 }],
+    physicalSchedule: {
+      items: [{ code: '1', description: 'Serviço', total: 100 }],
+      months: ['2026-07'],
+      curve: [{ month: '2026-07', planned: 35, actual: 31 }],
+      cutoffMonth: '2026-07',
+    },
     flows: [{ codigo_obra: 'OBRA-A', n_alteracao: 'A1' }],
     history: { items: [{ codigo_obra: 'OBRA-A', insumo: 'I1' }], gestoes: [] },
     projectionRaw: [{ codigo_obra: 'OBRA-A', mes: '2026-01' }],
@@ -276,6 +287,7 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     '20000000-0000-0000-0000-000000000001',
     '20000000-0000-0000-0000-000000000002',
     '20000000-0000-0000-0000-000000000003',
+    '20000000-0000-0000-0000-000000000004',
   ];
   let tick = 0;
   const repository = createDashboardDatasetRepository({
@@ -295,6 +307,16 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   assert.strictEqual(supabase.objects.size, 1);
   assert.deepStrictEqual((await repository.loadForDashboard()).tendency, dashboardData.tendency);
 
+  const physical = await repository.saveForUpload(['cronograma_fisico'], dashboardData, [
+    { id: 2, tipo: 'cronograma_fisico' },
+  ]);
+  assert.strictEqual(physical.activations[0].current.codigo_obra, 'OBRA-A');
+  assert.strictEqual(physical.activations[0].current.tipo, 'cronograma_fisico');
+  assert.deepStrictEqual(
+    (await repository.loadForDashboard()).physicalSchedule,
+    dashboardData.physicalSchedule,
+  );
+
   const changedData = { ...dashboardData, tendency: [{ codigo_obra: 'OBRA-A', item: 2 }] };
   const second = await repository.saveForUpload(['tendencia'], changedData);
   assert.strictEqual(
@@ -302,8 +324,15 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
     'superseded',
   );
   await repository.rollbackSnapshots(second.activations);
-  assert.strictEqual(supabase.rows.length, 1);
-  assert.strictEqual(supabase.rows[0].status, 'active');
+  assert.strictEqual(supabase.rows.length, 2);
+  assert.strictEqual(
+    supabase.rows.find((row) => row.tipo === 'tendencia').status,
+    'active',
+  );
+  assert.strictEqual(
+    supabase.rows.find((row) => row.tipo === 'cronograma_fisico').status,
+    'active',
+  );
   assert.deepStrictEqual((await repository.loadForDashboard()).tendency, dashboardData.tendency);
 
   const global = await repository.saveForUpload(['flows'], dashboardData);
@@ -345,9 +374,9 @@ function createSupabaseMock({ schemaMissing = false } = {}) {
   const projectReset = await repository.resetDashboardData();
   assert.deepStrictEqual(projectReset, {
     available: true,
-    configDeleted: 4,
-    datasetCount: 1,
-    storageObjectsRemoved: 1,
+    configDeleted: 5,
+    datasetCount: 2,
+    storageObjectsRemoved: 2,
   });
   assert(supabase.rows.every((row) => row.codigo_obra == null));
   assert.strictEqual(supabase.objects.size, 1);

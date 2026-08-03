@@ -1,7 +1,10 @@
 import { loadEnv } from 'vite';
 
 const mode = 'production';
-const fileEnvironment = loadEnv(mode, 'config/env', 'VITE_');
+const fileEnvironment =
+  process.env.PRODUCTION_ENV_FILE_LOADING === 'disabled'
+    ? {}
+    : loadEnv(mode, 'config/env', 'VITE_');
 const processEnvironment = Object.fromEntries(
   Object.entries(process.env).filter(([name]) => name.startsWith('VITE_')),
 );

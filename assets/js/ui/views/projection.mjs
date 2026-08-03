@@ -10,6 +10,11 @@ import {
 } from '../dashboard-runtime.mjs';
 import { parseNumber } from '../../parsers/shared.mjs';
 import {
+  buildHybridInputForecast,
+  buildPhysicalForecastContext,
+  FORECAST_METHOD_LABELS,
+} from '../../services/projection-forecast.mjs';
+import {
   buildWorkforcePlan,
   normalizeWorkforceState,
   WORKFORCE_INPUTS,
@@ -33,6 +38,8 @@ let renderAderenciaProj;
 let getProjectionControlState;
 let workforceRepository;
 let canEditWorkforce;
+let forecastRepository;
+let canManageForecast;
 let renderVisao;
 let SafeStorage;
 let projectionSettingsProject = null;
@@ -287,6 +294,14 @@ export function buildProjectionCurve(
   const months = buildMonthRange(sourceMonths[0], chartEnd);
   const extrapolationByMonth = {};
   for (const projection of projections || []) {
+    if (projection.extrapolationByMonth) {
+      for (const [month, value] of Object.entries(projection.extrapolationByMonth)) {
+        if (month <= chartEnd) {
+          extrapolationByMonth[month] = (extrapolationByMonth[month] || 0) + (Number(value) || 0);
+        }
+      }
+      continue;
+    }
     if (
       projection.extrapolacao <= 0 ||
       !projection.ultimo_mes_planejado ||
@@ -523,12 +538,20 @@ export function buildProjectionDifferenceBreakdown({
     }
     const contribution = getContribution(projection.insumo);
     if (projection.servico) contribution.servicos.add(projection.servico);
-    const monthlyExtrapolation = projection.extrapolacao / projection.meses_gap;
-    let month = projection.ultimo_mes_planejado;
-    for (let index = 0; index < projection.meses_gap; index += 1) {
-      month = addMonths(month, 1);
-      if ((!dataFim || month <= dataFim) && month <= selectedMonth) {
-        contribution.extrapolacao += monthlyExtrapolation;
+    if (projection.extrapolationByMonth) {
+      for (const [month, value] of Object.entries(projection.extrapolationByMonth)) {
+        if ((!dataFim || month <= dataFim) && month <= selectedMonth) {
+          contribution.extrapolacao += Number(value) || 0;
+        }
+      }
+    } else {
+      const monthlyExtrapolation = projection.extrapolacao / projection.meses_gap;
+      let month = projection.ultimo_mes_planejado;
+      for (let index = 0; index < projection.meses_gap; index += 1) {
+        month = addMonths(month, 1);
+        if ((!dataFim || month <= dataFim) && month <= selectedMonth) {
+          contribution.extrapolacao += monthlyExtrapolation;
+        }
       }
     }
   }
@@ -661,7 +684,14 @@ function calcularFlowsPendentesPorGrupo() {
 }
 
 // Função central: calcula KPIs por SERVIÇO (a base de tudo)
-export function projetarServico(servico, meses, dataCorte, dataFim, janelaMeses) {
+export function projetarServico(
+  servico,
+  meses,
+  dataCorte,
+  dataFim,
+  janelaMeses,
+  forecastOptions = {},
+) {
   const mesesAteTermino = Object.entries(meses).filter(([mes]) => !dataFim || mes <= dataFim);
   const realizado = mesesAteTermino.filter(([m]) => m < dataCorte).reduce((s, [, v]) => s + v, 0);
   const planejadoFuturo = mesesAteTermino
@@ -686,6 +716,21 @@ export function projetarServico(servico, meses, dataCorte, dataFim, janelaMeses)
     extrapolacao = ritmoHist * mesesGap;
   }
 
+  const legacyExtrapolation = extrapolacao;
+  const hybrid = buildHybridInputForecast({
+    monthlyValues: meses,
+    dataCorte,
+    dataFim,
+    windowMonths: janelaMeses,
+    group: grupo,
+    physicalContext: forecastOptions.physicalContext,
+    override: forecastOptions.override || 'auto',
+  });
+  if (forecastOptions.useHybrid && hybrid.available) {
+    extrapolacao = hybrid.extrapolation;
+    mesesGap = Object.keys(hybrid.extrapolationByMonth).length;
+  }
+
   const tendencia = planejadoTotal + extrapolacao;
   const diff = tendencia - planejadoTotal; // = extrapolacao na prática
 
@@ -699,6 +744,17 @@ export function projetarServico(servico, meses, dataCorte, dataFim, janelaMeses)
     ritmo_historico: ritmoHist,
     meses_gap: mesesGap,
     extrapolacao,
+    extrapolationByMonth:
+      forecastOptions.useHybrid && hybrid.available ? hybrid.extrapolationByMonth : null,
+    legacy_extrapolacao: legacyExtrapolation,
+    recommended_extrapolacao: hybrid.available ? hybrid.extrapolation : legacyExtrapolation,
+    forecast_method:
+      forecastOptions.useHybrid && hybrid.available ? hybrid.selectedMethod : 'legacy',
+    forecast_recommended_method: hybrid.available ? hybrid.selectedMethod : 'legacy',
+    forecast_confidence: hybrid.confidence,
+    forecast_diagnostics: hybrid.diagnostics,
+    forecast_run_rate: hybrid.runRate ?? ritmoHist,
+    forecast_cost_per_point: hybrid.costPerPoint ?? null,
     tendencia,
     diff,
     meses, // para drill-down
@@ -791,6 +847,12 @@ function projectionMonthlyExtrapolation(projection, months, dataFim) {
   const result = Object.fromEntries(months.map((month) => [month, 0]));
   const target = roundCurrency(projection?.extrapolacao);
   if (Math.abs(target) < 0.005 || !projection?.ultimo_mes_planejado || projection.meses_gap <= 0) {
+    return result;
+  }
+  if (projection.extrapolationByMonth) {
+    for (const month of months) {
+      if (month <= dataFim) result[month] = roundCurrency(projection.extrapolationByMonth[month]);
+    }
     return result;
   }
   const extrapolationMonths = buildMonthRange(
@@ -1208,6 +1270,9 @@ export function buildProjectionSnapshot({
   hierarchy = HIERARQUIA,
   comparison = null,
   workforce = null,
+  physicalSchedule = null,
+  officialEvolution = null,
+  forecast = null,
 } = {}) {
   const porServico = {};
   const porInsumo = {};
@@ -1222,32 +1287,66 @@ export function buildProjectionSnapshot({
     porInsumo[key].meses[row.mes] = (porInsumo[key].meses[row.mes] || 0) + (Number(row.valor) || 0);
   }
 
-  const inputProjections = Object.values(porInsumo).map((item) => ({
-    ...projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses),
-    insumo: item.insumo,
-  }));
+  const physicalContext = buildPhysicalForecastContext({
+    schedule: physicalSchedule,
+    officialEvolution,
+    dataCorte,
+    dataFim,
+  });
+  const buildInputProjections = (useHybrid) =>
+    Object.values(porInsumo).map((item) => ({
+      ...projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses, {
+        physicalContext,
+        useHybrid,
+        override: forecast?.overrides?.[`${item.servico}|${item.insumo}`] || 'auto',
+      }),
+      insumo: item.insumo,
+    }));
+  const legacyProjections = buildInputProjections(false);
+  const recommendedProjections = buildInputProjections(true);
+  const hybridActive = Boolean(forecast?.active && physicalContext?.available);
+  const inputProjections = hybridActive ? recommendedProjections : legacyProjections;
   const serviceProjections = inputProjections;
   const workforcePlan = buildWorkforcePlan({
     settings: workforce?.settings,
     rows: workforce?.rows,
     months: buildMonthRange(dataCorte, dataFim),
   });
+  const buildMonthlyModel = (projections) =>
+    buildProjectionMonthlyTableModel({
+      projections,
+      flows,
+      dataCorte,
+      dataFim,
+      hierarchy,
+      comparison,
+      workforcePlan,
+    });
+  const legacyMonthlyModel = buildMonthlyModel(legacyProjections);
+  const recommendedMonthlyModel = buildMonthlyModel(recommendedProjections);
+  const monthlyModel = hybridActive ? recommendedMonthlyModel : legacyMonthlyModel;
   const workforceCurveAdjustments = buildWorkforceCurveAdjustments({
     inputProjections,
     workforcePlan,
     dataCorte,
     dataFim,
   });
-  const monthlyModel = buildProjectionMonthlyTableModel({
-    projections: inputProjections,
-    flows,
-    dataCorte,
-    dataFim,
-    hierarchy,
-    comparison,
-    workforcePlan,
-    workforceCurveAdjustments,
-  });
+  const methodCounts = recommendedProjections.reduce((counts, projection) => {
+    const method = projection.forecast_recommended_method || 'legacy';
+    counts[method] = (counts[method] || 0) + 1;
+    return counts;
+  }, {});
+  const forecastComparison = {
+    available: Boolean(physicalContext?.available),
+    active: hybridActive,
+    currentTotal: legacyMonthlyModel.root?.metrics?.tendency || 0,
+    recommendedTotal: recommendedMonthlyModel.root?.metrics?.tendency || 0,
+    methodCounts,
+    sourceCutoff: physicalContext?.sourceCutoff || null,
+    sourceFile: physicalContext?.sourceFile || '',
+  };
+  monthlyModel.forecastComparison = forecastComparison;
+  monthlyModel.physicalContext = physicalContext;
 
   return {
     rows,
@@ -1261,6 +1360,8 @@ export function buildProjectionSnapshot({
     monthlyModel,
     workforcePlan,
     workforceCurveAdjustments,
+    physicalContext,
+    forecastComparison,
     rootMetrics: monthlyModel.root?.metrics || {
       planned: 0,
       realized: 0,
@@ -1294,6 +1395,9 @@ function buildActiveProjectionSnapshot() {
     janelaMeses,
     comparison,
     workforce: APP_STATE?.dados?.workforce,
+    physicalSchedule: APP_STATE?.dados?.physicalSchedule,
+    officialEvolution: APP_STATE?.config?.evolGlobal?.teorica,
+    forecast: APP_STATE?.config?.projectionForecast,
   });
 }
 
@@ -1423,6 +1527,15 @@ function renderProjectionWorkforce(plan) {
       toggle.checked = normalized.enabledByInput[input];
       toggle.disabled = !editable;
     }
+    const status = document.getElementById(`workforceStatus${input}`);
+    if (status) status.textContent = normalized.enabledByInput[input] ? 'Ativo' : 'Inativo';
+  }
+  const activeInputs = WORKFORCE_INPUTS.filter((input) => normalized.enabledByInput[input]);
+  const help = document.getElementById('workforceActivationHelp');
+  if (help) {
+    help.textContent = activeInputs.length
+      ? `Ativo: substitui o futuro da Gestão e a extrapolação automática de ${activeInputs.join(' e ')}.`
+      : 'Inativo: as linhas cadastradas não entram na Tendência até que o insumo seja ativado.';
   }
   const addButton = document.querySelector('[data-click-action="addProjectionWorkforceRow"]');
   if (addButton) addButton.disabled = !editable;
@@ -1698,6 +1811,8 @@ function renderProjecao() {
     snapshot.workforceCurveAdjustments,
   );
 
+  renderProjectionForecastMethodology(snapshot);
+
   renderProjectionWorkforce(workforcePlan);
 
   // Aderência Físico × Financeira (renderiza se o container existir na página)
@@ -1709,6 +1824,99 @@ function renderProjecao() {
 
   // Tabela hierárquica
   renderProjectionMonthlyTable(projectionMonthlyTableModel);
+}
+
+function renderProjectionForecastMethodology(snapshot) {
+  const root = document.getElementById('projectionForecastMethodology');
+  if (!root) return;
+  const comparison = snapshot.forecastComparison;
+  if (!comparison?.available) {
+    replaceWithParsedMarkup(
+      root,
+      `<div class="projection-forecast-heading"><h2>🧭 Metodologia da Previsão</h2><span class="badge gray">MODELO ATUAL</span></div>
+       <p class="projection-forecast-empty">Cronograma Físico ainda não publicado para esta obra. A projeção permanece na média histórica simples.</p>`,
+    );
+    return;
+  }
+  const delta = comparison.recommendedTotal - comparison.currentTotal;
+  const counts = Object.entries(comparison.methodCounts || {})
+    .filter(([method]) => method !== 'legacy')
+    .map(([method, count]) => `${FORECAST_METHOD_LABELS[method] || method}: ${count}`)
+    .join(' · ');
+  const canManage = canManageForecast?.() === true;
+  replaceWithParsedMarkup(
+    root,
+    `<div class="projection-forecast-heading">
+       <div><h2>🧭 Metodologia da Previsão</h2><p>${escHtml(comparison.sourceFile || 'Cronograma físico ativo')} · corte ${escHtml(formatMonthLabel(comparison.sourceCutoff))}</p></div>
+       <span class="badge ${comparison.active ? 'green' : 'gray'}">${comparison.active ? 'HÍBRIDO ATIVO' : 'EM COMPARAÇÃO'}</span>
+     </div>
+     <div class="projection-forecast-comparison">
+       <div><span>Cálculo atual</span><strong>${fmtR$(comparison.currentTotal)}</strong></div>
+       <div><span>Modelo recomendado</span><strong>${fmtR$(comparison.recommendedTotal)}</strong></div>
+       <div><span>Impacto</span><strong class="projection-difference-value--${projectionDifferenceTone(delta)}">${delta >= 0 ? '+' : ''}${fmtR$(delta)}</strong></div>
+     </div>
+     <div class="projection-forecast-footer">
+       <span>${escHtml(counts || 'Sem insumos elegíveis para extrapolação automática')}</span>
+       ${canManage ? `<button class="btn-sm ${comparison.active ? '' : 'primary'}" data-click-action="toggleProjectionForecastMode" data-action-mode="arg" data-action-arg="${comparison.active ? 'legacy' : 'hybrid'}">${comparison.active ? '↩ Usar cálculo atual' : '✓ Ativar modelo recomendado'}</button>` : ''}
+     </div>`,
+  );
+}
+
+async function toggleProjectionForecastMode(mode) {
+  if (!canManageForecast?.()) {
+    authToast('Apenas administradores podem alterar a metodologia oficial.', 'warn', 4000);
+    return;
+  }
+  const config = {
+    ...(APP_STATE.config.projectionForecast || {}),
+    active: mode === 'hybrid',
+    overrides: { ...(APP_STATE.config.projectionForecast?.overrides || {}) },
+  };
+  try {
+    await forecastRepository.saveDashboardKey(
+      `${activeProjectionProjectKey()}:projection_forecast`,
+      JSON.stringify(config),
+    );
+    APP_STATE.config.projectionForecast = config;
+    renderProjecao();
+    renderVisao();
+    authToast(
+      config.active ? 'Modelo híbrido ativado para esta obra.' : 'Cálculo atual restaurado.',
+      'ok',
+      3500,
+    );
+  } catch (error) {
+    reportNonFatalError(
+      'Projeção/salvar metodologia',
+      error,
+      'A metodologia não pôde ser alterada.',
+    );
+  }
+}
+
+async function changeProjectionForecastOverride(service, input, method) {
+  if (!canManageForecast?.()) return;
+  const allowed = ['auto', 'run_rate', 'ramp_down', 'physical'];
+  if (!allowed.includes(method)) return;
+  const config = {
+    ...(APP_STATE.config.projectionForecast || {}),
+    overrides: { ...(APP_STATE.config.projectionForecast?.overrides || {}) },
+  };
+  const key = `${service}|${input}`;
+  if (method === 'auto') delete config.overrides[key];
+  else config.overrides[key] = method;
+  try {
+    await forecastRepository.saveDashboardKey(
+      `${activeProjectionProjectKey()}:projection_forecast`,
+      JSON.stringify(config),
+    );
+    APP_STATE.config.projectionForecast = config;
+    renderProjecao();
+    renderVisao();
+    authToast('Modelo do insumo atualizado.', 'ok', 3000);
+  } catch (error) {
+    reportNonFatalError('Projeção/salvar modelo do insumo', error, 'O ajuste não pôde ser salvo.');
+  }
 }
 
 function createProjectionCurveTooltip(
@@ -2865,6 +3073,10 @@ async function exportarProjecaoDetalhada() {
         'Extrapolação (R$)': node.metrics.extrapolation,
         'Flows Pendentes (R$)': node.metrics.pendingFlows,
         'Tendência (R$)': node.metrics.tendency,
+        'Modelo de previsão': node.projection
+          ? FORECAST_METHOD_LABELS[node.projection.forecast_method] || ''
+          : '',
+        'Confiança da previsão': node.projection?.forecast_confidence || '',
       };
       if (model.comparison?.available) {
         row[`Planejado ${model.comparison.previousManagement} (R$)`] = node.metrics.previousPlanned;
@@ -2938,6 +3150,22 @@ async function exportarProjecaoDetalhada() {
       ];
       XLSX.utils.book_append_sheet(workbook, workforceSheet, 'Mão de Obra');
     }
+    if (model.physicalContext) {
+      const physicalMonths = [
+        ...new Set([
+          ...Object.keys(model.physicalContext.actualByMonth || {}),
+          ...Object.keys(model.physicalContext.plannedByMonth || {}),
+        ]),
+      ].sort();
+      const physicalRows = physicalMonths.map((month) => ({
+        Mês: month,
+        'Planejado normalizado (%)': model.physicalContext.plannedByMonth?.[month] ?? null,
+        'Realizado normalizado (%)': model.physicalContext.actualByMonth?.[month] ?? null,
+      }));
+      const physicalSheet = XLSX.utils.json_to_sheet(physicalRows);
+      physicalSheet['!cols'] = [{ wch: 12 }, { wch: 26 }, { wch: 26 }];
+      XLSX.utils.book_append_sheet(workbook, physicalSheet, 'Evolução Física');
+    }
     const metadata = XLSX.utils.json_to_sheet([
       { Campo: 'Obra', Valor: activeProjectionProjectKey() },
       { Campo: 'Gestão-base', Valor: activeProjectionManagement() },
@@ -2953,6 +3181,14 @@ async function exportarProjecaoDetalhada() {
           WORKFORCE_INPUTS.filter((input) => model.workforcePlan?.enabledByInput?.[input]).join(
             ', ',
           ) || 'Desativada',
+      },
+      {
+        Campo: 'Metodologia da previsão',
+        Valor: model.forecastComparison?.active ? 'Modelo híbrido ativo' : 'Cálculo atual',
+      },
+      {
+        Campo: 'Cronograma físico',
+        Valor: model.forecastComparison?.sourceFile || 'Não disponível',
       },
       { Campo: 'Exportado em', Valor: new Date().toLocaleString('pt-BR') },
     ]);
@@ -2991,6 +3227,7 @@ function openProjDrill(servico, insumo) {
   const dataCorte = document.getElementById('projDataCorte').value || defaultDataCorte();
   const dataFim = document.getElementById('projDataFim').value || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo').value) || 6;
+  const activeSnapshot = buildActiveProjectionSnapshot();
 
   const mesesServico = {};
   const mesesPorInsumo = new Map();
@@ -3003,10 +3240,9 @@ function openProjDrill(servico, insumo) {
       mesesPorInsumo.set(row.insumo, mesesDoInsumo);
     });
 
-  const projInsumos = [...mesesPorInsumo].map(([inputCode, inputMonths]) => ({
-    ...projetarServico(servico, inputMonths, dataCorte, dataFim, janelaMeses),
-    insumo: inputCode,
-  }));
+  const projInsumos = activeSnapshot.inputProjections.filter(
+    (projection) => projection.servico === servico,
+  );
   const sumProjectionMetric = (metric) =>
     projInsumos.reduce((sum, projection) => sum + (Number(projection[metric]) || 0), 0);
   const projServico = {
@@ -3046,7 +3282,6 @@ function openProjDrill(servico, insumo) {
   }
 
   const pendingFlowImpact = pendingFlowImpactForTarget(servico, insumo);
-  const activeSnapshot = buildActiveProjectionSnapshot();
   const workforcePlan = activeSnapshot.workforcePlan;
   const curveProjections = insumo ? [proj] : projInsumos;
   const workforceAdjustments = buildWorkforceCurveAdjustments({
@@ -3081,6 +3316,19 @@ function openProjDrill(servico, insumo) {
     Math.abs(effectiveExtrapolation) < 0.005
       ? '—'
       : `${effectiveExtrapolation > 0 ? '+' : ''}${fmtR$(effectiveExtrapolation)}`;
+  const forecastDiagnostic = proj.forecast_diagnostics?.[proj.forecast_recommended_method] || {};
+  const forecastWape =
+    forecastDiagnostic.wape == null
+      ? 'histórico insuficiente'
+      : `${(forecastDiagnostic.wape * 100).toFixed(1).replace('.', ',')}% WAPE`;
+  const configuredOverride =
+    APP_STATE.config.projectionForecast?.overrides?.[`${servico}|${insumo}`] || 'auto';
+  const forecastMethodMarkup = insumo
+    ? `<div class="projection-modal-forecast">
+        <div><span>Modelo recomendado</span><strong>${escHtml(FORECAST_METHOD_LABELS[proj.forecast_recommended_method] || 'Média simples atual')}</strong><small>Confiança ${escHtml(proj.forecast_confidence || 'low')} · ${escHtml(forecastWape)}</small></div>
+        ${canManageForecast?.() && activeSnapshot.physicalContext ? `<label for="projectionForecastOverride">Ajuste do insumo<select id="projectionForecastOverride" class="field-control"><option value="auto" ${configuredOverride === 'auto' ? 'selected' : ''}>Automático</option><option value="run_rate" ${configuredOverride === 'run_rate' ? 'selected' : ''}>Ritmo histórico ponderado</option><option value="ramp_down" ${configuredOverride === 'ramp_down' ? 'selected' : ''}>Desmobilização física</option><option value="physical" ${configuredOverride === 'physical' ? 'selected' : ''}>Custo por avanço físico</option></select></label>` : ''}
+      </div>`
+    : '';
 
   const findIdx = (m) => {
     let i = 0;
@@ -3095,6 +3343,7 @@ function openProjDrill(servico, insumo) {
     `
     <h2>🔮 Projeção · ${escHtml(titulo)}</h2>
     <div class="meta">${escHtml(subtitulo)} · Grupo: <strong>${escHtml(proj.grupo)}</strong> ${grupoExtrapola(proj.grupo) ? '<span class="badge purple">extrapola</span>' : '<span class="badge gray">não extrapola</span>'}</div>
+    ${forecastMethodMarkup}
     <div class="kpis kpi-2col projection-modal-kpis">
       <div class="kpi kpi-wide projection-modal-card">
         <h3 class="projection-modal-card-title">📊 Planejado</h3>
@@ -3122,7 +3371,7 @@ function openProjDrill(servico, insumo) {
           <div class="projection-modal-metric-label">Extrapolação</div>
           <div class="projection-modal-extrapolation-line">
             <strong class="projection-modal-metric-value">${extrapolacaoTexto}</strong>
-            <span class="projection-modal-calculation">- ${proj.meses_gap > 0 ? `${proj.meses_gap} meses × R$ ${fmt(proj.ritmo_historico, 0)}/m` : 'Sem meses adicionais'}</span>
+            <span class="projection-modal-calculation">- ${proj.meses_gap > 0 ? `${proj.meses_gap} meses · ${escHtml(FORECAST_METHOD_LABELS[proj.forecast_method] || 'Média histórica')}` : 'Sem meses adicionais'}</span>
           </div>
         </div>
         ${
@@ -3292,6 +3541,9 @@ function openProjDrill(servico, insumo) {
   // Renderizar após o conteúdo do modal estar no DOM
   setTimeout(() => renderApexChart('modalProjChart', modalChartOptions), 50);
   openModal();
+  document.getElementById('projectionForecastOverride')?.addEventListener('change', (event) => {
+    void changeProjectionForecastOverride(servico, insumo, event.target.value);
+  });
 }
 
 // Renderiza a seção "Movimentações de Projeção" no modal de drill-down da Tendência
@@ -3560,7 +3812,9 @@ export function createProjectionView({
   SafeStorage = storage;
   getProjectionControlState = projectionControl.getState;
   workforceRepository = dashboardRepository;
+  forecastRepository = dashboardRepository;
   canEditWorkforce = () => authService?.canEditActiveProject?.() === true;
+  canManageForecast = () => authService?.isAdmin?.() === true;
   const api = {
     defaultDataCorte,
     defaultDataFim,
@@ -3580,6 +3834,7 @@ export function createProjectionView({
     addProjectionWorkforceRow,
     deleteProjectionWorkforceRow,
     resetProjectionColumnWidths,
+    toggleProjectionForecastMode,
     exportarProjecaoDetalhada,
   };
 

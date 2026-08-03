@@ -42,6 +42,7 @@ export function createAppState({ storage = getBrowserStorage() } = {}) {
         projectionManagementByProject: {},
       },
       projRaw: [],
+      physicalSchedule: null,
       workforce: { settings: [], rows: [] },
     },
     sort: {
@@ -56,6 +57,7 @@ export function createAppState({ storage = getBrowserStorage() } = {}) {
       card3Modo: readStorage(storage, STORAGE_KEYS.cardMode, 'bruto'),
       correcaoIndice: readStorage(storage, STORAGE_KEYS.correctionIndex, 'incc'),
       headerEditable: false,
+      projectionForecast: { active: false, overrides: {} },
     },
     obra: {
       obras: [],
@@ -69,6 +71,7 @@ export function createAppState({ storage = getBrowserStorage() } = {}) {
       tendencia: null,
       flows: null,
       gestoes: null,
+      cronograma_fisico: null,
     },
     donut: {
       hidden: new Set(),

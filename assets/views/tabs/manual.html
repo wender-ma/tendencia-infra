@@ -295,6 +295,7 @@
                   <li>Na Curva S, históricos anteriores aos últimos cinco anos aparecem como fechamentos anuais; o período recente permanece mensal.</li>
                   <li>Use o cadeado para controlar o zoom e os botões para ajustar o período. A roda do mouse rola somente a página.</li>
                   <li>Passe o mouse no gráfico para comparar Planejado, Tendência e Diferença.</li>
+                  <li>Em Metodologia da Previsão, compare o cálculo atual com o modelo apoiado no Cronograma Físico. Somente um administrador pode tornar o modelo recomendado oficial.</li>
                   <li>No Planejamento de Mão de Obra, adicione cargos e distribua a quantidade de pessoas por mês.</li>
                   <li>Ative ADM5189 ou CONDH271 somente depois de conferir a grade; a versão manual substituirá o futuro automático do insumo.</li>
                   <li>Use o seletor Efetivo/Custo para alternar a leitura do histograma.</li>
@@ -365,7 +366,7 @@
               </div>
               <div>
                 <strong>Base por obra</strong>
-                <p>Cada obra recebe sua própria Tendência. Admins enviam para qualquer obra; editores, somente para as atribuídas.</p>
+                <p>Cada obra recebe sua própria Tendência e seu Cronograma Físico. Admins enviam para qualquer obra; editores, somente para as atribuídas.</p>
               </div>
             </div>
             <p class="manual-footnote">O procedimento completo está na seção 05 deste manual.</p>
@@ -407,9 +408,9 @@
             <h3>📅 Atualização mensal</h3>
             <ol class="manual-timeline">
               <li><span>1</span><p>Prepare a planilha global com as abas <b>Gestões</b> e <b>Aditivos_flowmaster</b>.</p></li>
-              <li><span>2</span><p>Prepare a planilha de <b>Tendência</b> de cada obra atualizada.</p></li>
+              <li><span>2</span><p>Prepare as planilhas de <b>Tendência</b> e <b>Cronograma Físico</b> de cada obra atualizada.</p></li>
               <li><span>3</span><p>O administrador envia primeiro a base global em Uploads.</p></li>
-              <li><span>4</span><p>Envie a Tendência no bloco correspondente a cada obra.</p></li>
+              <li><span>4</span><p>Envie a Tendência e o Cronograma Físico no bloco correspondente a cada obra.</p></li>
               <li><span>5</span><p>Confira o relatório de importação e os arquivos ativos.</p></li>
               <li><span>6</span><p>Revise os novos aditivos pendentes na aba Flows / Aditivos.</p></li>
               <li><span>7</span><p>Valide Visão Geral, Curva S e Projeção Detalhada antes de comunicar os números.</p></li>
@@ -453,13 +454,14 @@
 
           <section>
             <p class="manual-sequence-label">EDITOR OU ADMIN · BASE INDIVIDUAL</p>
-            <h3>🏗️ Tendência da obra</h3>
+            <h3>🏗️ Tendência e Cronograma Físico</h3>
             <ol class="manual-steps manual-steps--compact">
               <li><span>1</span><div><strong>Localize a obra</strong><p>Os blocos aparecem um abaixo do outro na Central de Uploads.</p></div></li>
               <li><span>2</span><div><strong>Confirme o código</strong><p>Envie o arquivo somente no bloco da obra correspondente.</p></div></li>
               <li><span>3</span><div><strong>Selecione a Tendência</strong><p>São aceitos Excel e CSV compatíveis. Em Excel com várias abas, confirme a aba sugerida pelo nome ou pelos cabeçalhos.</p></div></li>
               <li><span>4</span><div><strong>Confirme o mapeamento</strong><p>O sistema reconhece nomes como Tendência, Tendência de Obra, TendênciaValor e Tend.</p></div></li>
-              <li><span>5</span><div><strong>Valide a obra</strong><p>Abra a Visão Geral e confira gestão, totais e fontes ativas.</p></div></li>
+              <li><span>5</span><div><strong>Envie o Cronograma Físico</strong><p>Use o arquivo físico-financeiro da mesma obra e confirme ou ajuste o mês de corte sugerido.</p></div></li>
+              <li><span>6</span><div><strong>Valide a obra</strong><p>Abra a Tendência de Obra, compare os modelos e confira as fontes ativas.</p></div></li>
             </ol>
           </section>
         </div>
@@ -588,6 +590,7 @@
           <div><strong>TENDÊNCIA</strong><span>Visão Geral · Tendência de Obra · Controle Projeção</span></div>
           <div><strong>Aditivos_flowmaster</strong><span>Flows / Aditivos · Composição do desvio · Controle Projeção</span></div>
           <div><strong>Gestões</strong><span>Curva S · Projeção Detalhada · Realizado por período</span></div>
+          <div><strong>Cronograma Físico</strong><span>Curva física normalizada · comparação e recomendação da metodologia de previsão</span></div>
         </div>
 
         <div class="manual-disclosures manual-disclosures--technical">
@@ -653,6 +656,24 @@
             </div>
           </details>
           <details>
+            <summary>🏗️ Estrutura do Cronograma Físico</summary>
+            <div>
+              <p>
+                Campos fixos: <code>Nível</code>, <code>Código EAP</code>,
+                <code>Descrição</code>, <code>Início</code>, <code>Fim</code>,
+                <code>Material (R$)</code>, <code>Mão de obra (R$)</code> e
+                <code>Total (R$)</code>. Cada mês deve conter o trio
+                <code>Base</code>, <code>Previsto</code> e <code>Realizado</code>.
+              </p>
+              <ul>
+                <li>O Código EAP identifica cada atividade; descrições repetidas permanecem separadas.</li>
+                <li>O Total é usado somente como peso da evolução física e nunca altera orçamento, Gestão ou Tendência.</li>
+                <li>O sistema sugere o último mês com avanço realizado como corte e exige confirmação antes do upload.</li>
+                <li>Percentuais acumulados devem ser crescentes; valores até 100,10% são limitados a 100% com aviso.</li>
+              </ul>
+            </div>
+          </details>
+          <details>
             <summary>🧾 Formatos aceitos e regras de leitura</summary>
             <div>
               <ul>
@@ -667,7 +688,7 @@
         </div>
 
         <p class="manual-document-end">
-          <strong>Dashboard Tendência Infra · v1.7.0</strong>
+          <strong>Dashboard Tendência Infra · v1.8.0</strong>
           <span>Use este manual como referência durante a operação e a conferência mensal.</span>
         </p>
       </section>

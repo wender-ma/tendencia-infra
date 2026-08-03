@@ -7,6 +7,7 @@ const EMPTY_HISTORY = () => ({
   monthlyRowsByProjectManagement: {},
 });
 const EMPTY_EVOLUTION = () => ({ teorica: null, financeira: null });
+const EMPTY_FORECAST = () => ({ active: false, overrides: {} });
 
 export function resolveInitialProject(
   projects,
@@ -151,7 +152,9 @@ export function createProjectController({
     state.dados.flows = [];
     state.config.evolGlobal = EMPTY_EVOLUTION();
     state.config.gestaoLabel = 'Gestão Atual';
+    state.config.projectionForecast = EMPTY_FORECAST();
     state.dados.workforce = { settings: [], rows: [] };
+    state.dados.physicalSchedule = null;
   }
 
   function resetSharedData() {
@@ -236,6 +239,13 @@ export function createProjectController({
     if (config[`${prefix}gestao_label`]) {
       state.config.gestaoLabel = config[`${prefix}gestao_label`];
     }
+    state.config.projectionForecast = parseConfig(
+      config,
+      `${prefix}projection_forecast`,
+      EMPTY_FORECAST(),
+      'Dados/metodologia de previsão inválida',
+      'A configuração da previsão está inválida e foi ignorada.',
+    );
 
     const tendency = parseConfig(
       config,
@@ -283,6 +293,7 @@ export function createProjectController({
     if (Array.isArray(datasets.flows)) state.dados.flows = datasets.flows;
     if (datasets.history?.items) state.dados.historico = datasets.history;
     if (Array.isArray(datasets.projectionRaw)) state.dados.projRaw = datasets.projectionRaw;
+    if (datasets.physicalSchedule?.items) state.dados.physicalSchedule = datasets.physicalSchedule;
     atualizarGestaoLabelPelaHistoria();
     aplicarFallbackGestaoDoHistorico();
   }

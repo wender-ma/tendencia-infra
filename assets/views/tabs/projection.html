@@ -60,6 +60,10 @@
   </div>
 </div>
 
+<div class="card projection-forecast-card" id="projectionForecastCard">
+  <div id="projectionForecastMethodology"></div>
+</div>
+
 <div class="card projection-workforce-card" id="projectionWorkforceCard">
   <div class="projection-workforce-toolbar">
     <h2>👥 Planejamento de Mão de Obra</h2>
@@ -70,7 +74,7 @@
           type="checkbox"
           data-workforce-setting="ADM5189"
         />
-        ADM5189
+        ADM5189 <small id="workforceStatusADM5189"></small>
       </label>
       <label>
         <input
@@ -78,7 +82,7 @@
           type="checkbox"
           data-workforce-setting="CONDH271"
         />
-        CONDH271
+        CONDH271 <small id="workforceStatusCONDH271"></small>
       </label>
     </div>
     <div class="segmented projection-workforce-mode" role="group" aria-label="Métrica do histograma">
@@ -109,6 +113,7 @@
       ＋ Adicionar linha
     </button>
   </div>
+  <p id="workforceActivationHelp" class="projection-workforce-activation-help"></p>
   <div id="projectionWorkforceChart" class="projection-workforce-chart"></div>
   <div class="table-wrap projection-workforce-table-wrap">
     <table class="projection-workforce-table">

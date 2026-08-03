@@ -430,6 +430,7 @@ export function createDashboardRepository({
       'indice_correcao',
       'card3_modo',
       `${prefix}evol_global`,
+      `${prefix}projection_forecast`,
       prefix + DASHBOARD_DATA_KEYS.GESTAO_LABEL,
     ];
     if (includeLegacyDatasets) {

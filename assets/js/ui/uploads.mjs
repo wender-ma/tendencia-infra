@@ -43,6 +43,7 @@ let parseTendencia;
 let parseTendenciaFile;
 let parseFlowsValor;
 let parseGestoes;
+let parsePhysicalSchedule;
 let parseCSVRows;
 let validateImportHeaders;
 let discoverFlowProjectReferences;
@@ -60,7 +61,9 @@ let applyManuals;
 let loadClassifications;
 let requireAdmin;
 let loadLatestTendencies;
+let loadLatestProjectUploads;
 const PROJECT_TENDENCY_UPLOADS = Object.create(null);
+const PROJECT_PHYSICAL_UPLOADS = Object.create(null);
 const EXCEL_UPLOAD_GROUPS = new Map();
 let projectUploadsLoadKey = '';
 let projectUploadsLoading = false;
@@ -245,7 +248,7 @@ async function handleProjectTendencyUpload(ev, projectCode) {
     return;
   }
 
-  projectUploadBusy = project;
+  projectUploadBusy = `${project}:tendencia`;
   setUploadRuntimeState('tendencia', 'processing', `Processando Tendência de ${project}`);
   renderUploadsCentral();
   try {
@@ -339,6 +342,157 @@ async function handleProjectTendencyUpload(ev, projectCode) {
     projectUploadBusy = '';
     renderUploadsCentral();
   }
+}
+
+function promptPhysicalScheduleCutoff(parsed, projectCode) {
+  return new Promise((resolve) => {
+    const modalContent = document.getElementById('modalContent');
+    if (!modalContent) {
+      resolve(null);
+      return;
+    }
+    const point = parsed.curve.find((entry) => entry.month === parsed.suggestedCutoff);
+    replaceWithParsedMarkup(
+      modalContent,
+      `
+        <h2>🏗️ Confirmar mês de referência</h2>
+        <div class="meta">Obra: <strong>${escHtml(getProjectInfo?.(projectCode)?.nome || projectCode)}</strong></div>
+        <form id="physicalScheduleCutoffForm" data-modal-form>
+          <label class="field-label" for="physicalScheduleCutoff">Último mês consolidado</label>
+          <input class="field-control" id="physicalScheduleCutoff" type="month" value="${escAttr(parsed.suggestedCutoff)}" min="${escAttr(parsed.months[0])}" max="${escAttr(parsed.months.at(-1))}" required>
+          <div class="upload-impact-grid">
+            <span><strong>${parsed.items.length.toLocaleString('pt-BR')}</strong><small>itens EAP</small></span>
+            <span><strong>${parsed.months.length.toLocaleString('pt-BR')}</strong><small>meses</small></span>
+            <span><strong>${point ? `${point.planned.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : '-'}</strong><small>previsto detectado</small></span>
+            <span><strong>${point ? `${point.actual.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%` : '-'}</strong><small>realizado detectado</small></span>
+          </div>
+          <p class="field-help">O sistema detectou o último mês em que o Realizado avançou. Confirme ou ajuste antes de salvar.</p>
+          <div class="sheet-mapping-actions">
+            <button type="button" class="btn-sm" id="physicalScheduleCutoffCancel">Cancelar</button>
+            <button type="submit" class="btn-sm primary">Confirmar upload</button>
+          </div>
+        </form>`,
+    );
+    document
+      .getElementById('physicalScheduleCutoffCancel')
+      ?.addEventListener('click', () => closeModal(null));
+    document.getElementById('physicalScheduleCutoffForm')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      closeModal(document.getElementById('physicalScheduleCutoff')?.value || null);
+    });
+    openModal({
+      onClose: (value) => resolve(/^\d{4}-\d{2}$/.test(value || '') ? value : null),
+      initialFocus: '#physicalScheduleCutoff',
+    });
+  });
+}
+
+function parsePhysicalScheduleWorkbook(workbook) {
+  const matches = [];
+  for (const sheetName of workbook?.sheetNames || []) {
+    try {
+      matches.push({ sheetName, parsed: parsePhysicalSchedule(_sheetToCSV(workbook, sheetName)) });
+    } catch {
+      // Abas auxiliares não pertencentes ao cronograma são ignoradas.
+    }
+  }
+  if (!matches.length) {
+    throw new Error('Nenhuma aba com o formato de Cronograma Físico foi encontrada.');
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      `Mais de uma aba de Cronograma Físico foi encontrada (${matches.map((item) => item.sheetName).join(', ')}). Mantenha somente uma.`,
+    );
+  }
+  return matches[0];
+}
+
+async function handleProjectPhysicalScheduleUpload(ev, projectCode) {
+  const project = String(projectCode || '').trim();
+  const input = ev.target;
+  const file = input?.files?.[0];
+  if (!project || !file) return;
+  input.value = '';
+  if (!requireProjectPermission(project, 'enviar o Cronograma Físico')) return;
+  const validation = validateUploadFile(file, 'excel');
+  if (!validation.valid) {
+    authToast(`❌ ${validation.message}`, 'err', 5000);
+    return;
+  }
+
+  projectUploadBusy = `${project}:cronograma_fisico`;
+  setUploadRuntimeState(
+    'cronograma_fisico',
+    'processing',
+    `Processando Cronograma Físico de ${project}`,
+  );
+  renderUploadsCentral();
+  try {
+    const workbook = await readExcelFile(file);
+    const { parsed } = parsePhysicalScheduleWorkbook(workbook);
+    const cutoffMonth = await promptPhysicalScheduleCutoff(parsed, project);
+    if (!cutoffMonth) {
+      setUploadRuntimeState('cronograma_fisico', 'idle');
+      authToast('Upload de Cronograma Físico cancelado.', 'warn', 2500);
+      return;
+    }
+    parsed.cutoffMonth = cutoffMonth;
+    parsed.sourceFile = file.name;
+    const dashboardData = {
+      tendency: APP_STATE.dados.tendencia,
+      flows: APP_STATE.dados.flows,
+      history: APP_STATE.dados.historico,
+      projectionRaw: APP_STATE.dados.projRaw,
+      physicalSchedule: parsed,
+      managementLabel: APP_STATE.config.gestaoLabel,
+      evolution: APP_STATE.config.evolGlobal,
+      latestUploads: project === APP_STATE.obra.ativa ? APP_STATE.uploads : Object.create(null),
+    };
+    const result = await commitPreparedUpload({
+      file,
+      storageType: 'cronograma_fisico',
+      items: [{ kind: 'cronograma_fisico', linhas: parsed.items.length }],
+      memorySnapshot: null,
+      projectCode: project,
+      dashboardData,
+      applyToCurrentState: project === APP_STATE.obra.ativa,
+    });
+    const activeRecord = result.records?.[0] || null;
+    if (activeRecord) PROJECT_PHYSICAL_UPLOADS[project] = activeRecord;
+    if (project === APP_STATE.obra.ativa) {
+      APP_STATE.dados.physicalSchedule = parsed;
+      APP_STATE.uploads.cronograma_fisico = activeRecord;
+      debouncedRender();
+      renderSourcesHeaders();
+    }
+    await runAsyncSafely(
+      supaEnforceRollingBackup('cronograma_fisico', project),
+      `Upload/limpeza de backups físicos/${project}`,
+      'O upload foi concluído, mas os backups antigos não puderam ser limpos.',
+    );
+    await runAsyncSafely(
+      supaEnforceDatasetRetention(['cronograma_fisico'], UPLOADS_MAX_PER_TYPE, project),
+      `Upload/limpeza de snapshots físicos/${project}`,
+      'O upload foi concluído, mas snapshots antigos ficaram pendentes.',
+    );
+    authToast(
+      `✅ Cronograma Físico de ${getProjectInfo?.(project)?.nome || project}: ${parsed.items.length.toLocaleString('pt-BR')} itens · corte ${formatMonthLabelForUpload(cutoffMonth)}`,
+      'ok',
+      5000,
+    );
+  } catch (error) {
+    reportNonFatalError('Upload/Cronograma Físico', error);
+    setUploadRuntimeState('cronograma_fisico', 'failed', error.message || String(error));
+    authToast(`❌ Upload não concluído: ${error.message}`, 'err', 7000);
+  } finally {
+    projectUploadBusy = '';
+    renderUploadsCentral();
+  }
+}
+
+function formatMonthLabelForUpload(month) {
+  const [year, value] = String(month || '').split('-');
+  return value && year ? `${value}/${year}` : month;
 }
 
 // ============================================================
@@ -1390,6 +1544,12 @@ const UPLOAD_META = {
     desc: 'Alimenta: KPIs da Visão Geral, tabela de Detalhamento, curva S de Tendência de Obra e Controle de Projeção. Fonte: aba TENDÊNCIA da planilha.',
     manualKey: 'tendencia',
   },
+  cronograma_fisico: {
+    label: 'CRONOGRAMA FÍSICO',
+    icon: '🏗️',
+    desc: 'Base física versionada por obra. Os valores financeiros são usados somente para ponderar o avanço.',
+    manualKey: 'cronograma_fisico',
+  },
   flows: {
     label: 'FLOWS / ADITIVOS',
     icon: '🔗',
@@ -1560,18 +1720,27 @@ function refreshProjectTendencyUploadCards(projects) {
     if (!card) continue;
 
     const canEdit = authServiceCanEditProject(code);
-    const latest =
+    const latestTendency =
       (canEdit && PROJECT_TENDENCY_UPLOADS[code]) ||
       (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.tendencia : null);
+    const latestPhysical =
+      (canEdit && PROJECT_PHYSICAL_UPLOADS[code]) ||
+      (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.cronograma_fisico : null);
     replaceWithParsedMarkup(
       card.querySelector('.project-tendency-upload-summary'),
-      renderUploadSummary(latest, 'Nenhuma Tendência enviada para esta obra.'),
+      renderUploadSummary(latestTendency, 'Nenhuma Tendência enviada para esta obra.'),
+    );
+    replaceWithParsedMarkup(
+      card.querySelector('.project-physical-upload-summary'),
+      renderUploadSummary(latestPhysical, 'Nenhum Cronograma Físico enviado para esta obra.'),
     );
 
-    const uploadButton = card.querySelector('[data-file-target]');
-    if (uploadButton) {
-      uploadButton.textContent = `📤 ${latest ? 'Substituir Tendência' : 'Enviar Tendência'}`;
-    }
+    const tendencyButton = card.querySelector('[data-upload-kind="tendencia"]');
+    if (tendencyButton)
+      tendencyButton.textContent = `📤 ${latestTendency ? 'Substituir Tendência' : 'Enviar Tendência'}`;
+    const physicalButton = card.querySelector('[data-upload-kind="cronograma_fisico"]');
+    if (physicalButton)
+      physicalButton.textContent = `📤 ${latestPhysical ? 'Substituir Cronograma' : 'Enviar Cronograma Físico'}`;
   }
 }
 
@@ -1583,8 +1752,14 @@ async function refreshProjectTendencyUploads(projects) {
   projectUploadsLoadKey = key;
   projectUploadsLoading = true;
   try {
-    const latest = await loadLatestTendencies(codes);
-    for (const code of codes) PROJECT_TENDENCY_UPLOADS[code] = latest[code] || null;
+    const [latestTendencies, latestPhysicalSchedules] = await Promise.all([
+      loadLatestTendencies(codes),
+      loadLatestProjectUploads(codes, 'cronograma_fisico'),
+    ]);
+    for (const code of codes) {
+      PROJECT_TENDENCY_UPLOADS[code] = latestTendencies[code] || null;
+      PROJECT_PHYSICAL_UPLOADS[code] = latestPhysicalSchedules[code] || null;
+    }
   } finally {
     projectUploadsLoading = false;
     refreshProjectTendencyUploadCards(projects);
@@ -1613,12 +1788,17 @@ function renderUploadsCentral() {
       const code = String(project.codigo_obra || '').trim();
       const name = project.nome || code;
       const canEdit = authServiceCanEditProject(code);
-      const latest =
+      const latestTendency =
         (canEdit && PROJECT_TENDENCY_UPLOADS[code]) ||
         (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.tendencia : null);
-      const busy = projectUploadBusy === code;
+      const latestPhysical =
+        (canEdit && PROJECT_PHYSICAL_UPLOADS[code]) ||
+        (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.cronograma_fisico : null);
+      const tendencyBusy = projectUploadBusy === `${code}:tendencia`;
+      const physicalBusy = projectUploadBusy === `${code}:cronograma_fisico`;
+      const busy = tendencyBusy || physicalBusy;
       return `
-        <article class="project-tendency-card upload-card" data-kind="tendencia" data-project="${escAttr(code)}">
+        <article class="project-tendency-card upload-card" data-project="${escAttr(code)}">
           <div class="project-tendency-heading">
             <div>
               <h3 class="upload-card-title">🏗️ ${escHtml(name)}</h3>
@@ -1626,18 +1806,36 @@ function renderUploadsCentral() {
             </div>
             ${code === APP_STATE.obra.ativa ? '<span class="upload-active-project">SELECIONADA</span>' : ''}
           </div>
-          ${busy ? renderUploadRuntimeBlock('tendencia') : ''}
-          <div class="project-tendency-upload-summary">
-            ${renderUploadSummary(latest, 'Nenhuma Tendência enviada para esta obra.')}
+          ${busy ? renderUploadRuntimeBlock(tendencyBusy ? 'tendencia' : 'cronograma_fisico') : ''}
+          <div class="project-upload-dataset">
+            <strong class="project-upload-dataset-title">📈 Tendência financeira</strong>
+            <div class="project-tendency-upload-summary">
+              ${renderUploadSummary(latestTendency, 'Nenhuma Tendência enviada para esta obra.')}
+            </div>
+            <div class="upload-card-actions">
+              <button class="btn-sm primary" data-upload-kind="tendencia" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_tendencia_${index}">
+                📤 ${latestTendency ? 'Substituir Tendência' : 'Enviar Tendência'}
+              </button>
+              <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectTendencyHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
+                📜 Histórico da Tendência
+              </button>
+              <input type="file" id="fileInput_tendencia_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls,.csv" aria-label="Selecionar Tendência de ${escAttr(name)}" data-change-action="handleProjectTendencyUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
+            </div>
           </div>
-          <div class="upload-card-actions">
-            <button class="btn-sm primary" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_tendencia_${index}">
-              📤 ${latest ? 'Substituir Tendência' : 'Enviar Tendência'}
-            </button>
-            <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectTendencyHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
-              📜 Histórico da obra
-            </button>
-            <input type="file" id="fileInput_tendencia_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls,.csv" aria-label="Selecionar Tendência de ${escAttr(name)}" data-change-action="handleProjectTendencyUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
+          <div class="project-upload-dataset">
+            <strong class="project-upload-dataset-title">🏗️ Cronograma físico</strong>
+            <div class="project-physical-upload-summary">
+              ${renderUploadSummary(latestPhysical, 'Nenhum Cronograma Físico enviado para esta obra.')}
+            </div>
+            <div class="upload-card-actions">
+              <button class="btn-sm primary" data-upload-kind="cronograma_fisico" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_cronograma_fisico_${index}">
+                📤 ${latestPhysical ? 'Substituir Cronograma' : 'Enviar Cronograma Físico'}
+              </button>
+              <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectPhysicalScheduleHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
+                📜 Histórico do Cronograma
+              </button>
+              <input type="file" id="fileInput_cronograma_fisico_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar Cronograma Físico de ${escAttr(name)}" data-change-action="handleProjectPhysicalScheduleUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
+            </div>
           </div>
         </article>`;
     })
@@ -1680,7 +1878,7 @@ function renderUploadsCentral() {
           </div>
           <span class="upload-project-count">${projects.length} obra(s)</span>
         </div>
-        <p>Cada arquivo de Tendência é salvo exclusivamente na obra indicada.</p>
+        <p>Cada obra mantém versões independentes da Tendência financeira e do Cronograma Físico.</p>
         <div class="project-tendency-grid">
           ${projectCards || '<div class="uploads-history-empty">Nenhuma obra ativa cadastrada.</div>'}
         </div>
@@ -1714,7 +1912,11 @@ function renderUploadsCentral() {
       card.classList.remove('dragover');
       const file = event.dataTransfer.files[0];
       if (file) {
-        handleProjectTendencyUpload({ target: { files: [file], value: '' } }, card.dataset.project);
+        const isPhysical = /cronograma|fisico|físico/i.test(file.name);
+        const handler = isPhysical
+          ? handleProjectPhysicalScheduleUpload
+          : handleProjectTendencyUpload;
+        handler({ target: { files: [file], value: '' } }, card.dataset.project);
       }
     });
   });
@@ -1725,6 +1927,11 @@ function renderUploadsCentral() {
 function openProjectTendencyHistory(projectCode) {
   if (!requireProjectPermission(projectCode, 'consultar o histórico desta obra')) return;
   return openUploadsHistory('tendencia', projectCode);
+}
+
+function openProjectPhysicalScheduleHistory(projectCode) {
+  if (!requireProjectPermission(projectCode, 'consultar o histórico físico desta obra')) return;
+  return openUploadsHistory('cronograma_fisico', projectCode);
 }
 
 async function openUploadsHistory(kind, projectCode = null) {
@@ -2193,6 +2400,7 @@ async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
   let activation = null;
   let alvo = null;
   let parsedTendency = null;
+  let parsedPhysicalSchedule = null;
   let scopedDashboardData = null;
   setUploadRuntimeState(kind, 'processing', 'Validando e ativando arquivo do histórico');
   try {
@@ -2220,16 +2428,22 @@ async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
       const buf = await resp.arrayBuffer();
       const wb = await readExcelBuffer(buf);
       const sheetNames = wb.sheetNames || [];
+      if (kind === 'cronograma_fisico') {
+        parsedPhysicalSchedule = parsePhysicalScheduleWorkbook(wb).parsed;
+        const cutoffMonth = await promptPhysicalScheduleCutoff(parsedPhysicalSchedule, project);
+        if (!cutoffMonth) throw new Error('Ativação cancelada durante a confirmação do corte');
+        parsedPhysicalSchedule.cutoffMonth = cutoffMonth;
+        parsedPhysicalSchedule.sourceFile = alvo.nome_arquivo;
+      }
       const mapping = autoDetectExcelSheets(sheetNames);
       // Só processa a aba correspondente ao tipo
-      const sheetName =
-        mapping[kind] || (kind === 'tendencia' && sheetNames.length === 1 ? sheetNames[0] : null);
-      if (!sheetName) throw new Error(`Aba correspondente a "${kind}" não encontrada no Excel`);
-      const csv = _sheetToImportCSV(wb, sheetName, kind);
-      if (kind === 'tendencia') {
-        parsedTendency = parseTendenciaFile(csv);
-      } else {
-        _parsearECarregar(kind, csv);
+      if (kind !== 'cronograma_fisico') {
+        const sheetName =
+          mapping[kind] || (kind === 'tendencia' && sheetNames.length === 1 ? sheetNames[0] : null);
+        if (!sheetName) throw new Error(`Aba correspondente a "${kind}" não encontrada no Excel`);
+        const csv = _sheetToImportCSV(wb, sheetName, kind);
+        if (kind === 'tendencia') parsedTendency = parseTendenciaFile(csv);
+        else _parsearECarregar(kind, csv);
       }
     } else {
       // CSV direto
@@ -2248,6 +2462,18 @@ async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
         projectionRaw: APP_STATE.dados.projRaw,
         managementLabel: parsedTendency.managementLabel || APP_STATE.config.gestaoLabel,
         evolution: parsedTendency.evolution,
+        latestUploads: project === APP_STATE.obra.ativa ? APP_STATE.uploads : Object.create(null),
+      };
+    }
+    if (parsedPhysicalSchedule) {
+      scopedDashboardData = {
+        tendency: APP_STATE.dados.tendencia,
+        flows: APP_STATE.dados.flows,
+        history: APP_STATE.dados.historico,
+        projectionRaw: APP_STATE.dados.projRaw,
+        physicalSchedule: parsedPhysicalSchedule,
+        managementLabel: APP_STATE.config.gestaoLabel,
+        evolution: APP_STATE.config.evolGlobal,
         latestUploads: project === APP_STATE.obra.ativa ? APP_STATE.uploads : Object.create(null),
       };
     }
@@ -2302,6 +2528,12 @@ async function marcarUploadComoAtivo(uploadId, kind, projectCode = null) {
         reportNonFatalError('Histórico/reconstruir lista de insumos', error);
       }
       aplicarFallbackGestaoDoHistorico();
+    }
+  } else if (kind === 'cronograma_fisico') {
+    PROJECT_PHYSICAL_UPLOADS[project] = activation.active;
+    if (project === APP_STATE.obra.ativa && parsedPhysicalSchedule) {
+      APP_STATE.dados.physicalSchedule = parsedPhysicalSchedule;
+      APP_STATE.uploads.cronograma_fisico = activation.active;
     }
   } else {
     APP_STATE.uploads[kind] = activation.active;
@@ -2449,6 +2681,7 @@ function renderSourcesHeaders() {
       if (!last) {
         const hasPublishedData =
           (k === 'tendencia' && APP_STATE.dados.tendencia?.length) ||
+          (k === 'cronograma_fisico' && APP_STATE.dados.physicalSchedule?.items?.length) ||
           (k === 'flows' && APP_STATE.dados.flows?.length) ||
           (k === 'gestoes' && APP_STATE.dados.historico?.items?.length);
         if (hasPublishedData) {
@@ -2508,6 +2741,7 @@ export function createUploadView({
   supaListExcelGroups = uploadRepository.listExcelGroups;
   supaLoadLatestUploads = uploadRepository.loadLatest;
   loadLatestTendencies = uploadRepository.loadLatestTendencies;
+  loadLatestProjectUploads = uploadRepository.loadLatestProjectUploads;
   supaGetDownloadURL = uploadRepository.getDownloadUrl;
   supaDeleteUploadRecords = uploadRepository.deleteRecords;
   supaRemoveStoredUpload = uploadRepository.removeStoredUpload;
@@ -2532,6 +2766,7 @@ export function createUploadView({
   parseTendenciaFile = parsers.parseTendencia;
   parseFlowsValor = parsers.applyFlows;
   parseGestoes = parsers.applyManagements;
+  parsePhysicalSchedule = parsers.parsePhysicalSchedule;
   parseCSVRows = parsers.parseDelimitedRows;
   validateImportHeaders = parsers.validateImportHeaders;
   discoverFlowProjectReferences = parsers.discoverFlowProjectReferences;
@@ -2553,10 +2788,12 @@ export function createUploadView({
     refreshLatestUploadReferences,
     handleUpload,
     handleProjectTendencyUpload,
+    handleProjectPhysicalScheduleUpload,
     handleExcelUpload,
     toggleAdvancedUploads,
     openUploadsHistory,
     openProjectTendencyHistory,
+    openProjectPhysicalScheduleHistory,
     openExcelUploadsHistory,
   });
 }

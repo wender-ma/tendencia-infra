@@ -1,6 +1,7 @@
 import { discoverFlowProjectReferences, parseFlowsFile } from './flows-parser.mjs';
 import { discoverGestoesProjectCodes, parseGestoesFile } from './gestoes-parser.mjs';
 import { parseTendenciaFile } from './tendencia-parser.mjs';
+import { parsePhysicalScheduleFile } from './physical-schedule-parser.mjs';
 import {
   classifyFlow,
   isoDateToBr,
@@ -39,7 +40,7 @@ export function createImportParserService({
   saveDashboardKey = async () => {},
   reportError = () => {},
 }) {
-  const reports = { tendencia: null, flows: null, gestoes: null };
+  const reports = { tendencia: null, flows: null, gestoes: null, cronograma_fisico: null };
   const measured = (name, operation) =>
     monitor ? monitor.measure(`parse:${name}`, operation) : operation();
 
@@ -65,6 +66,8 @@ export function createImportParserService({
         projects: options.projects ?? state.obra.obras,
       }),
     );
+  const parsePhysicalSchedule = (text) =>
+    measured('cronograma-fisico', () => parsePhysicalScheduleFile(text));
 
   function applyTendency(text) {
     const result = parseTendency(text);
@@ -108,6 +111,7 @@ export function createImportParserService({
     parseTendencia: parseTendency,
     parseFlows,
     parseGestoes: parseManagements,
+    parsePhysicalSchedule,
     discoverFlowProjectReferences,
     discoverGestoesProjectCodes,
     applyTendency,

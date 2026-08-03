@@ -251,6 +251,7 @@ const uploadCoordinator = createUploadCoordinator({
     flows: appState.dados.flows,
     history: appState.dados.historico,
     projectionRaw: appState.dados.projRaw,
+    physicalSchedule: appState.dados.physicalSchedule,
     managementLabel: appState.config.gestaoLabel,
     evolution: appState.config.evolGlobal,
     latestUploads: appState.uploads,
@@ -260,6 +261,7 @@ const uploadCoordinator = createUploadCoordinator({
     appState.dados.flows = snapshot.flows;
     appState.dados.historico = snapshot.history;
     appState.dados.projRaw = snapshot.projectionRaw;
+    appState.dados.physicalSchedule = snapshot.physicalSchedule;
     appState.config.gestaoLabel = snapshot.managementLabel;
     appState.config.evolGlobal = snapshot.evolution;
   },

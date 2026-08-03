@@ -23,14 +23,13 @@ de conclusão.
 | EXT-12 | Concluída | Administrador da Vercel | Branch `production` criada no release estável | Alterar a Production Branch de `main` para `production` antes do próximo push na `main`. | Em 29/07/2026, CI e Vercel publicaram o SHA `83828bd`; smokes público e com dados reais passaram. |
 | EXT-13 | Concluída | Administrador do Supabase Auth | Contas responsáveis já criadas | Desativar `Allow new users to sign up` no provedor Email. | Em 29/07/2026, Management API confirmou `disable_signup: true`, com Email e Google habilitados para contas existentes. |
 | EXT-14 | Concluída | Administrador do Supabase | Migration `v1.7.0` validada localmente | Aplicar `20260731203000_projection_workforce.sql` no projeto de produção confirmado e executar o audit correspondente. | Em 03/08/2026, o audit retornou `complete: true`, leitura anônima restrita a SELECT, grants autenticados, duas tabelas com RLS e quatro policies em cada tabela. |
-| EXT-15 | Bloqueada | Administrador do dashboard | EXT-14 e deploy `v1.7.0` concluídos | Reprocessar a planilha global ativa pela tela de Uploads. | Aderência mensal disponível para as obras e cards, grade e Curva S reconciliados com os dados reais. |
+| EXT-15 | Concluída | Administrador do dashboard | EXT-14 e deploy `v1.7.0` concluídos | Reprocessar a planilha global ativa pela tela de Uploads. | Em 03/08/2026, produção exibiu `GESTÃO 06-2026` × `GESTÃO 07-2026`, aderência de `jun/2026` e `R$ 74.169.007,33` reconciliados entre raiz, card e último ponto da Curva S. |
 
 ## Ordem mínima
 
-1. Executar EXT-15 imediatamente depois do deploy da `v1.7.0`.
-2. Executar EXT-06 no domínio publicado.
-3. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
-4. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
+1. Executar EXT-06 no domínio publicado.
+2. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
+3. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
 
 Nenhuma ação deste registro exige compartilhar senha, token, chave privada,
 conteúdo de arquivo ou dado pessoal no repositório.

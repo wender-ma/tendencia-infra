@@ -50,9 +50,9 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] Criar migration, RLS, auditoria, rollback e testes descartáveis da persistência de mão de obra.
 - [x] Validar contratos, build, três navegadores, responsividade, Lighthouse e dados reais no localhost.
 - [x] **EXT-14 concluído** Aplicar `20260731203000_projection_workforce.sql` no Supabase de produção; auditoria confirmou tabelas, RLS, grants e oito policies em 03/08/2026.
-- [ ] **AÇÃO EXTERNA EXT-15** Após o deploy, reprocessar a planilha global ativa para preencher a aderência mensal dos snapshots antigos.
+- [x] **EXT-15 concluído** Reprocessar a planilha global ativa; produção confirmou `GESTÃO 06-2026` × `GESTÃO 07-2026`, aderência de `jun/2026` e reconciliação de `R$ 74.169.007,33` em 03/08/2026.
 
-Critério de conclusão: migration auditada, arquivo global reprocessado, totais reais reconciliados e `v1.7.0` publicada na Vercel.
+Critério de conclusão: atendido em 03/08/2026; migration auditada, arquivo global reprocessado, totais reais reconciliados e `v1.7.0` publicada na Vercel.
 
 ## P0: segurança crítica
 

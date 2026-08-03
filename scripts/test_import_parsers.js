@@ -321,6 +321,35 @@ async function main() {
     'Fonte da projeção não foi persistida no histórico',
   );
   assert(
+    JSON.stringify(managements.projectionComparisonByProject['42-21O']) ===
+      JSON.stringify({
+        currentManagement: 'GESTÃO 07-2026',
+        previousManagement: 'GESTÃO 06-2026',
+        comparisonMonth: '2026-06',
+      }),
+    'Comparativo entre Gestões foi montado incorretamente',
+  );
+  assert(
+    managements.monthlyRowsByProjectManagement['42-21O']['GESTÃO 06-2026'].length === 1,
+    'Série mensal da Gestão anterior não foi preservada',
+  );
+  let missingPreviousError = null;
+  try {
+    parseGestoesFile(
+      csv([
+        managementHeaders,
+        ['01/07/2026', planningKey, 'Obra', '10,00', 'GESTÃO 07-2026', '', '', ''],
+      ]),
+      { projects: [{ codigo_obra: '42-21O' }] },
+    );
+  } catch (error) {
+    missingPreviousError = error;
+  }
+  assert(
+    /42-21O: GESTÃO 07-2026 exige GESTÃO 06-2026/.test(missingPreviousError?.message || ''),
+    'Upload deveria bloquear a ausência da Gestão imediatamente anterior',
+  );
+  assert(
     managements.report.accepted === 7 && managements.report.ignored === 1,
     'Relatório de Gestões incorreto',
   );

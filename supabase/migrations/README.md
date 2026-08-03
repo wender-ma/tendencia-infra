@@ -23,6 +23,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Frontend em produção: modo `snapshots` publicado e validado em 27/07/2026; janela mínima de estabilidade aberta até 03/08/2026.
 - Hardening de lançamento: limita o contrato público às colunas consumidas pelo painel, oculta obras inativas e blobs legados, e adiciona cadastro transacional de obras por upload.
 - Mês de reflexo dos Flows: adiciona `refletido_mes` às classificações, preservado entre uploads e exposto no contrato público operacional.
+- Planejamento de mão de obra: adiciona ativação por insumo e linhas mensais públicas por obra, com escrita restrita aos responsáveis autorizados.
 
 Teste local reproduzível:
 
@@ -56,6 +57,7 @@ Ordem de aplicação:
 6. `20260728193000_global_upload_history.sql`
 7. `20260728235000_release_hardening.sql`
 8. `20260730175500_flow_reflection_month.sql`
+9. `20260731203000_projection_workforce.sql`
 
 Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
 URL do SQL Editor.

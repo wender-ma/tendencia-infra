@@ -16,6 +16,22 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
       projectionManagementByProject: {
         'OBRA-TESTE': 'GESTÃO 07-2026',
       },
+      projectionComparisonByProject: {
+        'OBRA-TESTE': {
+          currentManagement: 'GESTÃO 07-2026',
+          previousManagement: 'GESTÃO 06-2026',
+          comparisonMonth: '2026-06',
+        },
+      },
+      monthlyRowsByProjectManagement: {
+        'OBRA-TESTE': {
+          'GESTÃO 06-2026': [
+            { servico: 'S05765', insumo: 'ADM5189', mes: '2026-06', valor: 55 },
+            { servico: 'S05765', insumo: 'CONDH271', mes: '2026-06', valor: 45 },
+          ],
+          'GESTÃO 07-2026': [{ servico: 'S05765', insumo: 'ADM5189', mes: '2026-06', valor: 60 }],
+        },
+      },
     };
     state.dados.projRaw = [
       ['ADM5189', 60, '2026-01'],
@@ -86,7 +102,19 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   await expect(page.locator('#projThead')).toContainText('Realizado até jun/2026');
   await expect(page.locator('#projThead')).toContainText('jul/26');
   await expect(page.locator('#projThead')).toContainText('out/26');
-  expect(await impactCard.innerText()).toBe('+423,33');
+  expect(await impactCard.innerText()).toBe('+456,67');
+  await expect(page.locator('#projThead')).toContainText('Planejado GESTÃO 06-2026');
+  await expect(page.locator('#projThead')).toContainText('Consolidado GESTÃO 07-2026');
+  await expect(rootCells.nth(6)).toHaveText('100,00');
+  await expect(rootCells.nth(7)).toHaveText('60,00');
+  await expect(rootCells.nth(8)).toHaveText('-40,00');
+
+  await page.getByRole('button', { name: '− Resumo' }).click();
+  await expect(page.locator('#projThead')).not.toContainText('Valor planejado');
+  await page.getByRole('button', { name: '+ Resumo' }).click();
+  await page.getByRole('button', { name: '− Aderência' }).click();
+  await expect(page.locator('#projThead')).not.toContainText('Planejado GESTÃO 06-2026');
+  await page.getByRole('button', { name: '+ Aderência' }).click();
 
   await rootCells.nth(0).click();
   await expect(page.locator('#projTbody')).toContainText('Sem insumo classificado');
@@ -227,7 +255,50 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
 
   await page.evaluate(() => {
     const { state, views } = window.dashboardServices;
+    state.dados.workforce = {
+      settings: [{ insumo: 'ADM5189', ativo: true }],
+      rows: [
+        {
+          id: 'WORKFORCE-1',
+          codigo_obra: 'OBRA-TESTE',
+          insumo: 'ADM5189',
+          cargo: 'Engenheiro',
+          custo_mensal: 100,
+          ordem: 0,
+          distribuicao: {
+            '2026-07': 1,
+            '2026-08': 2,
+            '2026-09': 3,
+            '2026-10': 4,
+          },
+        },
+      ],
+    };
+    views.projection.renderProjecao();
+    views.projection.projExpandAll();
+  });
+  await expect(page.locator('#workforceToggleADM5189')).toBeChecked();
+  await expect(
+    page.locator('#projectionWorkforceTbody [data-workforce-field="cargo"]'),
+  ).toHaveValue('Engenheiro');
+  await expect(page.locator('#projectionWorkforceChart .apexcharts-svg')).toBeVisible();
+  await expect(
+    page.locator('#projKpis .projection-trend-card .projection-summary-row--total strong'),
+  ).toHaveText('1.776,67');
+  const workforceMonth = page
+    .locator('#projTbody tr', { hasText: 'ADM5189' })
+    .first()
+    .locator('.projection-month-cell--workforce')
+    .first();
+  await workforceMonth.locator('button').click();
+  await expect(page.locator('.projection-month-summary')).toContainText('Mão de obra manual');
+  await expect(page.locator('.projection-month-summary')).toContainText('Gestão substituída');
+  await page.locator('#modal .modal-close').click();
+
+  await page.evaluate(() => {
+    const { state, views } = window.dashboardServices;
     state.dados.flows = [];
+    state.dados.workforce = { settings: [], rows: [] };
     state.dados.projRaw = ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'].map(
       (mes) => ({
         codigo_obra: 'OBRA-TESTE',

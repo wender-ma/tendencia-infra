@@ -1,4 +1,11 @@
-const EMPTY_HISTORY = () => ({ gestoes: [], items: [], totals: {} });
+const EMPTY_HISTORY = () => ({
+  gestoes: [],
+  items: [],
+  totals: {},
+  projectionManagementByProject: {},
+  projectionComparisonByProject: {},
+  monthlyRowsByProjectManagement: {},
+});
 const EMPTY_EVOLUTION = () => ({ teorica: null, financeira: null });
 
 export function resolveInitialProject(
@@ -144,6 +151,7 @@ export function createProjectController({
     state.dados.flows = [];
     state.config.evolGlobal = EMPTY_EVOLUTION();
     state.config.gestaoLabel = 'Gestão Atual';
+    state.dados.workforce = { settings: [], rows: [] };
   }
 
   function resetSharedData() {
@@ -152,7 +160,7 @@ export function createProjectController({
     for (const kind of Object.keys(state.uploads)) state.uploads[kind] = null;
   }
 
-  function aplicarCacheLocal(classifications, manuals, projectionConfig, movements) {
+  function aplicarCacheLocal(classifications, manuals, projectionConfig, movements, workforce) {
     if (classifications) storage.set(storageKeys.classifications, JSON.stringify(classifications));
     else storage.remove(storageKeys.classifications);
     if (manuals) storage.set(storageKeys.manuals, JSON.stringify(manuals));
@@ -171,6 +179,7 @@ export function createProjectController({
         },
       }),
     );
+    state.dados.workforce = workforce || { settings: [], rows: [] };
   }
 
   function parseConfig(config, key, fallback, context, userMessage) {
@@ -316,17 +325,26 @@ export function createProjectController({
   async function recarregarDadosDaObra() {
     if (!hasBackend() || !state.obra.ativa) return false;
     resetDadosObra();
-    const [classifications, manuals, projectionConfig, movements, config, datasets, latestUploads] =
-      await Promise.all([
-        dashboardRepository.loadClassifications(),
-        dashboardRepository.loadManuals(),
-        dashboardRepository.loadProjectionConfig(),
-        dashboardRepository.loadMovements(),
-        dashboardRepository.loadDashboardConfig(),
-        dashboardDatasetRepository.loadForDashboard(),
-        uploadRepository.loadLatest(),
-      ]);
-    aplicarCacheLocal(classifications, manuals, projectionConfig, movements);
+    const [
+      classifications,
+      manuals,
+      projectionConfig,
+      movements,
+      workforce,
+      config,
+      datasets,
+      latestUploads,
+    ] = await Promise.all([
+      dashboardRepository.loadClassifications(),
+      dashboardRepository.loadManuals(),
+      dashboardRepository.loadProjectionConfig(),
+      dashboardRepository.loadMovements(),
+      dashboardRepository.loadWorkforce?.() || Promise.resolve({ settings: [], rows: [] }),
+      dashboardRepository.loadDashboardConfig(),
+      dashboardDatasetRepository.loadForDashboard(),
+      uploadRepository.loadLatest(),
+    ]);
+    aplicarCacheLocal(classifications, manuals, projectionConfig, movements, workforce);
     aplicarDadosPersistidos(config);
     aplicarDatasetsVersionados(datasets);
     for (const kind of Object.keys(state.uploads)) state.uploads[kind] = null;

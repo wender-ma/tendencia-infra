@@ -50,6 +50,7 @@ export const STORAGE_KEYS = Object.freeze({
   projectionControl: 'jzurique_proj_ctrl_v1',
   projectionSettings: 'jzurique_proj_settings_v1',
   projectionColumnWidths: 'jzurique_proj_column_widths_v1',
+  projectionColumnGroups: 'jzurique_proj_column_groups_v1',
   overviewInputColumnWidths: 'jzurique_overview_input_column_widths_v1',
   activeProject: 'jzurique_obra_ativa',
   evolution: 'jzurique_evol_global',

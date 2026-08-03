@@ -13,6 +13,9 @@ const { pathToFileURL } = require('url');
     buildProjectionDifferenceBreakdown,
     buildProjectionDifferenceFlowDetails,
     buildProjectionMonthlyTableModel,
+    buildProjectionSnapshot,
+    buildManagementAdherenceComparison,
+    buildWorkforceCurveAdjustments,
     distributeServiceProjection,
     projetarServico,
   } = await import(moduleUrl.href);
@@ -134,20 +137,175 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(monthlyModel.root.metrics.tendency, 420);
   assert.strictEqual(monthlyModel.root.monthly['2026-03'].total, 120);
   assert.strictEqual(monthlyModel.root.monthly['2026-04'].total, 100);
-  const inputAMonth = monthlyModel.nodes.find((node) => node.cod_insumo === 'A').monthly[
-    '2026-03'
-  ];
+  const inputAMonth = monthlyModel.nodes.find((node) => node.cod_insumo === 'A').monthly['2026-03'];
   assert.strictEqual(inputAMonth.extrapolation, 60);
   assert.strictEqual(inputAMonth.pendingFlows, 25);
   assert.strictEqual(inputAMonth.reflectedFlowItems.length, 1);
-  assert.strictEqual(
-    inputAMonth.total,
-    85,
-    'Flow refletido não pode ser somado novamente ao mês',
-  );
+  assert.strictEqual(inputAMonth.total, 85, 'Flow refletido não pode ser somado novamente ao mês');
   const unclassified = monthlyModel.nodes.find((node) => node.isFlowOnly);
   assert.strictEqual(unclassified.item, 'Sem insumo classificado');
   assert.strictEqual(unclassified.monthly['2026-03'].pendingFlows, -5);
+
+  const comparison = buildManagementAdherenceComparison({
+    projectCode: 'OBRA-1',
+    comparisonByProject: {
+      'OBRA-1': {
+        currentManagement: 'GESTÃO 07-2026',
+        previousManagement: 'GESTÃO 06-2026',
+        comparisonMonth: '2026-06',
+      },
+    },
+    monthlyRowsByProjectManagement: {
+      'OBRA-1': {
+        'GESTÃO 06-2026': [{ servico: 'S05765', insumo: 'A', mes: '2026-06', valor: 100 }],
+        'GESTÃO 07-2026': [{ servico: 'S05765', insumo: 'A', mes: '2026-06', valor: 125 }],
+      },
+    },
+  });
+  assert.strictEqual(comparison.available, true);
+  assert.deepStrictEqual(comparison.byInput['S05765|A'], {
+    previousPlanned: 100,
+    currentConsolidated: 125,
+  });
+
+  const directSnapshot = buildProjectionSnapshot({
+    dataCorte: '2026-07',
+    dataFim: '2028-04',
+    janelaMeses: 6,
+    hierarchy: [
+      { ordem: 0, cod: '1', item: 'RAIZ', tipo: 'raiz', nivel: 1 },
+      { ordem: 1, cod: '01.01', item: 'INDIRETOS', tipo: 'grupo', nivel: 2 },
+      {
+        ordem: 2,
+        cod: '01.01.01',
+        cod_servico: 'S05765',
+        item: 'SERVIÇO',
+        tipo: 'servico',
+        nivel: 3,
+      },
+      {
+        ordem: 3,
+        cod_servico: 'S05765',
+        cod_insumo: 'ADM5189',
+        item: 'ADMINISTRAÇÃO',
+        tipo: 'insumo',
+        nivel: 4,
+      },
+      {
+        ordem: 4,
+        cod_servico: 'S05765',
+        cod_insumo: 'CONDH271',
+        item: 'CONDUÇÃO',
+        tipo: 'insumo',
+        nivel: 4,
+      },
+      {
+        ordem: 5,
+        cod_servico: 'S05765',
+        cod_insumo: 'I013233',
+        item: 'SEM RITMO',
+        tipo: 'insumo',
+        nivel: 4,
+      },
+    ],
+    rows: [
+      ...['01', '02', '03', '04', '05', '06'].map((month) => ({
+        servico: 'S05765',
+        insumo: 'ADM5189',
+        mes: `2026-${month}`,
+        valor: 100,
+      })),
+      { servico: 'S05765', insumo: 'ADM5189', mes: '2027-10', valor: 50 },
+      ...['01', '02', '03', '04', '05', '06'].map((month) => ({
+        servico: 'S05765',
+        insumo: 'CONDH271',
+        mes: `2026-${month}`,
+        valor: 50,
+      })),
+      { servico: 'S05765', insumo: 'CONDH271', mes: '2028-03', valor: 50 },
+      { servico: 'S05765', insumo: 'I013233', mes: '2025-01', valor: 500 },
+      { servico: 'S05765', insumo: 'I013233', mes: '2027-10', valor: 50 },
+    ],
+  });
+  const admProjection = directSnapshot.inputProjections.find(
+    (projection) => projection.insumo === 'ADM5189',
+  );
+  const zeroRhythmProjection = directSnapshot.inputProjections.find(
+    (projection) => projection.insumo === 'I013233',
+  );
+  assert.strictEqual(admProjection.ultimo_mes_planejado, '2027-10');
+  assert.strictEqual(
+    directSnapshot.monthlyModel.nodes.find((node) => node.cod_insumo === 'ADM5189').monthly[
+      '2027-11'
+    ].extrapolation,
+    100,
+    'ADM5189 deveria extrapolar no mês seguinte ao seu próprio planejamento',
+  );
+  assert.strictEqual(zeroRhythmProjection.ritmo_historico, 0);
+  assert.strictEqual(zeroRhythmProjection.extrapolacao, 0);
+
+  const workforceSnapshot = buildProjectionSnapshot({
+    dataCorte: '2026-03',
+    dataFim: '2026-04',
+    janelaMeses: 2,
+    hierarchy: [
+      { ordem: 0, cod: '1', item: 'RAIZ', tipo: 'raiz', nivel: 1 },
+      { ordem: 1, cod: '01.01', item: 'INDIRETOS', tipo: 'grupo', nivel: 2 },
+      {
+        ordem: 2,
+        cod: '01.01.01',
+        cod_servico: 'S05765',
+        item: 'SERVIÇO',
+        tipo: 'servico',
+        nivel: 3,
+      },
+      {
+        ordem: 3,
+        cod_servico: 'S05765',
+        cod_insumo: 'ADM5189',
+        item: 'ADMINISTRAÇÃO',
+        tipo: 'insumo',
+        nivel: 4,
+      },
+    ],
+    rows: ['2026-01', '2026-02', '2026-03', '2026-04'].map((month) => ({
+      servico: 'S05765',
+      insumo: 'ADM5189',
+      mes: month,
+      valor: 100,
+    })),
+    workforce: {
+      settings: [{ insumo: 'ADM5189', ativo: true }],
+      rows: [
+        {
+          id: 'ROW-1',
+          insumo: 'ADM5189',
+          cargo: 'Engenheiro',
+          custo_mensal: 500,
+          distribuicao: { '2026-03': 1, '2026-04': 2 },
+        },
+      ],
+    },
+  });
+  assert.strictEqual(workforceSnapshot.rootMetrics.realized, 200);
+  assert.strictEqual(workforceSnapshot.rootMetrics.workforce, 1500);
+  assert.strictEqual(workforceSnapshot.rootMetrics.tendency, 1700);
+  assert.strictEqual(workforceSnapshot.monthlyModel.root.monthly['2026-03'].total, 500);
+  assert.strictEqual(workforceSnapshot.monthlyModel.root.monthly['2026-04'].total, 1000);
+  const workforceCurve = buildProjectionCurve(
+    { '2026-01': 100, '2026-02': 100, '2026-03': 100, '2026-04': 100 },
+    workforceSnapshot.inputProjections,
+    '2026-03',
+    '2026-04',
+    0,
+    buildWorkforceCurveAdjustments({
+      inputProjections: workforceSnapshot.inputProjections,
+      workforcePlan: workforceSnapshot.workforcePlan,
+      dataCorte: '2026-03',
+      dataFim: '2026-04',
+    }),
+  );
+  assert.strictEqual(workforceCurve.tendency.at(-1), 1700);
 
   assert.deepStrictEqual(buildMonthRange('2026-01', '2026-04'), [
     '2026-01',

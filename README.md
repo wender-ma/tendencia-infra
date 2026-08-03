@@ -204,6 +204,22 @@ escopo depois da migration
 `supabase/migrations/20260728193000_global_upload_history.sql`, que também garante
 uma única versão ativa por base e adiciona o reset global isolado.
 
+## Tendência, aderência e mão de obra
+
+- A Tendência usa a Gestão nomeada mais recente de cada obra e preserva as demais
+  Gestões no histórico interno.
+- A aderência compara o planejamento da Gestão imediatamente anterior com o
+  consolidado da Gestão atual no mês encerrado. Snapshots criados antes da `v1.7.0`
+  exibem esse comparativo como indisponível até o próximo upload global.
+- A projeção automática calcula ritmo e último mês planejado separadamente para
+  cada insumo. A janela de `3`, `6` ou `12` meses inclui meses zerados e não gera
+  extrapolação quando a média líquida for negativa.
+- O Planejamento de Mão de Obra controla `ADM5189` e `CONDH271` por cargo, custo
+  unitário e quantidade mensal. Quando ativado para um insumo, substitui o futuro
+  da Gestão e sua extrapolação automática, preservando realizado e Flows pendentes.
+- Cards, Curva S, histograma, grade mensal, modais e exportação usam o mesmo
+  snapshot de cálculo para manter a reconciliação dos totais.
+
 Para gerar e validar o pacote de producao pronto para publicar:
 
 ```bash

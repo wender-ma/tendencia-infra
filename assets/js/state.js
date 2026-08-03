@@ -42,6 +42,7 @@ export function createAppState({ storage = getBrowserStorage() } = {}) {
         projectionManagementByProject: {},
       },
       projRaw: [],
+      workforce: { settings: [], rows: [] },
     },
     sort: {
       key: 'aditivo_total',

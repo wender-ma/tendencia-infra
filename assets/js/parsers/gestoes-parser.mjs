@@ -44,6 +44,17 @@ function isNamedManagement(management) {
   return /GEST[ÃA]O\s+\d{2}-\d{4}/i.test(management);
 }
 
+function previousManagementName(management) {
+  const match = String(management || '').match(/GEST[ÃA]O\s+(\d{2})-(\d{4})/i);
+  if (!match) return null;
+  const date = new Date(Number(match[2]), Number(match[1]) - 2, 1);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return {
+    management: `GESTÃO ${month}-${date.getFullYear()}`,
+    month: `${date.getFullYear()}-${month}`,
+  };
+}
+
 export function parseGestoesFile(text, options = {}) {
   const rows = parseDelimitedRows(text);
   const columns = resolveImportColumns('gestoes', rows);
@@ -103,7 +114,7 @@ export function parseGestoesFile(text, options = {}) {
 
     const paymentDate = toIsoDate(String(row[columns.paymentMonth] || '').trim(), 'br');
     const value = parseNumber(row[columns.netValue]) || 0;
-    if (!paymentDate || value <= 0) continue;
+    if (!paymentDate) continue;
     const projectManagements = monthlyRowsByProject.get(projectCode) || new Map();
     const monthlyRows = projectManagements.get(management) || [];
     monthlyRows.push({
@@ -147,7 +158,13 @@ export function parseGestoesFile(text, options = {}) {
 
   const projectionRows = [];
   const projectionManagementByProject = {};
+  const projectionComparisonByProject = {};
+  const monthlyRowsByProjectManagement = {};
+  const missingPreviousManagements = [];
   for (const [projectCode, projectManagements] of monthlyRowsByProject) {
+    monthlyRowsByProjectManagement[projectCode] = Object.fromEntries(
+      [...projectManagements].map(([management, monthlyRows]) => [management, monthlyRows]),
+    );
     const namedManagements = [...projectManagements.keys()]
       .filter(isNamedManagement)
       .sort((left, right) => {
@@ -160,6 +177,32 @@ export function parseGestoesFile(text, options = {}) {
     if (!selectedManagement) continue;
     projectionManagementByProject[projectCode] = selectedManagement;
     projectionRows.push(...projectManagements.get(selectedManagement));
+    if (isNamedManagement(selectedManagement)) {
+      const previous = previousManagementName(selectedManagement);
+      if (!projectManagements.has(previous.management)) {
+        missingPreviousManagements.push({
+          projectCode,
+          currentManagement: selectedManagement,
+          expectedManagement: previous.management,
+        });
+      } else {
+        projectionComparisonByProject[projectCode] = {
+          currentManagement: selectedManagement,
+          previousManagement: previous.management,
+          comparisonMonth: previous.month,
+        };
+      }
+    }
+  }
+
+  if (missingPreviousManagements.length) {
+    const details = missingPreviousManagements
+      .map(
+        ({ projectCode, currentManagement, expectedManagement }) =>
+          `${projectCode}: ${currentManagement} exige ${expectedManagement}`,
+      )
+      .join('; ');
+    throw new Error(`GESTÕES: Gestão imediatamente anterior ausente. ${details}.`);
   }
 
   return {
@@ -168,9 +211,13 @@ export function parseGestoesFile(text, options = {}) {
       items,
       totals,
       projectionManagementByProject,
+      projectionComparisonByProject,
+      monthlyRowsByProjectManagement,
     },
     projectionRows,
     projectionManagementByProject,
+    projectionComparisonByProject,
+    monthlyRowsByProjectManagement,
     report,
     unknownProjects: [...unknownProjects],
   };

@@ -414,6 +414,8 @@ Promise.resolve()
       },
       projectController,
       projectionControl: ui.projectionControl,
+      dashboardRepository,
+      authService,
     });
     actionRegistry.register(ui.projection);
     ui.overview = createOverviewView({

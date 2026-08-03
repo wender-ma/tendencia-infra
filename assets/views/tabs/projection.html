@@ -60,6 +60,64 @@
   </div>
 </div>
 
+<div class="card projection-workforce-card" id="projectionWorkforceCard">
+  <div class="projection-workforce-toolbar">
+    <h2>👥 Planejamento de Mão de Obra</h2>
+    <div class="projection-workforce-activation" aria-label="Ativação do planejamento manual">
+      <label>
+        <input
+          id="workforceToggleADM5189"
+          type="checkbox"
+          data-workforce-setting="ADM5189"
+        />
+        ADM5189
+      </label>
+      <label>
+        <input
+          id="workforceToggleCONDH271"
+          type="checkbox"
+          data-workforce-setting="CONDH271"
+        />
+        CONDH271
+      </label>
+    </div>
+    <div class="segmented projection-workforce-mode" role="group" aria-label="Métrica do histograma">
+      <button
+        id="workforceModeEffective"
+        type="button"
+        class="active"
+        aria-pressed="true"
+        data-click-action="setProjectionWorkforceChartMode"
+        data-action-mode="arg"
+        data-action-arg="effective"
+      >
+        Efetivo
+      </button>
+      <button
+        id="workforceModeCost"
+        type="button"
+        aria-pressed="false"
+        data-click-action="setProjectionWorkforceChartMode"
+        data-action-mode="arg"
+        data-action-arg="cost"
+      >
+        Custo
+      </button>
+    </div>
+    <span id="workforceSaveStatus" class="projection-workforce-save-status" aria-live="polite"></span>
+    <button class="btn-sm compact" data-click-action="addProjectionWorkforceRow">
+      ＋ Adicionar linha
+    </button>
+  </div>
+  <div id="projectionWorkforceChart" class="projection-workforce-chart"></div>
+  <div class="table-wrap projection-workforce-table-wrap">
+    <table class="projection-workforce-table">
+      <thead id="projectionWorkforceThead"></thead>
+      <tbody id="projectionWorkforceTbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <div class="card">
   <div class="projection-detail-toolbar">
     <h2 class="projection-detail-title">🔍 Projeção Detalhada</h2>
@@ -76,6 +134,26 @@
       <span class="toolbar-count" id="projCount"></span>
     </div>
     <div class="panel-actions projection-detail-actions">
+      <button
+        id="projToggleSummaryColumns"
+        class="btn-sm compact projection-column-group-toggle"
+        data-click-action="toggleProjectionColumnGroup"
+        data-action-mode="arg"
+        data-action-arg="summary"
+        aria-expanded="true"
+      >
+        − Resumo
+      </button>
+      <button
+        id="projToggleAdherenceColumns"
+        class="btn-sm compact projection-column-group-toggle"
+        data-click-action="toggleProjectionColumnGroup"
+        data-action-mode="arg"
+        data-action-arg="adherence"
+        aria-expanded="true"
+      >
+        − Aderência
+      </button>
       <button class="btn-sm compact" data-click-action="projExpandAll">📂 Expandir tudo</button>
       <button class="btn-sm compact" data-click-action="projCollapseAll">📁 Recolher tudo</button>
       <button

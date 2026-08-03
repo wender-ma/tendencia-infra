@@ -311,6 +311,8 @@ function clearDeletedActiveObra() {
     items: [],
     totals: {},
     projectionManagementByProject: {},
+    projectionComparisonByProject: {},
+    monthlyRowsByProjectManagement: {},
   };
   APP_STATE.dados.projRaw = [];
   Object.keys(APP_STATE.uploads).forEach((key) => {

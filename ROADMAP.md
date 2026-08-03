@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 29/07/2026
+Última atualização: 03/08/2026
 
 ## Como acompanhar
 
@@ -37,6 +37,22 @@ Este documento registra as melhorias planejadas para o Dashboard de Tendência. 
 - [x] **EXT-11 concluído** Secrets cadastrados e primeiro backup diário criptografado criado, verificado e armazenado pelo GitHub Actions em 29/07/2026.
 - [x] **EXT-12 concluído** Vercel configurada para publicar a branch `production`; CI promoveu e publicou o SHA validado `83828bd` em 29/07/2026.
 - [x] **EXT-13 concluído** Desativar novos cadastros no Supabase Auth; Management API confirmou `disable_signup: true` e login por Email/Google ativo em 29/07/2026.
+
+## Versão 1.7.0
+
+- [x] Preservar as séries mensais por Gestão e selecionar a Gestão atual e a imediatamente anterior por obra.
+- [x] Bloquear o parser antes de qualquer escrita quando faltar a Gestão nomeada do mês anterior.
+- [x] Adicionar aderência do mês encerrado em todos os níveis da Projeção Detalhada.
+- [x] Criar os grupos recolhíveis `Resumo` e `Aderência`, persistidos por obra e navegador.
+- [x] Calcular ritmo, último mês planejado e extrapolação diretamente por insumo, incluindo meses zerados.
+- [x] Criar histograma e grade editável de mão de obra para `ADM5189` e `CONDH271`.
+- [x] Integrar o planejamento manual aos cards, Curva S, grade mensal, modais e Excel.
+- [x] Criar migration, RLS, auditoria, rollback e testes descartáveis da persistência de mão de obra.
+- [x] Validar contratos, build, três navegadores, responsividade, Lighthouse e dados reais no localhost.
+- [x] **EXT-14 concluído** Aplicar `20260731203000_projection_workforce.sql` no Supabase de produção; auditoria confirmou tabelas, RLS, grants e oito policies em 03/08/2026.
+- [ ] **AÇÃO EXTERNA EXT-15** Após o deploy, reprocessar a planilha global ativa para preencher a aderência mensal dos snapshots antigos.
+
+Critério de conclusão: migration auditada, arquivo global reprocessado, totais reais reconciliados e `v1.7.0` publicada na Vercel.
 
 ## P0: segurança crítica
 

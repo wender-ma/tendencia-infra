@@ -53,6 +53,9 @@ const PROJECTION_CONFIG_PUBLIC_COLUMNS =
 
 const MOVEMENT_PUBLIC_COLUMNS =
   'id,codigo_obra,tipo,data,data_br,origem,destino,descricao,justificativa,responsavel,valor,created_at';
+const WORKFORCE_SETTING_PUBLIC_COLUMNS = 'codigo_obra,insumo,ativo,updated_at';
+const WORKFORCE_ROW_PUBLIC_COLUMNS =
+  'id,codigo_obra,insumo,cargo,custo_mensal,distribuicao,ordem,updated_at';
 
 function classificationMap(rows = []) {
   return Object.fromEntries(
@@ -346,6 +349,77 @@ export function createDashboardRepository({
     );
   }
 
+  async function loadWorkforce() {
+    const supabase = client();
+    const project = activeProject();
+    if (!supabase || !project) return { settings: [], rows: [] };
+    const [settings, rows] = await Promise.all([
+      read('Mão de obra/carregar configurações', [], () =>
+        supabase
+          .from('projection_workforce_settings')
+          .select(WORKFORCE_SETTING_PUBLIC_COLUMNS)
+          .eq('codigo_obra', project),
+      ),
+      read('Mão de obra/carregar linhas', [], () =>
+        supabase
+          .from('projection_workforce_rows')
+          .select(WORKFORCE_ROW_PUBLIC_COLUMNS)
+          .eq('codigo_obra', project)
+          .order('ordem', { ascending: true }),
+      ),
+    ]);
+    return { settings: settings || [], rows: rows || [] };
+  }
+
+  async function saveWorkforceSetting(input, active) {
+    const supabase = client();
+    const project = activeProject();
+    if (!supabase || !canEditActiveProject?.() || !project) return;
+    return mutate(() =>
+      supabase.from('projection_workforce_settings').upsert(
+        {
+          codigo_obra: project,
+          insumo: String(input || ''),
+          ativo: Boolean(active),
+          updated_at: now().toISOString(),
+          updated_by: getCurrentUser?.()?.email || null,
+        },
+        { onConflict: 'codigo_obra,insumo' },
+      ),
+    );
+  }
+
+  async function upsertWorkforceRow(row) {
+    const supabase = client();
+    const project = activeProject();
+    if (!supabase || !canEditActiveProject?.() || !project) return;
+    return mutate(() =>
+      supabase.from('projection_workforce_rows').upsert(
+        {
+          id: row.id,
+          codigo_obra: project,
+          insumo: row.insumo,
+          cargo: row.cargo,
+          custo_mensal: row.custo_mensal,
+          distribuicao: row.distribuicao || {},
+          ordem: row.ordem || 0,
+          updated_at: now().toISOString(),
+          updated_by: getCurrentUser?.()?.email || null,
+        },
+        { onConflict: 'id' },
+      ),
+    );
+  }
+
+  async function deleteWorkforceRow(id) {
+    const supabase = client();
+    const project = activeProject();
+    if (!supabase || !canEditActiveProject?.() || !project) return;
+    return mutate(() =>
+      supabase.from('projection_workforce_rows').delete().eq('codigo_obra', project).eq('id', id),
+    );
+  }
+
   async function loadDashboardConfig() {
     const supabase = client();
     const project = activeProject();
@@ -431,6 +505,10 @@ export function createDashboardRepository({
     loadMovements,
     upsertMovement,
     deleteMovement,
+    loadWorkforce,
+    saveWorkforceSetting,
+    upsertWorkforceRow,
+    deleteWorkforceRow,
     loadDashboardConfig,
     saveDashboardKey,
     deleteDashboardKeys,

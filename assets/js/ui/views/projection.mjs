@@ -9,6 +9,11 @@ import {
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
 import { parseNumber } from '../../parsers/shared.mjs';
+import {
+  buildWorkforcePlan,
+  normalizeWorkforceState,
+  WORKFORCE_INPUTS,
+} from './projection-workforce.mjs';
 
 const HIERARQUIA = PROJECTION_CATALOG.hierarchy;
 const SERVICOS_META = PROJECTION_CATALOG.services;
@@ -26,6 +31,8 @@ let renderDashboardState;
 let APP_STATE;
 let renderAderenciaProj;
 let getProjectionControlState;
+let workforceRepository;
+let canEditWorkforce;
 let renderVisao;
 let SafeStorage;
 let projectionSettingsProject = null;
@@ -35,16 +42,46 @@ let projectionDifferenceSelectedMonth = null;
 let projectionMonthlyTableModel = null;
 let projectionColumnResize = null;
 let projectionActiveColumnWidths = {};
+let projectionColumnGroupProject = null;
+let projectionColumnGroups = { summary: true, adherence: true };
+let projectionWorkforceChartMode = 'effective';
+const projectionWorkforceSaveTimers = new Map();
+let projectionWorkforceRenderTimer = null;
 
 const PROJECTION_SETTINGS_KEY = STORAGE_KEYS.projectionSettings;
 const PROJECTION_COLUMN_WIDTHS_KEY = STORAGE_KEYS.projectionColumnWidths;
+const PROJECTION_COLUMN_GROUPS_KEY = STORAGE_KEYS.projectionColumnGroups;
 const PROJECTION_STATIC_COLUMNS = Object.freeze([
   { id: 'label', label: 'Grupo / Serviço / Insumo', width: 360, min: 240, max: 520 },
-  { id: 'planned', label: 'Valor planejado', width: 140, min: 110, max: 220 },
-  { id: 'realized', label: 'Realizado', width: 150, min: 110, max: 230 },
-  { id: 'balance', label: 'Saldo', width: 130, min: 100, max: 210 },
-  { id: 'extrapolation', label: 'Extrapolação', width: 140, min: 110, max: 230 },
-  { id: 'tendency', label: 'Tendência', width: 140, min: 110, max: 230 },
+  { id: 'planned', group: 'summary', label: 'Valor planejado', width: 140, min: 110, max: 220 },
+  { id: 'realized', group: 'summary', label: 'Realizado', width: 150, min: 110, max: 230 },
+  { id: 'balance', group: 'summary', label: 'Saldo', width: 130, min: 100, max: 210 },
+  { id: 'extrapolation', group: 'summary', label: 'Extrapolação', width: 140, min: 110, max: 230 },
+  { id: 'tendency', group: 'summary', label: 'Tendência', width: 140, min: 110, max: 230 },
+  {
+    id: 'previousPlanned',
+    group: 'adherence',
+    label: 'Planejado anterior',
+    width: 170,
+    min: 130,
+    max: 250,
+  },
+  {
+    id: 'currentConsolidated',
+    group: 'adherence',
+    label: 'Consolidado atual',
+    width: 170,
+    min: 130,
+    max: 250,
+  },
+  {
+    id: 'adherenceDifference',
+    group: 'adherence',
+    label: 'Diferença',
+    width: 140,
+    min: 110,
+    max: 220,
+  },
 ]);
 const PROJECTION_MONTH_COLUMN = Object.freeze({ width: 120, min: 90, max: 190 });
 
@@ -236,6 +273,7 @@ export function buildProjectionCurve(
   dataCorte,
   dataFim,
   pendingFlowImpact = 0,
+  monthlyAdjustments = {},
 ) {
   const sourceMonths = Object.keys(monthlyValues || {})
     .filter((month) => !dataFim || month <= dataFim)
@@ -276,7 +314,8 @@ export function buildProjectionCurve(
   for (const month of months) {
     const baseValue = monthlyValues[month] || 0;
     plannedAccumulated += baseValue;
-    tendencyAccumulated += baseValue + (extrapolationByMonth[month] || 0);
+    tendencyAccumulated +=
+      baseValue + (extrapolationByMonth[month] || 0) + (monthlyAdjustments[month] || 0);
     if (month === flowImpactMonth) tendencyAccumulated += pendingFlowImpact || 0;
     planned.push(plannedAccumulated);
     tendency.push(month < trendStart ? null : tendencyAccumulated);
@@ -286,11 +325,45 @@ export function buildProjectionCurve(
     const expectedFinal =
       planned[planned.length - 1] +
       (projections || []).reduce((sum, projection) => sum + (projection.extrapolacao || 0), 0) +
-      (pendingFlowImpact || 0);
+      (pendingFlowImpact || 0) +
+      Object.values(monthlyAdjustments).reduce((sum, value) => sum + (Number(value) || 0), 0);
     tendency[tendency.length - 1] = expectedFinal;
   }
 
   return { months, planned, tendency, trendStart };
+}
+
+export function buildWorkforceCurveAdjustments({
+  inputProjections = [],
+  workforcePlan = null,
+  dataCorte,
+  dataFim,
+} = {}) {
+  const months = buildMonthRange(dataCorte, dataFim);
+  const adjustments = Object.fromEntries(months.map((month) => [month, 0]));
+  if (!workforcePlan) return adjustments;
+  for (const input of WORKFORCE_INPUTS) {
+    if (!workforcePlan.enabledByInput?.[input]) continue;
+    const projections = inputProjections.filter((projection) => projection.insumo === input);
+    const extrapolations = projections.map((projection) =>
+      projectionMonthlyExtrapolation(projection, months, dataFim),
+    );
+    months.forEach((month) => {
+      const replacedBase = projections.reduce(
+        (sum, projection) => sum + (Number(projection.meses?.[month]) || 0),
+        0,
+      );
+      const replacedExtrapolation = extrapolations.reduce(
+        (sum, values) => sum + (Number(values[month]) || 0),
+        0,
+      );
+      const workforce = Number(workforcePlan.byInput?.[input]?.[month]) || 0;
+      adjustments[month] = roundCurrency(
+        adjustments[month] + workforce - replacedBase - replacedExtrapolation,
+      );
+    });
+  }
+  return adjustments;
 }
 
 export function buildProjectionCurveDisplaySeries(
@@ -408,6 +481,7 @@ export function buildProjectionDifferenceFlowDetails({
 export function buildProjectionDifferenceBreakdown({
   projections = [],
   pendingFlows = [],
+  workforcePlan = null,
   selectedMonth,
   trendStart,
   dataFim,
@@ -431,6 +505,7 @@ export function buildProjectionDifferenceBreakdown({
         insumo: normalizedInput,
         servicos: new Set(),
         extrapolacao: 0,
+        workforce: 0,
         flows: 0,
       });
     }
@@ -438,6 +513,7 @@ export function buildProjectionDifferenceBreakdown({
   };
 
   for (const projection of projections) {
+    if (workforcePlan?.enabledByInput?.[projection.insumo]) continue;
     if (
       projection.extrapolacao <= 0 ||
       !projection.ultimo_mes_planejado ||
@@ -457,6 +533,20 @@ export function buildProjectionDifferenceBreakdown({
     }
   }
 
+  for (const input of WORKFORCE_INPUTS) {
+    if (!workforcePlan?.enabledByInput?.[input]) continue;
+    const contribution = getContribution(input);
+    const inputProjections = projections.filter((projection) => projection.insumo === input);
+    for (let month = trendStart; month <= selectedMonth; month = addMonths(month, 1)) {
+      const workforce = Number(workforcePlan.byInput?.[input]?.[month]) || 0;
+      const replacedBase = inputProjections.reduce(
+        (sum, projection) => sum + (Number(projection.meses?.[month]) || 0),
+        0,
+      );
+      contribution.workforce += workforce - replacedBase;
+    }
+  }
+
   const flowDetails = buildProjectionDifferenceFlowDetails({
     pendingFlows,
     selectedMonth,
@@ -469,13 +559,15 @@ export function buildProjectionDifferenceBreakdown({
   const rows = [...contributions.values()]
     .map((row) => {
       const extrapolacao = roundCurrency(row.extrapolacao);
+      const workforce = roundCurrency(row.workforce);
       const flows = roundCurrency(row.flows);
       return {
         insumo: row.insumo,
         servicos: [...row.servicos].sort(),
         extrapolacao,
+        workforce,
         flows,
-        total: roundCurrency(extrapolacao + flows),
+        total: roundCurrency(extrapolacao + workforce + flows),
       };
     })
     .filter((row) => Math.abs(row.total) >= 0.005)
@@ -494,18 +586,24 @@ export function buildProjectionDifferenceBreakdown({
           insumo: '__unclassified__',
           servicos: [],
           extrapolacao: 0,
+          workforce: 0,
           flows: 0,
           total: 0,
         };
         rows.push(fallback);
         return fallback;
       })();
-    if (Math.abs(targetRow.extrapolacao) >= Math.abs(targetRow.flows)) {
+    if (
+      Math.abs(targetRow.extrapolacao) >= Math.abs(targetRow.flows) &&
+      Math.abs(targetRow.extrapolacao) >= Math.abs(targetRow.workforce)
+    ) {
       targetRow.extrapolacao = roundCurrency(targetRow.extrapolacao + roundingResidual);
+    } else if (Math.abs(targetRow.workforce) >= Math.abs(targetRow.flows)) {
+      targetRow.workforce = roundCurrency(targetRow.workforce + roundingResidual);
     } else {
       targetRow.flows = roundCurrency(targetRow.flows + roundingResidual);
     }
-    targetRow.total = roundCurrency(targetRow.extrapolacao + targetRow.flows);
+    targetRow.total = roundCurrency(targetRow.extrapolacao + targetRow.workforce + targetRow.flows);
   }
 
   return {
@@ -517,16 +615,11 @@ export function buildProjectionDifferenceBreakdown({
 
 // Calcula o ritmo histórico (R$/mês) somando os últimos N meses ANTES da data de corte
 function calcularRitmoHistorico(meses, dataCorte, janelaMeses) {
-  const past = Object.entries(meses)
-    .filter(([m, v]) => m < dataCorte && v > 0)
-    .sort();
-  if (!past.length) return 0;
-  // Pega os últimos N meses CONSECUTIVOS antes do corte
   const cutoffStart = addMonths(dataCorte, -janelaMeses);
-  const dentroJanela = past.filter(([m]) => m >= cutoffStart);
-  if (!dentroJanela.length) return 0;
-  const total = dentroJanela.reduce((s, [, v]) => s + v, 0);
-  return total / janelaMeses;
+  const total = Object.entries(meses || {})
+    .filter(([month]) => month >= cutoffStart && month < dataCorte)
+    .reduce((sum, [, value]) => sum + (Number(value) || 0), 0);
+  return Math.max(0, total / janelaMeses);
 }
 
 // Calcula somatório de flows PENDENTES (refletido_status='pendente', exceto cancelados)
@@ -671,6 +764,10 @@ function emptyProjectionMonth() {
   return {
     planned: 0,
     extrapolation: 0,
+    workforce: 0,
+    workforceOverride: false,
+    replacedPlanned: 0,
+    replacedExtrapolation: 0,
     pendingFlows: 0,
     total: 0,
     pendingFlowItems: [],
@@ -720,6 +817,8 @@ export function buildProjectionMonthlyTableModel({
   dataCorte,
   dataFim,
   hierarchy = HIERARQUIA,
+  comparison = null,
+  workforcePlan = null,
 } = {}) {
   const months = buildMonthRange(dataCorte, dataFim);
   const nodes = hierarchy.map((node, index) => ({
@@ -826,8 +925,79 @@ export function buildProjectionMonthlyTableModel({
       balance: roundCurrency(projection.planejado_total - projection.realizado),
       extrapolation: roundCurrency(projection.extrapolacao),
       pendingFlows: 0,
+      workforce: 0,
       tendency: roundCurrency(projection.planejado_total + projection.extrapolacao),
+      previousPlanned: 0,
+      currentConsolidated: 0,
+      adherenceDifference: 0,
     };
+  }
+
+  if (workforcePlan) {
+    for (const input of WORKFORCE_INPUTS) {
+      if (!workforcePlan.enabledByInput?.[input]) continue;
+      const candidates = nodes.filter(
+        (node) => node.tipo === 'insumo' && node.projection && node.cod_insumo === input,
+      );
+      if (!candidates.length) continue;
+      for (const node of candidates) {
+        for (const month of months) {
+          const cell = node.monthly[month];
+          cell.replacedPlanned = cell.planned;
+          cell.replacedExtrapolation = cell.extrapolation;
+          cell.workforce = 0;
+          cell.workforceOverride = true;
+          cell.extrapolation = 0;
+          cell.total = 0;
+        }
+        node.metrics.extrapolation = 0;
+        node.metrics.workforce = 0;
+        node.metrics.tendency = roundCurrency(node.metrics.realized);
+      }
+      const node = candidates[0];
+      let workforceTotal = 0;
+      for (const month of months) {
+        const cell = node.monthly[month];
+        const workforce = roundCurrency(workforcePlan.byInput?.[node.cod_insumo]?.[month]);
+        cell.workforce = workforce;
+        cell.workforceOverride = true;
+        cell.extrapolation = 0;
+        cell.total = workforce;
+        workforceTotal = roundCurrency(workforceTotal + workforce);
+      }
+      node.metrics.extrapolation = 0;
+      node.metrics.workforce = workforceTotal;
+      node.metrics.tendency = roundCurrency(node.metrics.realized + workforceTotal);
+    }
+  }
+
+  if (comparison?.available) {
+    const assignedComparisonKeys = new Set();
+    for (const node of nodes) {
+      if (node.tipo !== 'insumo') continue;
+      const key = `${node.cod_servico || ''}|${node.cod_insumo || ''}`;
+      if (assignedComparisonKeys.has(key)) continue;
+      const values = comparison.byInput?.[key];
+      if (!values) continue;
+      node.metrics ||= {
+        planned: 0,
+        realized: 0,
+        balance: 0,
+        extrapolation: 0,
+        pendingFlows: 0,
+        workforce: 0,
+        tendency: 0,
+        previousPlanned: 0,
+        currentConsolidated: 0,
+        adherenceDifference: 0,
+      };
+      node.metrics.previousPlanned = roundCurrency(values.previousPlanned);
+      node.metrics.currentConsolidated = roundCurrency(values.currentConsolidated);
+      node.metrics.adherenceDifference = roundCurrency(
+        values.currentConsolidated - values.previousPlanned,
+      );
+      assignedComparisonKeys.add(key);
+    }
   }
 
   let unclassifiedFlowNode = null;
@@ -856,6 +1026,9 @@ export function buildProjectionMonthlyTableModel({
         extrapolation: 0,
         pendingFlows: 0,
         tendency: 0,
+        previousPlanned: 0,
+        currentConsolidated: 0,
+        adherenceDifference: 0,
       },
     };
     nodes.push(node);
@@ -895,7 +1068,10 @@ export function buildProjectionMonthlyTableModel({
         const cell = target.monthly[dataCorte];
         cell.pendingFlows = roundCurrency(cell.pendingFlows + detail.valor);
         cell.pendingFlowItems.push(detail);
-        cell.total = roundCurrency(cell.planned + cell.extrapolation + cell.pendingFlows);
+        cell.total = roundCurrency(
+          (cell.workforceOverride ? cell.workforce : cell.planned + cell.extrapolation) +
+            cell.pendingFlows,
+        );
       }
       continue;
     }
@@ -912,7 +1088,11 @@ export function buildProjectionMonthlyTableModel({
       balance: 0,
       extrapolation: 0,
       pendingFlows: 0,
+      workforce: 0,
       tendency: 0,
+      previousPlanned: 0,
+      currentConsolidated: 0,
+      adherenceDifference: 0,
     };
   }
 
@@ -925,7 +1105,11 @@ export function buildProjectionMonthlyTableModel({
       balance: 0,
       extrapolation: 0,
       pendingFlows: 0,
+      workforce: 0,
       tendency: 0,
+      previousPlanned: 0,
+      currentConsolidated: 0,
+      adherenceDifference: 0,
     };
     node.monthly = Object.fromEntries(months.map((month) => [month, emptyProjectionMonth()]));
     for (const childIndex of node.children) {
@@ -938,6 +1122,12 @@ export function buildProjectionMonthlyTableModel({
         const source = child.monthly[month];
         target.planned = roundCurrency(target.planned + source.planned);
         target.extrapolation = roundCurrency(target.extrapolation + source.extrapolation);
+        target.workforce = roundCurrency(target.workforce + source.workforce);
+        target.workforceOverride ||= source.workforceOverride;
+        target.replacedPlanned = roundCurrency(target.replacedPlanned + source.replacedPlanned);
+        target.replacedExtrapolation = roundCurrency(
+          target.replacedExtrapolation + source.replacedExtrapolation,
+        );
         target.pendingFlows = roundCurrency(target.pendingFlows + source.pendingFlows);
         target.total = roundCurrency(target.total + source.total);
         target.pendingFlowItems.push(...source.pendingFlowItems);
@@ -956,7 +1146,33 @@ export function buildProjectionMonthlyTableModel({
     root: rootIndex >= 0 ? nodes[rootIndex] : null,
     dataCorte,
     dataFim,
+    comparison,
+    workforcePlan,
   };
+}
+
+export function buildManagementAdherenceComparison({
+  monthlyRowsByProjectManagement = {},
+  comparisonByProject = {},
+  projectCode = '',
+} = {}) {
+  const metadata = comparisonByProject?.[projectCode];
+  const projectRows = monthlyRowsByProjectManagement?.[projectCode];
+  if (!metadata || !projectRows) return { available: false, byInput: {} };
+  const previousRows = projectRows[metadata.previousManagement] || [];
+  const currentRows = projectRows[metadata.currentManagement] || [];
+  const byInput = {};
+  const add = (rows, field) => {
+    for (const row of rows) {
+      if (row.mes !== metadata.comparisonMonth) continue;
+      const key = `${row.servico || ''}|${row.insumo || ''}`;
+      byInput[key] ||= { previousPlanned: 0, currentConsolidated: 0 };
+      byInput[key][field] = roundCurrency(byInput[key][field] + (Number(row.valor) || 0));
+    }
+  };
+  add(previousRows, 'previousPlanned');
+  add(currentRows, 'currentConsolidated');
+  return { available: true, ...metadata, byInput };
 }
 
 function syncProjectionChartLockUi() {
@@ -990,6 +1206,8 @@ export function buildProjectionSnapshot({
   dataFim,
   janelaMeses = 6,
   hierarchy = HIERARQUIA,
+  comparison = null,
+  workforce = null,
 } = {}) {
   const porServico = {};
   const porInsumo = {};
@@ -1004,23 +1222,31 @@ export function buildProjectionSnapshot({
     porInsumo[key].meses[row.mes] = (porInsumo[key].meses[row.mes] || 0) + (Number(row.valor) || 0);
   }
 
-  const serviceProjections = Object.entries(porServico).map(([servico, months]) =>
-    projetarServico(servico, months, dataCorte, dataFim, janelaMeses),
-  );
-  const individualInputProjections = Object.values(porInsumo).map((item) => ({
+  const inputProjections = Object.values(porInsumo).map((item) => ({
     ...projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses),
     insumo: item.insumo,
   }));
-  const inputProjections = distributeServiceProjection(
-    serviceProjections,
-    individualInputProjections,
-  );
+  const serviceProjections = inputProjections;
+  const workforcePlan = buildWorkforcePlan({
+    settings: workforce?.settings,
+    rows: workforce?.rows,
+    months: buildMonthRange(dataCorte, dataFim),
+  });
+  const workforceCurveAdjustments = buildWorkforceCurveAdjustments({
+    inputProjections,
+    workforcePlan,
+    dataCorte,
+    dataFim,
+  });
   const monthlyModel = buildProjectionMonthlyTableModel({
     projections: inputProjections,
     flows,
     dataCorte,
     dataFim,
     hierarchy,
+    comparison,
+    workforcePlan,
+    workforceCurveAdjustments,
   });
 
   return {
@@ -1033,12 +1259,15 @@ export function buildProjectionSnapshot({
     serviceProjections,
     inputProjections,
     monthlyModel,
+    workforcePlan,
+    workforceCurveAdjustments,
     rootMetrics: monthlyModel.root?.metrics || {
       planned: 0,
       realized: 0,
       balance: 0,
       extrapolation: 0,
       pendingFlows: 0,
+      workforce: 0,
       tendency: 0,
     },
   };
@@ -1050,13 +1279,331 @@ function buildActiveProjectionSnapshot() {
   const dataFim =
     document.getElementById('projDataFim')?.value || savedDataFim() || defaultDataFim();
   const janelaMeses = parseInt(document.getElementById('projMetodo')?.value) || 6;
+  const projectCode = activeProjectionProjectKey();
+  const history = APP_STATE?.dados?.historico || {};
+  const comparison = buildManagementAdherenceComparison({
+    monthlyRowsByProjectManagement: history.monthlyRowsByProjectManagement,
+    comparisonByProject: history.projectionComparisonByProject,
+    projectCode,
+  });
   return buildProjectionSnapshot({
     rows,
     flows: getFlowsObraAtiva(),
     dataCorte,
     dataFim,
     janelaMeses,
+    comparison,
+    workforce: APP_STATE?.dados?.workforce,
   });
+}
+
+function workforceState() {
+  APP_STATE.dados.workforce ||= { settings: [], rows: [] };
+  return APP_STATE.dados.workforce;
+}
+
+function setWorkforceSaveStatus(message, tone = '') {
+  const status = document.getElementById('workforceSaveStatus');
+  if (!status) return;
+  status.textContent = message;
+  status.dataset.tone = tone;
+}
+
+function workforceRowById(id) {
+  return workforceState().rows.find((row) => String(row.id) === String(id));
+}
+
+function scheduleProjectionAfterWorkforceEdit() {
+  clearTimeout(projectionWorkforceRenderTimer);
+  projectionWorkforceRenderTimer = setTimeout(() => {
+    renderProjecao();
+    renderVisao();
+  }, 180);
+}
+
+async function persistWorkforceRow(row) {
+  if (!canEditWorkforce?.() || !row?.cargo?.trim()) return;
+  setWorkforceSaveStatus('Salvando...', 'saving');
+  try {
+    await workforceRepository.upsertWorkforceRow(row);
+    setWorkforceSaveStatus('Salvo', 'saved');
+  } catch (error) {
+    reportNonFatalError('Mão de obra/salvar linha', error);
+    setWorkforceSaveStatus('Erro ao salvar', 'error');
+  }
+}
+
+function scheduleWorkforceRowSave(row) {
+  clearTimeout(projectionWorkforceSaveTimers.get(row.id));
+  setWorkforceSaveStatus('Alterações não salvas', 'pending');
+  projectionWorkforceSaveTimers.set(
+    row.id,
+    setTimeout(() => {
+      projectionWorkforceSaveTimers.delete(row.id);
+      persistWorkforceRow(row);
+    }, 650),
+  );
+}
+
+function renderProjectionWorkforceChart(plan) {
+  const container = document.getElementById('projectionWorkforceChart');
+  if (!container) return;
+  document
+    .getElementById('workforceModeEffective')
+    ?.classList.toggle('active', projectionWorkforceChartMode === 'effective');
+  document
+    .getElementById('workforceModeCost')
+    ?.classList.toggle('active', projectionWorkforceChartMode === 'cost');
+  document
+    .getElementById('workforceModeEffective')
+    ?.setAttribute('aria-pressed', String(projectionWorkforceChartMode === 'effective'));
+  document
+    .getElementById('workforceModeCost')
+    ?.setAttribute('aria-pressed', String(projectionWorkforceChartMode === 'cost'));
+  const series = plan.series
+    .filter((row) => row.cargo)
+    .map((row) => ({
+      name: `${row.cargo} · ${row.insumo}`,
+      data: projectionWorkforceChartMode === 'cost' ? row.costs : row.quantities,
+    }));
+  if (!series.length) {
+    container.replaceChildren();
+    return;
+  }
+  renderApexChart('projectionWorkforceChart', {
+    series,
+    chart: {
+      type: 'bar',
+      height: 290,
+      stacked: true,
+      animations: { enabled: false },
+      toolbar: { show: false },
+      zoom: { enabled: false },
+    },
+    plotOptions: { bar: { columnWidth: '68%' } },
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: plan.months.map((month) => formatMonthLabel(month)),
+      labels: { rotate: -45, style: { fontSize: '10px' } },
+    },
+    yaxis: {
+      labels: {
+        formatter:
+          projectionWorkforceChartMode === 'cost'
+            ? (value) => fmtR$k(value)
+            : (value) => String(Math.round(value)),
+      },
+    },
+    tooltip: {
+      shared: true,
+      intersect: false,
+      theme: document.body.classList.contains('dark') ? 'dark' : 'light',
+      y: {
+        formatter:
+          projectionWorkforceChartMode === 'cost'
+            ? (value) => fmtR$(value)
+            : (value) => `${Math.round(value)} pessoa(s)`,
+      },
+    },
+    legend: {
+      position: 'top',
+      fontSize: '11px',
+      labels: { colors: resolveColor('var(--chart-text)') },
+    },
+    grid: { borderColor: resolveColor('var(--chart-grid)'), strokeDashArray: 3 },
+  });
+}
+
+function renderProjectionWorkforce(plan) {
+  const editable = canEditWorkforce?.() === true;
+  const normalized = normalizeWorkforceState(workforceState());
+  for (const input of WORKFORCE_INPUTS) {
+    const toggle = document.getElementById(`workforceToggle${input}`);
+    if (toggle) {
+      toggle.checked = normalized.enabledByInput[input];
+      toggle.disabled = !editable;
+    }
+  }
+  const addButton = document.querySelector('[data-click-action="addProjectionWorkforceRow"]');
+  if (addButton) addButton.disabled = !editable;
+  const monthHeaders = plan.months
+    .map((month) => `<th class="num">${escHtml(formatMonthLabel(month))}</th>`)
+    .join('');
+  replaceWithParsedMarkup(
+    document.getElementById('projectionWorkforceThead'),
+    `<tr><th>Insumo</th><th>Cargo</th><th class="num">Custo mensal</th>${monthHeaders}<th><span class="sr-only">Ações</span></th></tr>`,
+  );
+  const options = WORKFORCE_INPUTS.map(
+    (input) => `<option value="${input}">${input}</option>`,
+  ).join('');
+  const rows = normalized.rows
+    .map((row) => {
+      const monthCells = plan.months
+        .map(
+          (month) => `<td class="num"><input
+            type="number"
+            min="0"
+            step="1"
+            inputmode="numeric"
+            value="${row.distribuicao[month] || 0}"
+            data-workforce-row="${escAttr(row.id)}"
+            data-workforce-month="${month}"
+            aria-label="${escAttr(`${row.cargo || 'Cargo'} em ${formatMonthLabel(month)}`)}"
+            ${editable ? '' : 'disabled'}
+          /></td>`,
+        )
+        .join('');
+      return `<tr data-workforce-row-id="${escAttr(row.id)}">
+        <td><select data-workforce-row="${escAttr(row.id)}" data-workforce-field="insumo" aria-label="Insumo da mão de obra" ${editable ? '' : 'disabled'}>${options.replace(`value="${row.insumo}"`, `value="${row.insumo}" selected`)}</select></td>
+        <td><input type="text" maxlength="120" value="${escAttr(row.cargo)}" data-workforce-row="${escAttr(row.id)}" data-workforce-field="cargo" aria-label="Cargo" ${editable ? '' : 'disabled'}></td>
+        <td class="num"><input type="text" inputmode="decimal" value="${escAttr(formatEditableNumber(row.custo_mensal))}" data-workforce-row="${escAttr(row.id)}" data-workforce-field="custo_mensal" aria-label="Custo mensal" ${editable ? '' : 'disabled'}></td>
+        ${monthCells}
+        <td><button type="button" class="icon-btn danger" data-click-action="deleteProjectionWorkforceRow" data-action-mode="arg" data-action-arg="${escAttr(row.id)}" title="Excluir linha" aria-label="Excluir ${escAttr(row.cargo || 'linha')}" ${editable ? '' : 'disabled'}>🗑️</button></td>
+      </tr>`;
+    })
+    .join('');
+  replaceWithParsedMarkup(
+    document.getElementById('projectionWorkforceTbody'),
+    rows ||
+      `<tr><td colspan="${plan.months.length + 4}" class="projection-workforce-empty">Nenhuma linha cadastrada</td></tr>`,
+  );
+  renderProjectionWorkforceChart(plan);
+}
+
+function setProjectionWorkforceChartMode(mode) {
+  if (!['effective', 'cost'].includes(mode)) return;
+  projectionWorkforceChartMode = mode;
+  renderProjectionWorkforceChart(buildActiveProjectionSnapshot().workforcePlan);
+}
+
+function addProjectionWorkforceRow() {
+  if (!canEditWorkforce?.()) return;
+  const rows = workforceState().rows;
+  rows.push({
+    id: crypto.randomUUID(),
+    codigo_obra: activeProjectionProjectKey(),
+    insumo: WORKFORCE_INPUTS[0],
+    cargo: '',
+    custo_mensal: 0,
+    distribuicao: {},
+    ordem: rows.length,
+  });
+  renderProjectionWorkforce(buildActiveProjectionSnapshot().workforcePlan);
+  document
+    .querySelector('#projectionWorkforceTbody tr:last-child [data-workforce-field="cargo"]')
+    ?.focus();
+}
+
+async function deleteProjectionWorkforceRow(id) {
+  if (!canEditWorkforce?.()) return;
+  const state = workforceState();
+  const index = state.rows.findIndex((row) => String(row.id) === String(id));
+  if (index < 0) return;
+  clearTimeout(projectionWorkforceSaveTimers.get(id));
+  projectionWorkforceSaveTimers.delete(id);
+  const [removed] = state.rows.splice(index, 1);
+  setWorkforceSaveStatus('Salvando...', 'saving');
+  try {
+    await workforceRepository.deleteWorkforceRow(id);
+    setWorkforceSaveStatus('Salvo', 'saved');
+    renderProjecao();
+    renderVisao();
+  } catch (error) {
+    state.rows.splice(index, 0, removed);
+    reportNonFatalError('Mão de obra/excluir linha', error);
+    setWorkforceSaveStatus('Erro ao salvar', 'error');
+    renderProjectionWorkforce(buildActiveProjectionSnapshot().workforcePlan);
+  }
+}
+
+async function changeProjectionWorkforceSetting(input, active) {
+  if (!canEditWorkforce?.() || !WORKFORCE_INPUTS.includes(input)) return;
+  const state = workforceState();
+  const existing = state.settings.find((setting) => setting.insumo === input);
+  if (existing) existing.ativo = active;
+  else
+    state.settings.push({
+      codigo_obra: activeProjectionProjectKey(),
+      insumo: input,
+      ativo: active,
+    });
+  setWorkforceSaveStatus('Salvando...', 'saving');
+  try {
+    await workforceRepository.saveWorkforceSetting(input, active);
+    setWorkforceSaveStatus('Salvo', 'saved');
+    renderProjecao();
+    renderVisao();
+  } catch (error) {
+    reportNonFatalError('Mão de obra/ativar planejamento', error);
+    setWorkforceSaveStatus('Erro ao salvar', 'error');
+    renderProjecao();
+  }
+}
+
+function handleProjectionWorkforceInput(event) {
+  const target = event.target.closest('[data-workforce-row]');
+  if (!target || !canEditWorkforce?.()) return;
+  const row = workforceRowById(target.dataset.workforceRow);
+  if (!row) return;
+  if (target.dataset.workforceMonth) {
+    row.distribuicao ||= {};
+    row.distribuicao[target.dataset.workforceMonth] = Math.max(
+      0,
+      Math.trunc(Number(target.value) || 0),
+    );
+  } else if (target.dataset.workforceField === 'custo_mensal') {
+    row.custo_mensal = Math.max(0, parseNumber(target.value) || 0);
+  } else if (target.dataset.workforceField) {
+    row[target.dataset.workforceField] = target.value;
+  }
+  scheduleWorkforceRowSave(row);
+  if (event.type === 'change') scheduleProjectionAfterWorkforceEdit();
+}
+
+function handleProjectionWorkforcePaste(event) {
+  const target = event.target.closest('[data-workforce-month]');
+  if (!target || !canEditWorkforce?.()) return;
+  const matrix = String(event.clipboardData?.getData('text/plain') || '')
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => line.split('\t'));
+  if (!matrix.length) return;
+  event.preventDefault();
+  const months = buildActiveProjectionSnapshot().workforcePlan.months;
+  const startMonth = months.indexOf(target.dataset.workforceMonth);
+  const rows = workforceState().rows;
+  const startRow = rows.findIndex((row) => String(row.id) === target.dataset.workforceRow);
+  const touched = new Set();
+  matrix.forEach((values, rowOffset) => {
+    const row = rows[startRow + rowOffset];
+    if (!row) return;
+    row.distribuicao ||= {};
+    values.forEach((value, columnOffset) => {
+      const month = months[startMonth + columnOffset];
+      if (!month) return;
+      const parsed = parseNumber(value);
+      row.distribuicao[month] = Math.max(0, Math.trunc(parsed || 0));
+      touched.add(row);
+    });
+  });
+  touched.forEach((row) => persistWorkforceRow(row));
+  renderProjecao();
+  renderVisao();
+}
+
+function handleProjectionWorkforceKeydown(event) {
+  if (event.key !== 'Enter' || event.target.tagName === 'BUTTON') return;
+  const cell = event.target.closest('td');
+  const row = cell?.parentElement;
+  const nextRow = row?.nextElementSibling;
+  if (!cell || !nextRow) return;
+  const columnIndex = [...row.children].indexOf(cell);
+  const nextControl = nextRow.children[columnIndex]?.querySelector('input, select');
+  if (nextControl) {
+    event.preventDefault();
+    nextControl.focus();
+    nextControl.select?.();
+  }
 }
 
 function renderProjecao() {
@@ -1077,28 +1624,22 @@ function renderProjecao() {
   const projServicos = snapshot.serviceProjections;
   const projInsumos = snapshot.inputProjections;
   const flowsObra = snapshot.flows;
+  const workforcePlan = snapshot.workforcePlan;
   projectionMonthlyTableModel = snapshot.monthlyModel;
   const rootMetrics = snapshot.rootMetrics;
 
   // KPIs gerais
   const totRealizado = rootMetrics.realized;
   const totPlanejado = rootMetrics.planned;
-  const totExtrap = rootMetrics.extrapolation;
   const saldoPlanejamento = rootMetrics.balance;
   const pctSaldoPlanejamento = totPlanejado ? (saldoPlanejamento / totPlanejado) * 100 : 0;
 
-  // Quebrar a "extrapolação" entre o que é obra estendida (só Indiretos) e flows pendentes (qualquer grupo)
-  // totExtrap (calculado acima) = só extrapolação clássica (obra estendida em Indiretos)
-  // Vamos calcular separadamente o impacto dos flows pendentes por grupo
-  const flowsPendByGrupo = calcularFlowsPendentesPorGrupo();
-  const flowsPendInd =
-    (flowsPendByGrupo['Custos Indiretos'] || 0) + (flowsPendByGrupo['Projeção de Gastos'] || 0);
-  const flowsPendDir =
-    (flowsPendByGrupo['Custos Diretos / Infraestrutura'] || 0) +
-    (flowsPendByGrupo['Obras Civis'] || 0) +
-    (flowsPendByGrupo['Outros'] || 0);
-  const totIndiretosTend = totExtrap + flowsPendInd;
-  const totDiretosTend = flowsPendDir;
+  const groupImpact = (codes) =>
+    projectionMonthlyTableModel.nodes
+      .filter((node) => codes.includes(node.cod))
+      .reduce((sum, node) => sum + node.metrics.tendency - node.metrics.planned, 0);
+  const totIndiretosTend = groupImpact(['01.01', '01.04']);
+  const totDiretosTend = rootMetrics.tendency - rootMetrics.planned - totIndiretosTend;
   const totImpactoTendencia = rootMetrics.tendency - rootMetrics.planned;
   const pctImpactoTendencia = totPlanejado ? (totImpactoTendencia / totPlanejado) * 100 : 0;
   const totTendencia = rootMetrics.tendency;
@@ -1154,7 +1695,10 @@ function renderProjecao() {
     rootMetrics.pendingFlows,
     projInsumos,
     flowsObra,
+    snapshot.workforceCurveAdjustments,
   );
+
+  renderProjectionWorkforce(workforcePlan);
 
   // Aderência Físico × Financeira (renderiza se o container existir na página)
   try {
@@ -1248,6 +1792,7 @@ function renderProjChartGeral(
   pendingFlowImpact = 0,
   inputProjections = [],
   pendingFlows = [],
+  monthlyAdjustments = {},
 ) {
   // Acumular planejado total mês a mês
   const totalMeses = {};
@@ -1262,6 +1807,7 @@ function renderProjChartGeral(
     dataCorte,
     dataFim,
     pendingFlowImpact,
+    monthlyAdjustments,
   );
   if (!curve.months.length) {
     projectionDifferenceContext = null;
@@ -1274,6 +1820,7 @@ function renderProjChartGeral(
     inputProjections,
     pendingFlows,
     dataFim,
+    workforcePlan: projectionMonthlyTableModel?.workforcePlan,
   };
   projectionDifferenceSelectedMonth = curve.months[curve.months.length - 1] || null;
 
@@ -1478,6 +2025,7 @@ function openProjectionDifference(selectedMonth) {
   const breakdown = buildProjectionDifferenceBreakdown({
     projections: context.inputProjections,
     pendingFlows: context.pendingFlows,
+    workforcePlan: context.workforcePlan,
     selectedMonth,
     trendStart: context.curve.trendStart,
     dataFim: context.dataFim,
@@ -1501,6 +2049,7 @@ function openProjectionDifference(selectedMonth) {
           ${inputDescription && inputDescription !== inputLabel ? `<span>${escHtml(inputDescription)}</span>` : ''}
         </td>
         <td class="num projection-difference-value--${projectionDifferenceTone(row.extrapolacao)}">${formatSignedProjectionValue(row.extrapolacao)}</td>
+        <td class="num projection-difference-value--${projectionDifferenceTone(row.workforce)}">${formatSignedProjectionValue(row.workforce)}</td>
         <td class="num projection-difference-value--${projectionDifferenceTone(row.flows)}">${formatSignedProjectionValue(row.flows)}</td>
         <td class="num projection-difference-value--${projectionDifferenceTone(row.total)}"><strong>${formatSignedProjectionValue(row.total)}</strong></td>
       </tr>`;
@@ -1568,6 +2117,7 @@ function openProjectionDifference(selectedMonth) {
           <tr>
             <th>Insumo</th>
             <th class="num">Extrapolação</th>
+            <th class="num">Mão de obra</th>
             <th class="num">Flows pendentes</th>
             <th class="num">Contribuição</th>
           </tr>
@@ -1576,6 +2126,7 @@ function openProjectionDifference(selectedMonth) {
         <tfoot>
           <tr>
             <th>Total</th>
+            <td></td>
             <td></td>
             <td></td>
             <th class="num projection-difference-value--${projectionDifferenceTone(breakdown.total)}">${formatSignedProjectionValue(breakdown.total)}</th>
@@ -1622,8 +2173,9 @@ function openProjectionMonthDetail(argument) {
           <strong>${escHtml(inputCode)}</strong>
           ${description && description !== inputCode ? `<span>${escHtml(description)}</span>` : ''}
         </td>
-        <td class="num">${metricProjectionMonthValue(monthly.planned)}</td>
+        <td class="num">${metricProjectionMonthValue(monthly.planned - monthly.replacedPlanned)}</td>
         <td class="num projection-difference-value--${projectionDifferenceTone(monthly.extrapolation)}">${formatSignedProjectionValue(monthly.extrapolation)}</td>
+        <td class="num projection-difference-value--${projectionDifferenceTone(monthly.workforce)}">${formatSignedProjectionValue(monthly.workforce)}</td>
         <td class="num projection-difference-value--${projectionDifferenceTone(monthly.pendingFlows)}">${formatSignedProjectionValue(monthly.pendingFlows)}</td>
         <td class="num projection-difference-value--${projectionDifferenceTone(monthly.total)}"><strong>${metricProjectionMonthValue(monthly.total)}</strong></td>
       </tr>`;
@@ -1684,14 +2236,16 @@ function openProjectionMonthDetail(argument) {
     <div class="projection-month-summary">
       <div><span>Gestão-base</span><strong>${metricProjectionMonthValue(cell.planned)}</strong></div>
       <div><span>Extrapolação</span><strong>${formatSignedProjectionValue(cell.extrapolation)}</strong></div>
+      <div><span>Mão de obra manual</span><strong>${formatSignedProjectionValue(cell.workforce)}</strong></div>
+      ${cell.workforceOverride ? `<div><span>Gestão substituída</span><strong>${formatSignedProjectionValue(cell.replacedPlanned + cell.replacedExtrapolation)}</strong></div>` : ''}
       <div><span>Flows pendentes</span><strong>${formatSignedProjectionValue(cell.pendingFlows)}</strong></div>
       <div class="projection-month-summary--total"><span>Total do mês</span><strong>${metricProjectionMonthValue(cell.total)}</strong></div>
     </div>
     <div class="table-wrap projection-difference-table-wrap">
       <table class="projection-difference-table projection-month-composition-table">
-        <thead><tr><th>Insumo</th><th class="num">Gestão</th><th class="num">Extrapolação</th><th class="num">Flows pendentes</th><th class="num">Total</th></tr></thead>
+        <thead><tr><th>Insumo</th><th class="num">Gestão aplicada</th><th class="num">Extrapolação</th><th class="num">Mão de obra</th><th class="num">Flows pendentes</th><th class="num">Total</th></tr></thead>
         <tbody>${componentRows}</tbody>
-        <tfoot><tr><th>Total conciliado</th><td class="num">${metricProjectionMonthValue(cell.planned)}</td><td class="num">${formatSignedProjectionValue(cell.extrapolation)}</td><td class="num">${formatSignedProjectionValue(cell.pendingFlows)}</td><th class="num">${metricProjectionMonthValue(cell.total)}</th></tr></tfoot>
+        <tfoot><tr><th>Total conciliado</th><td class="num">${metricProjectionMonthValue(cell.planned - cell.replacedPlanned)}</td><td class="num">${formatSignedProjectionValue(cell.extrapolation)}</td><td class="num">${formatSignedProjectionValue(cell.workforce)}</td><td class="num">${formatSignedProjectionValue(cell.pendingFlows)}</td><th class="num">${metricProjectionMonthValue(cell.total)}</th></tr></tfoot>
       </table>
     </div>
     ${pendingSection}
@@ -1797,9 +2351,63 @@ function readProjectionColumnWidthStore() {
   }
 }
 
+function readProjectionColumnGroupStore() {
+  try {
+    const parsed = JSON.parse(SafeStorage?.get(PROJECTION_COLUMN_GROUPS_KEY, '{}') || '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function syncProjectionColumnGroups() {
+  const project = activeProjectionProjectKey();
+  if (projectionColumnGroupProject !== project) {
+    const saved = readProjectionColumnGroupStore()[project] || {};
+    projectionColumnGroups = {
+      summary: saved.summary !== false,
+      adherence: saved.adherence !== false,
+    };
+    projectionColumnGroupProject = project;
+  }
+  const controls = {
+    summary: document.getElementById('projToggleSummaryColumns'),
+    adherence: document.getElementById('projToggleAdherenceColumns'),
+  };
+  for (const [group, control] of Object.entries(controls)) {
+    if (!control) continue;
+    const expanded = projectionColumnGroups[group];
+    control.textContent = `${expanded ? '−' : '+'} ${group === 'summary' ? 'Resumo' : 'Aderência'}`;
+    control.setAttribute('aria-expanded', String(expanded));
+    control.title = `${expanded ? 'Recolher' : 'Expandir'} colunas de ${group === 'summary' ? 'resumo' : 'aderência mensal'}`;
+  }
+}
+
+function saveProjectionColumnGroups() {
+  const store = readProjectionColumnGroupStore();
+  store[activeProjectionProjectKey()] = { ...projectionColumnGroups };
+  SafeStorage?.set(PROJECTION_COLUMN_GROUPS_KEY, JSON.stringify(store));
+}
+
+function toggleProjectionColumnGroup(group) {
+  if (!['summary', 'adherence'].includes(group)) return;
+  syncProjectionColumnGroups();
+  projectionColumnGroups[group] = !projectionColumnGroups[group];
+  saveProjectionColumnGroups();
+  syncProjectionColumnGroups();
+  renderProjectionMonthlyTable(projectionMonthlyTableModel);
+}
+
+function projectionStaticColumnDefinitions() {
+  syncProjectionColumnGroups();
+  return PROJECTION_STATIC_COLUMNS.filter(
+    (column) => !column.group || projectionColumnGroups[column.group],
+  );
+}
+
 function projectionColumnDefinitions(model = projectionMonthlyTableModel) {
   return [
-    ...PROJECTION_STATIC_COLUMNS,
+    ...projectionStaticColumnDefinitions(),
     ...(model?.months || []).map((month) => ({
       id: `month:${month}`,
       label: formatMonthLabel(month).replace(/\/\d{2}(\d{2})$/, '/$1'),
@@ -1841,10 +2449,9 @@ function resetProjectionColumnWidths() {
 }
 
 function projectionStickyOffset(index, widths = projectionActiveColumnWidths) {
-  return PROJECTION_STATIC_COLUMNS.slice(0, index).reduce(
-    (sum, column) => sum + (widths[column.id] || column.width),
-    0,
-  );
+  return projectionStaticColumnDefinitions()
+    .slice(0, index)
+    .reduce((sum, column) => sum + (widths[column.id] || column.width), 0);
 }
 
 function projectionStickyClass(index, widths = projectionActiveColumnWidths) {
@@ -1853,6 +2460,28 @@ function projectionStickyClass(index, widths = projectionActiveColumnWidths) {
     Math.max(0, Math.round(projectionStickyOffset(index, widths) / 10) * 10),
   );
   return `projection-sticky-left-${offset}`;
+}
+
+function projectionStickyLimit() {
+  const containerWidth = document.querySelector('.projection-table')?.clientWidth || 1200;
+  return Math.max(520, Math.min(760, Math.round(containerWidth * 0.58)));
+}
+
+function projectionColumnIsSticky(index, widths = projectionActiveColumnWidths) {
+  if (index === 0) return true;
+  const definitions = projectionStaticColumnDefinitions();
+  const definition = definitions[index];
+  if (!definition) return false;
+  return (
+    projectionStickyOffset(index, widths) + (widths[definition.id] || definition.width) <=
+    projectionStickyLimit()
+  );
+}
+
+function projectionStickyClasses(index, widths = projectionActiveColumnWidths) {
+  return projectionColumnIsSticky(index, widths)
+    ? `projection-sticky-col ${projectionStickyClass(index, widths)}`
+    : '';
 }
 
 function projectionColumnMarkup(model, widths) {
@@ -1879,27 +2508,38 @@ function projectionResizeHandle(definition, width) {
 }
 
 function renderProjectionTableHeader(model, widths) {
-  const staticHeaders = PROJECTION_STATIC_COLUMNS.map((definition, index) => {
-    const sortKeys = {
-      label: 'label',
-      planned: 'planned',
-      realized: 'realized',
-      balance: 'balance',
-      extrapolation: 'extrapolation',
-      tendency: 'tendency',
-    };
-    const label =
-      definition.id === 'realized'
-        ? `Realizado até ${formatMonthLabel(addMonths(model.dataCorte, -1))}`
-        : definition.label;
-    return `<th
-      class="${definition.id === 'label' ? '' : 'num '}projection-sticky-col ${projectionStickyClass(index, widths)}"
+  const staticHeaders = projectionStaticColumnDefinitions()
+    .map((definition, index) => {
+      const sortKeys = {
+        label: 'label',
+        planned: 'planned',
+        realized: 'realized',
+        balance: 'balance',
+        extrapolation: 'extrapolation',
+        tendency: 'tendency',
+        previousPlanned: 'previousPlanned',
+        currentConsolidated: 'currentConsolidated',
+        adherenceDifference: 'adherenceDifference',
+      };
+      let label = definition.label;
+      if (definition.id === 'realized') {
+        label = `Realizado até ${formatMonthLabel(addMonths(model.dataCorte, -1))}`;
+      } else if (definition.id === 'previousPlanned' && model.comparison?.available) {
+        label = `Planejado ${model.comparison.previousManagement}`;
+      } else if (definition.id === 'currentConsolidated' && model.comparison?.available) {
+        label = `Consolidado ${model.comparison.currentManagement}`;
+      } else if (definition.id === 'adherenceDifference' && model.comparison?.available) {
+        label = `Diferença · ${formatMonthLabel(model.comparison.comparisonMonth)}`;
+      }
+      return `<th
+      class="${definition.id === 'label' ? '' : 'num '}${projectionStickyClasses(index, widths)}"
       data-sticky-index="${index}"
       data-sort-proj="${sortKeys[definition.id]}"
       aria-sort="none"
       scope="col"
     ><span>${escHtml(label)}</span>${projectionResizeHandle(definition, widths[definition.id])}</th>`;
-  }).join('');
+    })
+    .join('');
   const monthHeaders = model.months
     .map((month) => {
       const definition = projectionColumnDefinitions(model).find(
@@ -1935,7 +2575,11 @@ function syncProjectionColumnWidths() {
     for (const className of [...cell.classList]) {
       if (className.startsWith('projection-sticky-left-')) cell.classList.remove(className);
     }
-    cell.classList.add(projectionStickyClass(Number(cell.dataset.stickyIndex) || 0));
+    cell.classList.remove('projection-sticky-col');
+    const index = Number(cell.dataset.stickyIndex) || 0;
+    if (projectionColumnIsSticky(index)) {
+      cell.classList.add('projection-sticky-col', projectionStickyClass(index));
+    }
   });
 }
 
@@ -2055,7 +2699,7 @@ function renderProjectionMonthlyTable(model) {
   }
 
   function stickyCellClass(index, extra = '') {
-    return `${extra} projection-sticky-col ${projectionStickyClass(index, widths)}`.trim();
+    return `${extra} ${projectionStickyClasses(index, widths)}`.trim();
   }
 
   function metricValue(value, strong = false) {
@@ -2099,14 +2743,26 @@ function renderProjectionMonthlyTable(model) {
 
     const label = labelForNode(node, expanded, hasChildren);
     const metrics = node.metrics;
-    const staticCells = [
-      `<td class="${stickyCellClass(0, `projection-tree-label projection-tree-depth-${Math.min(level, 6)}`)}" data-sticky-index="0">${label}</td>`,
-      `<td class="${stickyCellClass(1, 'num')}" data-sticky-index="1">${metricValue(metrics.planned)}</td>`,
-      `<td class="${stickyCellClass(2, 'num')}" data-sticky-index="2">${metricValue(metrics.realized)}</td>`,
-      `<td class="${stickyCellClass(3, 'num')}" data-sticky-index="3">${metricValue(metrics.balance)}</td>`,
-      `<td class="${stickyCellClass(4, 'num')}" data-sticky-index="4">${formatSignedProjectionValue(metrics.extrapolation)}</td>`,
-      `<td class="${stickyCellClass(5, 'num')}" data-sticky-index="5">${metricValue(metrics.tendency, true)}</td>`,
-    ].join('');
+    const staticCells = projectionStaticColumnDefinitions()
+      .map((definition, columnIndex) => {
+        if (definition.id === 'label') {
+          return `<td class="${stickyCellClass(columnIndex, `projection-tree-label projection-tree-depth-${Math.min(level, 6)}`)}" data-sticky-index="${columnIndex}">${label}</td>`;
+        }
+        let content = metricValue(metrics[definition.id]);
+        let extraClass = 'num';
+        if (definition.id === 'extrapolation') {
+          content = formatSignedProjectionValue(metrics.extrapolation);
+        } else if (definition.id === 'tendency') {
+          content = metricValue(metrics.tendency, true);
+        } else if (definition.group === 'adherence' && !model.comparison?.available) {
+          content = '<span class="projection-empty-value">—</span>';
+        } else if (definition.id === 'adherenceDifference') {
+          content = formatSignedProjectionValue(metrics.adherenceDifference);
+          extraClass += ` projection-adherence-value--${projectionDifferenceTone(metrics.adherenceDifference)}`;
+        }
+        return `<td class="${stickyCellClass(columnIndex, extraClass)}" data-sticky-index="${columnIndex}">${content}</td>`;
+      })
+      .join('');
 
     const monthCells = model.months
       .map((month) => {
@@ -2114,13 +2770,15 @@ function renderProjectionMonthlyTable(model) {
         const hasExtrapolation = Math.abs(cell.extrapolation) >= 0.005;
         const hasPendingFlow = Math.abs(cell.pendingFlows) >= 0.005;
         const hasReflectedFlow = cell.reflectedFlowItems.length > 0;
+        const hasWorkforce = cell.workforceOverride;
         const clickable = Math.abs(cell.total) >= 0.005;
         const classes = ['num', 'projection-month-cell'];
         if (hasExtrapolation) classes.push('projection-month-cell--extrapolated');
         if (hasPendingFlow) classes.push('projection-month-cell--flow');
         if (hasReflectedFlow) classes.push('projection-month-cell--reflected');
+        if (hasWorkforce) classes.push('projection-month-cell--workforce');
         if (clickable) classes.push('projection-month-cell--clickable');
-        const markers = `${hasExtrapolation ? '<span class="projection-month-source-mark" title="Contém extrapolação">◆</span>' : ''}${hasPendingFlow ? '<span class="projection-month-flow-mark" title="Contém Flow pendente">📎</span>' : ''}${hasReflectedFlow ? '<span class="projection-month-reflected-mark" title="Há Flow já refletido neste mês">✓</span>' : ''}`;
+        const markers = `${hasExtrapolation ? '<span class="projection-month-source-mark" title="Contém extrapolação">◆</span>' : ''}${hasWorkforce ? '<span class="projection-month-workforce-mark" title="Planejamento manual de mão de obra">●</span>' : ''}${hasPendingFlow ? '<span class="projection-month-flow-mark" title="Contém Flow pendente">📎</span>' : ''}${hasReflectedFlow ? '<span class="projection-month-reflected-mark" title="Há Flow já refletido neste mês">✓</span>' : ''}`;
         const value = metricValue(cell.total);
         return `<td class="${classes.join(' ')}">${
           clickable
@@ -2208,6 +2866,13 @@ async function exportarProjecaoDetalhada() {
         'Flows Pendentes (R$)': node.metrics.pendingFlows,
         'Tendência (R$)': node.metrics.tendency,
       };
+      if (model.comparison?.available) {
+        row[`Planejado ${model.comparison.previousManagement} (R$)`] = node.metrics.previousPlanned;
+        row[`Consolidado ${model.comparison.currentManagement} (R$)`] =
+          node.metrics.currentConsolidated;
+        row[`Diferença ${formatMonthLabel(model.comparison.comparisonMonth)} (R$)`] =
+          node.metrics.adherenceDifference;
+      }
       for (const month of model.months) {
         row[`${formatMonthLabel(month).replace(/\/\d{2}(\d{2})$/, '/$1')} (R$)`] =
           node.monthly[month].total;
@@ -2228,7 +2893,7 @@ async function exportarProjecaoDetalhada() {
       { wch: 28 },
       { wch: Math.max(36, Math.round(currentWidths.label / 7)) },
       ...PROJECTION_STATIC_COLUMNS.slice(1).map((column) => ({
-        wch: Math.max(14, Math.round(currentWidths[column.id] / 7)),
+        wch: Math.max(14, Math.round((currentWidths[column.id] || column.width) / 7)),
       })),
       ...model.months.map((month) => ({
         wch: Math.max(12, Math.round(currentWidths[`month:${month}`] / 7)),
@@ -2247,12 +2912,48 @@ async function exportarProjecaoDetalhada() {
       }
     }
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Projeção Mensal');
+    if (model.workforcePlan?.rows?.length) {
+      const workforceRows = model.workforcePlan.rows.map((row) => {
+        const exported = {
+          Insumo: row.insumo,
+          Cargo: row.cargo,
+          'Custo mensal por pessoa (R$)': row.custo_mensal,
+        };
+        for (const month of model.months) {
+          exported[`${formatMonthLabel(month)} · pessoas`] = row.distribuicao[month] || 0;
+        }
+        exported['Custo total (R$)'] = model.months.reduce(
+          (sum, month) => sum + (row.distribuicao[month] || 0) * (Number(row.custo_mensal) || 0),
+          0,
+        );
+        return exported;
+      });
+      const workforceSheet = XLSX.utils.json_to_sheet(workforceRows);
+      workforceSheet['!cols'] = [
+        { wch: 14 },
+        { wch: 28 },
+        { wch: 24 },
+        ...model.months.map(() => ({ wch: 16 })),
+        { wch: 18 },
+      ];
+      XLSX.utils.book_append_sheet(workbook, workforceSheet, 'Mão de Obra');
+    }
     const metadata = XLSX.utils.json_to_sheet([
       { Campo: 'Obra', Valor: activeProjectionProjectKey() },
       { Campo: 'Gestão-base', Valor: activeProjectionManagement() },
       { Campo: 'Data de corte', Valor: model.dataCorte },
       { Campo: 'Data prevista de término', Valor: model.dataFim },
-      { Campo: 'Regra mensal', Valor: 'Gestão + extrapolação + Flows pendentes' },
+      {
+        Campo: 'Regra mensal',
+        Valor: 'Gestão ou mão de obra manual + extrapolação + Flows pendentes',
+      },
+      {
+        Campo: 'Mão de obra manual',
+        Valor:
+          WORKFORCE_INPUTS.filter((input) => model.workforcePlan?.enabledByInput?.[input]).join(
+            ', ',
+          ) || 'Desativada',
+      },
       { Campo: 'Exportado em', Valor: new Date().toLocaleString('pt-BR') },
     ]);
     metadata['!cols'] = [{ wch: 32 }, { wch: 52 }];
@@ -2302,14 +3003,30 @@ function openProjDrill(servico, insumo) {
       mesesPorInsumo.set(row.insumo, mesesDoInsumo);
     });
 
-  const projServico = projetarServico(servico, mesesServico, dataCorte, dataFim, janelaMeses);
-  const projInsumos = distributeServiceProjection(
-    [projServico],
-    [...mesesPorInsumo].map(([inputCode, inputMonths]) => ({
-      ...projetarServico(servico, inputMonths, dataCorte, dataFim, janelaMeses),
-      insumo: inputCode,
-    })),
-  );
+  const projInsumos = [...mesesPorInsumo].map(([inputCode, inputMonths]) => ({
+    ...projetarServico(servico, inputMonths, dataCorte, dataFim, janelaMeses),
+    insumo: inputCode,
+  }));
+  const sumProjectionMetric = (metric) =>
+    projInsumos.reduce((sum, projection) => sum + (Number(projection[metric]) || 0), 0);
+  const projServico = {
+    servico,
+    grupo: grupoDoServico(servico),
+    realizado: sumProjectionMetric('realizado'),
+    planejado_futuro: sumProjectionMetric('planejado_futuro'),
+    planejado_total: sumProjectionMetric('planejado_total'),
+    ultimo_mes_planejado: projInsumos
+      .map((projection) => projection.ultimo_mes_planejado)
+      .filter(Boolean)
+      .sort()
+      .at(-1),
+    ritmo_historico: sumProjectionMetric('ritmo_historico'),
+    meses_gap: Math.max(0, ...projInsumos.map((projection) => projection.meses_gap || 0)),
+    extrapolacao: sumProjectionMetric('extrapolacao'),
+    tendencia: sumProjectionMetric('tendencia'),
+    diff: sumProjectionMetric('diff'),
+    meses: mesesServico,
+  };
 
   let meses;
   let proj;
@@ -2329,18 +3046,41 @@ function openProjDrill(servico, insumo) {
   }
 
   const pendingFlowImpact = pendingFlowImpactForTarget(servico, insumo);
-  const curve = buildProjectionCurve(meses, [proj], dataCorte, dataFim, pendingFlowImpact);
+  const activeSnapshot = buildActiveProjectionSnapshot();
+  const workforcePlan = activeSnapshot.workforcePlan;
+  const curveProjections = insumo ? [proj] : projInsumos;
+  const workforceAdjustments = buildWorkforceCurveAdjustments({
+    inputProjections: curveProjections,
+    workforcePlan,
+    dataCorte,
+    dataFim,
+  });
+  const curve = buildProjectionCurve(
+    meses,
+    curveProjections,
+    dataCorte,
+    dataFim,
+    pendingFlowImpact,
+    workforceAdjustments,
+  );
   const extended = curve.months;
   const categories = extended.map((m) => formatMonthLabel(m));
   const planData = curve.planned;
   const tendData = curve.tendency;
   const saldoPlanejado = proj.planejado_total - proj.realizado;
-  const finalTrend = proj.tendencia + pendingFlowImpact;
-  const finalDifference = proj.diff + pendingFlowImpact;
+  const monthlyNode = activeSnapshot.monthlyModel.nodes.find((node) =>
+    insumo
+      ? node.projection?.servico === servico && node.projection?.insumo === insumo
+      : node.tipo === 'servico' && node.cod_servico === servico,
+  );
+  const effectiveExtrapolation = monthlyNode?.metrics.extrapolation ?? proj.extrapolacao;
+  const workforceTotal = monthlyNode?.metrics.workforce || 0;
+  const finalTrend = monthlyNode?.metrics.tendency ?? proj.tendencia + pendingFlowImpact;
+  const finalDifference = finalTrend - proj.planejado_total;
   const extrapolacaoTexto =
-    Math.abs(proj.extrapolacao) < 0.005
+    Math.abs(effectiveExtrapolation) < 0.005
       ? '—'
-      : `${proj.extrapolacao > 0 ? '+' : ''}${fmtR$(proj.extrapolacao)}`;
+      : `${effectiveExtrapolation > 0 ? '+' : ''}${fmtR$(effectiveExtrapolation)}`;
 
   const findIdx = (m) => {
     let i = 0;
@@ -2385,6 +3125,14 @@ function openProjDrill(servico, insumo) {
             <span class="projection-modal-calculation">- ${proj.meses_gap > 0 ? `${proj.meses_gap} meses × R$ ${fmt(proj.ritmo_historico, 0)}/m` : 'Sem meses adicionais'}</span>
           </div>
         </div>
+        ${
+          Math.abs(workforceTotal) >= 0.005
+            ? `<div class="projection-modal-metric">
+          <div class="projection-modal-metric-label">Mão de obra manual</div>
+          <strong class="projection-modal-metric-value">${fmtR$(workforceTotal)}</strong>
+        </div>`
+            : ''
+        }
         ${
           Math.abs(pendingFlowImpact) >= 0.005
             ? `<div class="projection-modal-metric">
@@ -2794,6 +3542,8 @@ export function createProjectionView({
   state,
   overview,
   projectionControl,
+  dashboardRepository,
+  authService,
 }) {
   reportNonFatalError = runtime.reportNonFatalError;
   resolveColor = runtime.resolveColor;
@@ -2809,6 +3559,8 @@ export function createProjectionView({
   renderVisao = overview.renderVisao;
   SafeStorage = storage;
   getProjectionControlState = projectionControl.getState;
+  workforceRepository = dashboardRepository;
+  canEditWorkforce = () => authService?.canEditActiveProject?.() === true;
   const api = {
     defaultDataCorte,
     defaultDataFim,
@@ -2823,6 +3575,10 @@ export function createProjectionView({
     openProjectionMonthDetail,
     projExpandAll,
     projCollapseAll,
+    toggleProjectionColumnGroup,
+    setProjectionWorkforceChartMode,
+    addProjectionWorkforceRow,
+    deleteProjectionWorkforceRow,
     resetProjectionColumnWidths,
     exportarProjecaoDetalhada,
   };
@@ -2848,6 +3604,20 @@ export function createProjectionView({
   document.addEventListener('pointermove', handleProjectionColumnResizePointerMove);
   document.addEventListener('pointerup', finishProjectionColumnResize);
   document.addEventListener('pointercancel', finishProjectionColumnResize);
+  const workforceBody = document.getElementById('projectionWorkforceTbody');
+  workforceBody?.addEventListener('input', handleProjectionWorkforceInput);
+  workforceBody?.addEventListener('change', (event) => {
+    handleProjectionWorkforceInput(event);
+    if (event.target.dataset.workforceField === 'custo_mensal') {
+      event.target.value = formatEditableNumber(parseNumber(event.target.value) || 0);
+    }
+  });
+  workforceBody?.addEventListener('paste', handleProjectionWorkforcePaste);
+  workforceBody?.addEventListener('keydown', handleProjectionWorkforceKeydown);
+  document.getElementById('projectionWorkforceCard')?.addEventListener('change', (event) => {
+    const input = event.target.dataset.workforceSetting;
+    if (input) changeProjectionWorkforceSetting(input, event.target.checked);
+  });
 
   const sharedParameterIds = new Set([
     'projDataFim',

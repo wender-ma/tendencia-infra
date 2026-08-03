@@ -26,6 +26,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Planejamento de mão de obra: adiciona ativação por insumo e linhas mensais públicas por obra, com escrita restrita aos responsáveis autorizados.
 - Cronograma físico: adiciona snapshots e histórico independentes por obra, permite upload por responsáveis atribuídos e mantém a ativação da metodologia híbrida sob controle administrativo.
 - Cronograma físico em produção: migration aplicada e auditoria confirmou `complete: true`, escopos e reset habilitados em 03/08/2026.
+- Primeiro cronograma físico: `42-21O` validada com 105 EAPs, 35 meses e corte `jul/2026`; o Modelo Atual foi mantido após a comparação indicar baixa confiança na maior parte dos insumos elegíveis.
 
 Teste local reproduzível:
 

@@ -66,9 +66,9 @@ Critério de conclusão: atendido em 03/08/2026; migration auditada, arquivo glo
 - [x] Manter o cálculo atual como oficial por padrão e restringir a ativação do modelo híbrido ao administrador.
 - [x] Criar migration, rollback, auditoria e contratos de RLS, reset e persistência por obra.
 - [x] **EXT-16 concluída** Aplicar `20260803150000_physical_schedule_datasets.sql` em produção e executar `verify_physical_schedule_deployment.sql`; auditoria confirmou os três escopos físicos e o reset em 03/08/2026.
-- [ ] **AÇÃO EXTERNA EXT-17** Enviar o Cronograma Físico da obra, confirmar o corte e comparar os dois modelos com dados reais.
+- [x] **EXT-17 concluída** Cronograma Físico de `42-21O` publicado e comparado em produção; corte `jul/2026` confirmado e Modelo Atual mantido porque 22 de 25 previsões elegíveis apresentaram confiança baixa.
 
-Critério de conclusão: migration auditada, cronograma ativo em produção, recomendação real conferida e `v1.8.0` publicada na Vercel.
+Critério de conclusão: atendido em 03/08/2026; migration auditada, cronograma ativo, comparação real conferida, cálculo atual preservado e `v1.8.0` publicada na Vercel.
 
 ## P0: segurança crítica
 

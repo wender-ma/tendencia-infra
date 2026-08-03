@@ -25,14 +25,13 @@ de conclusão.
 | EXT-14 | Concluída | Administrador do Supabase | Migration `v1.7.0` validada localmente | Aplicar `20260731203000_projection_workforce.sql` no projeto de produção confirmado e executar o audit correspondente. | Em 03/08/2026, o audit retornou `complete: true`, leitura anônima restrita a SELECT, grants autenticados, duas tabelas com RLS e quatro policies em cada tabela. |
 | EXT-15 | Concluída | Administrador do dashboard | EXT-14 e deploy `v1.7.0` concluídos | Reprocessar a planilha global ativa pela tela de Uploads. | Em 03/08/2026, produção exibiu `GESTÃO 06-2026` × `GESTÃO 07-2026`, aderência de `jun/2026` e `R$ 74.169.007,33` reconciliados entre raiz, card e último ponto da Curva S. |
 | EXT-16 | Concluída | Administrador do Supabase | Migration `v1.8.0` validada localmente | Aplicar `20260803150000_physical_schedule_datasets.sql` no projeto de produção confirmado e executar `verify_physical_schedule_deployment.sql`. | Em 03/08/2026, auditoria independente retornou `complete: true`, os três escopos físicos e o reset habilitados, sem uploads ou datasets físicos prévios. |
-| EXT-17 | Aberta | Administrador do dashboard | EXT-16 e deploy `v1.8.0` concluídos | Enviar o Cronograma Físico da obra, confirmar o corte sugerido e comparar o cálculo atual com o recomendado. | Arquivo físico ativo, corte confirmado, totais conciliados e decisão de ativação ou manutenção do cálculo atual registrada. |
+| EXT-17 | Concluída | Administrador do dashboard | EXT-16 e deploy `v1.8.0` concluídos | Enviar o Cronograma Físico da obra, confirmar o corte sugerido e comparar o cálculo atual com o recomendado. | Em 03/08/2026, `42-21O` ficou com um upload e snapshot físicos ativos: 105 EAPs, 35 meses e corte `jul/2026`. O recomendado ficou `R$ 323.517,43` abaixo do atual; como 22 de 25 previsões elegíveis tinham confiança baixa, o Modelo Atual foi preservado. |
 
 ## Ordem mínima
 
-1. Executar EXT-17 com o arquivo real e manter o cálculo atual até a conferência.
-2. Executar EXT-06 no domínio publicado.
-3. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
-4. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
+1. Executar EXT-06 no domínio publicado.
+2. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
+3. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
 
 Nenhuma ação deste registro exige compartilhar senha, token, chave privada,
 conteúdo de arquivo ou dado pessoal no repositório.

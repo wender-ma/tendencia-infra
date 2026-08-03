@@ -4,6 +4,19 @@ test('projeção mensal reconcilia card, detalhamento e data prevista de términ
   page,
 }) => {
   await page.route('https://*.supabase.co/**', (route) => route.abort());
+  await page.addInitScript(() => {
+    const fixedNow = new Date('2026-07-31T12:00:00Z').valueOf();
+    const NativeDate = Date;
+    window.Date = class extends NativeDate {
+      constructor(...args) {
+        super(...(args.length ? args : [fixedNow]));
+      }
+
+      static now() {
+        return fixedNow;
+      }
+    };
+  });
   await page.goto('/');
   await page.waitForFunction(
     () => window.dashboardServices?.performance.snapshot().boot.completed === true,

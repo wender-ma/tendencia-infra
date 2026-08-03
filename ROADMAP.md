@@ -70,6 +70,20 @@ Critério de conclusão: atendido em 03/08/2026; migration auditada, arquivo glo
 
 Critério de conclusão: atendido em 03/08/2026; migration auditada, cronograma ativo, comparação real conferida, cálculo atual preservado e `v1.8.0` publicada na Vercel.
 
+## Versão 1.9.0
+
+- [x] Permitir metodologia individual para todos os insumos de Custos Indiretos.
+- [x] Implementar Fixo mensal robusto, Evolução física, Misto, Valor mensal manual e Não extrapolar.
+- [x] Permitir amostras de 6, 12, 18 meses ou todo o histórico e defasagem de até dois meses.
+- [x] Detectar extremos com mediana e MAD sem remover lançamentos da base.
+- [x] Exibir amostra, base robusta, correlação, WAPE, coeficiente físico e extremos na lupa.
+- [x] Persistir a configuração por obra, serviço e insumo sem alteração de schema.
+- [x] Integrar a metodologia ao snapshot único, cards, Curva S, grade mensal, modal e Excel.
+- [x] Preservar a prioridade do Planejamento de Mão de Obra para `ADM5189` e `CONDH271`.
+- [ ] **AÇÃO EXTERNA EXT-18** Revisar a comparação da obra real e ativar a metodologia `v2` pelo acesso administrativo.
+
+Critério de conclusão: código, testes e publicação aprovados; EXT-18 confirma os valores reais antes de tornar a nova metodologia oficial.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

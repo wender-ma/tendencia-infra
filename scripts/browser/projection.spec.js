@@ -3,7 +3,12 @@ const { expect, test } = require('@playwright/test');
 test('cronograma físico compara modelos e restringe a ativação ao administrador', async ({
   page,
 }) => {
-  await page.route('https://*.supabase.co/**', (route) => route.abort());
+  await page.route('https://*.supabase.co/**', (route) => {
+    if (route.request().method() === 'POST') {
+      return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
+    }
+    return route.abort();
+  });
   await page.goto('/');
   await page.waitForFunction(
     () => window.dashboardServices?.performance.snapshot().boot.completed === true,
@@ -13,7 +18,7 @@ test('cronograma físico compara modelos e restringe a ativação ao administrad
     const { state } = window.dashboardServices;
     state.obra.ativa = 'OBRA-FISICA';
     state.config.evolGlobal = { teorica: 35, financeira: 40 };
-    state.config.projectionForecast = { active: false, overrides: {} };
+    state.config.projectionForecast = { version: 2, active: false, overrides: {} };
     state.dados.projRaw = Array.from({ length: 8 }, (_, index) => ({
       codigo_obra: 'OBRA-FISICA',
       servico: 'S05765',
@@ -44,11 +49,9 @@ test('cronograma físico compara modelos e restringe a ativação ao administrad
     'cronograma-fisico.xlsx',
   );
   await expect(page.locator('#projectionForecastMethodology')).toContainText('Cálculo atual');
-  await expect(page.locator('#projectionForecastMethodology')).toContainText(
-    'Modelo recomendado',
-  );
+  await expect(page.locator('#projectionForecastMethodology')).toContainText('Modelo configurável');
   await expect(
-    page.getByRole('button', { name: 'Ativar modelo recomendado' }),
+    page.getByRole('button', { name: 'Ativar metodologias configuradas' }),
   ).toHaveCount(0);
 
   await page.evaluate(() => {
@@ -63,7 +66,40 @@ test('cronograma físico compara modelos e restringe a ativação ao administrad
     window.dashboardServices.authUi.updateAuthUI();
     window.dashboardServices.views.projection.renderProjecao();
   });
-  await expect(page.getByRole('button', { name: 'Ativar modelo recomendado' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Ativar metodologias configuradas' }),
+  ).toBeVisible();
+
+  await page.evaluate(() => {
+    window.dashboardServices.views.projection.openProjDrill('S05765', 'ADM5189');
+  });
+  await expect(page.getByText('Metodologia do insumo')).toBeVisible();
+  await expect(page.getByText('Base robusta')).toBeVisible();
+  await expect(page.getByText('Extremos atenuados', { exact: true })).toBeVisible();
+  const method = page.locator('#projectionForecastMethod');
+  await expect(method).toHaveValue('fixed');
+  await method.selectOption('mixed');
+  await expect(page.locator('#projectionForecastFixedShare')).toBeEnabled();
+  await expect(page.locator('#projectionForecastManualValue')).toBeDisabled();
+  await method.selectOption('manual');
+  await expect(page.locator('#projectionForecastManualValue')).toBeEnabled();
+  await page.locator('#projectionForecastManualValue').fill('85.000,00');
+  await page.getByRole('button', { name: 'Salvar metodologia' }).click();
+  await expect.poll(
+    () =>
+      page.evaluate(
+        () =>
+          window.dashboardServices.state.config.projectionForecast.overrides[
+            'S05765|ADM5189'
+          ],
+      ),
+  ).toEqual({
+    method: 'manual',
+    sampleMonths: 12,
+    lagMonths: 0,
+    fixedShare: 70,
+    manualMonthlyValue: 85000,
+  });
 });
 
 test('projeção mensal reconcilia card, detalhamento e data prevista de término', async ({

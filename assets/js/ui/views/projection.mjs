@@ -13,6 +13,7 @@ import {
   buildHybridInputForecast,
   buildPhysicalForecastContext,
   FORECAST_METHOD_LABELS,
+  normalizeInputForecastConfig,
 } from '../../services/projection-forecast.mjs';
 import {
   buildWorkforcePlan,
@@ -91,6 +92,7 @@ const PROJECTION_STATIC_COLUMNS = Object.freeze([
   },
 ]);
 const PROJECTION_MONTH_COLUMN = Object.freeze({ width: 120, min: 90, max: 190 });
+const PROJECTION_FORECAST_VERSION = 2;
 
 // ============ TENDÊNCIA DE OBRA (PROJEÇÃO) ============
 
@@ -724,7 +726,7 @@ export function projetarServico(
     windowMonths: janelaMeses,
     group: grupo,
     physicalContext: forecastOptions.physicalContext,
-    override: forecastOptions.override || 'auto',
+    override: forecastOptions.override || { method: 'fixed', sampleMonths: 12 },
   });
   if (forecastOptions.useHybrid && hybrid.available) {
     extrapolacao = hybrid.extrapolation;
@@ -755,6 +757,8 @@ export function projetarServico(
     forecast_diagnostics: hybrid.diagnostics,
     forecast_run_rate: hybrid.runRate ?? ritmoHist,
     forecast_cost_per_point: hybrid.costPerPoint ?? null,
+    forecast_config: hybrid.config,
+    forecast_details: hybrid.details,
     tendencia,
     diff,
     meses, // para drill-down
@@ -1298,13 +1302,20 @@ export function buildProjectionSnapshot({
       ...projetarServico(item.servico, item.meses, dataCorte, dataFim, janelaMeses, {
         physicalContext,
         useHybrid,
-        override: forecast?.overrides?.[`${item.servico}|${item.insumo}`] || 'auto',
+        override: forecast?.overrides?.[`${item.servico}|${item.insumo}`] || {
+          method: 'fixed',
+          sampleMonths: 12,
+        },
       }),
       insumo: item.insumo,
     }));
   const legacyProjections = buildInputProjections(false);
   const recommendedProjections = buildInputProjections(true);
-  const hybridActive = Boolean(forecast?.active && physicalContext?.available);
+  const hybridActive = Boolean(
+    forecast?.active &&
+    Number(forecast?.version) === PROJECTION_FORECAST_VERSION &&
+    physicalContext?.available,
+  );
   const inputProjections = hybridActive ? recommendedProjections : legacyProjections;
   const serviceProjections = inputProjections;
   const workforcePlan = buildWorkforcePlan({
@@ -1848,16 +1859,16 @@ function renderProjectionForecastMethodology(snapshot) {
     root,
     `<div class="projection-forecast-heading">
        <div><h2>🧭 Metodologia da Previsão</h2><p>${escHtml(comparison.sourceFile || 'Cronograma físico ativo')} · corte ${escHtml(formatMonthLabel(comparison.sourceCutoff))}</p></div>
-       <span class="badge ${comparison.active ? 'green' : 'gray'}">${comparison.active ? 'HÍBRIDO ATIVO' : 'EM COMPARAÇÃO'}</span>
+       <span class="badge ${comparison.active ? 'green' : 'gray'}">${comparison.active ? 'MODELO CONFIGURÁVEL ATIVO' : 'EM COMPARAÇÃO'}</span>
      </div>
      <div class="projection-forecast-comparison">
        <div><span>Cálculo atual</span><strong>${fmtR$(comparison.currentTotal)}</strong></div>
-       <div><span>Modelo recomendado</span><strong>${fmtR$(comparison.recommendedTotal)}</strong></div>
+       <div><span>Modelo configurável</span><strong>${fmtR$(comparison.recommendedTotal)}</strong></div>
        <div><span>Impacto</span><strong class="projection-difference-value--${projectionDifferenceTone(delta)}">${delta >= 0 ? '+' : ''}${fmtR$(delta)}</strong></div>
      </div>
      <div class="projection-forecast-footer">
        <span>${escHtml(counts || 'Sem insumos elegíveis para extrapolação automática')}</span>
-       ${canManage ? `<button class="btn-sm ${comparison.active ? '' : 'primary'}" data-click-action="toggleProjectionForecastMode" data-action-mode="arg" data-action-arg="${comparison.active ? 'legacy' : 'hybrid'}">${comparison.active ? '↩ Usar cálculo atual' : '✓ Ativar modelo recomendado'}</button>` : ''}
+       ${canManage ? `<button class="btn-sm ${comparison.active ? '' : 'primary'}" data-click-action="toggleProjectionForecastMode" data-action-mode="arg" data-action-arg="${comparison.active ? 'legacy' : 'hybrid'}">${comparison.active ? '↩ Usar cálculo atual' : '✓ Ativar metodologias configuradas'}</button>` : ''}
      </div>`,
   );
 }
@@ -1869,6 +1880,7 @@ async function toggleProjectionForecastMode(mode) {
   }
   const config = {
     ...(APP_STATE.config.projectionForecast || {}),
+    version: PROJECTION_FORECAST_VERSION,
     active: mode === 'hybrid',
     overrides: { ...(APP_STATE.config.projectionForecast?.overrides || {}) },
   };
@@ -1881,7 +1893,9 @@ async function toggleProjectionForecastMode(mode) {
     renderProjecao();
     renderVisao();
     authToast(
-      config.active ? 'Modelo híbrido ativado para esta obra.' : 'Cálculo atual restaurado.',
+      config.active
+        ? 'Metodologias configuradas ativadas para esta obra.'
+        : 'Cálculo atual restaurado.',
       'ok',
       3500,
     );
@@ -1894,17 +1908,19 @@ async function toggleProjectionForecastMode(mode) {
   }
 }
 
-async function changeProjectionForecastOverride(service, input, method) {
-  if (!canManageForecast?.()) return;
-  const allowed = ['auto', 'run_rate', 'ramp_down', 'physical'];
-  if (!allowed.includes(method)) return;
+async function changeProjectionForecastOverride(service, input, values) {
+  if (!canManageForecast?.()) return false;
+  const inputConfig = normalizeInputForecastConfig(values);
   const config = {
     ...(APP_STATE.config.projectionForecast || {}),
+    version: PROJECTION_FORECAST_VERSION,
+    active:
+      Number(APP_STATE.config.projectionForecast?.version) === PROJECTION_FORECAST_VERSION &&
+      APP_STATE.config.projectionForecast?.active === true,
     overrides: { ...(APP_STATE.config.projectionForecast?.overrides || {}) },
   };
   const key = `${service}|${input}`;
-  if (method === 'auto') delete config.overrides[key];
-  else config.overrides[key] = method;
+  config.overrides[key] = inputConfig;
   try {
     await forecastRepository.saveDashboardKey(
       `${activeProjectionProjectKey()}:projection_forecast`,
@@ -1913,10 +1929,125 @@ async function changeProjectionForecastOverride(service, input, method) {
     APP_STATE.config.projectionForecast = config;
     renderProjecao();
     renderVisao();
-    authToast('Modelo do insumo atualizado.', 'ok', 3000);
+    authToast('Metodologia do insumo atualizada.', 'ok', 3000);
+    return true;
   } catch (error) {
     reportNonFatalError('Projeção/salvar modelo do insumo', error, 'O ajuste não pôde ser salvo.');
+    return false;
   }
+}
+
+function forecastConfidenceLabel(value) {
+  if (value === 'high') return 'alta';
+  if (value === 'medium') return 'média';
+  if (value === 'manual') return 'manual';
+  return 'baixa';
+}
+
+function forecastCorrelationLabel(value) {
+  if (!Number.isFinite(value)) return 'indisponível';
+  return Number(value).toFixed(2).replace('.', ',');
+}
+
+function forecastInputValue(value) {
+  return (Number(value) || 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function forecastConfigMarkup(proj, servico, insumo, activeSnapshot) {
+  if (!insumo || !grupoExtrapola(proj.grupo)) return '';
+  const stored = APP_STATE.config.projectionForecast?.overrides?.[`${servico}|${insumo}`];
+  const config = normalizeInputForecastConfig(stored || proj.forecast_config);
+  const details = proj.forecast_details || {};
+  const diagnostic = proj.forecast_diagnostics?.[config.method] || {};
+  const wape =
+    diagnostic.wape == null
+      ? 'indisponível'
+      : `${(diagnostic.wape * 100).toFixed(1).replace('.', ',')}%`;
+  const sampleLabel =
+    details.sampleStart && details.sampleEnd
+      ? `${formatMonthLabel(details.sampleStart)} a ${formatMonthLabel(details.sampleEnd)}`
+      : 'Sem amostra';
+  const outlierLabel = details.outliers?.length
+    ? details.outliers.map((item) => formatMonthLabel(item.month)).join(', ')
+    : 'Nenhum';
+  const canManage = canManageForecast?.() === true;
+  const option = (value, label) =>
+    `<option value="${value}" ${config.method === value ? 'selected' : ''}>${label}</option>`;
+  const sampleOption = (value, label) =>
+    `<option value="${value}" ${config.sampleMonths === value ? 'selected' : ''}>${label}</option>`;
+  const lagOption = (value, label) =>
+    `<option value="${value}" ${config.lagMonths === value ? 'selected' : ''}>${label}</option>`;
+
+  return `<section class="projection-modal-forecast" aria-labelledby="projectionForecastConfigTitle">
+    <div class="projection-modal-forecast-heading">
+      <div>
+        <span id="projectionForecastConfigTitle">Metodologia do insumo</span>
+        <strong>${escHtml(FORECAST_METHOD_LABELS[config.method] || 'Fixo mensal robusto')}</strong>
+        ${proj.forecast_method !== config.method ? `<small>Cálculo exibido: ${escHtml(FORECAST_METHOD_LABELS[proj.forecast_method] || proj.forecast_method)}</small>` : ''}
+      </div>
+      <span class="badge ${proj.forecast_confidence === 'high' ? 'green' : proj.forecast_confidence === 'medium' ? 'yellow' : 'gray'}">CONFIANÇA ${escHtml(forecastConfidenceLabel(proj.forecast_confidence).toUpperCase())}</span>
+    </div>
+    <div class="projection-forecast-memory">
+      <div><span>Amostra</span><strong>${escHtml(sampleLabel)} · ${Number(details.samples) || 0} meses</strong></div>
+      <div><span>Base robusta</span><strong>${fmtR$(details.robustMonthly || 0)}/mês</strong></div>
+      <div><span>Correlação física</span><strong>${escHtml(forecastCorrelationLabel(details.correlation))}</strong></div>
+      <div><span>Erro histórico</span><strong>${escHtml(wape)} WAPE</strong></div>
+      <div><span>Coeficiente físico</span><strong>${details.physicalCoefficient ? `${fmtR$(details.physicalCoefficient)}/pp` : '—'}</strong></div>
+      <div><span>Extremos atenuados</span><strong>${escHtml(outlierLabel)}</strong></div>
+    </div>
+    ${details.fallbackReason ? `<p class="projection-forecast-warning">${escHtml(details.fallbackReason)}</p>` : ''}
+    ${
+      canManage
+        ? `<form id="projectionForecastConfigForm" class="projection-forecast-config-form">
+          <label>Método
+            <select id="projectionForecastMethod" class="field-control">
+              ${option('fixed', 'Fixo mensal robusto')}
+              ${option('physical', 'Evolução física')}
+              ${option('mixed', 'Misto · fixo + evolução física')}
+              ${option('manual', 'Valor mensal manual')}
+              ${option('none', 'Não extrapolar')}
+            </select>
+          </label>
+          <label>Amostra histórica
+            <select id="projectionForecastSample" class="field-control">
+              ${sampleOption(6, '6 meses')}
+              ${sampleOption(12, '12 meses')}
+              ${sampleOption(18, '18 meses')}
+              ${sampleOption(0, 'Todo histórico')}
+            </select>
+          </label>
+          <label>Defasagem
+            <select id="projectionForecastLag" class="field-control">
+              ${lagOption(0, 'Mesmo mês')}
+              ${lagOption(1, '1 mês')}
+              ${lagOption(2, '2 meses')}
+            </select>
+          </label>
+          <label>Parcela fixa (%)
+            <input id="projectionForecastFixedShare" class="field-control" type="number" min="0" max="100" step="1" value="${config.fixedShare}">
+          </label>
+          <label>Valor mensal manual
+            <input id="projectionForecastManualValue" class="field-control" inputmode="decimal" value="${escAttr(forecastInputValue(config.manualMonthlyValue))}">
+          </label>
+          <button class="btn-sm primary projection-forecast-save" type="submit">💾 Salvar metodologia</button>
+        </form>`
+        : ''
+    }
+    ${activeSnapshot.workforcePlan?.enabledByInput?.[insumo] ? '<p class="projection-forecast-warning">O Planejamento de Mão de Obra está ativo e tem prioridade sobre esta metodologia.</p>' : ''}
+  </section>`;
+}
+
+function syncForecastConfigFields() {
+  const method = document.getElementById('projectionForecastMethod')?.value;
+  const lag = document.getElementById('projectionForecastLag');
+  const fixedShare = document.getElementById('projectionForecastFixedShare');
+  const manualValue = document.getElementById('projectionForecastManualValue');
+  if (lag) lag.disabled = !['physical', 'mixed'].includes(method);
+  if (fixedShare) fixedShare.disabled = method !== 'mixed';
+  if (manualValue) manualValue.disabled = method !== 'manual';
 }
 
 function createProjectionCurveTooltip(
@@ -3077,6 +3208,16 @@ async function exportarProjecaoDetalhada() {
           ? FORECAST_METHOD_LABELS[node.projection.forecast_method] || ''
           : '',
         'Confiança da previsão': node.projection?.forecast_confidence || '',
+        'Amostra da previsão': node.projection?.forecast_details?.samples || '',
+        'Base robusta mensal (R$)': node.projection?.forecast_details?.robustMonthly || '',
+        'Correlação física': Number.isFinite(node.projection?.forecast_details?.correlation)
+          ? node.projection.forecast_details.correlation
+          : '',
+        'Coeficiente físico (R$/pp)': node.projection?.forecast_details?.physicalCoefficient || '',
+        'Meses atípicos':
+          node.projection?.forecast_details?.outliers
+            ?.map((item) => formatMonthLabel(item.month))
+            .join(', ') || '',
       };
       if (model.comparison?.available) {
         row[`Planejado ${model.comparison.previousManagement} (R$)`] = node.metrics.previousPlanned;
@@ -3184,7 +3325,7 @@ async function exportarProjecaoDetalhada() {
       },
       {
         Campo: 'Metodologia da previsão',
-        Valor: model.forecastComparison?.active ? 'Modelo híbrido ativo' : 'Cálculo atual',
+        Valor: model.forecastComparison?.active ? 'Modelo configurável ativo' : 'Cálculo atual',
       },
       {
         Campo: 'Cronograma físico',
@@ -3316,19 +3457,7 @@ function openProjDrill(servico, insumo) {
     Math.abs(effectiveExtrapolation) < 0.005
       ? '—'
       : `${effectiveExtrapolation > 0 ? '+' : ''}${fmtR$(effectiveExtrapolation)}`;
-  const forecastDiagnostic = proj.forecast_diagnostics?.[proj.forecast_recommended_method] || {};
-  const forecastWape =
-    forecastDiagnostic.wape == null
-      ? 'histórico insuficiente'
-      : `${(forecastDiagnostic.wape * 100).toFixed(1).replace('.', ',')}% WAPE`;
-  const configuredOverride =
-    APP_STATE.config.projectionForecast?.overrides?.[`${servico}|${insumo}`] || 'auto';
-  const forecastMethodMarkup = insumo
-    ? `<div class="projection-modal-forecast">
-        <div><span>Modelo recomendado</span><strong>${escHtml(FORECAST_METHOD_LABELS[proj.forecast_recommended_method] || 'Média simples atual')}</strong><small>Confiança ${escHtml(proj.forecast_confidence || 'low')} · ${escHtml(forecastWape)}</small></div>
-        ${canManageForecast?.() && activeSnapshot.physicalContext ? `<label for="projectionForecastOverride">Ajuste do insumo<select id="projectionForecastOverride" class="field-control"><option value="auto" ${configuredOverride === 'auto' ? 'selected' : ''}>Automático</option><option value="run_rate" ${configuredOverride === 'run_rate' ? 'selected' : ''}>Ritmo histórico ponderado</option><option value="ramp_down" ${configuredOverride === 'ramp_down' ? 'selected' : ''}>Desmobilização física</option><option value="physical" ${configuredOverride === 'physical' ? 'selected' : ''}>Custo por avanço físico</option></select></label>` : ''}
-      </div>`
-    : '';
+  const forecastMethodMarkup = forecastConfigMarkup(proj, servico, insumo, activeSnapshot);
 
   const findIdx = (m) => {
     let i = 0;
@@ -3541,8 +3670,25 @@ function openProjDrill(servico, insumo) {
   // Renderizar após o conteúdo do modal estar no DOM
   setTimeout(() => renderApexChart('modalProjChart', modalChartOptions), 50);
   openModal();
-  document.getElementById('projectionForecastOverride')?.addEventListener('change', (event) => {
-    void changeProjectionForecastOverride(servico, insumo, event.target.value);
+  const forecastMethod = document.getElementById('projectionForecastMethod');
+  forecastMethod?.addEventListener('change', syncForecastConfigFields);
+  syncForecastConfigFields();
+  document.getElementById('projectionForecastConfigForm')?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const button = event.currentTarget.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+    const values = {
+      method: document.getElementById('projectionForecastMethod')?.value,
+      sampleMonths: Number(document.getElementById('projectionForecastSample')?.value),
+      lagMonths: Number(document.getElementById('projectionForecastLag')?.value),
+      fixedShare: Number(document.getElementById('projectionForecastFixedShare')?.value),
+      manualMonthlyValue:
+        parseNumber(document.getElementById('projectionForecastManualValue')?.value) || 0,
+    };
+    void changeProjectionForecastOverride(servico, insumo, values).then((saved) => {
+      if (saved) openProjDrill(servico, insumo);
+      else if (button) button.disabled = false;
+    });
   });
 }
 

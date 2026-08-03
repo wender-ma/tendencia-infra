@@ -7,7 +7,7 @@ const EMPTY_HISTORY = () => ({
   monthlyRowsByProjectManagement: {},
 });
 const EMPTY_EVOLUTION = () => ({ teorica: null, financeira: null });
-const EMPTY_FORECAST = () => ({ active: false, overrides: {} });
+const EMPTY_FORECAST = () => ({ version: 2, active: false, overrides: {} });
 
 export function resolveInitialProject(
   projects,

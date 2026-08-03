@@ -211,15 +211,19 @@ uma única versão ativa por base e adiciona o reset global isolado.
 - A aderência compara o planejamento da Gestão imediatamente anterior com o
   consolidado da Gestão atual no mês encerrado. Snapshots criados antes da `v1.7.0`
   exibem esse comparativo como indisponível até o próximo upload global.
-- A projeção automática calcula ritmo e último mês planejado separadamente para
-  cada insumo. A janela de `3`, `6` ou `12` meses inclui meses zerados e não gera
-  extrapolação quando a média líquida for negativa.
+- A projeção automática calcula o último mês planejado separadamente para cada
+  insumo. Na lupa dos Custos Indiretos, o administrador escolhe entre valor fixo
+  robusto, evolução física, modelo misto, valor mensal manual e não extrapolar.
 - O Cronograma Físico usa `Código EAP` como identificador e `Total (R$)` apenas
   como peso físico. O corte é detectado pelo último avanço realizado e confirmado
   no upload. A curva importada é normalizada pela evolução física oficial da obra.
-- O modelo híbrido compara ritmo recente, desmobilização física e custo por avanço,
-  escolhendo a alternativa de menor erro histórico por insumo. O administrador
-  pode ativá-lo por obra ou voltar imediatamente ao cálculo atual.
+- A base robusta usa mediana, identifica extremos por desvio absoluto mediano e
+  preserva todos os lançamentos originais. Os métodos físico e misto aceitam
+  amostras de `6`, `12`, `18` meses ou todo o histórico, além de defasagem de até
+  dois meses entre execução e custo.
+- O modelo configurável exibe amostra, correlação, WAPE, coeficiente físico e meses
+  atípicos na memória de cálculo. O administrador pode ativá-lo por obra ou voltar
+  imediatamente ao cálculo atual.
 - O Planejamento de Mão de Obra controla `ADM5189` e `CONDH271` por cargo, custo
   unitário e quantidade mensal. Quando ativado para um insumo, substitui o futuro
   da Gestão e sua extrapolação automática, preservando realizado e Flows pendentes.

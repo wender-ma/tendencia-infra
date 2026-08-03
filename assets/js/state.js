@@ -57,7 +57,7 @@ export function createAppState({ storage = getBrowserStorage() } = {}) {
       card3Modo: readStorage(storage, STORAGE_KEYS.cardMode, 'bruto'),
       correcaoIndice: readStorage(storage, STORAGE_KEYS.correctionIndex, 'incc'),
       headerEditable: false,
-      projectionForecast: { active: false, overrides: {} },
+      projectionForecast: { version: 2, active: false, overrides: {} },
     },
     obra: {
       obras: [],

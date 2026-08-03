@@ -1114,14 +1114,17 @@ body:not(.is-admin-geral) [data-admin-control],
   font-size: 11px;
 }
 .projection-modal-forecast {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
+  display: block;
   margin: 10px 0;
   padding: 10px 12px;
   border: 1px solid var(--border);
   background: var(--bg-soft);
+}
+.projection-modal-forecast-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 .projection-modal-forecast span,
 .projection-modal-forecast strong,
@@ -1137,6 +1140,64 @@ body:not(.is-admin-geral) [data-admin-control],
 .projection-modal-forecast strong {
   margin: 2px 0;
   color: var(--text-strong);
+}
+.projection-forecast-memory {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.projection-forecast-memory > div {
+  min-width: 0;
+}
+.projection-forecast-memory strong {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.projection-forecast-config-form {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.4fr) repeat(2, minmax(140px, 1fr));
+  align-items: end;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.projection-forecast-config-form label {
+  min-width: 0;
+}
+.projection-forecast-config-form .field-control {
+  width: 100%;
+  margin-top: 3px;
+}
+.projection-forecast-save {
+  min-height: 32px;
+  white-space: nowrap;
+}
+.projection-forecast-warning {
+  margin: 8px 0 0;
+  color: var(--sem-alerta-text);
+  font-size: 10.5px;
+}
+@media (max-width: 980px) {
+  .projection-forecast-memory {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .projection-forecast-config-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .projection-modal-forecast-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .projection-forecast-memory,
+  .projection-forecast-config-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .projection-forecast-comparison span {
   color: var(--text-soft);

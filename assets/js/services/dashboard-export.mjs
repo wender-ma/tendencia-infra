@@ -7,7 +7,7 @@ import {
 import { formatReflectionMonth, isReflectedStatus } from './flow-reflection.mjs';
 
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
-const DASHBOARD_VERSION = 'v1.12.0';
+const DASHBOARD_VERSION = 'v1.12.1';
 
 function roundCurrency(value) {
   return value == null ? null : Math.round(value * 100) / 100;

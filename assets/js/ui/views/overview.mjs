@@ -558,9 +558,9 @@ function renderVisao({ cardsOnly = false } = {}) {
       <div class="label">📊 ${escHtml(APP_STATE.config.gestaoLabel)}</div>
       <div class="value">${fmtR$(totGestao)}</div>
       <div class="overview-breakdown-heading">Decomposição do desvio</div>
-      ${bdLine('💱 Inflação incorporada', (inflacaoIncorporada >= 0 ? '+' : '') + fmtR$(inflacaoIncorporada), 'purple', `via Flows até ${managementDeviation.cutoffMonth ? formatReflectionMonth(`${managementDeviation.cutoffMonth}-01`) : 'o mês atual'}`, 'openIncorporatedInflationDetail')}
-      ${bdLine('📎 Aditivos refletidos', (aditivoRastreado >= 0 ? '+' : '') + fmtR$(aditivoRastreado), 'warning', 'rastreado em Flows')}
-      ${bdLine('❓ Não rastreado', (restoNaoRastreado >= 0 ? '+' : '') + fmtR$(restoNaoRastreado), signedTone(restoNaoRastreado), 'atualização de orçamento')}
+      ${bdLine('💱 Inflação incorporada', (inflacaoIncorporada > 0 ? '+' : '') + fmtR$(inflacaoIncorporada), 'purple', `via Flows até ${managementDeviation.cutoffMonth ? formatReflectionMonth(`${managementDeviation.cutoffMonth}-01`) : 'o mês atual'}`, 'openIncorporatedInflationDetail')}
+      ${bdLine('📎 Aditivos refletidos', (aditivoRastreado > 0 ? '+' : '') + fmtR$(aditivoRastreado), 'warning', 'rastreado em Flows')}
+      ${bdLine('❓ Não rastreado', (restoNaoRastreado > 0 ? '+' : '') + fmtR$(restoNaoRastreado), signedTone(restoNaoRastreado), 'atualização de orçamento')}
       <div class="overview-total-block">
         <div class="overview-total-line">
           <span class="overview-total-label">🎯 Total · Desvio bruto <span class="overview-total-hint">(${fmtPct(desvioBrutoPct)})</span></span>

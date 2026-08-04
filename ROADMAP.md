@@ -126,6 +126,10 @@ Critério de conclusão: migration confirmada em produção, contratos e navegad
 
 Critério de conclusão: Visão Geral reconciliada, filtros restaurados, anotações persistidas e migration confirmada em produção.
 
+## Versão 1.12.1
+
+- [x] Corrigir a exibição de valores zerados na decomposição da Gestão, removendo o prefixo inválido `+-`.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

@@ -134,6 +134,10 @@ Critério de conclusão: Visão Geral reconciliada, filtros restaurados, anotaç
 
 - [x] Ocultar a decomposição do card Tendência Final Projetada quando o modo Líquido estiver selecionado.
 
+## Versão 1.12.3
+
+- [x] No modo Líquido, ocultar somente `Projeção de Gastos` e `Δ líquido`, preservando as demais informações do card.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

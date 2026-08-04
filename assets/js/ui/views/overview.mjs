@@ -514,26 +514,23 @@ function renderVisao({ cardsOnly = false } = {}) {
       <strong class="overview-tone--${tone}">${valor}</strong>
     </${action ? 'button' : 'div'}>
   `;
-  const card3Details =
-    APP_STATE.config.card3Modo === 'liquido'
-      ? ''
-      : [
-          bdLine(
-            '🎯 Gestão vs Licitação corrigida (' + indiceLabel + ')',
-            (gestaoVsCorrigido >= 0 ? '+' : '') + fmtR$(gestaoVsCorrigido),
-            signedTone(gestaoVsCorrigido),
-          ),
-          bdLine(
-            '🏗️ Tend. Indiretos',
-            (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos),
-            'purple',
-          ),
-          bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning'),
-          `<div class="overview-total-block">
+  const card3Details = [
+    bdLine(
+      '🎯 Gestão vs Licitação corrigida (' + indiceLabel + ')',
+      (gestaoVsCorrigido >= 0 ? '+' : '') + fmtR$(gestaoVsCorrigido),
+      signedTone(gestaoVsCorrigido),
+    ),
+    bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'purple'),
+    bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning'),
+    `<div class="overview-total-block">
             <div class="overview-total-line">
               <span class="overview-total-label">📈 Δ bruto vs Licitação corrigida</span>
               <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigido)}">${tendVsCorrigido >= 0 ? '+' : ''}${fmtR$(tendVsCorrigido)}</strong>
             </div>
+            ${
+              APP_STATE.config.card3Modo === 'liquido'
+                ? ''
+                : `
             <div class="overview-total-line">
               <span class="overview-projection-reserve-label">${escHtml(insumoControlado)} - Projeção de Gastos</span>
               <strong class="overview-total-value overview-tone--${signedTone(-reservaProj)}">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
@@ -541,9 +538,10 @@ function renderVisao({ cardsOnly = false } = {}) {
             <div class="overview-total-line">
               <span class="overview-total-label">💧 Δ líquido vs Licitação corrigida</span>
               <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigidoLiq)}">${tendVsCorrigidoLiq >= 0 ? '+' : ''}${fmtR$(tendVsCorrigidoLiq)}</strong>
-            </div>
+            </div>`
+            }
           </div>`,
-        ].join('');
+  ].join('');
 
   replaceWithParsedMarkup(
     document.getElementById('kpis'),

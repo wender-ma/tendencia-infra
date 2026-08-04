@@ -1,3 +1,5 @@
+import { isReflectedStatus } from './flow-reflection.mjs';
+
 export const DASHBOARD_DATA_KEYS = Object.freeze({
   DATA_T: 'dados_tendencia',
   DATA_F: 'dados_flows',
@@ -13,8 +15,7 @@ const CLASSIFICATION_FIELDS = new Set([
   'custo_flowmaster',
   'refletido_status',
   'refletido_mes',
-  'causa_desvio',
-  'indice_inflacao',
+  'observacao',
 ]);
 
 const RESETTABLE_PROJECT_KEYS = new Set([
@@ -70,9 +71,8 @@ function classificationMap(rows = []) {
         custo_flowmaster: row.custo_flowmaster,
         refletido_status: row.refletido_status,
         refletido_mes: row.refletido_mes,
-        refletido: row.refletido_status === 'sim',
-        causa_desvio: row.causa_desvio || 'nao_classificado',
-        indice_inflacao: row.indice_inflacao || null,
+        refletido: isReflectedStatus(row.refletido_status),
+        observacao_classificacao: row.observacao || '',
       },
     ]),
   );
@@ -172,7 +172,7 @@ export function createDashboardRepository({
       supabase
         .from('flow_classifications')
         .select(
-          'codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,causa_desvio,indice_inflacao',
+          'codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,observacao',
         )
         .eq('codigo_obra', project),
     );

@@ -29,11 +29,9 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
         descricao: 'Aditivo já incorporado',
         insumo_planejamento: 'ADM5189',
         custo_flowmaster: 3,
-        refletido_status: 'sim',
+        refletido_status: 'ipca',
         refletido_mes: '2026-06',
         tipo: 'aumento_real',
-        causa_desvio: 'inflacao',
-        indice_inflacao: 'ipca',
       },
     ];
     services.state.dados.projRaw = [

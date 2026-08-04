@@ -29,18 +29,17 @@ const { pathToFileURL } = require('url');
   const [flow] = buildFlowsExportRows([
     {
       tipo: 'remanejamento',
-      refletido_status: 'sim',
+      refletido_status: 'ipca',
       refletido_mes: '2026-07-01',
       custo_flowmaster: 10.126,
-      causa_desvio: 'inflacao',
-      indice_inflacao: 'ipca',
+      observacao_classificacao: 'Parcela de julho',
     },
   ]);
   assert.strictEqual(flow['Tipo classificação'], 'Remanejamento');
-  assert.strictEqual(flow['Refletido?'], 'Sim');
+  assert.strictEqual(flow['Refletido?'], 'IPCA');
   assert.strictEqual(flow['Mês refletido'], '07/2026');
-  assert.strictEqual(flow['Causa do desvio'], 'Inflação');
-  assert.strictEqual(flow['Índice da inflação'], 'IPCA');
+  assert.strictEqual(flow['Observações / Anotações'], 'Parcela de julho');
+  assert.strictEqual(flow['Causa do desvio'], undefined);
   assert.strictEqual(flow['Custo Flowmaster (R$)'], 10.13);
 
   const projection = buildProjectionExportRows({

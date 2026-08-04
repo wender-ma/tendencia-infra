@@ -1,3 +1,20 @@
+export const FLOW_REFLECTION_STATUSES = Object.freeze(['pendente', 'sim', 'nao', 'ipca', 'incc']);
+
+export const REFLECTED_FLOW_STATUSES = Object.freeze(['sim', 'ipca', 'incc']);
+
+export function normalizeReflectionStatus(value) {
+  return FLOW_REFLECTION_STATUSES.includes(value) ? value : 'pendente';
+}
+
+export function isReflectedStatus(value) {
+  return REFLECTED_FLOW_STATUSES.includes(normalizeReflectionStatus(value));
+}
+
+export function inflationIndexFromReflectionStatus(value) {
+  const status = normalizeReflectionStatus(value);
+  return status === 'ipca' || status === 'incc' ? status : null;
+}
+
 export function normalizeReflectionMonth(value) {
   const match = String(value || '')
     .trim()
@@ -14,7 +31,7 @@ export function currentReflectionMonth(now = new Date()) {
 }
 
 export function resolveReflectionMonth(status, currentValue, now = new Date()) {
-  if (status !== 'sim') return null;
+  if (!isReflectedStatus(status)) return null;
   return normalizeReflectionMonth(currentValue) || currentReflectionMonth(now);
 }
 

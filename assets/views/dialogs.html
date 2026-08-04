@@ -27,21 +27,18 @@
       <input type="text" id="m_valor" placeholder="ex: 12.500,00 ou -5000">
     </div>
     <div>
-      <label for="m_causa_desvio">Causa do desvio</label>
-      <select id="m_causa_desvio">
-        <option value="nao_classificado">Não classificado</option>
-        <option value="inflacao">Inflação</option>
-        <option value="demais_causas">Demais causas</option>
+      <label for="m_refletido_status">Refletido?</label>
+      <select id="m_refletido_status">
+        <option value="pendente">Pendente</option>
+        <option value="sim">Sim</option>
+        <option value="ipca">IPCA</option>
+        <option value="incc">INCC</option>
+        <option value="nao">Não</option>
       </select>
     </div>
     <div>
-      <label for="m_indice_inflacao">Índice da inflação</label>
-      <select id="m_indice_inflacao">
-        <option value="">— Não se aplica —</option>
-        <option value="ipca">IPCA</option>
-        <option value="incc">INCC</option>
-        <option value="outro">Outro</option>
-      </select>
+      <label for="m_refletido_mes">Mês refletido</label>
+      <input type="month" id="m_refletido_mes">
     </div>
     <div>
       <label for="m_dest">→ Destino (Insumo Planejamento)</label>
@@ -54,6 +51,10 @@
     <div class="full">
       <label for="m_just">Justificativa (opcional)</label>
       <textarea id="m_just" placeholder="Detalhe técnico, links de projeto, etc."></textarea>
+    </div>
+    <div class="full">
+      <label for="m_anotacoes">Observações / Anotações</label>
+      <textarea id="m_anotacoes" maxlength="500" placeholder="Registre aqui informações internas sobre este Flow."></textarea>
     </div>
   </div>
   <div class="form-actions">

@@ -4,10 +4,10 @@ import {
   PROJECTION_MOVEMENT_DIRECTIONS,
   resolveProjectionMovementDirection,
 } from './projection-control-accounting.mjs';
-import { formatReflectionMonth } from './flow-reflection.mjs';
+import { formatReflectionMonth, isReflectedStatus } from './flow-reflection.mjs';
 
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
-const DASHBOARD_VERSION = 'v1.11.0';
+const DASHBOARD_VERSION = 'v1.12.0';
 
 function roundCurrency(value) {
   return value == null ? null : Math.round(value * 100) / 100;
@@ -47,7 +47,13 @@ export function buildDetailsExportRows(items = []) {
 }
 
 export function buildFlowsExportRows(flows = []) {
-  const reflectedLabels = { sim: 'Sim', nao: 'Não', pendente: 'Pendente' };
+  const reflectedLabels = {
+    sim: 'Sim',
+    ipca: 'IPCA',
+    incc: 'INCC',
+    nao: 'Não',
+    pendente: 'Pendente',
+  };
   const typeLabels = {
     aumento_real: 'Aumento real',
     remanejamento: 'Remanejamento',
@@ -57,13 +63,6 @@ export function buildFlowsExportRows(flows = []) {
     sem_classificacao: 'Sem classificação',
     misto: 'Misto',
   };
-  const causeLabels = {
-    nao_classificado: 'Não classificado',
-    inflacao: 'Inflação',
-    demais_causas: 'Demais causas',
-  };
-  const indexLabels = { ipca: 'IPCA', incc: 'INCC', outro: 'Outro' };
-
   return flows.map((flow) => ({
     'N° Alteração': flow.n_alteracao || '',
     Data: flow.data_br || '',
@@ -76,13 +75,12 @@ export function buildFlowsExportRows(flows = []) {
     'Insumo Planejamento (destino)': flow.insumo_planejamento || '',
     'Insumo Remanejamento (origem)': flow.insumo_remanejamento || '',
     'Tipo classificação': typeLabels[flow.tipo] || flow.tipo || '',
-    'Causa do desvio': causeLabels[flow.causa_desvio] || 'Não classificado',
-    'Índice da inflação': indexLabels[flow.indice_inflacao] || '',
     'Refletido?': reflectedLabels[flow.refletido_status] || flow.refletido_status || 'Pendente',
     'Mês refletido':
-      flow.refletido_status === 'sim' && flow.refletido_mes
+      isReflectedStatus(flow.refletido_status) && flow.refletido_mes
         ? formatReflectionMonth(flow.refletido_mes)
         : '',
+    'Observações / Anotações': flow.observacao_classificacao || '',
     'Solicitante Dep.': flow.solicitante_dep || '',
     'É manual': flow.is_manual ? 'Sim' : 'Não',
   }));

@@ -1,3 +1,5 @@
+import { isReflectedStatus } from '../../services/flow-reflection.mjs';
+
 function roundCurrency(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
@@ -296,14 +298,14 @@ export function buildOverviewInputDetailModel({
   for (const flow of flows) {
     if (flow.dep === 'Cancelado') continue;
     const status = flow.refletido_status || 'pendente';
-    if (!['pendente', 'sim'].includes(status)) continue;
+    if (status !== 'pendente' && !isReflectedStatus(status)) continue;
     const target = resolveFlowTarget(flow);
     const detail = flowDetail(flow);
     if (status === 'pendente') {
       if (Math.abs(detail.valor) < 0.005) continue;
       target.metrics.pendingFlows = roundCurrency(target.metrics.pendingFlows + detail.valor);
       target.pendingFlowItems.push(detail);
-    } else {
+    } else if (isReflectedStatus(status)) {
       target.reflectedFlowItems.push(detail);
     }
   }

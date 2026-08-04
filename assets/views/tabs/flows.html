@@ -27,26 +27,12 @@
     <div class="toolbar flows-filter-toolbar">
       <input type="search" id="flowSearch" aria-label="Buscar aditivos por descrição ou número do Flow" placeholder="🔍 Descrição ou nº Flow...">
       <div class="ms-wrap" id="ms_refletido_wrap"><button type="button" class="ms-btn" id="ms_refletido_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="refletido">Todos status</button><div class="ms-panel" id="ms_refletido_panel"></div></div>
-      <div class="ms-wrap" id="ms_causa_desvio_wrap"><button type="button" class="ms-btn" id="ms_causa_desvio_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="causa_desvio">Todas causas</button><div class="ms-panel" id="ms_causa_desvio_panel"></div></div>
       <div class="ms-wrap" id="ms_dep_wrap"><button type="button" class="ms-btn" id="ms_dep_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="dep">Todos departamentos</button><div class="ms-panel" id="ms_dep_panel"></div></div>
       <div class="ms-wrap" id="ms_destino_wrap"><button type="button" class="ms-btn" id="ms_destino_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="destino">Todos destinos</button><div class="ms-panel" id="ms_destino_panel"></div></div>
       <div class="ms-wrap" id="ms_origem_wrap"><button type="button" class="ms-btn" id="ms_origem_btn" data-click-action="msToggle" data-action-mode="arg" data-action-arg="origem">Todas origens</button><div class="ms-panel" id="ms_origem_panel"></div></div>
       <label class="advanced-filter-field">
         Refletido em:
         <input type="month" id="flowFilterRefletidoMes" class="flow-filter-control" aria-label="Filtrar pelo mês refletido">
-      </label>
-      <label class="advanced-filter-field">
-        📅 De:
-        <input type="month" id="flowFilterDataIni" class="flow-filter-control">
-      </label>
-      <label class="advanced-filter-field">
-        até:
-        <input type="month" id="flowFilterDataFim" class="flow-filter-control">
-      </label>
-      <label class="advanced-filter-field">
-        💰 R$:
-        <input type="number" id="flowFilterValMin" class="flow-filter-control flow-filter-number" aria-label="Valor mínimo" placeholder="mín" step="100">
-        <input type="number" id="flowFilterValMax" class="flow-filter-control flow-filter-number" aria-label="Valor máximo" placeholder="máx" step="100">
       </label>
       <button class="btn-sm compact" data-click-action="clearFlowFilters">🧹 Limpar filtros</button>
     </div>
@@ -62,12 +48,11 @@
             <th class="table-col-80" data-sort-flow="data" aria-sort="none">Data</th>
             <th class="table-col-90" data-sort-flow="dep" aria-sort="none">Departamento</th>
             <th class="table-col-100" data-sort-flow="tipo" aria-sort="none">Tipo</th>
-            <th class="table-col-120" data-sort-flow="causa_desvio" aria-sort="none">Causa do desvio</th>
-            <th class="table-col-80" data-sort-flow="indice_inflacao" aria-sort="none">Índice</th>
             <th class="table-col-120" data-sort-flow="insumo_planejamento" aria-sort="none">→ Destino</th>
             <th class="table-col-120" data-sort-flow="insumo_remanejamento" aria-sort="none">← Origem</th>
             <th class="num table-col-110" data-sort-flow="custo_flowmaster" aria-sort="none">Fluxo Planejamento</th>
             <th data-sort-flow="motivo" aria-sort="none">Motivo / Descrição</th>
+            <th class="table-col-180" data-sort-flow="observacao_classificacao" aria-sort="none">Observações / Anotações</th>
           </tr>
         </thead>
         <tbody id="flowTbody"></tbody>

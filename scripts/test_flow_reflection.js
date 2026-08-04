@@ -11,6 +11,9 @@ const { pathToFileURL } = require('url');
   const {
     currentReflectionMonth,
     formatReflectionMonth,
+    inflationIndexFromReflectionStatus,
+    isReflectedStatus,
+    normalizeReflectionStatus,
     normalizeReflectionMonth,
     reflectionMonthInputValue,
     resolveReflectionMonth,
@@ -22,8 +25,16 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(currentReflectionMonth(new Date(2026, 6, 19)), '2026-07-01');
   assert.strictEqual(resolveReflectionMonth('sim', null, new Date(2026, 6, 19)), '2026-07-01');
   assert.strictEqual(resolveReflectionMonth('sim', '2026-05'), '2026-05-01');
+  assert.strictEqual(resolveReflectionMonth('ipca', '2026-05'), '2026-05-01');
+  assert.strictEqual(resolveReflectionMonth('incc', null, new Date(2026, 6, 19)), '2026-07-01');
   assert.strictEqual(resolveReflectionMonth('pendente', '2026-05'), null);
   assert.strictEqual(resolveReflectionMonth('nao', '2026-05'), null);
+  assert.strictEqual(normalizeReflectionStatus('incc'), 'incc');
+  assert.strictEqual(normalizeReflectionStatus('desconhecido'), 'pendente');
+  assert.strictEqual(isReflectedStatus('ipca'), true);
+  assert.strictEqual(isReflectedStatus('pendente'), false);
+  assert.strictEqual(inflationIndexFromReflectionStatus('ipca'), 'ipca');
+  assert.strictEqual(inflationIndexFromReflectionStatus('sim'), null);
   assert.strictEqual(reflectionMonthInputValue('2026-07-01'), '2026-07');
   assert.strictEqual(formatReflectionMonth('2026-07-01'), '07/2026');
   assert.strictEqual(formatReflectionMonth(null), '—');

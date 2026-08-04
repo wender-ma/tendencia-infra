@@ -68,11 +68,10 @@ class Query {
         {
           codigo_obra: 'OBRA-A',
           n_alteracao: 'ADT-1',
-          refletido_status: 'sim',
+          refletido_status: 'ipca',
           refletido_mes: '2026-07-01',
           custo_flowmaster: 10,
-          causa_desvio: 'inflacao',
-          indice_inflacao: 'ipca',
+          observacao: 'Parcela de julho',
         },
       ],
       error: null,
@@ -106,8 +105,11 @@ class Query {
   const classifications = await repository.loadClassifications();
   assert.strictEqual(classifications['OBRA-A:ADT-1'].refletido, true);
   assert.strictEqual(classifications['OBRA-A:ADT-1'].refletido_mes, '2026-07-01');
-  assert.strictEqual(classifications['OBRA-A:ADT-1'].causa_desvio, 'inflacao');
-  assert.strictEqual(classifications['OBRA-A:ADT-1'].indice_inflacao, 'ipca');
+  assert.strictEqual(classifications['OBRA-A:ADT-1'].refletido_status, 'ipca');
+  assert.strictEqual(
+    classifications['OBRA-A:ADT-1'].observacao_classificacao,
+    'Parcela de julho',
+  );
   assert(
     calls.some(
       (call) =>
@@ -133,8 +135,8 @@ class Query {
   await repository.patchClassification('ADT-1', {
     custo_flowmaster: 42,
     refletido_mes: '2026-06-01',
-    causa_desvio: 'inflacao',
-    indice_inflacao: 'incc',
+    refletido_status: 'incc',
+    observacao: 'Parcela de junho',
     codigo_obra: 'OBRA-INJETADA',
   });
   const update = calls.find(
@@ -142,8 +144,8 @@ class Query {
   );
   assert.strictEqual(update.args[0].custo_flowmaster, 42);
   assert.strictEqual(update.args[0].refletido_mes, '2026-06-01');
-  assert.strictEqual(update.args[0].causa_desvio, 'inflacao');
-  assert.strictEqual(update.args[0].indice_inflacao, 'incc');
+  assert.strictEqual(update.args[0].refletido_status, 'incc');
+  assert.strictEqual(update.args[0].observacao, 'Parcela de junho');
   assert.strictEqual(update.args[0].codigo_obra, undefined);
   assert.strictEqual(update.args[0].updated_by, 'editor@example.com');
 

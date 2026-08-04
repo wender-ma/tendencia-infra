@@ -55,7 +55,7 @@ export const READ_ONLY_QUERIES = Object.freeze({
           array[
             'codigo_obra', 'n_alteracao', 'insumo_planejamento',
             'insumo_remanejamento', 'custo_flowmaster', 'refletido_status',
-            'refletido_mes', 'causa_desvio', 'indice_inflacao'
+            'refletido_mes', 'observacao'
           ]::text[]
         ),
         (

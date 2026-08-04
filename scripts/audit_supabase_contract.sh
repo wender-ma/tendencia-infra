@@ -24,7 +24,7 @@ if [[ "$PROFILE" == "baseline" ]]; then
   CONTRACTS=(
     "obras|codigo_obra,nome,key_empobratd,observacao,ativa,origem,criada_em"
     "editores_permitidos|email,codigo_obra,nome,observacao,role,status,adicionado_em"
-    "flow_classifications|codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,causa_desvio,indice_inflacao,updated_at"
+    "flow_classifications|codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,observacao,updated_at"
     "flow_manuals|codigo_obra,n_alteracao,n_adt,dep,descricao,data_br,data,aprovador_dep,aprovador,solicitante_dep,solicitante,custo_flowmaster,custo_planejamento,motivo,justificativa,insumo_planejamento,insumo_remanejamento,obs,created_at,created_by"
     "projecao_config|codigo_obra,insumo_controlado,saldo_inicial,data_ref,locked_saldo,locked_data,locked_insumo,updated_at"
     "projecao_movimentacoes|id,codigo_obra,tipo,data,data_br,origem,destino,descricao,justificativa,responsavel,valor,created_at,created_by"
@@ -36,7 +36,7 @@ else
   CONTRACTS=(
     "obras|codigo_obra,nome,ativa"
     "editores_permitidos|email"
-    "flow_classifications|codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,causa_desvio,indice_inflacao"
+    "flow_classifications|codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,observacao"
     "flow_manuals|codigo_obra,n_alteracao,n_adt,dep,descricao,data_br,data,aprovador_dep,aprovador,solicitante_dep,solicitante,custo_flowmaster,custo_planejamento,motivo,justificativa,insumo_planejamento,insumo_remanejamento,obs"
     "projecao_config|codigo_obra,insumo_controlado,saldo_inicial,data_ref,locked_saldo,locked_data,locked_insumo"
     "projecao_movimentacoes|id,codigo_obra,tipo,data,data_br,origem,destino,descricao,justificativa,responsavel,valor,created_at"

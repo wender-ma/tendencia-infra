@@ -1,18 +1,8 @@
-export const FLOW_DEVIATION_CAUSES = Object.freeze([
-  'nao_classificado',
-  'inflacao',
-  'demais_causas',
-]);
-
-export const FLOW_INFLATION_INDEXES = Object.freeze(['ipca', 'incc', 'outro']);
-
-export function normalizeDeviationCause(value) {
-  return FLOW_DEVIATION_CAUSES.includes(value) ? value : 'nao_classificado';
-}
-
-export function normalizeInflationIndex(value) {
-  return FLOW_INFLATION_INDEXES.includes(value) ? value : null;
-}
+import {
+  inflationIndexFromReflectionStatus,
+  isReflectedStatus,
+  normalizeReflectionStatus,
+} from './flow-reflection.mjs';
 
 export function managementCutoffMonth(label, now = new Date()) {
   const match = String(label || '').match(/GEST(?:ÃO|AO)\s+(\d{2})-(\d{4})/i);
@@ -34,23 +24,23 @@ export function buildManagementDeviationBreakdown({ flows = [], managementLabel 
   const inflationFlows = [];
   const otherReflectedFlows = [];
   const incompleteInflationFlows = [];
-  const totalsByIndex = { ipca: 0, incc: 0, outro: 0 };
+  const totalsByIndex = { ipca: 0, incc: 0 };
 
   for (const flow of flows) {
     if (isCancelled(flow)) continue;
-    const cause = normalizeDeviationCause(flow.causa_desvio);
-    const index = normalizeInflationIndex(flow.indice_inflacao);
+    const status = normalizeReflectionStatus(flow.refletido_status);
+    const index = inflationIndexFromReflectionStatus(status);
     const month = reflectedMonth(flow);
-    const reflected = (flow.refletido_status || 'pendente') === 'sim';
+    const reflected = isReflectedStatus(status);
 
-    if (cause === 'inflacao' && (!index || (reflected && !month))) {
+    if (index && !month) {
       incompleteInflationFlows.push(flow);
       continue;
     }
     if (!reflected || !month || (cutoffMonth && month > cutoffMonth)) continue;
 
     const value = Number(flow.custo_flowmaster) || 0;
-    if (cause === 'inflacao') {
+    if (index) {
       inflationFlows.push(flow);
       totalsByIndex[index] += value;
       continue;

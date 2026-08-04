@@ -28,12 +28,14 @@ de conclusão.
 | EXT-17 | Concluída | Administrador do dashboard | EXT-16 e deploy `v1.8.0` concluídos | Enviar o Cronograma Físico da obra, confirmar o corte sugerido e comparar o cálculo atual com o recomendado. | Em 03/08/2026, `42-21O` ficou com um upload e snapshot físicos ativos: 105 EAPs, 35 meses e corte `jul/2026`. O recomendado ficou `R$ 323.517,43` abaixo do atual; como 22 de 25 previsões elegíveis tinham confiança baixa, o Modelo Atual foi preservado. |
 | EXT-18 | Aberta | Administrador do dashboard | Deploy `v1.9.0` concluído | Conferir a memória de cálculo dos principais insumos indiretos e ativar a metodologia `v2` na Tendência de Obra. | Métodos revisados, comparação conciliada e indicador `MODELO CONFIGURÁVEL ATIVO` exibido sem erros. |
 | EXT-19 | Concluída | Administrador do Supabase | Migration `v1.11.0` validada localmente | Aplicar `20260804120000_flow_deviation_cause.sql` em produção e executar `verify_flow_deviation_cause_deployment.sql`. | Em 04/08/2026, a auditoria retornou `complete: true`, leitura pública habilitada, duas colunas presentes, constraints válidas e zero linhas históricas classificadas automaticamente. |
+| EXT-20 | Concluída | Administrador do Supabase | Migration `v1.12.0` validada localmente | Aplicar `20260804123000_flow_reflection_inflation.sql` em produção e executar `verify_flow_reflection_inflation_deployment.sql`. | Em 04/08/2026, o contrato público confirmou 8 colunas e 132 classificações visíveis, com status IPCA/INCC e anotações disponíveis e campos legados fora do contrato anônimo. |
 
 ## Ordem mínima
 
 1. Executar EXT-06 no domínio publicado.
 2. Iniciar a janela de EXT-07 e só então avaliar a limpeza legada.
 3. Resolver EXT-01, EXT-05, EXT-08 e EXT-09 com os responsáveis indicados.
+4. EXT-20 concluída; publicar e validar a `v1.12.0`.
 
 Nenhuma ação deste registro exige compartilhar senha, token, chave privada,
 conteúdo de arquivo ou dado pessoal no repositório.

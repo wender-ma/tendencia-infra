@@ -25,8 +25,7 @@ test('acoes principais de Flows abrem o formulario e exportam Excel', async ({ p
         refletido_mes: '2026-06',
         insumo_planejamento: 'I001',
         insumo_remanejamento: '',
-        causa_desvio: 'nao_classificado',
-        indice_inflacao: null,
+        observacao_classificacao: '',
       },
     ];
     Object.assign(services.auth.state, {
@@ -63,23 +62,32 @@ test('acoes principais de Flows abrem o formulario e exportam Excel', async ({ p
   await firstRow.locator('[data-field="insumo_remanejamento"]').press('Tab');
   await expect(firstRow.locator('td').nth(6)).toContainText('Misto');
   await expect(firstRow.locator('td').nth(6)).not.toContainText('<span');
-  await firstRow.locator('.flow-cause-select').selectOption('inflacao');
-  await expect(firstRow.locator('.flow-index-select')).toBeVisible();
-  await firstRow.locator('.flow-index-select').selectOption('ipca');
+  await firstRow.locator('.refletido-select').selectOption('ipca');
+  await firstRow.locator('.flow-notes-input').fill('Parcela inflacionária de junho');
+  await firstRow.locator('.flow-notes-input').press('Tab');
   await expect
     .poll(() =>
       page.evaluate(() => ({
-        cause: window.dashboardServices.state.dados.flows[0].causa_desvio,
-        index: window.dashboardServices.state.dados.flows[0].indice_inflacao,
+        status: window.dashboardServices.state.dados.flows[0].refletido_status,
+        observation: window.dashboardServices.state.dados.flows[0].observacao_classificacao,
       })),
     )
-    .toEqual({ cause: 'inflacao', index: 'ipca' });
+    .toEqual({ status: 'ipca', observation: 'Parcela inflacionária de junho' });
 
   await page.locator('#flowFilterRefletidoMes').fill('2026-06');
   await expect(page.locator('#flowTbody tr')).toHaveCount(1);
   await expect(page.locator('#flowTbody')).toContainText('FLOW-E2E-1');
   await page.locator('#flowFilterRefletidoMes').fill('2026-07');
   await expect(page.locator('#flowTbody tr')).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          JSON.parse(localStorage.getItem('jzurique_flow_filters_v1:OBRA-FLOWS') || '{}')
+            .reflectedMonth,
+      ),
+    )
+    .toBe('2026-07');
   await page.getByRole('button', { name: 'Limpar filtros' }).click();
   await expect(page.locator('#flowTbody tr')).toHaveCount(2);
 

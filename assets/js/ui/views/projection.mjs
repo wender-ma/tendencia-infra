@@ -20,6 +20,7 @@ import {
   normalizeWorkforceState,
   WORKFORCE_INPUTS,
 } from './projection-workforce.mjs';
+import { isReflectedStatus } from '../../services/flow-reflection.mjs';
 
 const HIERARQUIA = PROJECTION_CATALOG.hierarchy;
 const SERVICOS_META = PROJECTION_CATALOG.services;
@@ -1066,6 +1067,23 @@ export function buildProjectionMonthlyTableModel({
     }
   }
 
+  // Flows podem apontar para um insumo existente sem projeção automática.
+  // Inicialize as métricas antes de conciliá-los para manter a árvore íntegra.
+  for (const node of nodes) {
+    node.metrics ||= {
+      planned: 0,
+      realized: 0,
+      balance: 0,
+      extrapolation: 0,
+      pendingFlows: 0,
+      workforce: 0,
+      tendency: 0,
+      previousPlanned: 0,
+      currentConsolidated: 0,
+      adherenceDifference: 0,
+    };
+  }
+
   let unclassifiedFlowNode = null;
   function appendFlowOnlyNode(input) {
     const index = nodes.length;
@@ -1124,7 +1142,7 @@ export function buildProjectionMonthlyTableModel({
   for (const flow of flows) {
     if (flow.dep === 'Cancelado') continue;
     const status = flow.refletido_status || 'pendente';
-    if (!['pendente', 'sim'].includes(status)) continue;
+    if (status !== 'pendente' && !isReflectedStatus(status)) continue;
     const target = resolveFlowNode(flow);
     const detail = projectionFlowDetail(flow);
     if (status === 'pendente' && Math.abs(detail.valor) >= 0.005) {
@@ -1142,7 +1160,7 @@ export function buildProjectionMonthlyTableModel({
       continue;
     }
     const reflectedMonth = String(flow.refletido_mes || '').slice(0, 7);
-    if (status === 'sim' && target.monthly[reflectedMonth]) {
+    if (isReflectedStatus(status) && target.monthly[reflectedMonth]) {
       target.monthly[reflectedMonth].reflectedFlowItems.push(detail);
     }
   }
@@ -2616,8 +2634,7 @@ const projExpanded = new Set(); // chaves de grupos/serviços expandidos
 // Conta flows que apontam para um insumo (destino ou origem), ignorando cancelados
 function flowsPorInsumo(insumo) {
   if (!insumo) return null;
-  // Só mostrar flows REFLETIDOS (status === 'sim')
-  const refletidos = (f) => (f.refletido_status || 'pendente') === 'sim';
+  const refletidos = (f) => isReflectedStatus(f.refletido_status);
   const entrada = getFlowsObraAtiva().filter(
     (f) => refletidos(f) && f.insumo_planejamento === insumo,
   );
@@ -3793,9 +3810,9 @@ function renderMovimentacoesProjecaoSection(servico, insumo) {
 
 // Renderiza a seção "Flows Refletidos" dentro do modal de drill-down
 function renderFlowsRefletidosSection(servico, insumo) {
-  // Pega flows REFLETIDOS (status === 'sim') E PENDENTES (status === 'pendente') que apontam para este servico/insumo
+  // Pega Flows refletidos e pendentes que apontam para este serviço/insumo.
   const statusOf = (f) => f.refletido_status || 'pendente';
-  const isRefl = (f) => statusOf(f) === 'sim';
+  const isRefl = (f) => isReflectedStatus(statusOf(f));
   const isPend = (f) => statusOf(f) === 'pendente';
 
   function coletarFlows(filtroStatus) {

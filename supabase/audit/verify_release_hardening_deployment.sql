@@ -8,7 +8,7 @@ with expected_columns(table_name, columns) as (
       array[
         'codigo_obra', 'n_alteracao', 'insumo_planejamento',
         'insumo_remanejamento', 'custo_flowmaster', 'refletido_status',
-        'refletido_mes', 'causa_desvio', 'indice_inflacao'
+        'refletido_mes', 'observacao'
       ]::text[]
     ),
     (

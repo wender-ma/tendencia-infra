@@ -115,6 +115,17 @@ Critério de conclusão: parser, contrato de UI e teste de navegador reconciliad
 
 Critério de conclusão: migration confirmada em produção, contratos e navegador aprovados, publicação e smoke concluídos.
 
+## Versão 1.12.0
+
+- [x] Corrigir a quebra da Visão Geral causada por Flow refletido em insumo sem projeção automática.
+- [x] Substituir causa e índice pelos estados de reflexo `IPCA` e `INCC`.
+- [x] Persistir os filtros restantes da aba Flows por obra e navegador.
+- [x] Remover filtros de data de criação e faixa de valores.
+- [x] Adicionar Observações / Anotações persistentes por Flow.
+- [x] **AÇÃO EXTERNA EXT-20** Migration de reflexo simplificado aplicada em produção e contrato público auditado.
+
+Critério de conclusão: Visão Geral reconciliada, filtros restaurados, anotações persistidas e migration confirmada em produção.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

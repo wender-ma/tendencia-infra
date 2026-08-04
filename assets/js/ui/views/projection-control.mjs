@@ -15,6 +15,7 @@ import {
   formatNumber as fmt,
   formatNumber as fmtR$,
 } from '../dashboard-runtime.mjs';
+import { isReflectedStatus } from '../../services/flow-reflection.mjs';
 
 const PROJ_CTRL_KEY = STORAGE_KEYS.projectionControl;
 
@@ -297,7 +298,7 @@ function getAllMovimentacoes() {
 
   // Flows refletidos que tocam o insumo
   getFlowsObraAtiva()
-    .filter((f) => (f.refletido_status || 'pendente') === 'sim')
+    .filter((f) => isReflectedStatus(f.refletido_status))
     .forEach((f) => {
       let direcao = null;
       if (f.insumo_planejamento === insumo) direcao = 'entrada';

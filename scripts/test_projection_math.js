@@ -80,12 +80,21 @@ const { pathToFileURL } = require('url');
       },
       {
         dep: 'Finalizado',
-        refletido_status: 'sim',
+        refletido_status: 'ipca',
         refletido_mes: '2026-03-01',
         custo_flowmaster: 30,
         insumo_planejamento: 'A',
         n_alteracao: 'FLOW-REFLETIDO',
         descricao: 'Já incorporado',
+      },
+      {
+        dep: 'Finalizado',
+        refletido_status: 'incc',
+        refletido_mes: '2026-03-01',
+        custo_flowmaster: 12,
+        insumo_planejamento: 'C',
+        n_alteracao: 'FLOW-SEM-PROJECAO',
+        descricao: 'Insumo existente sem projeção automática',
       },
       {
         dep: 'Em andamento',
@@ -127,6 +136,15 @@ const { pathToFileURL } = require('url');
         tipo: 'insumo',
         nivel: 4,
       },
+      {
+        ordem: 5,
+        cod: '01.01.01',
+        cod_servico: 'S05765',
+        cod_insumo: 'C',
+        item: 'INSUMO C SEM PROJEÇÃO',
+        tipo: 'insumo',
+        nivel: 4,
+      },
     ],
   });
   assert.deepStrictEqual(monthlyModel.months, ['2026-03', '2026-04']);
@@ -142,6 +160,9 @@ const { pathToFileURL } = require('url');
   assert.strictEqual(inputAMonth.pendingFlows, 25);
   assert.strictEqual(inputAMonth.reflectedFlowItems.length, 1);
   assert.strictEqual(inputAMonth.total, 85, 'Flow refletido não pode ser somado novamente ao mês');
+  const inputC = monthlyModel.nodes.find((node) => node.cod_insumo === 'C');
+  assert.strictEqual(inputC.metrics.pendingFlows, 0);
+  assert.strictEqual(inputC.monthly['2026-03'].reflectedFlowItems.length, 1);
   const unclassified = monthlyModel.nodes.find((node) => node.isFlowOnly);
   assert.strictEqual(unclassified.item, 'Sem insumo classificado');
   assert.strictEqual(unclassified.monthly['2026-03'].pendingFlows, -5);

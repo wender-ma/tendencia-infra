@@ -24,6 +24,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Hardening de lançamento: limita o contrato público às colunas consumidas pelo painel, oculta obras inativas e blobs legados, e adiciona cadastro transacional de obras por upload.
 - Mês de reflexo dos Flows: adiciona `refletido_mes` às classificações, preservado entre uploads e exposto no contrato público operacional.
 - Inflação incorporada: adiciona causa do desvio e índice às classificações dos Flows, sem inferência ou backfill dos registros existentes.
+- Reflexo simplificado: substitui a classificação pública de causa/índice pelos estados `IPCA` e `INCC`, adiciona anotações e converte classificações explícitas da versão anterior.
 - Planejamento de mão de obra: adiciona ativação por insumo e linhas mensais públicas por obra, com escrita restrita aos responsáveis autorizados.
 - Cronograma físico: adiciona snapshots e histórico independentes por obra, permite upload por responsáveis atribuídos e mantém a ativação da metodologia híbrida sob controle administrativo.
 - Cronograma físico em produção: migration aplicada e auditoria confirmou `complete: true`, escopos e reset habilitados em 03/08/2026.
@@ -63,6 +64,8 @@ Ordem de aplicação:
 8. `20260730175500_flow_reflection_month.sql`
 9. `20260731203000_projection_workforce.sql`
 10. `20260803150000_physical_schedule_datasets.sql`
+11. `20260804120000_flow_deviation_cause.sql`
+12. `20260804123000_flow_reflection_inflation.sql`
 
 Depois da décima migration, execute:
 
@@ -71,6 +74,14 @@ supabase/audit/verify_physical_schedule_deployment.sql
 ```
 
 O resultado deve indicar `complete: true` antes de habilitar uploads físicos em produção.
+
+Depois da décima segunda migration, execute:
+
+```text
+supabase/audit/verify_flow_reflection_inflation_deployment.sql
+```
+
+O resultado deve indicar `complete: true` antes de publicar a `v1.12.0`.
 
 Antes de abrir o SQL, execute `npm run env:target` e compare o project ref com a
 URL do SQL Editor.

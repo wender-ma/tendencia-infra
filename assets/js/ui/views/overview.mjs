@@ -2,7 +2,11 @@ import { replaceWithParsedMarkup } from '../dom.mjs';
 import { escHtml } from '../formatters.mjs';
 import { createOverviewDetailView } from './overview-detail-view.mjs';
 import { buildManagementDeviationBreakdown } from '../../services/flow-deviation.mjs';
-import { formatReflectionMonth } from '../../services/flow-reflection.mjs';
+import {
+  formatReflectionMonth,
+  inflationIndexFromReflectionStatus,
+  isReflectedStatus,
+} from '../../services/flow-reflection.mjs';
 import {
   formatCompactNumber as fmtR$k,
   formatNumber as fmtR$,
@@ -48,7 +52,7 @@ function openIncorporatedInflationDetail() {
     flows: getFlowsObraAtiva(),
     managementLabel: activeManagementLabel(),
   });
-  const indexLabel = { ipca: 'IPCA', incc: 'INCC', outro: 'Outro' };
+  const indexLabel = { ipca: 'IPCA', incc: 'INCC' };
   const signed = (value) => `${value > 0 ? '+' : ''}${fmtR$(value)}`;
   const rows = breakdown.inflationFlows
     .map(
@@ -56,7 +60,7 @@ function openIncorporatedInflationDetail() {
         <td>${escHtml(flow.n_alteracao || 'Sem número')}</td>
         <td>${escHtml(flowDescription(flow))}</td>
         <td>${escHtml(formatReflectionMonth(flow.refletido_mes))}</td>
-        <td>${escHtml(indexLabel[flow.indice_inflacao] || '—')}</td>
+        <td>${escHtml(indexLabel[inflationIndexFromReflectionStatus(flow.refletido_status)] || '—')}</td>
         <td class="num">${signed(Number(flow.custo_flowmaster) || 0)}</td>
       </tr>`,
     )
@@ -64,8 +68,7 @@ function openIncorporatedInflationDetail() {
   const incompleteRows = breakdown.incompleteInflationFlows
     .map((flow) => {
       const missing = [];
-      if (!flow.indice_inflacao) missing.push('índice');
-      if ((flow.refletido_status || 'pendente') === 'sim' && !flow.refletido_mes) {
+      if (isReflectedStatus(flow.refletido_status) && !flow.refletido_mes) {
         missing.push('mês refletido');
       }
       return `<li><strong>${escHtml(flow.n_alteracao || 'Sem número')}</strong> · ${escHtml(flowDescription(flow))} <span>${escHtml(missing.join(' e '))}</span></li>`;
@@ -79,7 +82,6 @@ function openIncorporatedInflationDetail() {
     <div class="overview-inflation-summary">
       <div><span>IPCA</span><strong>${signed(breakdown.totalsByIndex.ipca)}</strong></div>
       <div><span>INCC</span><strong>${signed(breakdown.totalsByIndex.incc)}</strong></div>
-      <div><span>Outro</span><strong>${signed(breakdown.totalsByIndex.outro)}</strong></div>
       <div class="overview-inflation-summary-total"><span>Total incorporado</span><strong>${signed(breakdown.inflation)}</strong></div>
     </div>
     <div class="table-wrap overview-inflation-table-wrap">

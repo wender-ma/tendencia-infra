@@ -65,9 +65,9 @@ test('editor altera status de Flow preservando a obra ativa', async ({ page }) =
   const status = page.locator('select.refletido-select[data-n="ADT-E2E-1"]');
   const row = page.locator('#flowTbody tr[data-n="ADT-E2E-1"]');
   await expect(row).toHaveCount(1);
-  await expect(row.locator(':scope > td')).toHaveCount(13);
+  await expect(row.locator(':scope > td')).toHaveCount(12);
   await expect(row.locator(':scope > td').nth(3)).toContainText('ADT-E2E-1');
-  await expect(row.locator(':scope > td').nth(12)).toContainText('Teste E2E');
+  await expect(row.locator(':scope > td').nth(10)).toContainText('Teste E2E');
   await expect(row.locator('.flow-reflection-month-empty')).toHaveText('—');
   await expect(status).toBeEnabled();
   await status.selectOption('sim');

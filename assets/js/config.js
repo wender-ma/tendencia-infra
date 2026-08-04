@@ -46,6 +46,7 @@ export const AUTH_CONFIG = Object.freeze({
 export const STORAGE_KEYS = Object.freeze({
   header: 'jzurique_header_title',
   classifications: 'jzurique_flow_classifications_v1',
+  flowFilters: 'jzurique_flow_filters_v1',
   manuals: 'jzurique_flow_manuals_v1',
   projectionControl: 'jzurique_proj_ctrl_v1',
   projectionSettings: 'jzurique_proj_settings_v1',

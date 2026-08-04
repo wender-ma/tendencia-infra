@@ -5,15 +5,14 @@ import { escAttr, escHtml, formatDate } from '../formatters.mjs';
 import { bindSortableHeaders, updateSortHeaderState } from '../table-interactions.mjs';
 import {
   formatReflectionMonth,
+  isReflectedStatus,
+  normalizeReflectionStatus,
   reflectionMonthInputValue,
   resolveReflectionMonth,
 } from '../../services/flow-reflection.mjs';
-import {
-  normalizeDeviationCause,
-  normalizeInflationIndex,
-} from '../../services/flow-deviation.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
+const FILTERS_STORAGE_KEY = STORAGE_KEYS.flowFilters;
 
 let runAsyncSafely;
 let getFlowsObraAtiva;
@@ -27,12 +26,55 @@ let deleteManual;
 let msUpdateBtn;
 let msResetAll;
 let msMatches;
+let MS_EXCLUDED;
 let MASS_SELECTED;
 let renderInsumoSelect;
 let syncSelectAllHeader;
 let updateMassBar;
 let readClassificationMap;
 let syncAllViewsFromFlows;
+let restoredFilterProject = null;
+
+function activeFilterStorageKey() {
+  return `${FILTERS_STORAGE_KEY}:${APP_STATE.obra.ativa || 'sem-obra'}`;
+}
+
+function persistFlowFilters() {
+  if (!MS_EXCLUDED || restoredFilterProject !== APP_STATE.obra.ativa) return;
+  const excluded = Object.fromEntries(
+    ['refletido', 'dep', 'destino', 'origem'].map((key) => [key, [...MS_EXCLUDED[key]]]),
+  );
+  SafeStorage.set(
+    activeFilterStorageKey(),
+    JSON.stringify({
+      search: document.getElementById('flowSearch')?.value || '',
+      reflectedMonth: document.getElementById('flowFilterRefletidoMes')?.value || '',
+      excluded,
+    }),
+  );
+}
+
+function restoreFlowFilters() {
+  const project = APP_STATE.obra.ativa;
+  if (restoredFilterProject === project || !MS_EXCLUDED) return;
+  msResetAll();
+  let saved = {};
+  try {
+    saved = JSON.parse(SafeStorage.get(activeFilterStorageKey(), '{}')) || {};
+  } catch {
+    saved = {};
+  }
+  const search = document.getElementById('flowSearch');
+  const reflectedMonth = document.getElementById('flowFilterRefletidoMes');
+  if (search) search.value = String(saved.search || '');
+  if (reflectedMonth) reflectedMonth.value = String(saved.reflectedMonth || '');
+  for (const key of ['refletido', 'dep', 'destino', 'origem']) {
+    MS_EXCLUDED[key].clear();
+    for (const value of saved.excluded?.[key] || []) MS_EXCLUDED[key].add(String(value));
+    msUpdateBtn(key);
+  }
+  restoredFilterProject = project;
+}
 
 // ============ FLOWS TAB ============
 let interactionsBound = false;
@@ -67,14 +109,7 @@ function bindFlowInteractions() {
   });
 
   const debouncedFlowTable = debounce(renderFlowTable, 300);
-  [
-    'flowSearch',
-    'flowFilterRefletidoMes',
-    'flowFilterDataIni',
-    'flowFilterDataFim',
-    'flowFilterValMin',
-    'flowFilterValMax',
-  ].forEach((id) => {
+  ['flowSearch', 'flowFilterRefletidoMes'].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.addEventListener('input', debouncedFlowTable);
@@ -84,6 +119,7 @@ function bindFlowInteractions() {
 }
 
 function renderFlows() {
+  restoreFlowFilters();
   bindFlowInteractions();
   // guard sem dados de Flows
   if (!Array.isArray(getFlowsObraAtiva()) || getFlowsObraAtiva().length === 0) {
@@ -101,7 +137,7 @@ function renderFlows() {
       renderDashboardState(flowsTbody, {
         title: 'Sem aditivos para listar',
         compact: true,
-        tableColspan: 13,
+        tableColspan: 12,
       });
     document.getElementById('flowsByMotivo')?.replaceChildren();
     document.getElementById('flowsDescartados')?.replaceChildren();
@@ -256,27 +292,8 @@ function renderFlows() {
   renderFlowTable();
 }
 
-function flowMatchesDate(f, ini, fim) {
-  if (!ini && !fim) return true;
-  // f.data_br pode ser dd/mm/yyyy ou serial Excel já convertido em data formatada
-  const formatted = formatDate(f.data_br); // dd/mm/yyyy
-  const m = formatted.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (!m) return true; // se não conseguir parsear, não filtra
-  const yyyy_mm = `${m[3]}-${m[2]}`;
-  if (ini && yyyy_mm < ini) return false;
-  if (fim && yyyy_mm > fim) return false;
-  return true;
-}
-
 function clearFlowFilters() {
-  [
-    'flowSearch',
-    'flowFilterRefletidoMes',
-    'flowFilterDataIni',
-    'flowFilterDataFim',
-    'flowFilterValMin',
-    'flowFilterValMax',
-  ].forEach((id) => {
+  ['flowSearch', 'flowFilterRefletidoMes'].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -285,8 +302,8 @@ function clearFlowFilters() {
 }
 
 function renderReflectionMonth(f) {
-  const status = f.refletido_status || 'pendente';
-  if (status !== 'sim') {
+  const status = normalizeReflectionStatus(f.refletido_status);
+  if (!isReflectedStatus(status)) {
     return '<span class="flow-reflection-month-empty">—</span>';
   }
   if (!isEditorDaObraAtiva()) {
@@ -300,56 +317,27 @@ function renderReflectionMonth(f) {
     title="Mês em que o Flow foi refletido no planejamento">`;
 }
 
-function renderDeviationCause(flow, disabled) {
-  const cause = normalizeDeviationCause(flow.causa_desvio);
-  return `<select class="flow-cause-select" data-edit-control${disabled} data-n="${escAttr(flow.n_alteracao)}" data-change-action="onDeviationCauseChange" data-action-mode="self" aria-label="Causa do desvio do Flow ${escAttr(flow.n_alteracao)}">
-    <option value="nao_classificado" ${cause === 'nao_classificado' ? 'selected' : ''}>Não classificado</option>
-    <option value="inflacao" ${cause === 'inflacao' ? 'selected' : ''}>Inflação</option>
-    <option value="demais_causas" ${cause === 'demais_causas' ? 'selected' : ''}>Demais causas</option>
-  </select>`;
-}
-
-function renderInflationIndex(flow, disabled) {
-  const cause = normalizeDeviationCause(flow.causa_desvio);
-  if (cause !== 'inflacao') return '<span class="flow-index-empty">—</span>';
-  const index = normalizeInflationIndex(flow.indice_inflacao);
-  return `<select class="flow-index-select${index ? '' : ' is-incomplete'}" data-edit-control${disabled} data-n="${escAttr(flow.n_alteracao)}" data-change-action="onInflationIndexChange" data-action-mode="self" aria-label="Índice da inflação do Flow ${escAttr(flow.n_alteracao)}">
-    <option value="" ${index ? 'disabled' : 'selected disabled'}>Selecione</option>
-    <option value="ipca" ${index === 'ipca' ? 'selected' : ''}>IPCA</option>
-    <option value="incc" ${index === 'incc' ? 'selected' : ''}>INCC</option>
-    <option value="outro" ${index === 'outro' ? 'selected' : ''}>Outro</option>
-  </select>`;
-}
-
 function renderFlowTable() {
   bindFlowInteractions();
+  persistFlowFilters();
   const q = document.getElementById('flowSearch').value.toLowerCase();
   const reflectedMonth = document.getElementById('flowFilterRefletidoMes')?.value || '';
-  const fdi = document.getElementById('flowFilterDataIni')?.value || '';
-  const fdf = document.getElementById('flowFilterDataFim')?.value || '';
-  const fvmin = parseFloat(document.getElementById('flowFilterValMin')?.value);
-  const fvmax = parseFloat(document.getElementById('flowFilterValMax')?.value);
   const editDisabled = isEditorDaObraAtiva() ? '' : ' disabled';
 
   const rows = getFlowsObraAtiva().filter((f) => {
     if (q) {
       const txt =
-        `${f.n_alteracao || ''} ${f.descricao} ${f.justificativa} ${f.motivo} ${f.insumo_planejamento} ${f.insumo_remanejamento} ${f.solicitante || ''}`.toLowerCase();
+        `${f.n_alteracao || ''} ${f.descricao} ${f.justificativa} ${f.motivo} ${f.insumo_planejamento} ${f.insumo_remanejamento} ${f.solicitante || ''} ${f.observacao_classificacao || ''}`.toLowerCase();
       if (!txt.includes(q)) return false;
     }
     if (!msMatches('dep', f.dep)) return false;
     // Refletido: status do aditivo (precisa default 'pendente')
     const fStat = f.refletido_status || 'pendente';
     if (!msMatches('refletido', fStat)) return false;
-    if (!msMatches('causa_desvio', normalizeDeviationCause(f.causa_desvio))) return false;
     if (reflectedMonth && String(f.refletido_mes || '').slice(0, 7) !== reflectedMonth)
       return false;
     if (!msMatches('destino', f.insumo_planejamento)) return false;
     if (!msMatches('origem', f.insumo_remanejamento)) return false;
-    if (!flowMatchesDate(f, fdi, fdf)) return false;
-    const v = f.custo_flowmaster || 0;
-    if (!isNaN(fvmin) && v < fvmin) return false;
-    if (!isNaN(fvmax) && v > fvmax) return false;
     return true;
   });
 
@@ -397,9 +385,12 @@ function renderFlowTable() {
         const delBtn = f.is_manual
           ? `<button class="btn-del-manual" data-editor-only data-action="delete-manual" data-n="${escAttr(f.n_alteracao)}" title="Excluir este aditivo manual" aria-label="Excluir aditivo manual ${escAttr(f.n_alteracao)}">🗑️</button>`
           : '';
-        const status = f.refletido_status || 'pendente';
-        const statusClass =
-          status === 'sim' ? 'flow-status-sim' : status === 'nao' ? 'flow-status-nao' : '';
+        const status = normalizeReflectionStatus(f.refletido_status);
+        const statusClass = isReflectedStatus(status)
+          ? 'flow-status-sim'
+          : status === 'nao'
+            ? 'flow-status-nao'
+            : '';
         const isSelected = MASS_SELECTED.has(f.n_alteracao);
         return `
     <tr class="${statusClass} ${isSelected ? 'row-selected' : ''}" data-n="${escAttr(f.n_alteracao)}">
@@ -410,6 +401,8 @@ function renderFlowTable() {
         <select class="refletido-select status-${escAttr(f.refletido_status || 'pendente')}" data-edit-control${editDisabled} data-n="${escAttr(f.n_alteracao)}" data-change-action="onRefletidoChange" data-action-mode="self" title="Status de reflexo no planejamento">
           <option value="pendente" ${(f.refletido_status || 'pendente') === 'pendente' ? 'selected' : ''}>⏳ Pendente</option>
           <option value="sim" ${f.refletido_status === 'sim' ? 'selected' : ''}>✅ Sim</option>
+          <option value="ipca" ${f.refletido_status === 'ipca' ? 'selected' : ''}>📈 IPCA</option>
+          <option value="incc" ${f.refletido_status === 'incc' ? 'selected' : ''}>🏗️ INCC</option>
           <option value="nao" ${f.refletido_status === 'nao' ? 'selected' : ''}>❌ Não</option>
         </select>
       </td>
@@ -418,8 +411,6 @@ function renderFlowTable() {
       <td class="flow-date-cell">${escHtml(formatDate(f.data_br))}</td>
       <td><span class="badge ${depBadge[f.dep] || 'gray'}">${escHtml(f.dep || '')}</span></td>
       <td>${tipoLabel[f.tipo] || ''}</td>
-      <td class="flow-cause-cell">${renderDeviationCause(f, editDisabled)}</td>
-      <td class="flow-index-cell">${renderInflationIndex(f, editDisabled)}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_planejamento')}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_remanejamento')}</td>
       <td class="classif-cell"><input type="text" class="valor-input ${valCls}${valEdited}" data-edit-control${editDisabled}
@@ -427,6 +418,10 @@ function renderFlowTable() {
         data-change-action="onValorChange" data-action-mode="self" data-select-on-focus
         title="Aceita valores como 1234,56 ou -1.234,56" placeholder="0,00"></td>
       <td class="flow-reason-cell"><strong>${escHtml(f.motivo || '')}</strong><br><span class="flow-reason-description">${escHtml((f.descricao || '').length > 110 ? (f.descricao || '').slice(0, 107) + '...' : f.descricao || '')}</span></td>
+      <td class="flow-notes-cell"><input type="text" class="flow-notes-input" data-edit-control${editDisabled}
+        value="${escAttr(f.observacao_classificacao || '')}" maxlength="500" data-n="${escAttr(f.n_alteracao)}"
+        data-change-action="onFlowNotesChange" data-action-mode="self"
+        aria-label="Observações ou anotações do Flow ${escAttr(f.n_alteracao)}" placeholder="Adicionar anotação..."></td>
     </tr>`;
       })
       .join(''),
@@ -442,20 +437,19 @@ function renderFlowTable() {
   updateMassBar();
 }
 
-// Handler do select de "refletido" (3 estados: pendente / sim / nao)
+// Handler do select de reflexo, incluindo os índices de inflação incorporada.
 function onRefletidoChange(sel) {
   if (!requireEditor('alterar o status de reflexo')) {
     renderFlowTable();
     return;
   }
   const nAlt = sel.dataset.n;
-  const status = sel.value; // 'pendente' | 'sim' | 'nao'
+  const status = normalizeReflectionStatus(sel.value);
   const f = getFlowsObraAtiva().find((x) => x.n_alteracao === nAlt);
   if (!f) return;
   f.refletido_status = status;
   f.refletido_mes = resolveReflectionMonth(status, f.refletido_mes);
-  // manter campo legado 'refletido' = (status === 'sim') por compatibilidade
-  f.refletido = status === 'sim';
+  f.refletido = isReflectedStatus(status);
   // chave composta + sync Supabase
   const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
   const key = codigoObra + ':' + nAlt;
@@ -463,7 +457,7 @@ function onRefletidoChange(sel) {
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
   map[key].refletido_status = status;
   map[key].refletido_mes = f.refletido_mes;
-  map[key].refletido = status === 'sim'; // compat
+  map[key].refletido = isReflectedStatus(status);
   SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
   void runAsyncSafely(
     supaPatchClassification(
@@ -478,7 +472,7 @@ function onRefletidoChange(sel) {
   const tr = sel.closest('tr');
   if (tr) {
     tr.classList.remove('flow-status-sim', 'flow-status-nao');
-    if (status === 'sim') tr.classList.add('flow-status-sim');
+    if (isReflectedStatus(status)) tr.classList.add('flow-status-sim');
     if (status === 'nao') tr.classList.add('flow-status-nao');
   }
   sel.className = 'refletido-select status-' + status;
@@ -494,11 +488,13 @@ function onRefletidoMonthChange(input) {
   }
   const nAlt = input.dataset.n;
   const f = getFlowsObraAtiva().find((flow) => flow.n_alteracao === nAlt);
-  if (!f || f.refletido_status !== 'sim') {
+  if (!f || !isReflectedStatus(f.refletido_status)) {
     renderFlowTable();
     return;
   }
-  const reflectedMonth = input.value ? resolveReflectionMonth('sim', input.value) : null;
+  const reflectedMonth = input.value
+    ? resolveReflectionMonth(f.refletido_status, input.value)
+    : null;
   f.refletido_mes = reflectedMonth;
   const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
   const key = `${codigoObra}:${nAlt}`;
@@ -514,61 +510,26 @@ function onRefletidoMonthChange(input) {
   renderFlowTable();
 }
 
-function persistDeviationClassification(flow) {
+function onFlowNotesChange(input) {
+  if (!requireEditor('editar observações dos aditivos')) {
+    renderFlowTable();
+    return;
+  }
+  const flow = getFlowsObraAtiva().find((item) => item.n_alteracao === input.dataset.n);
+  if (!flow) return;
+  const observation = input.value.trim().slice(0, 500);
+  flow.observacao_classificacao = observation;
   const codigoObra = flow.codigo_obra || APP_STATE.obra.ativa || '';
   const key = `${codigoObra}:${flow.n_alteracao}`;
   const map = readClassificationMap();
   if (!map[key]) map[key] = { codigo_obra: codigoObra };
-  map[key].causa_desvio = normalizeDeviationCause(flow.causa_desvio);
-  map[key].indice_inflacao = normalizeInflationIndex(flow.indice_inflacao);
+  map[key].observacao = observation;
   SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
-  return {
-    codigoObra,
-    patch: { causa_desvio: map[key].causa_desvio, indice_inflacao: map[key].indice_inflacao },
-  };
-}
-
-function onDeviationCauseChange(select) {
-  if (!requireEditor('classificar a causa do desvio')) {
-    renderFlowTable();
-    return;
-  }
-  const flow = getFlowsObraAtiva().find((item) => item.n_alteracao === select.dataset.n);
-  if (!flow) return;
-  flow.causa_desvio = normalizeDeviationCause(select.value);
-  if (flow.causa_desvio !== 'inflacao') flow.indice_inflacao = null;
-  const { codigoObra, patch } = persistDeviationClassification(flow);
-  if (flow.causa_desvio !== 'inflacao' || normalizeInflationIndex(flow.indice_inflacao)) {
-    void runAsyncSafely(
-      supaPatchClassification(flow.n_alteracao, patch, codigoObra),
-      'Classificações/salvar causa do desvio',
-      'A causa foi salva apenas neste navegador.',
-    );
-  }
-  renderFlowTable();
-  if (flow.causa_desvio === 'inflacao' && !flow.indice_inflacao) {
-    document.querySelector(`.flow-index-select[data-n="${CSS.escape(flow.n_alteracao)}"]`)?.focus();
-  }
-  syncAllViewsFromFlows();
-}
-
-function onInflationIndexChange(select) {
-  if (!requireEditor('classificar o índice da inflação')) {
-    renderFlowTable();
-    return;
-  }
-  const flow = getFlowsObraAtiva().find((item) => item.n_alteracao === select.dataset.n);
-  const index = normalizeInflationIndex(select.value);
-  if (!flow || normalizeDeviationCause(flow.causa_desvio) !== 'inflacao' || !index) return;
-  flow.indice_inflacao = index;
-  const { codigoObra, patch } = persistDeviationClassification(flow);
   void runAsyncSafely(
-    supaPatchClassification(flow.n_alteracao, patch, codigoObra),
-    'Classificações/salvar índice da inflação',
-    'O índice foi salvo apenas neste navegador.',
+    supaPatchClassification(flow.n_alteracao, { observacao: observation || null }, codigoObra),
+    'Classificações/salvar observação',
+    'A observação foi salva apenas neste navegador.',
   );
-  renderFlowTable();
-  syncAllViewsFromFlows();
 }
 
 export function createFlowsView({
@@ -593,6 +554,7 @@ export function createFlowsView({
   msUpdateBtn = flowEditor.msUpdateBtn;
   msResetAll = flowEditor.msResetAll;
   msMatches = flowEditor.msMatches;
+  MS_EXCLUDED = flowEditor.getExcludedFilters();
   MASS_SELECTED = flowEditor.getMassSelection();
   renderInsumoSelect = flowEditor.renderInsumoSelect;
   syncSelectAllHeader = flowEditor.syncSelectAllHeader;
@@ -605,7 +567,6 @@ export function createFlowsView({
     clearFlowFilters,
     onRefletidoChange,
     onRefletidoMonthChange,
-    onDeviationCauseChange,
-    onInflationIndexChange,
+    onFlowNotesChange,
   });
 }

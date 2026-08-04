@@ -27,6 +27,8 @@ function normalizeReflected(value) {
     .trim()
     .toLowerCase();
   if (['sim', 's', 'yes', 'refletido'].includes(normalized)) return 'sim';
+  if (normalized === 'ipca') return 'ipca';
+  if (normalized === 'incc') return 'incc';
   if (['não', 'nao', 'n', 'no'].includes(normalized)) return 'nao';
   return 'pendente';
 }

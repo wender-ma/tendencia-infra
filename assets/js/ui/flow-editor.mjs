@@ -7,9 +7,10 @@ import { MANUAL_TEXT } from './manual-text.mjs';
 import {
   currentReflectionMonth,
   formatReflectionMonth,
+  isReflectedStatus,
+  normalizeReflectionStatus,
   resolveReflectionMonth,
 } from '../services/flow-reflection.mjs';
-import { normalizeDeviationCause, normalizeInflationIndex } from '../services/flow-deviation.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 const MANUAL_KEY = STORAGE_KEYS.manuals;
@@ -93,8 +94,8 @@ function loadClassifications() {
           f._edited_v = true;
         }
         if (entry.refletido_status !== undefined) {
-          f.refletido_status = entry.refletido_status;
-          f.refletido = entry.refletido_status === 'sim';
+          f.refletido_status = normalizeReflectionStatus(entry.refletido_status);
+          f.refletido = isReflectedStatus(entry.refletido_status);
         } else if (entry.refletido !== undefined) {
           // compat com versões antigas (só checkbox)
           f.refletido = entry.refletido;
@@ -103,8 +104,7 @@ function loadClassifications() {
         if (entry.refletido_mes !== undefined) {
           f.refletido_mes = entry.refletido_mes;
         }
-        f.causa_desvio = normalizeDeviationCause(entry.causa_desvio);
-        f.indice_inflacao = normalizeInflationIndex(entry.indice_inflacao);
+        f.observacao_classificacao = entry.observacao || '';
         f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
         n++;
       }
@@ -190,7 +190,7 @@ function exportClassifications() {
     return;
   }
   const lines = [
-    'Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Causa do desvio;Índice inflação;Refletido (PENDENTE/SIM/NAO);Mês refletido;Justificativa;Data exportação',
+    'Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Refletido (PENDENTE/SIM/NAO/IPCA/INCC);Mês refletido;Observações / Anotações;Justificativa;Data exportação',
   ];
   const now = new Date().toLocaleString('pt-BR');
   allKeys.forEach((k) => {
@@ -212,15 +212,11 @@ function exportClassifications() {
       edit.refletido_status !== undefined
         ? edit.refletido_status
         : f.refletido_status || 'pendente';
-    const refLabel = refStatus === 'sim' ? 'SIM' : refStatus === 'nao' ? 'NAO' : 'PENDENTE';
+    const refLabel = normalizeReflectionStatus(refStatus).toUpperCase();
     const refMonth =
       edit.refletido_mes !== undefined ? edit.refletido_mes : f.refletido_mes || null;
-    const cause = normalizeDeviationCause(
-      edit.causa_desvio !== undefined ? edit.causa_desvio : f.causa_desvio,
-    );
-    const inflationIndex = normalizeInflationIndex(
-      edit.indice_inflacao !== undefined ? edit.indice_inflacao : f.indice_inflacao,
-    );
+    const observation =
+      edit.observacao !== undefined ? edit.observacao : f.observacao_classificacao || '';
     lines.push(
       [
         f.is_manual ? 'Manual' : 'Sistema',
@@ -233,10 +229,9 @@ function exportClassifications() {
         csvEsc(ir),
         fmtVal,
         tipo,
-        cause,
-        inflationIndex || '',
         refLabel,
-        refStatus === 'sim' && refMonth ? formatReflectionMonth(refMonth) : '',
+        isReflectedStatus(refStatus) && refMonth ? formatReflectionMonth(refMonth) : '',
+        csvEsc(observation),
         csvEsc(f.justificativa),
         now,
       ].join(';'),
@@ -568,7 +563,6 @@ const MS_EXCLUDED = {
   refletido: new Set(),
   destino: new Set(),
   origem: new Set(),
-  causa_desvio: new Set(),
 };
 const MS_TIPO_OPTS = [
   { v: 'aumento_real', l: '🔴 Aumento real' },
@@ -581,12 +575,9 @@ const MS_TIPO_OPTS = [
 const MS_REFLETIDO_OPTS = [
   { v: 'pendente', l: '⏳ Pendente' },
   { v: 'sim', l: '✅ Sim - refletido' },
+  { v: 'ipca', l: '📈 IPCA - refletido' },
+  { v: 'incc', l: '🏗️ INCC - refletido' },
   { v: 'nao', l: '❌ Não - não refletir' },
-];
-const MS_CAUSA_OPTS = [
-  { v: 'nao_classificado', l: 'Não classificado' },
-  { v: 'inflacao', l: 'Inflação' },
-  { v: 'demais_causas', l: 'Demais causas' },
 ];
 const MS_DESTINO_OPTS = [
   { v: 'com_destino', l: '✓ Com destino' },
@@ -599,7 +590,6 @@ const MS_DESTINO_OPTS = [
 function msGetAllValues(key) {
   if (key === 'tipo') return MS_TIPO_OPTS.map((o) => o.v);
   if (key === 'refletido') return MS_REFLETIDO_OPTS.map((o) => o.v);
-  if (key === 'causa_desvio') return MS_CAUSA_OPTS.map((o) => o.v);
   if (!getFlowsObraAtiva() || !getFlowsObraAtiva().length) return [];
   const field =
     key === 'destino' ? 'insumo_planejamento' : key === 'origem' ? 'insumo_remanejamento' : key;
@@ -620,10 +610,6 @@ function msLabelFor(key, value) {
   if (key === 'refletido') {
     const o = MS_REFLETIDO_OPTS.find((x) => x.v === value);
     return o ? o.l : value;
-  }
-  if (key === 'causa_desvio') {
-    const option = MS_CAUSA_OPTS.find((item) => item.v === value);
-    return option ? option.l : value;
   }
   return value;
 }
@@ -659,11 +645,6 @@ function msRenderPanel(key) {
     getFlowsObraAtiva().forEach((f) => {
       const v = f.refletido_status || 'pendente';
       counts[v] = (counts[v] || 0) + 1;
-    });
-  } else if (key === 'causa_desvio') {
-    getFlowsObraAtiva().forEach((flow) => {
-      const value = normalizeDeviationCause(flow.causa_desvio);
-      counts[value] = (counts[value] || 0) + 1;
     });
   } else {
     const field =
@@ -775,10 +756,9 @@ function msUpdateBtn(key) {
     refletido: 'status',
     destino: 'destinos',
     origem: 'origens',
-    causa_desvio: 'causas',
   };
   if (excluded === 0) {
-    btn.textContent = key === 'causa_desvio' ? 'Todas causas' : `Todos ${baseLabels[key]}`;
+    btn.textContent = `Todos ${baseLabels[key]}`;
     btn.classList.remove('has-filter');
   } else if (totalSelected === 0) {
     btn.textContent = `Nenhum ${baseLabels[key].slice(0, -1)}`;
@@ -1047,10 +1027,12 @@ function massAplicarRefletido() {
       <label for="massReflInput">Status de reflexo a aplicar em ${MASS_SELECTED.size} aditivo(s):</label>
       <select id="massReflInput" class="field-control">
         <option value="sim">✅ Sim — refletir no planejamento</option>
+        <option value="ipca">📈 IPCA — inflação refletida</option>
+        <option value="incc">🏗️ INCC — inflação refletida</option>
         <option value="nao">❌ Não — não refletir (ex: cancelado)</option>
         <option value="pendente">⏳ Pendente — ainda não decidido</option>
       </select>
-      <label for="massReflMonth">Mês do reflexo (usado ao marcar Sim):</label>
+      <label for="massReflMonth">Mês do reflexo:</label>
       <input type="month" id="massReflMonth" class="field-control" value="${currentReflectionMonth()?.slice(0, 7) || ''}">
     </div>
   `;
@@ -1066,14 +1048,14 @@ function massAplicarRefletido() {
       MASS_SELECTED.forEach((nAlt) => {
         const f = getFlowsObraAtiva().find((x) => x.n_alteracao === nAlt);
         if (!f) return;
-        f.refletido_status = status;
-        f.refletido = status === 'sim';
+        f.refletido_status = normalizeReflectionStatus(status);
+        f.refletido = isReflectedStatus(status);
         f.refletido_mes = resolveReflectionMonth(status, requestedMonth);
         const codigoObra = f.codigo_obra || APP_STATE.obra.ativa || '';
         const key = codigoObra + ':' + nAlt;
         if (!map[key]) map[key] = { codigo_obra: codigoObra };
         map[key].refletido_status = status;
-        map[key].refletido = status === 'sim';
+        map[key].refletido = isReflectedStatus(status);
         map[key].refletido_mes = f.refletido_mes;
         bulkPayloads.push({
           codigo_obra: codigoObra,
@@ -1200,12 +1182,20 @@ function applyManuals() {
   // Remove anteriores e adiciona novamente (idempotente)
   APP_STATE.dados.flows = APP_STATE.dados.flows.filter((f) => !f.is_manual);
   const manuals = loadManuals();
+  const classifications = readClassificationMap();
   manuals.forEach((m) => {
+    const entry =
+      classifications[`${m.codigo_obra || APP_STATE.obra.ativa}:${m.n_alteracao}`] || {};
+    const status = normalizeReflectionStatus(entry.refletido_status || m.refletido_status);
     APP_STATE.dados.flows.push({
       ...m,
       codigo_obra: m.codigo_obra || APP_STATE.obra.ativa,
       is_manual: true,
       tipo: classifyFlow(m.insumo_planejamento, m.insumo_remanejamento),
+      refletido_status: status,
+      refletido: isReflectedStatus(status),
+      refletido_mes: entry.refletido_mes || m.refletido_mes || null,
+      observacao_classificacao: entry.observacao || m.observacao_classificacao || '',
     });
   });
 }
@@ -1268,8 +1258,8 @@ function openManualForm(editing) {
   // Preencher valor
   tpl.querySelector('#m_valor').value = f.custo_flowmaster != null ? fmt(f.custo_flowmaster) : '';
 
-  tpl.querySelector('#m_causa_desvio').value = normalizeDeviationCause(f.causa_desvio);
-  tpl.querySelector('#m_indice_inflacao').value = normalizeInflationIndex(f.indice_inflacao) || '';
+  tpl.querySelector('#m_refletido_status').value = normalizeReflectionStatus(f.refletido_status);
+  tpl.querySelector('#m_refletido_mes').value = String(f.refletido_mes || '').slice(0, 7);
 
   // Preencher destino e origem
   tpl.querySelector('#m_dest').value = displayForValue(f.insumo_planejamento || '');
@@ -1277,6 +1267,7 @@ function openManualForm(editing) {
 
   // Preencher justificativa
   tpl.querySelector('#m_just').value = f.justificativa || '';
+  tpl.querySelector('#m_anotacoes').value = f.observacao_classificacao || '';
 
   // Preencher data-n no botão salvar
   tpl.querySelector('[data-action="save-manual"]').dataset.n = f.n_alteracao || '';
@@ -1296,11 +1287,12 @@ function saveManualForm(editingId) {
   const desc = get('m_desc');
   const motivo = get('m_motivo');
   const valor = parseNumber(get('m_valor'));
-  const causaDesvio = normalizeDeviationCause(get('m_causa_desvio'));
-  const indiceInflacao = normalizeInflationIndex(get('m_indice_inflacao'));
+  const refletidoStatus = normalizeReflectionStatus(get('m_refletido_status'));
+  const refletidoMes = resolveReflectionMonth(refletidoStatus, get('m_refletido_mes'));
   const dest = valueFromDisplay(get('m_dest'));
   const orig = valueFromDisplay(get('m_orig'));
   const just = get('m_just');
+  const anotacoes = get('m_anotacoes').slice(0, 500);
 
   if (!desc) {
     authToast('⚠️ Descrição é obrigatória.', 'warn', 3000);
@@ -1310,12 +1302,6 @@ function saveManualForm(editingId) {
     authToast('⚠️ Departamento é obrigatório.', 'warn', 3000);
     return;
   }
-  if (causaDesvio === 'inflacao' && !indiceInflacao) {
-    authToast('⚠️ Selecione IPCA, INCC ou Outro para a parcela de inflação.', 'warn', 4000);
-    document.getElementById('m_indice_inflacao')?.focus();
-    return;
-  }
-
   const manuals = loadManuals();
   const id = editingId || nextManualId();
 
@@ -1342,8 +1328,9 @@ function saveManualForm(editingId) {
     insumo_planejamento: dest,
     insumo_remanejamento: orig,
     obs: '',
-    causa_desvio: causaDesvio,
-    indice_inflacao: causaDesvio === 'inflacao' ? indiceInflacao : null,
+    refletido_status: refletidoStatus,
+    refletido_mes: refletidoMes,
+    observacao_classificacao: anotacoes,
   };
 
   // se editando, substitui; senão adiciona
@@ -1358,17 +1345,22 @@ function saveManualForm(editingId) {
   if (!classificationMap[classificationKey]) {
     classificationMap[classificationKey] = { codigo_obra: APP_STATE.obra.ativa };
   }
-  classificationMap[classificationKey].causa_desvio = obj.causa_desvio;
-  classificationMap[classificationKey].indice_inflacao = obj.indice_inflacao;
+  classificationMap[classificationKey].refletido_status = obj.refletido_status;
+  classificationMap[classificationKey].refletido_mes = obj.refletido_mes;
+  classificationMap[classificationKey].observacao = obj.observacao_classificacao;
   SafeStorage.set(STORAGE_KEY, JSON.stringify(classificationMap));
   void runAsyncSafely(
     supaPatchClassification(
       id,
-      { causa_desvio: obj.causa_desvio, indice_inflacao: obj.indice_inflacao },
+      {
+        refletido_status: obj.refletido_status,
+        refletido_mes: obj.refletido_mes,
+        observacao: obj.observacao_classificacao || null,
+      },
       APP_STATE.obra.ativa,
     ),
-    'Manuais/salvar causa do desvio',
-    'A causa do aditivo manual foi salva apenas neste navegador.',
+    'Manuais/salvar classificação do reflexo',
+    'A classificação do aditivo manual foi salva apenas neste navegador.',
   );
   closeModal();
   // Sincronizar todas as telas com debounce (evita múltiplas renderizações)

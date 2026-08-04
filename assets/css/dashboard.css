@@ -595,31 +595,10 @@
   /* Upload contextual por aba */
   .refletido-select:focus { outline: none; border-color: var(--fgr-red); box-shadow: 0 0 0 2px var(--fgr-red-light); }
   .refletido-select.status-sim { background: var(--ref-sim-bg); color: var(--sem-ok); border-color: var(--ref-sim-border); }
+  .refletido-select.status-ipca { background: var(--accent-purple-bg); color: var(--accent-purple); border-color: var(--accent-purple-border); }
+  .refletido-select.status-incc { background: var(--accent-info-soft); color: var(--accent-info); border-color: var(--accent-info); }
   .refletido-select.status-nao { background: var(--fgr-red-light); color: var(--sem-erro); border-color: var(--ref-nao-border); }
   .refletido-select.status-pendente { background: var(--sem-alerta-bg); color: var(--sem-alerta); border-color: var(--ref-pend-border); }
-  .flow-cause-select,
-  .flow-index-select {
-    width: 100%;
-    padding: 5px 6px;
-    border: 1px solid var(--border-strong);
-    border-radius: 5px;
-    background: var(--bg-card);
-    color: var(--text-strong);
-    font: inherit;
-  }
-  .flow-cause-select { min-width: 98px; }
-  .flow-index-select { min-width: 76px; }
-  .flow-cause-select:focus,
-  .flow-index-select:focus {
-    outline: none;
-    border-color: var(--fgr-red);
-    box-shadow: 0 0 0 2px var(--fgr-red-light);
-  }
-  .flow-index-select.is-incomplete {
-    border-color: var(--sem-alerta);
-    background: var(--sem-alerta-bg);
-  }
-  .flow-index-empty { color: var(--text-lighter); }
   /* Alinhar todas as células da tabela de flows verticalmente */
   #flowTbody td { vertical-align: middle; }
   .flow-selection-cell { text-align: center; vertical-align: middle; }
@@ -648,6 +627,22 @@
   .flow-date-cell { color: var(--text-soft); font-size: 11px; }
   .flow-reason-cell { font-size: 11px; }
   .flow-reason-description { color: var(--text-soft); }
+  .flow-notes-cell { padding: 4px 6px; }
+  .flow-notes-input {
+    width: 100%;
+    min-width: 150px;
+    padding: 6px 7px;
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+    background: var(--bg-card);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .flow-notes-input:focus {
+    border-color: var(--fgr-red);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--fgr-red-light);
+  }
 
   .mass-bar {
     background: linear-gradient(135deg, var(--fgr-red-dark) 0%, var(--fgr-red) 100%);

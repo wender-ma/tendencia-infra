@@ -528,7 +528,7 @@ function renderVisao({ cardsOnly = false } = {}) {
               <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigido)}">${tendVsCorrigido >= 0 ? '+' : ''}${fmtR$(tendVsCorrigido)}</strong>
             </div>
             ${
-              APP_STATE.config.card3Modo === 'liquido'
+              APP_STATE.config.card3Modo === 'bruto'
                 ? ''
                 : `
             <div class="overview-total-line">

@@ -116,9 +116,11 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   await expect(tendencyCard).toContainText('Gestão vs Licitação corrigida');
   await expect(tendencyCard).toContainText('Tend. Indiretos');
   await expect(tendencyCard).toContainText('Δ bruto vs Licitação corrigida');
+  await expect(tendencyCard).toContainText('I011890 - Projeção de Gastos');
+  await expect(tendencyCard).toContainText('Δ líquido vs Licitação corrigida');
+  await tendencyCard.getByRole('button', { name: 'Bruto' }).click();
   await expect(tendencyCard).not.toContainText('I011890 - Projeção de Gastos');
   await expect(tendencyCard).not.toContainText('Δ líquido vs Licitação corrigida');
-  await tendencyCard.getByRole('button', { name: 'Bruto' }).click();
 
   const adherenceCard = page.locator('#kpis .kpi', { hasText: 'Aderência Físico-Financeira' });
   await expect(adherenceCard).toContainText('Diferença nominal');

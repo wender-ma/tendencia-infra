@@ -138,6 +138,10 @@ Critério de conclusão: Visão Geral reconciliada, filtros restaurados, anotaç
 
 - [x] No modo Líquido, ocultar somente `Projeção de Gastos` e `Δ líquido`, preservando as demais informações do card.
 
+## Versão 1.12.4
+
+- [x] Corrigir o toggle para ocultar as informações líquidas no modo Bruto, mantendo-as no modo Líquido.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

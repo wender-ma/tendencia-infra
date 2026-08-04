@@ -44,7 +44,7 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
   await expect(page.locator('.project-tendency-card').nth(1)).toContainText('Obra Beta');
   await expect(
     page.locator('.project-tendency-card').nth(0).getByRole('button', {
-      name: 'Enviar Tendência',
+      name: 'Enviar Tendência + Cronograma',
     }),
   ).toBeEnabled();
   await expect(
@@ -52,11 +52,6 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
       name: 'Histórico da Tendência',
     }),
   ).toBeVisible();
-  await expect(
-    page.locator('.project-tendency-card').nth(0).getByRole('button', {
-      name: 'Enviar Cronograma Físico',
-    }),
-  ).toBeEnabled();
   await expect(
     page.locator('.project-tendency-card').nth(0).getByRole('button', {
       name: 'Histórico do Cronograma',
@@ -78,22 +73,12 @@ test('uploads ficam privados e separam bases globais das Tendências por obra', 
   });
   await expect(
     page.locator('.project-tendency-card[data-project="OBRA-A"]').getByRole('button', {
-      name: 'Enviar Tendência',
-    }),
-  ).toBeDisabled();
-  await expect(
-    page.locator('.project-tendency-card[data-project="OBRA-A"]').getByRole('button', {
-      name: 'Enviar Cronograma Físico',
+      name: 'Enviar Tendência + Cronograma',
     }),
   ).toBeDisabled();
   await expect(
     page.locator('.project-tendency-card[data-project="OBRA-B"]').getByRole('button', {
-      name: 'Enviar Tendência',
-    }),
-  ).toBeEnabled();
-  await expect(
-    page.locator('.project-tendency-card[data-project="OBRA-B"]').getByRole('button', {
-      name: 'Enviar Cronograma Físico',
+      name: 'Enviar Tendência + Cronograma',
     }),
   ).toBeEnabled();
 
@@ -315,9 +300,31 @@ test('Tendência multiaba identifica cabeçalhos e pede confirmação', async ({
     ]),
     'Base de orçamento',
   );
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.aoa_to_sheet([
+      ['Cronograma físico financeiro exportado em 04/08/2026'],
+      ['', '', '', '', '', '', '', '', '', '31/07/2026', ''],
+      [
+        'Nível',
+        'Código EAP',
+        'Descrição',
+        'Início',
+        'Fim',
+        'Material (R$)',
+        'Mão de obra (R$)',
+        'Total (R$)',
+        'Base',
+        'Previsto',
+        'Realizado',
+      ],
+      [1, '01', 'Serviço físico', '01/07/2026', '31/07/2026', 100, 0, 100, 100, 100, 100],
+    ]),
+    'Cronograma da obra',
+  );
 
-  await page.locator('#fileInput_tendencia_0').setInputFiles({
-    name: 'tendencia-obra.xlsx',
+  await page.locator('#fileInput_project_bundle_0').setInputFiles({
+    name: 'tendencia-cronograma-obra.xlsx',
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     buffer: XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' }),
   });
@@ -326,6 +333,7 @@ test('Tendência multiaba identifica cabeçalhos e pede confirmação', async ({
     timeout: 15_000,
   });
   await expect(page.locator('#mapSheet_tendencia')).toHaveValue('Base de orçamento');
+  await expect(page.locator('#mapSheet_cronograma_fisico')).toHaveValue('Cronograma da obra');
   await expect(page.locator('#modalContent')).toContainText(
     'identificadas pelo nome ou pelos cabeçalhos',
   );

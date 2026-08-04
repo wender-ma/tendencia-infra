@@ -2,7 +2,7 @@
 
 Este documento registra as melhorias planejadas para o Dashboard de Tendência. Ele deve ser atualizado durante cada implementação para manter visíveis a prioridade, o progresso, as decisões e os critérios de conclusão.
 
-Última atualização: 03/08/2026
+Última atualização: 04/08/2026
 
 ## Como acompanhar
 
@@ -83,6 +83,18 @@ Critério de conclusão: atendido em 03/08/2026; migration auditada, cronograma 
 - [ ] **AÇÃO EXTERNA EXT-18** Revisar a comparação da obra real e ativar a metodologia `v2` pelo acesso administrativo.
 
 Critério de conclusão: código, testes e publicação aprovados; EXT-18 confirma os valores reais antes de tornar a nova metodologia oficial.
+
+## Versão 1.10.0
+
+- [x] Unificar Tendência e Cronograma Físico em um único Excel por obra.
+- [x] Exigir confirmação das duas abas e do mês de corte antes de qualquer gravação.
+- [x] Ativar os dois datasets na mesma transação, com rollback integral em caso de falha.
+- [x] Preservar históricos, retenção e snapshots independentes de cada fonte.
+- [x] Adicionar filtro por mês refletido na tabela de Flows.
+- [x] Corrigir a renderização do Tipo após editar Destino ou Origem.
+- [x] Vincular novos aditivos manuais à obra ativa para exibição imediata.
+
+Critério de conclusão: upload combinado e correções de Flows validados por contratos, navegador, build e smoke de produção.
 
 ## P0: segurança crítica
 

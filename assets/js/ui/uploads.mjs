@@ -490,6 +490,134 @@ async function handleProjectPhysicalScheduleUpload(ev, projectCode) {
   }
 }
 
+async function handleProjectBundleUpload(ev, projectCode) {
+  const project = String(projectCode || '').trim();
+  const input = ev.target;
+  const file = input?.files?.[0];
+  if (!project || !file) return;
+  input.value = '';
+  if (!requireProjectPermission(project, 'enviar Tendência e Cronograma Físico')) return;
+
+  const validation = validateUploadFile(file, 'excel');
+  if (!validation.valid) {
+    authToast(`❌ ${validation.message}`, 'err', 5000);
+    return;
+  }
+
+  const kinds = ['tendencia', 'cronograma_fisico'];
+  projectUploadBusy = `${project}:project_bundle`;
+  setUploadRuntimeState(kinds, 'processing', `Processando dados de ${project}`);
+  renderUploadsCentral();
+
+  try {
+    const workbook = await readExcelFile(file);
+    const sheetNames = workbook.sheetNames || [];
+    const detected = _resolveExcelSheetMapping(workbook, kinds);
+    const mapping = await _promptSheetMapping(sheetNames, detected, kinds);
+    if (!mapping) {
+      setUploadRuntimeState(kinds, 'idle');
+      authToast('Upload da obra cancelado. Nenhuma alteração foi realizada.', 'warn', 3000);
+      return;
+    }
+    if (!mapping.tendencia || !mapping.cronograma_fisico) {
+      throw new Error('Selecione as abas de Tendência e Cronograma Físico para continuar.');
+    }
+    if (mapping.tendencia === mapping.cronograma_fisico) {
+      throw new Error('Tendência e Cronograma Físico devem usar abas diferentes.');
+    }
+
+    const tendencyCsv = _sheetToImportCSV(workbook, mapping.tendencia, 'tendencia');
+    validateImportHeaders('tendencia', parseCSVRows(tendencyCsv));
+    const parsedTendency = parseTendenciaFile(tendencyCsv);
+    const parsedPhysical = parsePhysicalSchedule(_sheetToCSV(workbook, mapping.cronograma_fisico));
+    const cutoffMonth = await promptPhysicalScheduleCutoff(parsedPhysical, project);
+    if (!cutoffMonth) {
+      setUploadRuntimeState(kinds, 'idle');
+      authToast('Upload da obra cancelado. Nenhuma alteração foi realizada.', 'warn', 3000);
+      return;
+    }
+
+    parsedPhysical.cutoffMonth = cutoffMonth;
+    parsedPhysical.sourceFile = file.name;
+    const dashboardData = {
+      tendency: parsedTendency.items,
+      flows: APP_STATE.dados.flows,
+      history: APP_STATE.dados.historico,
+      projectionRaw: APP_STATE.dados.projRaw,
+      physicalSchedule: parsedPhysical,
+      managementLabel: parsedTendency.managementLabel || APP_STATE.config.gestaoLabel,
+      evolution: parsedTendency.evolution,
+      latestUploads: project === APP_STATE.obra.ativa ? APP_STATE.uploads : Object.create(null),
+    };
+    const result = await commitPreparedUpload({
+      file,
+      storageType: 'tendencia',
+      items: [
+        { kind: 'tendencia', linhas: parsedTendency.items.length },
+        { kind: 'cronograma_fisico', linhas: parsedPhysical.items.length },
+      ],
+      groupId: _uuid4(),
+      memorySnapshot: null,
+      projectCode: project,
+      dashboardData,
+      applyToCurrentState: project === APP_STATE.obra.ativa,
+    });
+    const records = new Map((result.records || []).map((record) => [record.tipo, record]));
+    const tendencyRecord = records.get('tendencia') || null;
+    const physicalRecord = records.get('cronograma_fisico') || null;
+    PROJECT_TENDENCY_UPLOADS[project] = tendencyRecord;
+    PROJECT_PHYSICAL_UPLOADS[project] = physicalRecord;
+
+    if (project === APP_STATE.obra.ativa) {
+      APP_STATE.dados.tendencia = parsedTendency.items;
+      APP_STATE.dados.physicalSchedule = parsedPhysical;
+      APP_STATE.config.gestaoLabel = parsedTendency.managementLabel || APP_STATE.config.gestaoLabel;
+      APP_STATE.config.evolGlobal = parsedTendency.evolution;
+      APP_STATE.uploads.tendencia = tendencyRecord;
+      APP_STATE.uploads.cronograma_fisico = physicalRecord;
+      try {
+        setInputOptions(buildInsumosList());
+        buildDatalist();
+      } catch (error) {
+        reportNonFatalError('Upload/reconstruir lista de insumos', error);
+      }
+      aplicarFallbackGestaoDoHistorico();
+      debouncedRender();
+      renderSourcesHeaders();
+    }
+
+    await Promise.all(
+      kinds.map((kind) =>
+        runAsyncSafely(
+          supaEnforceRollingBackup(kind, project),
+          `Upload/limpeza de backups/${kind}/${project}`,
+          `O upload foi concluído, mas os backups antigos de ${kind} não puderam ser limpos.`,
+        ),
+      ),
+    );
+    await runAsyncSafely(
+      supaEnforceDatasetRetention(kinds, UPLOADS_MAX_PER_TYPE, project),
+      `Upload/limpeza de snapshots/${project}`,
+      'O upload foi concluído, mas snapshots antigos ficaram pendentes para limpeza.',
+    );
+
+    IMPORT_REPORTS.tendencia = parsedTendency.report;
+    authToast(
+      `✅ ${getProjectInfo?.(project)?.nome || project}: ${parsedTendency.items.length.toLocaleString('pt-BR')} linhas de Tendência · ${parsedPhysical.items.length.toLocaleString('pt-BR')} itens físicos · corte ${formatMonthLabelForUpload(cutoffMonth)}`,
+      'ok',
+      6000,
+    );
+    showImportReport(['tendencia'], file.name);
+  } catch (error) {
+    reportNonFatalError('Upload/Tendência + Cronograma', error);
+    setUploadRuntimeState(kinds, 'failed', error.message || String(error));
+    authToast(`❌ Upload não concluído: ${error.message}`, 'err', 7000);
+  } finally {
+    projectUploadBusy = '';
+    renderUploadsCentral();
+  }
+}
+
 function formatMonthLabelForUpload(month) {
   const [year, value] = String(month || '').split('-');
   return value && year ? `${value}/${year}` : month;
@@ -507,6 +635,11 @@ function formatMonthLabelForUpload(month) {
 // Padrões aplicados depois de normalizar acentos e separadores.
 const EXCEL_SHEET_PATTERNS = {
   tendencia: [/(?:^|\s)tendencia/, /(?:^|\s)tend(?:\s|$)/],
+  cronograma_fisico: [
+    /(?:^|\s)cronograma\s+fisico(?:\s|$)/,
+    /(?:^|\s)cronograma(?:\s|$)/,
+    /(?:^|\s)evolucao\s+fisica(?:\s|$)/,
+  ],
   flows: [
     /(?:^|\s)aditivos?\s+flow\s*master(?:\s|$)/,
     /(?:^|\s)flow\s*master(?:\s|$)/,
@@ -530,7 +663,7 @@ function _normalizeSheetName(name) {
 // Tenta identificar automaticamente cada tipo pelo nome da aba.
 // Retorna { tendencia: 'nomeAba' | null, flows: ..., gestoes: ... }
 export function autoDetectExcelSheets(sheetNames) {
-  const result = { tendencia: null, flows: null, gestoes: null };
+  const result = { tendencia: null, cronograma_fisico: null, flows: null, gestoes: null };
   for (const kind of Object.keys(EXCEL_SHEET_PATTERNS)) {
     for (const pattern of EXCEL_SHEET_PATTERNS[kind]) {
       const match = sheetNames.find((n) => pattern.test(_normalizeSheetName(n)));
@@ -545,6 +678,10 @@ export function autoDetectExcelSheets(sheetNames) {
 
 function _sheetHasValidHeaders(workbook, sheetName, kind) {
   try {
+    if (kind === 'cronograma_fisico') {
+      parsePhysicalSchedule(_sheetToCSV(workbook, sheetName));
+      return true;
+    }
     validateImportHeaders(kind, parseCSVRows(_sheetToImportCSV(workbook, sheetName, kind)));
     return true;
   } catch {
@@ -778,6 +915,14 @@ function _promptSheetMapping(
             : ''
         }
         ${
+          allowedKinds.includes('cronograma_fisico')
+            ? `<div class="sheet-mapping-row">
+          <label for="mapSheet_cronograma_fisico">🏗️ Cronograma físico:</label>
+          <select id="mapSheet_cronograma_fisico">${['<option value="">— nenhuma —</option>', ...sheetNames.map((n) => opt(n, autoDetected.cronograma_fisico))].join('')}</select>
+        </div>`
+            : ''
+        }
+        ${
           allowedKinds.includes('flows')
             ? `<div class="sheet-mapping-row">
           <label for="mapSheet_flows">🔗 Flows:</label>
@@ -808,10 +953,11 @@ function _promptSheetMapping(
     document.getElementById('mapSheetsOk').addEventListener('click', () => {
       const r = {
         tendencia: document.getElementById('mapSheet_tendencia')?.value || null,
+        cronograma_fisico: document.getElementById('mapSheet_cronograma_fisico')?.value || null,
         flows: document.getElementById('mapSheet_flows')?.value || null,
         gestoes: document.getElementById('mapSheet_gestoes')?.value || null,
       };
-      if (!r.tendencia && !r.flows && !r.gestoes) {
+      if (!r.tendencia && !r.cronograma_fisico && !r.flows && !r.gestoes) {
         authToast('⚠️ Selecione ao menos uma aba pra processar', 'warn', 3000);
         return;
       }
@@ -1735,12 +1881,10 @@ function refreshProjectTendencyUploadCards(projects) {
       renderUploadSummary(latestPhysical, 'Nenhum Cronograma Físico enviado para esta obra.'),
     );
 
-    const tendencyButton = card.querySelector('[data-upload-kind="tendencia"]');
-    if (tendencyButton)
-      tendencyButton.textContent = `📤 ${latestTendency ? 'Substituir Tendência' : 'Enviar Tendência'}`;
-    const physicalButton = card.querySelector('[data-upload-kind="cronograma_fisico"]');
-    if (physicalButton)
-      physicalButton.textContent = `📤 ${latestPhysical ? 'Substituir Cronograma' : 'Enviar Cronograma Físico'}`;
+    const bundleButton = card.querySelector('[data-upload-kind="project_bundle"]');
+    if (bundleButton) {
+      bundleButton.textContent = `📤 ${latestTendency || latestPhysical ? 'Substituir dados da obra' : 'Enviar Tendência + Cronograma'}`;
+    }
   }
 }
 
@@ -1794,9 +1938,7 @@ function renderUploadsCentral() {
       const latestPhysical =
         (canEdit && PROJECT_PHYSICAL_UPLOADS[code]) ||
         (canEdit && code === APP_STATE.obra.ativa ? APP_STATE.uploads.cronograma_fisico : null);
-      const tendencyBusy = projectUploadBusy === `${code}:tendencia`;
-      const physicalBusy = projectUploadBusy === `${code}:cronograma_fisico`;
-      const busy = tendencyBusy || physicalBusy;
+      const busy = projectUploadBusy.startsWith(`${code}:`);
       return `
         <article class="project-tendency-card upload-card" data-project="${escAttr(code)}">
           <div class="project-tendency-heading">
@@ -1806,35 +1948,29 @@ function renderUploadsCentral() {
             </div>
             ${code === APP_STATE.obra.ativa ? '<span class="upload-active-project">SELECIONADA</span>' : ''}
           </div>
-          ${busy ? renderUploadRuntimeBlock(tendencyBusy ? 'tendencia' : 'cronograma_fisico') : ''}
+          ${busy ? renderUploadRuntimeBlock(['tendencia', 'cronograma_fisico']) : ''}
           <div class="project-upload-dataset">
-            <strong class="project-upload-dataset-title">📈 Tendência financeira</strong>
+            <strong class="project-upload-dataset-title">📈 Tendência + 🏗️ Cronograma físico</strong>
+            <p class="project-upload-dataset-help">Selecione um único Excel e confirme a aba de cada fonte.</p>
+            <strong class="project-upload-source-label">📈 Tendência financeira</strong>
             <div class="project-tendency-upload-summary">
               ${renderUploadSummary(latestTendency, 'Nenhuma Tendência enviada para esta obra.')}
             </div>
-            <div class="upload-card-actions">
-              <button class="btn-sm primary" data-upload-kind="tendencia" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_tendencia_${index}">
-                📤 ${latestTendency ? 'Substituir Tendência' : 'Enviar Tendência'}
-              </button>
-              <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectTendencyHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
-                📜 Histórico da Tendência
-              </button>
-              <input type="file" id="fileInput_tendencia_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls,.csv" aria-label="Selecionar Tendência de ${escAttr(name)}" data-change-action="handleProjectTendencyUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
-            </div>
-          </div>
-          <div class="project-upload-dataset">
-            <strong class="project-upload-dataset-title">🏗️ Cronograma físico</strong>
+            <strong class="project-upload-source-label">🏗️ Cronograma físico</strong>
             <div class="project-physical-upload-summary">
               ${renderUploadSummary(latestPhysical, 'Nenhum Cronograma Físico enviado para esta obra.')}
             </div>
             <div class="upload-card-actions">
-              <button class="btn-sm primary" data-upload-kind="cronograma_fisico" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_cronograma_fisico_${index}">
-                📤 ${latestPhysical ? 'Substituir Cronograma' : 'Enviar Cronograma Físico'}
+              <button class="btn-sm primary" data-upload-kind="project_bundle" ${canEdit && !busy ? '' : 'disabled'} data-click-action="" data-file-target="fileInput_project_bundle_${index}">
+                📤 ${latestTendency || latestPhysical ? 'Substituir dados da obra' : 'Enviar Tendência + Cronograma'}
+              </button>
+              <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectTendencyHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
+                📜 Histórico da Tendência
               </button>
               <button class="btn-sm" ${canEdit ? '' : 'disabled'} data-click-action="openProjectPhysicalScheduleHistory" data-action-mode="arg" data-action-arg="${escAttr(code)}">
                 📜 Histórico do Cronograma
               </button>
-              <input type="file" id="fileInput_cronograma_fisico_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar Cronograma Físico de ${escAttr(name)}" data-change-action="handleProjectPhysicalScheduleUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
+              <input type="file" id="fileInput_project_bundle_${index}" class="upload-file-input" accept=".xlsx,.xlsm,.xls" aria-label="Selecionar Tendência e Cronograma Físico de ${escAttr(name)}" data-change-action="handleProjectBundleUpload" data-action-mode="event-arg" data-action-arg="${escAttr(code)}">
             </div>
           </div>
         </article>`;
@@ -1873,12 +2009,12 @@ function renderUploadsCentral() {
       <section class="upload-projects-section">
         <div class="upload-section-heading">
           <div>
-            <span class="upload-scope-kicker">TENDÊNCIAS INDIVIDUAIS</span>
+            <span class="upload-scope-kicker">DADOS INDIVIDUAIS</span>
             <h3>🏗️ Obras</h3>
           </div>
           <span class="upload-project-count">${projects.length} obra(s)</span>
         </div>
-        <p>Cada obra mantém versões independentes da Tendência financeira e do Cronograma Físico.</p>
+        <p>Um único Excel atualiza Tendência e Cronograma Físico; os históricos permanecem versionados por obra.</p>
         <div class="project-tendency-grid">
           ${projectCards || '<div class="uploads-history-empty">Nenhuma obra ativa cadastrada.</div>'}
         </div>
@@ -1912,11 +2048,7 @@ function renderUploadsCentral() {
       card.classList.remove('dragover');
       const file = event.dataTransfer.files[0];
       if (file) {
-        const isPhysical = /cronograma|fisico|físico/i.test(file.name);
-        const handler = isPhysical
-          ? handleProjectPhysicalScheduleUpload
-          : handleProjectTendencyUpload;
-        handler({ target: { files: [file], value: '' } }, card.dataset.project);
+        handleProjectBundleUpload({ target: { files: [file], value: '' } }, card.dataset.project);
       }
     });
   });
@@ -2789,6 +2921,7 @@ export function createUploadView({
     handleUpload,
     handleProjectTendencyUpload,
     handleProjectPhysicalScheduleUpload,
+    handleProjectBundleUpload,
     handleExcelUpload,
     toggleAdvancedUploads,
     openUploadsHistory,

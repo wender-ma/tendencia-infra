@@ -417,7 +417,7 @@ function onClassifChange(sel) {
       misto: '<span class="badge gray">⚪ Misto</span>',
     };
     const tipoTd = tr.children[6];
-    if (tipoTd) tipoTd.textContent = tipoLabel[f.tipo] || '';
+    if (tipoTd) replaceWithParsedMarkup(tipoTd, tipoLabel[f.tipo] || '');
     // marca só o input (fundo amarelo do CSS já sinaliza)
     sel.classList.add('edited');
   }
@@ -1171,6 +1171,7 @@ function applyManuals() {
   manuals.forEach((m) => {
     APP_STATE.dados.flows.push({
       ...m,
+      codigo_obra: m.codigo_obra || APP_STATE.obra.ativa,
       is_manual: true,
       tipo: classifyFlow(m.insumo_planejamento, m.insumo_remanejamento),
     });
@@ -1277,6 +1278,7 @@ function saveManualForm(editingId) {
   const id = editingId || nextManualId();
 
   const obj = {
+    codigo_obra: APP_STATE.obra.ativa,
     n_alteracao: id,
     n_adt: '',
     dep,

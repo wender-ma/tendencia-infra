@@ -33,6 +33,12 @@ const { pathToFileURL } = require('url');
     'Base Tendência Atual',
     'Tend',
   ];
+  const physicalScheduleAliases = [
+    'Cronograma Físico',
+    'Cronograma Fisico-Financeiro',
+    'Cronograma da Obra',
+    'Evolução Física',
+  ];
 
   for (const alias of flowAliases) {
     assert.strictEqual(
@@ -50,11 +56,23 @@ const { pathToFileURL } = require('url');
     );
   }
 
-  assert.deepStrictEqual(autoDetectExcelSheets(['TENDÊNCIA-21O', 'Flows', 'Gestões']), {
-    tendencia: 'TENDÊNCIA-21O',
-    flows: 'Flows',
-    gestoes: 'Gestões',
-  });
+  for (const alias of physicalScheduleAliases) {
+    assert.strictEqual(
+      autoDetectExcelSheets([alias]).cronograma_fisico,
+      alias,
+      `Alias de Cronograma Físico não reconhecido: ${alias}`,
+    );
+  }
+
+  assert.deepStrictEqual(
+    autoDetectExcelSheets(['TENDÊNCIA-21O', 'Cronograma Físico', 'Flows', 'Gestões']),
+    {
+      tendencia: 'TENDÊNCIA-21O',
+      cronograma_fisico: 'Cronograma Físico',
+      flows: 'Flows',
+      gestoes: 'Gestões',
+    },
+  );
   assert.strictEqual(
     autoDetectExcelSheets(['Workflow de aprovação']).flows,
     null,

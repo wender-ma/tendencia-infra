@@ -369,7 +369,7 @@
               </div>
               <div>
                 <strong>Base por obra</strong>
-                <p>Cada obra recebe sua própria Tendência e seu Cronograma Físico. Admins enviam para qualquer obra; editores, somente para as atribuídas.</p>
+                <p>Cada obra recebe Tendência e Cronograma Físico em um único Excel. Admins enviam para qualquer obra; editores, somente para as atribuídas.</p>
               </div>
             </div>
             <p class="manual-footnote">O procedimento completo está na seção 05 deste manual.</p>
@@ -411,9 +411,9 @@
             <h3>📅 Atualização mensal</h3>
             <ol class="manual-timeline">
               <li><span>1</span><p>Prepare a planilha global com as abas <b>Gestões</b> e <b>Aditivos_flowmaster</b>.</p></li>
-              <li><span>2</span><p>Prepare as planilhas de <b>Tendência</b> e <b>Cronograma Físico</b> de cada obra atualizada.</p></li>
+              <li><span>2</span><p>Prepare um Excel por obra com as abas de <b>Tendência</b> e <b>Cronograma Físico</b>.</p></li>
               <li><span>3</span><p>O administrador envia primeiro a base global em Uploads.</p></li>
-              <li><span>4</span><p>Envie a Tendência e o Cronograma Físico no bloco correspondente a cada obra.</p></li>
+              <li><span>4</span><p>Envie o Excel unificado no bloco correspondente a cada obra e confirme as duas abas.</p></li>
               <li><span>5</span><p>Confira o relatório de importação e os arquivos ativos.</p></li>
               <li><span>6</span><p>Revise os novos aditivos pendentes na aba Flows / Aditivos.</p></li>
               <li><span>7</span><p>Valide Visão Geral, Curva S e Projeção Detalhada antes de comunicar os números.</p></li>
@@ -461,9 +461,9 @@
             <ol class="manual-steps manual-steps--compact">
               <li><span>1</span><div><strong>Localize a obra</strong><p>Os blocos aparecem um abaixo do outro na Central de Uploads.</p></div></li>
               <li><span>2</span><div><strong>Confirme o código</strong><p>Envie o arquivo somente no bloco da obra correspondente.</p></div></li>
-              <li><span>3</span><div><strong>Selecione a Tendência</strong><p>São aceitos Excel e CSV compatíveis. Em Excel com várias abas, confirme a aba sugerida pelo nome ou pelos cabeçalhos.</p></div></li>
-              <li><span>4</span><div><strong>Confirme o mapeamento</strong><p>O sistema reconhece nomes como Tendência, Tendência de Obra, TendênciaValor e Tend.</p></div></li>
-              <li><span>5</span><div><strong>Envie o Cronograma Físico</strong><p>Use o arquivo físico-financeiro da mesma obra e confirme ou ajuste o mês de corte sugerido.</p></div></li>
+              <li><span>3</span><div><strong>Selecione o Excel da obra</strong><p>O mesmo arquivo deve conter uma aba de Tendência e outra de Cronograma Físico.</p></div></li>
+              <li><span>4</span><div><strong>Confirme o mapeamento</strong><p>Indique qual aba corresponde à Tendência e qual corresponde ao Cronograma Físico; sugestões válidas já aparecem selecionadas.</p></div></li>
+              <li><span>5</span><div><strong>Confirme o corte físico</strong><p>Revise o último mês consolidado sugerido. As duas fontes só são ativadas depois dessa confirmação.</p></div></li>
               <li><span>6</span><div><strong>Valide a obra</strong><p>Abra a Tendência de Obra, compare os modelos e confira as fontes ativas.</p></div></li>
             </ol>
           </section>
@@ -472,7 +472,7 @@
         <dl class="manual-facts">
           <div><dt>12 versões</dt><dd>São mantidas as versões mais recentes de cada tipo de arquivo e snapshot.</dd></div>
           <div><dt>Histórico</dt><dd>Permite baixar uma versão anterior e, quando autorizado, torná-la ativa novamente.</dd></div>
-          <div><dt>Substituição</dt><dd>O novo arquivo vira a fonte ativa; o anterior permanece no histórico durante a retenção.</dd></div>
+          <div><dt>Substituição atômica</dt><dd>Tendência e Cronograma são validados antes da gravação e ativados juntos; o arquivo anterior permanece no histórico durante a retenção.</dd></div>
           <div><dt>Edições preservadas</dt><dd>Classificações, aditivos manuais e movimentações não são apagados por um novo upload.</dd></div>
         </dl>
 
@@ -691,7 +691,7 @@
         </div>
 
         <p class="manual-document-end">
-          <strong>Dashboard Tendência Infra · v1.9.0</strong>
+          <strong>Dashboard Tendência Infra · v1.10.0</strong>
           <span>Use este manual como referência durante a operação e a conferência mensal.</span>
         </p>
       </section>

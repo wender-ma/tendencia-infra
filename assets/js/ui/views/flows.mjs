@@ -65,6 +65,7 @@ function bindFlowInteractions() {
   const debouncedFlowTable = debounce(renderFlowTable, 300);
   [
     'flowSearch',
+    'flowFilterRefletidoMes',
     'flowFilterDataIni',
     'flowFilterDataFim',
     'flowFilterValMin',
@@ -266,6 +267,7 @@ function flowMatchesDate(f, ini, fim) {
 function clearFlowFilters() {
   [
     'flowSearch',
+    'flowFilterRefletidoMes',
     'flowFilterDataIni',
     'flowFilterDataFim',
     'flowFilterValMin',
@@ -297,6 +299,7 @@ function renderReflectionMonth(f) {
 function renderFlowTable() {
   bindFlowInteractions();
   const q = document.getElementById('flowSearch').value.toLowerCase();
+  const reflectedMonth = document.getElementById('flowFilterRefletidoMes')?.value || '';
   const fdi = document.getElementById('flowFilterDataIni')?.value || '';
   const fdf = document.getElementById('flowFilterDataFim')?.value || '';
   const fvmin = parseFloat(document.getElementById('flowFilterValMin')?.value);
@@ -313,6 +316,8 @@ function renderFlowTable() {
     // Refletido: status do aditivo (precisa default 'pendente')
     const fStat = f.refletido_status || 'pendente';
     if (!msMatches('refletido', fStat)) return false;
+    if (reflectedMonth && String(f.refletido_mes || '').slice(0, 7) !== reflectedMonth)
+      return false;
     if (!msMatches('destino', f.insumo_planejamento)) return false;
     if (!msMatches('origem', f.insumo_remanejamento)) return false;
     if (!flowMatchesDate(f, fdi, fdf)) return false;

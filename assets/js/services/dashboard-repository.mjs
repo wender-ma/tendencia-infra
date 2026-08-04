@@ -76,6 +76,7 @@ function classificationMap(rows = []) {
 
 function manualFromRow(row) {
   return {
+    codigo_obra: row.codigo_obra,
     n_alteracao: row.n_alteracao,
     n_adt: row.n_adt || '',
     dep: row.dep || '',

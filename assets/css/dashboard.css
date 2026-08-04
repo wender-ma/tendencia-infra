@@ -1062,6 +1062,17 @@ body:not(.is-admin-geral) [data-admin-control],
   color: var(--text-strong);
   font-size: 12px;
 }
+.project-upload-dataset-help {
+  margin: 0 0 10px;
+  color: var(--text-soft);
+  font-size: 11px;
+}
+.project-upload-source-label {
+  display: block;
+  margin: 9px 0 4px;
+  color: var(--text-medium);
+  font-size: 11px;
+}
 .projection-forecast-heading,
 .projection-forecast-footer {
   display: flex;
@@ -2146,12 +2157,23 @@ body:not(.is-admin-geral) [data-admin-control],
 .flows-discarded { margin-top: 10px; }
 .detail-heading { gap: 12px; }
 .detail-actions { margin-left: auto; flex-shrink: 0; min-width: 0; }
-.flows-filter-toolbar { flex-wrap: nowrap; }
-.flows-filter-toolbar input[type=search] { min-width: 180px; }
-.flows-filter-toolbar .ms-btn { min-width: 125px; }
+.flows-filter-toolbar { flex-wrap: nowrap; gap: 6px; }
+.flows-filter-toolbar input[type=search] {
+  flex: 1 1 150px;
+  min-width: 140px;
+}
+.flows-filter-toolbar .ms-wrap {
+  flex: 0 1 112px;
+  min-width: 0;
+}
+.flows-filter-toolbar .ms-btn {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 7px;
+}
 .flows-filter-toolbar .advanced-filter-field { flex-shrink: 0; }
-.flows-filter-toolbar input[type=month] { width: 112px; }
-.flows-filter-toolbar .flow-filter-number { width: 68px; }
+.flows-filter-toolbar input[type=month] { width: 100px; }
+.flows-filter-toolbar .flow-filter-number { width: 58px; }
 .flows-filter-toolbar > .btn-sm { flex-shrink: 0; white-space: nowrap; }
 #tab-flows .table-wrap {
   max-height: none;

@@ -23,6 +23,7 @@ Rascunhos que não devem ser aplicados ficam em `../drafts/`.
 - Frontend em produção: modo `snapshots` publicado e validado em 27/07/2026; janela mínima de estabilidade aberta até 03/08/2026.
 - Hardening de lançamento: limita o contrato público às colunas consumidas pelo painel, oculta obras inativas e blobs legados, e adiciona cadastro transacional de obras por upload.
 - Mês de reflexo dos Flows: adiciona `refletido_mes` às classificações, preservado entre uploads e exposto no contrato público operacional.
+- Inflação incorporada: adiciona causa do desvio e índice às classificações dos Flows, sem inferência ou backfill dos registros existentes.
 - Planejamento de mão de obra: adiciona ativação por insumo e linhas mensais públicas por obra, com escrita restrita aos responsáveis autorizados.
 - Cronograma físico: adiciona snapshots e histórico independentes por obra, permite upload por responsáveis atribuídos e mantém a ativação da metodologia híbrida sob controle administrativo.
 - Cronograma físico em produção: migration aplicada e auditoria confirmou `complete: true`, escopos e reset habilitados em 03/08/2026.

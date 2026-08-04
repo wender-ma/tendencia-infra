@@ -104,6 +104,17 @@ Critério de conclusão: upload combinado e correções de Flows validados por c
 
 Critério de conclusão: parser, contrato de UI e teste de navegador reconciliados com os valores nominais da planilha.
 
+## Versão 1.11.0
+
+- [x] Separar a correção monetária teórica da inflação efetivamente incorporada na Gestão.
+- [x] Classificar manualmente cada Flow por causa do desvio e índice de inflação.
+- [x] Reconciliar o card Gestão somente com Flows refletidos até o seu mês-base.
+- [x] Excluir remanejamentos, pendentes, cancelados e reflexos futuros da decomposição total.
+- [x] Disponibilizar a auditoria das parcelas incorporadas por Flow, mês e índice.
+- [x] **AÇÃO EXTERNA EXT-19** Migration de causa do desvio aplicada em produção e auditoria SQL validada em 04/08/2026.
+
+Critério de conclusão: migration confirmada em produção, contratos e navegador aprovados, publicação e smoke concluídos.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

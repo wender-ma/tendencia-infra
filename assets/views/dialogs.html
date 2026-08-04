@@ -27,6 +27,23 @@
       <input type="text" id="m_valor" placeholder="ex: 12.500,00 ou -5000">
     </div>
     <div>
+      <label for="m_causa_desvio">Causa do desvio</label>
+      <select id="m_causa_desvio">
+        <option value="nao_classificado">Não classificado</option>
+        <option value="inflacao">Inflação</option>
+        <option value="demais_causas">Demais causas</option>
+      </select>
+    </div>
+    <div>
+      <label for="m_indice_inflacao">Índice da inflação</label>
+      <select id="m_indice_inflacao">
+        <option value="">— Não se aplica —</option>
+        <option value="ipca">IPCA</option>
+        <option value="incc">INCC</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+    <div>
       <label for="m_dest">→ Destino (Insumo Planejamento)</label>
       <input type="text" id="m_dest" list="insumosDatalist" placeholder="digite p/ buscar...">
     </div>

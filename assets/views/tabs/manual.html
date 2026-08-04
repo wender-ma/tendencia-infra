@@ -231,6 +231,7 @@
                   <li>Confira o status dos grupos e a composição dos aditivos.</li>
                   <li>Compare o status dos grupos com a composição dos aditivos para localizar a origem do desvio.</li>
                   <li>Alterne Bruto/Líquido e INCC/IPCA; as diferenças da Tendência usam a Licitação corrigida pelo índice selecionado.</li>
+                  <li>No card da Gestão, <b>Inflação incorporada</b> considera somente parcelas comprovadas por Flows refletidos até o mês da Gestão; clique no valor para auditá-las.</li>
                   <li>No final da página, use o Detalhamento de Insumos para reconciliar o orçamento corrigido com a Tendência Final.</li>
                   <li>Clique em uma diferença para conferir a variação da Gestão, a projeção automática e os Flows que compõem o valor.</li>
                 </ol>
@@ -255,13 +256,22 @@
                 <strong>Como trabalhar</strong>
                 <ol>
                   <li>Localize pelo número do Flow ou pela descrição.</li>
-                  <li>Refine por status, departamento, destino, origem, data ou valor.</li>
+                  <li>Refine por status, causa do desvio, departamento, destino, origem, data ou valor.</li>
                   <li>Como editor, altere Destino e Origem diretamente nas células habilitadas.</li>
                   <li>Ao marcar <b>Refletido? = Sim</b>, confira ou ajuste o <b>Mês refletido</b>.</li>
+                  <li>Para inflação, escolha <b>Causa do desvio = Inflação</b> e informe IPCA, INCC ou Outro. Registre cada parcela incorporada em um Flow próprio.</li>
                   <li>Selecione várias linhas para aplicar a mesma classificação em lote.</li>
                   <li>Use <b>Novo aditivo</b> somente para um item que não existe na base de Flows.</li>
                 </ol>
               </div>
+            </div>
+            <div class="manual-callout manual-callout--warning">
+              <strong>Correção teórica não é inflação incorporada</strong>
+              <p>
+                O card Orçamento Licitação calcula a correção monetária completa como referência.
+                O card Gestão mostra apenas o que já entrou no planejamento, comprovado por Flow,
+                mês refletido e índice. Nenhum registro antigo é classificado automaticamente.
+              </p>
             </div>
             <div class="manual-callout manual-callout--info">
               <strong>Salvamento das classificações</strong>
@@ -691,7 +701,7 @@
         </div>
 
         <p class="manual-document-end">
-          <strong>Dashboard Tendência Infra · v1.10.1</strong>
+          <strong>Dashboard Tendência Infra · v1.11.0</strong>
           <span>Use este manual como referência durante a operação e a conferência mensal.</span>
         </p>
       </section>

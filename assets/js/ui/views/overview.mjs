@@ -1,6 +1,8 @@
 import { replaceWithParsedMarkup } from '../dom.mjs';
 import { escHtml } from '../formatters.mjs';
 import { createOverviewDetailView } from './overview-detail-view.mjs';
+import { buildManagementDeviationBreakdown } from '../../services/flow-deviation.mjs';
+import { formatReflectionMonth } from '../../services/flow-reflection.mjs';
 import {
   formatCompactNumber as fmtR$k,
   formatNumber as fmtR$,
@@ -25,6 +27,72 @@ let buildProjectionSnapshot;
 let getProjectionControlState;
 let getAllMovimentacoes;
 let overviewDetailView;
+let openModal;
+
+function activeManagementLabel() {
+  return (
+    APP_STATE.dados.historico?.projectionManagementByProject?.[APP_STATE.obra.ativa] ||
+    APP_STATE.config.gestaoLabel ||
+    'Atual'
+  );
+}
+
+function flowDescription(flow) {
+  return (
+    String(flow.descricao || flow.motivo || flow.justificativa || '').trim() || 'Sem descrição'
+  );
+}
+
+function openIncorporatedInflationDetail() {
+  const breakdown = buildManagementDeviationBreakdown({
+    flows: getFlowsObraAtiva(),
+    managementLabel: activeManagementLabel(),
+  });
+  const indexLabel = { ipca: 'IPCA', incc: 'INCC', outro: 'Outro' };
+  const signed = (value) => `${value > 0 ? '+' : ''}${fmtR$(value)}`;
+  const rows = breakdown.inflationFlows
+    .map(
+      (flow) => `<tr>
+        <td>${escHtml(flow.n_alteracao || 'Sem número')}</td>
+        <td>${escHtml(flowDescription(flow))}</td>
+        <td>${escHtml(formatReflectionMonth(flow.refletido_mes))}</td>
+        <td>${escHtml(indexLabel[flow.indice_inflacao] || '—')}</td>
+        <td class="num">${signed(Number(flow.custo_flowmaster) || 0)}</td>
+      </tr>`,
+    )
+    .join('');
+  const incompleteRows = breakdown.incompleteInflationFlows
+    .map((flow) => {
+      const missing = [];
+      if (!flow.indice_inflacao) missing.push('índice');
+      if ((flow.refletido_status || 'pendente') === 'sim' && !flow.refletido_mes) {
+        missing.push('mês refletido');
+      }
+      return `<li><strong>${escHtml(flow.n_alteracao || 'Sem número')}</strong> · ${escHtml(flowDescription(flow))} <span>${escHtml(missing.join(' e '))}</span></li>`;
+    })
+    .join('');
+
+  replaceWithParsedMarkup(
+    document.getElementById('modalContent'),
+    `<h2>Inflação incorporada</h2>
+    <div class="meta">Obra: <strong>${escHtml(APP_STATE.obra.ativa)}</strong> · Gestão-base: <strong>${escHtml(activeManagementLabel())}</strong> · Corte: <strong>${escHtml(breakdown.cutoffMonth ? formatReflectionMonth(`${breakdown.cutoffMonth}-01`) : '—')}</strong></div>
+    <div class="overview-inflation-summary">
+      <div><span>IPCA</span><strong>${signed(breakdown.totalsByIndex.ipca)}</strong></div>
+      <div><span>INCC</span><strong>${signed(breakdown.totalsByIndex.incc)}</strong></div>
+      <div><span>Outro</span><strong>${signed(breakdown.totalsByIndex.outro)}</strong></div>
+      <div class="overview-inflation-summary-total"><span>Total incorporado</span><strong>${signed(breakdown.inflation)}</strong></div>
+    </div>
+    <div class="table-wrap overview-inflation-table-wrap">
+      <table class="overview-inflation-table">
+        <thead><tr><th>Flow</th><th>Descrição</th><th>Mês refletido</th><th>Índice</th><th class="num">Valor</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5" class="overview-inflation-empty">Nenhuma parcela de inflação incorporada até esta Gestão.</td></tr>'}</tbody>
+        <tfoot><tr><th colspan="4">Total conciliado</th><th class="num">${signed(breakdown.inflation)}</th></tr></tfoot>
+      </table>
+    </div>
+    ${incompleteRows ? `<section class="overview-inflation-incomplete"><h3>Atenção: parcelas incompletas não contabilizadas</h3><ul>${incompleteRows}</ul></section>` : ''}`,
+  );
+  openModal({ initialFocus: '[data-click-action="closeModal"]' });
+}
 
 // ============ VISÃO GERAL ============
 // APP_STATE.config.gestaoLabel, APP_STATE.config.evolGlobal, APP_STATE.config.card3Modo, APP_STATE.config.correcaoIndice
@@ -415,12 +483,13 @@ function renderVisao({ cardsOnly = false } = {}) {
 
   // Decomposição do Fluxo Atual
   const desvioBruto = totDiff; // gestao - licit
-  // Aditivos refletidos = "rastreado" (do que conseguimos atribuir a um aditivo)
-  // Usa totAumentoReal (já calculado acima) somado às outras categorias rastreadas
-  const aditivoRastreado =
-    (tipoSum.aumento_real || 0) + (tipoSum.economia || 0) + (tipoSum.remanejamento || 0);
-  // Resto = parte do desvio que não tem aditivo refletido → atualização orçamentária/tendência não rastreada
-  const restoNaoRastreado = desvioBruto - inflacaoAbs - aditivoRastreado;
+  const managementDeviation = buildManagementDeviationBreakdown({
+    flows: getFlowsObraAtiva(),
+    managementLabel: activeManagementLabel(),
+  });
+  const inflacaoIncorporada = managementDeviation.inflation;
+  const aditivoRastreado = managementDeviation.otherReflected;
+  const restoNaoRastreado = desvioBruto - inflacaoIncorporada - aditivoRastreado;
 
   const kpiBrutoCls = desvioBrutoPct > 5 ? 'red' : desvioBrutoPct > 0 ? 'amber' : 'green';
   // Toggle INCC/IPCA
@@ -437,11 +506,11 @@ function renderVisao({ cardsOnly = false } = {}) {
     totCorrigido > 0 ? Math.max(0, Math.min(100, (totLicit / totCorrigido) * 100)) : 0;
   const budgetCorrectionShare = Math.max(0, 100 - budgetBaseShare);
   const budgetBarNumber = (value) => value.toFixed(2);
-  const bdLine = (label, valor, tone = 'neutral', hint) => `
-    <div class="overview-breakdown-line">
+  const bdLine = (label, valor, tone = 'neutral', hint, action) => `
+    <${action ? 'button' : 'div'} ${action ? `type="button" data-click-action="${action}"` : ''} class="overview-breakdown-line${action ? ' overview-breakdown-line--action' : ''}">
       <span class="overview-breakdown-label">${label}${hint ? ` <span class="overview-breakdown-hint">(${hint})</span>` : ''}</span>
       <strong class="overview-tone--${tone}">${valor}</strong>
-    </div>
+    </${action ? 'button' : 'div'}>
   `;
 
   replaceWithParsedMarkup(
@@ -487,7 +556,7 @@ function renderVisao({ cardsOnly = false } = {}) {
       <div class="label">📊 ${escHtml(APP_STATE.config.gestaoLabel)}</div>
       <div class="value">${fmtR$(totGestao)}</div>
       <div class="overview-breakdown-heading">Decomposição do desvio</div>
-      ${bdLine('💱 Inflação ' + indiceLabel, (inflacaoAbs >= 0 ? '+' : '') + fmtR$(inflacaoAbs), 'purple', 'externa, inevitável')}
+      ${bdLine('💱 Inflação incorporada', (inflacaoIncorporada >= 0 ? '+' : '') + fmtR$(inflacaoIncorporada), 'purple', `via Flows até ${managementDeviation.cutoffMonth ? formatReflectionMonth(`${managementDeviation.cutoffMonth}-01`) : 'o mês atual'}`, 'openIncorporatedInflationDetail')}
       ${bdLine('📎 Aditivos refletidos', (aditivoRastreado >= 0 ? '+' : '') + fmtR$(aditivoRastreado), 'warning', 'rastreado em Flows')}
       ${bdLine('❓ Não rastreado', (restoNaoRastreado >= 0 ? '+' : '') + fmtR$(restoNaoRastreado), signedTone(restoNaoRastreado), 'atualização de orçamento')}
       <div class="overview-total-block">
@@ -801,6 +870,7 @@ export function createOverviewView({
     state,
     reportNonFatalError,
   });
+  openModal = modals.open;
   return Object.freeze({
     renderAderenciaProj,
     irParaAba,
@@ -809,6 +879,7 @@ export function createOverviewView({
     toggleDonutSlice,
     setCard3Modo,
     setCorrecaoIndice,
+    openIncorporatedInflationDetail,
     overviewInputExpandAll: overviewDetailView.expandAll,
     overviewInputCollapseAll: overviewDetailView.collapseAll,
     restoreOverviewInputOriginalOrder: overviewDetailView.restoreOriginalOrder,

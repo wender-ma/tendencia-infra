@@ -597,6 +597,29 @@
   .refletido-select.status-sim { background: var(--ref-sim-bg); color: var(--sem-ok); border-color: var(--ref-sim-border); }
   .refletido-select.status-nao { background: var(--fgr-red-light); color: var(--sem-erro); border-color: var(--ref-nao-border); }
   .refletido-select.status-pendente { background: var(--sem-alerta-bg); color: var(--sem-alerta); border-color: var(--ref-pend-border); }
+  .flow-cause-select,
+  .flow-index-select {
+    width: 100%;
+    padding: 5px 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+    background: var(--bg-card);
+    color: var(--text-strong);
+    font: inherit;
+  }
+  .flow-cause-select { min-width: 98px; }
+  .flow-index-select { min-width: 76px; }
+  .flow-cause-select:focus,
+  .flow-index-select:focus {
+    outline: none;
+    border-color: var(--fgr-red);
+    box-shadow: 0 0 0 2px var(--fgr-red-light);
+  }
+  .flow-index-select.is-incomplete {
+    border-color: var(--sem-alerta);
+    background: var(--sem-alerta-bg);
+  }
+  .flow-index-empty { color: var(--text-lighter); }
   /* Alinhar todas as células da tabela de flows verticalmente */
   #flowTbody td { vertical-align: middle; }
   .flow-selection-cell { text-align: center; vertical-align: middle; }
@@ -2127,6 +2150,8 @@ body:not(.is-admin-geral) [data-admin-control],
 .table-col-24 { width: 24px; }
 .table-col-30 { width: 30px; }
 .table-col-55 { width: 55px; }
+.table-col-70 { width: 70px; }
+.table-col-80 { width: 80px; }
 .table-col-90 { width: 90px; }
 .table-col-100 { width: 100px; }
 .table-col-110 { width: 110px; }
@@ -2180,6 +2205,7 @@ body:not(.is-admin-geral) [data-admin-control],
   overflow-x: visible;
   overflow-y: clip;
 }
+#tab-flows .table-wrap > .flows-table { min-width: 1320px; }
 .advanced-filter-title { color: var(--text-soft); font-size: 11px; font-weight: 600; }
 .advanced-filter-field {
   display: flex;
@@ -3827,6 +3853,21 @@ body:not(.is-admin-geral) [data-admin-control],
   padding: 3px 0;
   font-size: 11.5px;
 }
+.overview-breakdown-line--action {
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.overview-breakdown-line--action:hover { background: var(--bg-soft); }
+.overview-breakdown-line--action:focus-visible {
+  outline: 2px solid var(--fgr-red);
+  outline-offset: 1px;
+}
 .overview-breakdown-label { color: var(--text-soft); }
 .overview-breakdown-hint { color: var(--text-lighter); font-size: 10px; }
 .overview-total-block {
@@ -3844,6 +3885,44 @@ body:not(.is-admin-geral) [data-admin-control],
 .overview-total-label { color: var(--text-strong); font-weight: 700; }
 .overview-total-hint { color: var(--text-soft); font-weight: 600; }
 .overview-total-value { font-size: 14px; }
+.overview-inflation-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--border);
+}
+.overview-inflation-summary > div {
+  padding: 10px 12px;
+  background: var(--bg-card);
+}
+.overview-inflation-summary span,
+.overview-inflation-summary strong { display: block; }
+.overview-inflation-summary span { color: var(--text-soft); font-size: 10px; }
+.overview-inflation-summary strong { margin-top: 3px; color: var(--text-strong); font-size: 14px; }
+.overview-inflation-summary-total strong { color: var(--accent-purple-dark); }
+.overview-inflation-table-wrap { max-height: 42vh; }
+.overview-inflation-table { min-width: 680px; }
+.overview-inflation-table :is(th, td):last-child { text-align: right; }
+.overview-inflation-table tfoot th { border-top: 2px solid var(--border-strong); }
+.overview-inflation-empty { padding: 18px; color: var(--text-soft); text-align: center; }
+.overview-inflation-incomplete {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--sem-alerta);
+  border-radius: 6px;
+  background: var(--sem-alerta-bg);
+}
+.overview-inflation-incomplete h3 { margin: 0 0 6px; color: var(--text-strong); font-size: 12px; }
+.overview-inflation-incomplete ul { margin: 0; padding-left: 18px; color: var(--text-medium); font-size: 11px; }
+.overview-inflation-incomplete li + li { margin-top: 4px; }
+.overview-inflation-incomplete li span { color: var(--sem-alerta); }
+@media (max-width: 700px) {
+  .overview-inflation-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .overview-projection-head {
   display: flex;
   align-items: center;

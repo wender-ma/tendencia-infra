@@ -25,6 +25,8 @@ test('acoes principais de Flows abrem o formulario e exportam Excel', async ({ p
         refletido_mes: '2026-06',
         insumo_planejamento: 'I001',
         insumo_remanejamento: '',
+        causa_desvio: 'nao_classificado',
+        indice_inflacao: null,
       },
     ];
     Object.assign(services.auth.state, {
@@ -61,6 +63,17 @@ test('acoes principais de Flows abrem o formulario e exportam Excel', async ({ p
   await firstRow.locator('[data-field="insumo_remanejamento"]').press('Tab');
   await expect(firstRow.locator('td').nth(6)).toContainText('Misto');
   await expect(firstRow.locator('td').nth(6)).not.toContainText('<span');
+  await firstRow.locator('.flow-cause-select').selectOption('inflacao');
+  await expect(firstRow.locator('.flow-index-select')).toBeVisible();
+  await firstRow.locator('.flow-index-select').selectOption('ipca');
+  await expect
+    .poll(() =>
+      page.evaluate(() => ({
+        cause: window.dashboardServices.state.dados.flows[0].causa_desvio,
+        index: window.dashboardServices.state.dados.flows[0].indice_inflacao,
+      })),
+    )
+    .toEqual({ cause: 'inflacao', index: 'ipca' });
 
   await page.locator('#flowFilterRefletidoMes').fill('2026-06');
   await expect(page.locator('#flowTbody tr')).toHaveCount(1);

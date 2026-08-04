@@ -5,7 +5,7 @@ pelos testes automatizados ou por acesso somente leitura. O `ROADMAP.md` usa os
 mesmos IDs para que cada item aberto tenha responsável, dependência e evidência
 de conclusão.
 
-Última atualização: 03/08/2026
+Última atualização: 04/08/2026
 
 | ID | Status | Responsável | Dependência | Ação necessária | Evidência de aceite |
 | --- | --- | --- | --- | --- | --- |
@@ -27,6 +27,7 @@ de conclusão.
 | EXT-16 | Concluída | Administrador do Supabase | Migration `v1.8.0` validada localmente | Aplicar `20260803150000_physical_schedule_datasets.sql` no projeto de produção confirmado e executar `verify_physical_schedule_deployment.sql`. | Em 03/08/2026, auditoria independente retornou `complete: true`, os três escopos físicos e o reset habilitados, sem uploads ou datasets físicos prévios. |
 | EXT-17 | Concluída | Administrador do dashboard | EXT-16 e deploy `v1.8.0` concluídos | Enviar o Cronograma Físico da obra, confirmar o corte sugerido e comparar o cálculo atual com o recomendado. | Em 03/08/2026, `42-21O` ficou com um upload e snapshot físicos ativos: 105 EAPs, 35 meses e corte `jul/2026`. O recomendado ficou `R$ 323.517,43` abaixo do atual; como 22 de 25 previsões elegíveis tinham confiança baixa, o Modelo Atual foi preservado. |
 | EXT-18 | Aberta | Administrador do dashboard | Deploy `v1.9.0` concluído | Conferir a memória de cálculo dos principais insumos indiretos e ativar a metodologia `v2` na Tendência de Obra. | Métodos revisados, comparação conciliada e indicador `MODELO CONFIGURÁVEL ATIVO` exibido sem erros. |
+| EXT-19 | Concluída | Administrador do Supabase | Migration `v1.11.0` validada localmente | Aplicar `20260804120000_flow_deviation_cause.sql` em produção e executar `verify_flow_deviation_cause_deployment.sql`. | Em 04/08/2026, a auditoria retornou `complete: true`, leitura pública habilitada, duas colunas presentes, constraints válidas e zero linhas históricas classificadas automaticamente. |
 
 ## Ordem mínima
 

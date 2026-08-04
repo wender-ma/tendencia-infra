@@ -13,6 +13,8 @@ const CLASSIFICATION_FIELDS = new Set([
   'custo_flowmaster',
   'refletido_status',
   'refletido_mes',
+  'causa_desvio',
+  'indice_inflacao',
 ]);
 
 const RESETTABLE_PROJECT_KEYS = new Set([
@@ -69,6 +71,8 @@ function classificationMap(rows = []) {
         refletido_status: row.refletido_status,
         refletido_mes: row.refletido_mes,
         refletido: row.refletido_status === 'sim',
+        causa_desvio: row.causa_desvio || 'nao_classificado',
+        indice_inflacao: row.indice_inflacao || null,
       },
     ]),
   );
@@ -168,7 +172,7 @@ export function createDashboardRepository({
       supabase
         .from('flow_classifications')
         .select(
-          'codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes',
+          'codigo_obra,n_alteracao,insumo_planejamento,insumo_remanejamento,custo_flowmaster,refletido_status,refletido_mes,causa_desvio,indice_inflacao',
         )
         .eq('codigo_obra', project),
     );

@@ -9,6 +9,7 @@ import {
   formatReflectionMonth,
   resolveReflectionMonth,
 } from '../services/flow-reflection.mjs';
+import { normalizeDeviationCause, normalizeInflationIndex } from '../services/flow-deviation.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 const MANUAL_KEY = STORAGE_KEYS.manuals;
@@ -102,6 +103,8 @@ function loadClassifications() {
         if (entry.refletido_mes !== undefined) {
           f.refletido_mes = entry.refletido_mes;
         }
+        f.causa_desvio = normalizeDeviationCause(entry.causa_desvio);
+        f.indice_inflacao = normalizeInflationIndex(entry.indice_inflacao);
         f.tipo = classifyFlow(f.insumo_planejamento, f.insumo_remanejamento);
         n++;
       }
@@ -177,19 +180,23 @@ function exportClassifications() {
   // CSV: Nº Alteração; Nº ADT; Insumo Planejamento (novo); Insumo Remanejamento (novo); Tipo classificado
   // Inclui edições + manuais
   const manuals = loadManuals();
-  const allKeys = new Set([...keys, ...manuals.map((m) => m.n_alteracao)]);
+  const projectPrefix = `${APP_STATE.obra.ativa}:`;
+  const classificationIds = keys
+    .filter((key) => !key.includes(':') || key.startsWith(projectPrefix))
+    .map((key) => (key.startsWith(projectPrefix) ? key.slice(projectPrefix.length) : key));
+  const allKeys = new Set([...classificationIds, ...manuals.map((m) => m.n_alteracao)]);
   if (allKeys.size === 0) {
     authToast('⚠️ Nenhuma alteração ou aditivo manual para exportar.', 'warn', 3000);
     return;
   }
   const lines = [
-    'Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Refletido (PENDENTE/SIM/NAO);Mês refletido;Justificativa;Data exportação',
+    'Origem;Nº Alteração;Departamento;Data;Descrição;Motivo;INSUMO PLANEJAMENTO;INSUMO DE REMANEJAMENTO;Fluxo Planejamento (R$);Tipo (calculado);Causa do desvio;Índice inflação;Refletido (PENDENTE/SIM/NAO);Mês refletido;Justificativa;Data exportação',
   ];
   const now = new Date().toLocaleString('pt-BR');
   allKeys.forEach((k) => {
     const f = getFlowsObraAtiva().find((x) => x.n_alteracao === k);
     if (!f) return;
-    const edit = map[k] || {};
+    const edit = map[`${projectPrefix}${k}`] || map[k] || {};
     const ip =
       edit.insumo_planejamento !== undefined ? edit.insumo_planejamento : f.insumo_planejamento;
     const ir =
@@ -208,6 +215,12 @@ function exportClassifications() {
     const refLabel = refStatus === 'sim' ? 'SIM' : refStatus === 'nao' ? 'NAO' : 'PENDENTE';
     const refMonth =
       edit.refletido_mes !== undefined ? edit.refletido_mes : f.refletido_mes || null;
+    const cause = normalizeDeviationCause(
+      edit.causa_desvio !== undefined ? edit.causa_desvio : f.causa_desvio,
+    );
+    const inflationIndex = normalizeInflationIndex(
+      edit.indice_inflacao !== undefined ? edit.indice_inflacao : f.indice_inflacao,
+    );
     lines.push(
       [
         f.is_manual ? 'Manual' : 'Sistema',
@@ -220,6 +233,8 @@ function exportClassifications() {
         csvEsc(ir),
         fmtVal,
         tipo,
+        cause,
+        inflationIndex || '',
         refLabel,
         refStatus === 'sim' && refMonth ? formatReflectionMonth(refMonth) : '',
         csvEsc(f.justificativa),
@@ -553,6 +568,7 @@ const MS_EXCLUDED = {
   refletido: new Set(),
   destino: new Set(),
   origem: new Set(),
+  causa_desvio: new Set(),
 };
 const MS_TIPO_OPTS = [
   { v: 'aumento_real', l: '🔴 Aumento real' },
@@ -567,6 +583,11 @@ const MS_REFLETIDO_OPTS = [
   { v: 'sim', l: '✅ Sim - refletido' },
   { v: 'nao', l: '❌ Não - não refletir' },
 ];
+const MS_CAUSA_OPTS = [
+  { v: 'nao_classificado', l: 'Não classificado' },
+  { v: 'inflacao', l: 'Inflação' },
+  { v: 'demais_causas', l: 'Demais causas' },
+];
 const MS_DESTINO_OPTS = [
   { v: 'com_destino', l: '✓ Com destino' },
   { v: 'sem_destino', l: '✗ Sem destino' },
@@ -578,6 +599,7 @@ const MS_DESTINO_OPTS = [
 function msGetAllValues(key) {
   if (key === 'tipo') return MS_TIPO_OPTS.map((o) => o.v);
   if (key === 'refletido') return MS_REFLETIDO_OPTS.map((o) => o.v);
+  if (key === 'causa_desvio') return MS_CAUSA_OPTS.map((o) => o.v);
   if (!getFlowsObraAtiva() || !getFlowsObraAtiva().length) return [];
   const field =
     key === 'destino' ? 'insumo_planejamento' : key === 'origem' ? 'insumo_remanejamento' : key;
@@ -598,6 +620,10 @@ function msLabelFor(key, value) {
   if (key === 'refletido') {
     const o = MS_REFLETIDO_OPTS.find((x) => x.v === value);
     return o ? o.l : value;
+  }
+  if (key === 'causa_desvio') {
+    const option = MS_CAUSA_OPTS.find((item) => item.v === value);
+    return option ? option.l : value;
   }
   return value;
 }
@@ -633,6 +659,11 @@ function msRenderPanel(key) {
     getFlowsObraAtiva().forEach((f) => {
       const v = f.refletido_status || 'pendente';
       counts[v] = (counts[v] || 0) + 1;
+    });
+  } else if (key === 'causa_desvio') {
+    getFlowsObraAtiva().forEach((flow) => {
+      const value = normalizeDeviationCause(flow.causa_desvio);
+      counts[value] = (counts[value] || 0) + 1;
     });
   } else {
     const field =
@@ -744,9 +775,10 @@ function msUpdateBtn(key) {
     refletido: 'status',
     destino: 'destinos',
     origem: 'origens',
+    causa_desvio: 'causas',
   };
   if (excluded === 0) {
-    btn.textContent = `Todos ${baseLabels[key]}`;
+    btn.textContent = key === 'causa_desvio' ? 'Todas causas' : `Todos ${baseLabels[key]}`;
     btn.classList.remove('has-filter');
   } else if (totalSelected === 0) {
     btn.textContent = `Nenhum ${baseLabels[key].slice(0, -1)}`;
@@ -1236,6 +1268,9 @@ function openManualForm(editing) {
   // Preencher valor
   tpl.querySelector('#m_valor').value = f.custo_flowmaster != null ? fmt(f.custo_flowmaster) : '';
 
+  tpl.querySelector('#m_causa_desvio').value = normalizeDeviationCause(f.causa_desvio);
+  tpl.querySelector('#m_indice_inflacao').value = normalizeInflationIndex(f.indice_inflacao) || '';
+
   // Preencher destino e origem
   tpl.querySelector('#m_dest').value = displayForValue(f.insumo_planejamento || '');
   tpl.querySelector('#m_orig').value = displayForValue(f.insumo_remanejamento || '');
@@ -1261,6 +1296,8 @@ function saveManualForm(editingId) {
   const desc = get('m_desc');
   const motivo = get('m_motivo');
   const valor = parseNumber(get('m_valor'));
+  const causaDesvio = normalizeDeviationCause(get('m_causa_desvio'));
+  const indiceInflacao = normalizeInflationIndex(get('m_indice_inflacao'));
   const dest = valueFromDisplay(get('m_dest'));
   const orig = valueFromDisplay(get('m_orig'));
   const just = get('m_just');
@@ -1271,6 +1308,11 @@ function saveManualForm(editingId) {
   }
   if (!dep) {
     authToast('⚠️ Departamento é obrigatório.', 'warn', 3000);
+    return;
+  }
+  if (causaDesvio === 'inflacao' && !indiceInflacao) {
+    authToast('⚠️ Selecione IPCA, INCC ou Outro para a parcela de inflação.', 'warn', 4000);
+    document.getElementById('m_indice_inflacao')?.focus();
     return;
   }
 
@@ -1300,6 +1342,8 @@ function saveManualForm(editingId) {
     insumo_planejamento: dest,
     insumo_remanejamento: orig,
     obs: '',
+    causa_desvio: causaDesvio,
+    indice_inflacao: causaDesvio === 'inflacao' ? indiceInflacao : null,
   };
 
   // se editando, substitui; senão adiciona
@@ -1309,6 +1353,23 @@ function saveManualForm(editingId) {
 
   saveManuals(manuals);
   applyManuals();
+  const classificationKey = `${APP_STATE.obra.ativa}:${id}`;
+  const classificationMap = readClassificationMap();
+  if (!classificationMap[classificationKey]) {
+    classificationMap[classificationKey] = { codigo_obra: APP_STATE.obra.ativa };
+  }
+  classificationMap[classificationKey].causa_desvio = obj.causa_desvio;
+  classificationMap[classificationKey].indice_inflacao = obj.indice_inflacao;
+  SafeStorage.set(STORAGE_KEY, JSON.stringify(classificationMap));
+  void runAsyncSafely(
+    supaPatchClassification(
+      id,
+      { causa_desvio: obj.causa_desvio, indice_inflacao: obj.indice_inflacao },
+      APP_STATE.obra.ativa,
+    ),
+    'Manuais/salvar causa do desvio',
+    'A causa do aditivo manual foi salva apenas neste navegador.',
+  );
   closeModal();
   // Sincronizar todas as telas com debounce (evita múltiplas renderizações)
   debouncedRender();

@@ -32,11 +32,15 @@ const { pathToFileURL } = require('url');
       refletido_status: 'sim',
       refletido_mes: '2026-07-01',
       custo_flowmaster: 10.126,
+      causa_desvio: 'inflacao',
+      indice_inflacao: 'ipca',
     },
   ]);
   assert.strictEqual(flow['Tipo classificação'], 'Remanejamento');
   assert.strictEqual(flow['Refletido?'], 'Sim');
   assert.strictEqual(flow['Mês refletido'], '07/2026');
+  assert.strictEqual(flow['Causa do desvio'], 'Inflação');
+  assert.strictEqual(flow['Índice da inflação'], 'IPCA');
   assert.strictEqual(flow['Custo Flowmaster (R$)'], 10.13);
 
   const projection = buildProjectionExportRows({

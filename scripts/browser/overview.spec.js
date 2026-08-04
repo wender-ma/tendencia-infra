@@ -31,6 +31,9 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
         custo_flowmaster: 3,
         refletido_status: 'sim',
         refletido_mes: '2026-06',
+        tipo: 'aumento_real',
+        causa_desvio: 'inflacao',
+        indice_inflacao: 'ipca',
       },
     ];
     services.state.dados.projRaw = [
@@ -94,6 +97,13 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   });
 
   await expect(page.getByText(/Top 10 - Maiores/)).toHaveCount(0);
+  const managementCard = page.locator('#kpis .kpi', { hasText: 'GESTÃO 07-2026' });
+  await expect(managementCard).toContainText('Inflação incorporada');
+  await expect(managementCard).toContainText('+3,00');
+  await managementCard.getByRole('button', { name: /Inflação incorporada/ }).click();
+  await expect(page.locator('#modalContent')).toContainText('FLOW-REFLETIDO');
+  await expect(page.locator('#modalContent')).toContainText('IPCA');
+  await page.getByRole('button', { name: 'Fechar janela' }).click();
   await expect(page.locator('#top10Up')).toHaveCount(0);
   await expect(page.locator('#top10Down')).toHaveCount(0);
 
@@ -127,7 +137,7 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   await expect(page.locator('#modalContent')).toContainText('Tendência atualizada');
   await expect(page.locator('#modalContent')).toContainText('Diferença Licitação × Tendência');
   await expect(page.locator('#modalContent')).toContainText('Composição dessa diferença');
-  await expect(page.locator('#modalContent')).toContainText('Inflação');
+  await expect(page.locator('#modalContent')).toContainText('Correção monetária de referência');
   await expect(page.locator('#modalContent')).toContainText('Projeção automática');
   await expect(page.locator('#modalContent')).toContainText('Flows pendentes');
   await expect(page.locator('#modalContent')).toContainText('Não identificado');
@@ -144,6 +154,8 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   await page.getByRole('button', { name: 'Fechar janela' }).click();
 
   await page.locator('#kpis').getByRole('button', { name: 'INCC' }).click();
+  await expect(managementCard).toContainText('Inflação incorporada');
+  await expect(managementCard).toContainText('+3,00');
   await expect(tendencyCard).toContainText('Gestão vs Licitação corrigida (INCC)');
   await expect(tendencyCard).toContainText('+20,00');
   await expect(page.locator('#overviewInputThead')).toContainText(

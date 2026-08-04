@@ -8,6 +8,10 @@ import {
   reflectionMonthInputValue,
   resolveReflectionMonth,
 } from '../../services/flow-reflection.mjs';
+import {
+  normalizeDeviationCause,
+  normalizeInflationIndex,
+} from '../../services/flow-deviation.mjs';
 
 const STORAGE_KEY = STORAGE_KEYS.classifications;
 
@@ -97,7 +101,7 @@ function renderFlows() {
       renderDashboardState(flowsTbody, {
         title: 'Sem aditivos para listar',
         compact: true,
-        tableColspan: 11,
+        tableColspan: 13,
       });
     document.getElementById('flowsByMotivo')?.replaceChildren();
     document.getElementById('flowsDescartados')?.replaceChildren();
@@ -296,6 +300,27 @@ function renderReflectionMonth(f) {
     title="Mês em que o Flow foi refletido no planejamento">`;
 }
 
+function renderDeviationCause(flow, disabled) {
+  const cause = normalizeDeviationCause(flow.causa_desvio);
+  return `<select class="flow-cause-select" data-edit-control${disabled} data-n="${escAttr(flow.n_alteracao)}" data-change-action="onDeviationCauseChange" data-action-mode="self" aria-label="Causa do desvio do Flow ${escAttr(flow.n_alteracao)}">
+    <option value="nao_classificado" ${cause === 'nao_classificado' ? 'selected' : ''}>Não classificado</option>
+    <option value="inflacao" ${cause === 'inflacao' ? 'selected' : ''}>Inflação</option>
+    <option value="demais_causas" ${cause === 'demais_causas' ? 'selected' : ''}>Demais causas</option>
+  </select>`;
+}
+
+function renderInflationIndex(flow, disabled) {
+  const cause = normalizeDeviationCause(flow.causa_desvio);
+  if (cause !== 'inflacao') return '<span class="flow-index-empty">—</span>';
+  const index = normalizeInflationIndex(flow.indice_inflacao);
+  return `<select class="flow-index-select${index ? '' : ' is-incomplete'}" data-edit-control${disabled} data-n="${escAttr(flow.n_alteracao)}" data-change-action="onInflationIndexChange" data-action-mode="self" aria-label="Índice da inflação do Flow ${escAttr(flow.n_alteracao)}">
+    <option value="" ${index ? 'disabled' : 'selected disabled'}>Selecione</option>
+    <option value="ipca" ${index === 'ipca' ? 'selected' : ''}>IPCA</option>
+    <option value="incc" ${index === 'incc' ? 'selected' : ''}>INCC</option>
+    <option value="outro" ${index === 'outro' ? 'selected' : ''}>Outro</option>
+  </select>`;
+}
+
 function renderFlowTable() {
   bindFlowInteractions();
   const q = document.getElementById('flowSearch').value.toLowerCase();
@@ -316,6 +341,7 @@ function renderFlowTable() {
     // Refletido: status do aditivo (precisa default 'pendente')
     const fStat = f.refletido_status || 'pendente';
     if (!msMatches('refletido', fStat)) return false;
+    if (!msMatches('causa_desvio', normalizeDeviationCause(f.causa_desvio))) return false;
     if (reflectedMonth && String(f.refletido_mes || '').slice(0, 7) !== reflectedMonth)
       return false;
     if (!msMatches('destino', f.insumo_planejamento)) return false;
@@ -392,6 +418,8 @@ function renderFlowTable() {
       <td class="flow-date-cell">${escHtml(formatDate(f.data_br))}</td>
       <td><span class="badge ${depBadge[f.dep] || 'gray'}">${escHtml(f.dep || '')}</span></td>
       <td>${tipoLabel[f.tipo] || ''}</td>
+      <td class="flow-cause-cell">${renderDeviationCause(f, editDisabled)}</td>
+      <td class="flow-index-cell">${renderInflationIndex(f, editDisabled)}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_planejamento')}</td>
       <td class="classif-cell">${renderInsumoSelect(f, 'insumo_remanejamento')}</td>
       <td class="classif-cell"><input type="text" class="valor-input ${valCls}${valEdited}" data-edit-control${editDisabled}
@@ -486,6 +514,63 @@ function onRefletidoMonthChange(input) {
   renderFlowTable();
 }
 
+function persistDeviationClassification(flow) {
+  const codigoObra = flow.codigo_obra || APP_STATE.obra.ativa || '';
+  const key = `${codigoObra}:${flow.n_alteracao}`;
+  const map = readClassificationMap();
+  if (!map[key]) map[key] = { codigo_obra: codigoObra };
+  map[key].causa_desvio = normalizeDeviationCause(flow.causa_desvio);
+  map[key].indice_inflacao = normalizeInflationIndex(flow.indice_inflacao);
+  SafeStorage.set(STORAGE_KEY, JSON.stringify(map));
+  return {
+    codigoObra,
+    patch: { causa_desvio: map[key].causa_desvio, indice_inflacao: map[key].indice_inflacao },
+  };
+}
+
+function onDeviationCauseChange(select) {
+  if (!requireEditor('classificar a causa do desvio')) {
+    renderFlowTable();
+    return;
+  }
+  const flow = getFlowsObraAtiva().find((item) => item.n_alteracao === select.dataset.n);
+  if (!flow) return;
+  flow.causa_desvio = normalizeDeviationCause(select.value);
+  if (flow.causa_desvio !== 'inflacao') flow.indice_inflacao = null;
+  const { codigoObra, patch } = persistDeviationClassification(flow);
+  if (flow.causa_desvio !== 'inflacao' || normalizeInflationIndex(flow.indice_inflacao)) {
+    void runAsyncSafely(
+      supaPatchClassification(flow.n_alteracao, patch, codigoObra),
+      'Classificações/salvar causa do desvio',
+      'A causa foi salva apenas neste navegador.',
+    );
+  }
+  renderFlowTable();
+  if (flow.causa_desvio === 'inflacao' && !flow.indice_inflacao) {
+    document.querySelector(`.flow-index-select[data-n="${CSS.escape(flow.n_alteracao)}"]`)?.focus();
+  }
+  syncAllViewsFromFlows();
+}
+
+function onInflationIndexChange(select) {
+  if (!requireEditor('classificar o índice da inflação')) {
+    renderFlowTable();
+    return;
+  }
+  const flow = getFlowsObraAtiva().find((item) => item.n_alteracao === select.dataset.n);
+  const index = normalizeInflationIndex(select.value);
+  if (!flow || normalizeDeviationCause(flow.causa_desvio) !== 'inflacao' || !index) return;
+  flow.indice_inflacao = index;
+  const { codigoObra, patch } = persistDeviationClassification(flow);
+  void runAsyncSafely(
+    supaPatchClassification(flow.n_alteracao, patch, codigoObra),
+    'Classificações/salvar índice da inflação',
+    'O índice foi salvo apenas neste navegador.',
+  );
+  renderFlowTable();
+  syncAllViewsFromFlows();
+}
+
 export function createFlowsView({
   runtime,
   storage,
@@ -520,5 +605,7 @@ export function createFlowsView({
     clearFlowFilters,
     onRefletidoChange,
     onRefletidoMonthChange,
+    onDeviationCauseChange,
+    onInflationIndexChange,
   });
 }

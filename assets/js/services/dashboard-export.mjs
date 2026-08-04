@@ -7,7 +7,7 @@ import {
 import { formatReflectionMonth } from './flow-reflection.mjs';
 
 const MONEY_FORMAT = '#,##0.00;-#,##0.00;"-"';
-const DASHBOARD_VERSION = 'v1.10.1';
+const DASHBOARD_VERSION = 'v1.11.0';
 
 function roundCurrency(value) {
   return value == null ? null : Math.round(value * 100) / 100;
@@ -57,6 +57,12 @@ export function buildFlowsExportRows(flows = []) {
     sem_classificacao: 'Sem classificação',
     misto: 'Misto',
   };
+  const causeLabels = {
+    nao_classificado: 'Não classificado',
+    inflacao: 'Inflação',
+    demais_causas: 'Demais causas',
+  };
+  const indexLabels = { ipca: 'IPCA', incc: 'INCC', outro: 'Outro' };
 
   return flows.map((flow) => ({
     'N° Alteração': flow.n_alteracao || '',
@@ -70,6 +76,8 @@ export function buildFlowsExportRows(flows = []) {
     'Insumo Planejamento (destino)': flow.insumo_planejamento || '',
     'Insumo Remanejamento (origem)': flow.insumo_remanejamento || '',
     'Tipo classificação': typeLabels[flow.tipo] || flow.tipo || '',
+    'Causa do desvio': causeLabels[flow.causa_desvio] || 'Não classificado',
+    'Índice da inflação': indexLabels[flow.indice_inflacao] || '',
     'Refletido?': reflectedLabels[flow.refletido_status] || flow.refletido_status || 'Pendente',
     'Mês refletido':
       flow.refletido_status === 'sim' && flow.refletido_mes

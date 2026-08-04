@@ -229,6 +229,10 @@ uma única versão ativa por base e adiciona o reset global isolado.
   da Gestão e sua extrapolação automática, preservando realizado e Flows pendentes.
 - Cards, Curva S, histograma, grade mensal, modais e exportação usam o mesmo
   snapshot de cálculo para manter a reconciliação dos totais.
+- A correção IPCA/INCC da Licitação é uma referência teórica. A inflação
+  incorporada na Gestão é rastreada separadamente por Flow, índice e mês de
+  reflexo; cada parcela deve ter seu próprio Flow e nenhuma classificação
+  histórica é inferida automaticamente.
 
 Para gerar e validar o pacote de producao pronto para publicar:
 

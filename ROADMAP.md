@@ -130,6 +130,10 @@ Critério de conclusão: Visão Geral reconciliada, filtros restaurados, anotaç
 
 - [x] Corrigir a exibição de valores zerados na decomposição da Gestão, removendo o prefixo inválido `+-`.
 
+## Versão 1.12.2
+
+- [x] Ocultar a decomposição do card Tendência Final Projetada quando o modo Líquido estiver selecionado.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

@@ -514,6 +514,36 @@ function renderVisao({ cardsOnly = false } = {}) {
       <strong class="overview-tone--${tone}">${valor}</strong>
     </${action ? 'button' : 'div'}>
   `;
+  const card3Details =
+    APP_STATE.config.card3Modo === 'liquido'
+      ? ''
+      : [
+          bdLine(
+            '🎯 Gestão vs Licitação corrigida (' + indiceLabel + ')',
+            (gestaoVsCorrigido >= 0 ? '+' : '') + fmtR$(gestaoVsCorrigido),
+            signedTone(gestaoVsCorrigido),
+          ),
+          bdLine(
+            '🏗️ Tend. Indiretos',
+            (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos),
+            'purple',
+          ),
+          bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning'),
+          `<div class="overview-total-block">
+            <div class="overview-total-line">
+              <span class="overview-total-label">📈 Δ bruto vs Licitação corrigida</span>
+              <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigido)}">${tendVsCorrigido >= 0 ? '+' : ''}${fmtR$(tendVsCorrigido)}</strong>
+            </div>
+            <div class="overview-total-line">
+              <span class="overview-projection-reserve-label">${escHtml(insumoControlado)} - Projeção de Gastos</span>
+              <strong class="overview-total-value overview-tone--${signedTone(-reservaProj)}">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
+            </div>
+            <div class="overview-total-line">
+              <span class="overview-total-label">💧 Δ líquido vs Licitação corrigida</span>
+              <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigidoLiq)}">${tendVsCorrigidoLiq >= 0 ? '+' : ''}${fmtR$(tendVsCorrigidoLiq)}</strong>
+            </div>
+          </div>`,
+        ].join('');
 
   replaceWithParsedMarkup(
     document.getElementById('kpis'),
@@ -579,23 +609,7 @@ function renderVisao({ cardsOnly = false } = {}) {
           <button type="button" data-click-action="setCard3Modo" data-action-mode="arg" data-action-arg="liquido" class="toggle-btn ${APP_STATE.config.card3Modo === 'liquido' ? 'active' : ''}">Líquido</button>
         </div>
       </div>
-      ${bdLine('🎯 Gestão vs Licitação corrigida (' + indiceLabel + ')', (gestaoVsCorrigido >= 0 ? '+' : '') + fmtR$(gestaoVsCorrigido), signedTone(gestaoVsCorrigido))}
-      ${bdLine('🏗️ Tend. Indiretos', (tendIndiretos >= 0 ? '+' : '') + fmtR$(tendIndiretos), 'purple')}
-      ${bdLine('🧱 Tend. Diretos', (tendDiretos >= 0 ? '+' : '') + fmtR$(tendDiretos), 'warning')}
-      <div class="overview-total-block">
-        <div class="overview-total-line">
-          <span class="overview-total-label">📈 Δ bruto vs Licitação corrigida</span>
-          <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigido)}">${tendVsCorrigido >= 0 ? '+' : ''}${fmtR$(tendVsCorrigido)}</strong>
-        </div>
-        <div class="overview-total-line">
-          <span class="overview-projection-reserve-label">${escHtml(insumoControlado)} - Projeção de Gastos</span>
-          <strong class="overview-total-value overview-tone--${signedTone(-reservaProj)}">${reservaProj > 0 ? '−' : reservaProj < 0 ? '+' : ''}${fmtR$(Math.abs(reservaProj))}</strong>
-        </div>
-        <div class="overview-total-line">
-          <span class="overview-total-label">💧 Δ líquido vs Licitação corrigida</span>
-          <strong class="overview-total-value overview-tone--${signedTone(tendVsCorrigidoLiq)}">${tendVsCorrigidoLiq >= 0 ? '+' : ''}${fmtR$(tendVsCorrigidoLiq)}</strong>
-        </div>
-      </div>
+      ${card3Details}
     </div>
 
     <!-- Card 4 (v0.55) — Aderência Físico-Financeira (Prevision) -->

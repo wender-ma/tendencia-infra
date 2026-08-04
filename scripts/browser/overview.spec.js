@@ -13,6 +13,7 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
     services.state.config.correcaoIndice = 'ipca';
     services.state.config.card3Modo = 'bruto';
     services.state.config.gestaoLabel = 'GESTÃO 07-2026';
+    services.state.config.evolGlobal = { teorica: 31, financeira: 41 };
     services.state.dados.flows = [
       {
         codigo_obra: 'OBRA-VISAO',
@@ -54,6 +55,8 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
         item: 'PLANEJAMENTO OBRA',
         nivel: 1,
         is_folha: false,
+        evolucao_teorica: 100,
+        evolucao_financeira: 125,
       },
       {
         cod: '01.01',
@@ -100,6 +103,10 @@ test('Visão Geral usa a Licitação corrigida e não exibe rankings Top 10', as
   await expect(tendencyCard).toContainText('+10,00');
   await expect(tendencyCard).toContainText('Δ bruto vs Licitação corrigida');
   await expect(tendencyCard).toContainText('+18,33');
+
+  const adherenceCard = page.locator('#kpis .kpi', { hasText: 'Aderência Físico-Financeira' });
+  await expect(adherenceCard).toContainText('Diferença nominal');
+  await expect(adherenceCard).toContainText('+25,00');
 
   await expect(page.locator('#overviewInputThead')).toContainText(
     'Orçamento Licitação Corrigido (IPCA)',

@@ -120,6 +120,8 @@ assert(
     overview.includes('overview-adherence-bar-svg') &&
     overview.includes('overview-adherence-bar-progress') &&
     overview.includes('overview-adherence-bar-value') &&
+    overview.includes('overview-adherence-nominal') &&
+    overview.includes('nominalFinancial - nominalTheoretical') &&
     overview.includes("delta > 0 ? 'negative' : 'positive'") &&
     overview.includes('Math.abs(financialPosition - physicalPosition)'),
   'Card de Aderência deve preencher o progresso e colorir a diferença pela semântica financeira',

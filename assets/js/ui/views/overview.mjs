@@ -87,6 +87,15 @@ function renderCardAderencia() {
   }
   const delta = teor != null && fin != null ? fin - teor : null;
   const absD = delta != null ? Math.abs(delta) : null;
+  const nominalSource = APP_STATE.dados.tendencia.find(
+    (item) => item.evolucao_teorica != null && item.evolucao_financeira != null,
+  );
+  const nominalTheoretical = evol.teoricaNominal ?? nominalSource?.evolucao_teorica ?? null;
+  const nominalFinancial = evol.financeiraNominal ?? nominalSource?.evolucao_financeira ?? null;
+  const nominalDelta =
+    nominalTheoretical != null && nominalFinancial != null
+      ? nominalFinancial - nominalTheoretical
+      : null;
 
   // Semáforo: verde ≤5pp, amber 5-15pp, red >15pp
   let semaLabel, semaCls, ico;
@@ -113,6 +122,7 @@ function renderCardAderencia() {
   const fmtPP = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + 'pp');
   const fmtPct = (v) => (v == null ? '-' : fmtAdherenceNumber(v) + '%');
   const varianceTone = delta == null ? 'neutral' : delta > 0 ? 'negative' : 'positive';
+  const nominalTone = nominalDelta == null ? 'neutral' : nominalDelta > 0 ? 'negative' : 'positive';
   const clampPercentage = (value) => Math.max(0, Math.min(100, Number(value)));
   const physicalPosition = teor == null ? null : clampPercentage(teor);
   const financialPosition = fin == null ? null : clampPercentage(fin);
@@ -167,6 +177,10 @@ function renderCardAderencia() {
       <div class="overview-adherence-line overview-adherence-status overview-tone--${varianceTone}">
         <span>${ico} ${semaLabel}</span>
         <strong>${delta != null ? (delta >= 0 ? '+' : '') + fmtPP(delta) : '-'}</strong>
+      </div>
+      <div class="overview-adherence-line overview-adherence-nominal overview-tone--${nominalTone}" title="Diferença nominal entre N3 e M3 da aba Tendência">
+        <span>💱 Diferença nominal</span>
+        <strong>${nominalDelta != null ? (nominalDelta >= 0 ? '+' : '') + fmtR$(nominalDelta) : '-'}</strong>
       </div>
       <div class="overview-adherence-bar">
         <svg

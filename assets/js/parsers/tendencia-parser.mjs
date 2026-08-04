@@ -79,5 +79,7 @@ export function parseTendenciaFile(text, options = {}) {
   }
 
   if (!items.length) throw new Error('TENDÊNCIA: nenhuma linha válida encontrada.');
+  evolution.teoricaNominal = items[0].evolucao_teorica;
+  evolution.financeiraNominal = items[0].evolucao_financeira;
   return { items, managementLabel, evolution, report };
 }

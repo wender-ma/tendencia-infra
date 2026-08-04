@@ -96,6 +96,14 @@ Critério de conclusão: código, testes e publicação aprovados; EXT-18 confir
 
 Critério de conclusão: upload combinado e correções de Flows validados por contratos, navegador, build e smoke de produção.
 
+## Versão 1.10.1
+
+- [x] Exibir no card de Aderência Físico-Financeira a diferença nominal `N3 − M3` da Tendência.
+- [x] Preservar os valores nominais no parser e manter compatibilidade com snapshots anteriores.
+- [x] Aplicar a semântica financeira: diferença positiva em vermelho e negativa em verde.
+
+Critério de conclusão: parser, contrato de UI e teste de navegador reconciliados com os valores nominais da planilha.
+
 ## P0: segurança crítica
 
 ### 1. Auditar e versionar o Supabase

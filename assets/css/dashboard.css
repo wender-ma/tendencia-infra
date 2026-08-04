@@ -3687,6 +3687,13 @@ body:not(.is-admin-geral) [data-admin-control],
   font-weight: 700;
 }
 .overview-adherence-status > span { color: var(--text-strong); }
+.overview-adherence-nominal {
+  margin-top: 4px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+.overview-adherence-nominal > span { color: var(--text-strong); }
 .overview-adherence-bar { margin-top: 14px; }
 .overview-adherence-bar-svg {
   display: block;

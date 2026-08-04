@@ -70,6 +70,8 @@ async function main() {
   assert(tendency.items[0].licitacao_corrigido === 1100, 'Índice IPCA não foi aplicado');
   assert(tendency.managementLabel === 'Gestão 07-2026', 'Label de gestão não foi extraído');
   assert(tendency.evolution.teorica === 31, 'Percentual fracionário não foi normalizado');
+  assert(tendency.evolution.teoricaNominal === 10, 'Valor nominal de M3 não foi preservado');
+  assert(tendency.evolution.financeiraNominal === 8, 'Valor nominal de N3 não foi preservado');
   assert(
     tendency.report.accepted === 1 && tendency.report.ignored === 1,
     'Relatório de Tendência incorreto',
